@@ -1,0 +1,13 @@
+* text=auto
+
+*.py    text
+*.js    text
+*.css   text
+*.rst   text
+*.svg   text
+*.dia   text
+
+*.bat   text eol=crlf
+
+*.png   binary
+*.jpg   binary
