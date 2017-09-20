@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'easydmp.auth.apps.EasyDMPAuthConfig',
+    'flow',
 ]
 
 MIDDLEWARE = [
