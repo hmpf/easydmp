@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     'easydmp.auth.apps.EasyDMPAuthConfig',
     'flow',
+    'easydmp.dmpt',
 ]
 
 MIDDLEWARE = [
