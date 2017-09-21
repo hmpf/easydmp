@@ -2,3 +2,4 @@ Django>=1.11
 pytz>=2017
 Sphinx>=1.6
 graphviz>=0.8
+docutils>=0.14
