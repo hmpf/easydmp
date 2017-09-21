@@ -28,7 +28,25 @@ class CannedAnswerAdmin(admin.ModelAdmin):
         'choice',
         'edge',
     )
+    actions = [
+        'create_edge',
+        'update_edge',
+    ]
     list_filter = ('question',)
+
+    def create_edge(self, request, queryset):
+        for q in queryset.all():
+            if not q.edge:
+                q.create_edge()
+    create_edge.short_description = 'Create edge'
+
+    def update_edge(self, request, queryset):
+        for q in queryset.all():
+            if q.edge:
+                q.update_edge()
+            else:
+                q.create_edge()
+    update_edge.short_description = 'Update edge'
 
 
 class CannedAnswerInline(admin.StackedInline):
@@ -45,5 +63,16 @@ class QuestionAdmin(admin.ModelAdmin):
         'input_type',
         'node',
     )
+    actions = [
+        'create_node',
+    ]
     list_filter = ['section']
     inlines = [CannedAnswerInline]
+
+    def create_node(self, request, queryset):
+        for q in queryset.all():
+            if not q.node:
+                q.create_node()
+    create_node.short_description = 'Create node'
+
+
