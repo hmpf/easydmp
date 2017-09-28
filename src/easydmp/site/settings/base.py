@@ -39,9 +39,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'crispy_forms',
+
     'easydmp.auth.apps.EasyDMPAuthConfig',
     'flow',
     'easydmp.dmpt',
+    'easydmp.plan',
 ]
 
 MIDDLEWARE = [
