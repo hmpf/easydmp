@@ -1,0 +1,12 @@
+{% autoescape off %}{% for section in text %}{{ section.section.title }}
+{% for char in section.section.title|make_list %}-{% endfor %}
+{% if section.section.introductory_text %}
+{{ section.section.introductory_text|wordwrap:66 }}{% endif %}
+{% for para in section.text %}{% if para.text or para.notes %}
+
+{{ para.text|wordwrap:66 }}{% if para.notes %}
+
+Note: {{ para.notes|wordwrap:66 }}{% endif %}
+{% endif %}{% endfor %}
+
+{% endfor %}{% endautoescape %}
