@@ -16,7 +16,12 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 
+from easydmp.site.views import Homepage, logout_view
+
 urlpatterns = [
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', admin.site.urls),
+
+    url('^$', Homepage.as_view(), name='home'),
+    url('^logout', logout_view, name='logout'),
 ]
