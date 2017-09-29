@@ -5,3 +5,4 @@ graphviz>=0.8
 docutils>=0.14
 jsonfield>=2.0
 django-crispy-forms>=1.6
+social-auth-app-django>=1.2
