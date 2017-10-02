@@ -22,6 +22,8 @@ urlpatterns = [
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', admin.site.urls),
 
+    url('^psa/', include('social_django.urls', namespace='social')),
+
     url('^$', Homepage.as_view(), name='home'),
     url('^logout', logout_view, name='logout'),
     url(r'^plan/', include('easydmp.plan.urls')),
