@@ -14,6 +14,7 @@ class Node(models.Model):
     fsa:     which fsa this node belongs to
     slug:    string node name for introspection, must be set
     start:   whether this is the topmost node or not
+    end:     whether this is an endnode or not
     depends: node to look up to decide next node. If unset, lookup self
 
     Reverse relations
@@ -25,6 +26,7 @@ class Node(models.Model):
     fsa = models.ForeignKey('FSA', related_name='nodes')
     slug = models.SlugField(max_length=16)
     start = models.BooleanField(default=False)
+    end = models.BooleanField(default=False)
     depends = models.ForeignKey(
         'self',
         blank=True,
@@ -167,7 +169,7 @@ class FSA(models.Model):
 
     def _find_all_paths(self, graph, start, path=[]):
         path = path + [start]
-        if start is None:
+        if start is None or start.end:
             return [path]
         if start not in graph:
             return []
