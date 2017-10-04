@@ -186,6 +186,21 @@ class DateRangeForm(AbstractNodeForm):
         return 'Not set'
 
 
+class ReasonForm(AbstractNodeForm):
+
+    def _add_choice_field(self):
+        self.fields['choice'] = forms.CharField(
+            label=self.label,
+            help_text=self.help_text,
+            widget=forms.Textarea,
+        )
+
+    def pprint(self):
+        if self.is_valid():
+            return self.cleaned_data['choice']
+        return 'Not set'
+
+
 def make_form(question, **kwargs):
     kwargs.pop('prefix', None)
     kwargs.pop('instance', None)
@@ -206,6 +221,8 @@ def make_form(question, **kwargs):
         kwargs['choices'] = choices
     elif question.input_type == 'daterange':
         form_type = DateRangeForm
+    elif question.input_type == 'reason':
+        form_type = ReasonForm
     else:
         assert False, 'Unknown input type: {}'.format(question.input_type)
     return form_type(**kwargs)

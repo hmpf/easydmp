@@ -18,6 +18,7 @@ INPUT_TYPES = (
     'choice',
     'daterange',
     'multichoiceonetext',
+    'reason',
 )
 
 
@@ -346,12 +347,32 @@ class DateRangeQuestion(Question):
         return self.framing_text.format(**daterange)
 
 
+class ReasonQuestion(Question):
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.input_type = 'reason'
+        super(ReasonQuestion, self).save(*args, **kwargs)
+
+    def get_canned_answer(self, reason, **kwargs):
+        """
+        reason is a string.
+        """
+        if self.framing_text:
+            return self.framing_text.format(reason)
+        return reason
+
+
 INPUT_TYPE_MAP = {
     'bool': BooleanQuestion,
     'choice': ChoiceQuestion,
     'daterange': DateRangeQuestion,
     'multichoiceonetext': MultipleChoiceOneTextQuestion,
+    'reason': ReasonQuestion,
 }
+
 
 class CannedAnswer(models.Model):
     question = models.ForeignKey(Question, related_name='canned_answers')
