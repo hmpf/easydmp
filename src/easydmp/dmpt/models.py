@@ -19,6 +19,7 @@ INPUT_TYPES = (
     'daterange',
     'multichoiceonetext',
     'reason',
+    'positiveinteger',
 )
 
 
@@ -140,6 +141,18 @@ class Section(models.Model):
         if prev_sections.exists():
             return prev_sections[0]
         return None
+
+
+class SimpleFramingTextMixin:
+
+    def get_canned_answer(self, choice, **kwargs):
+        """
+        choice is a non-sequence type.
+        """
+        choice = str(choice)
+        if self.framing_text:
+            return self.framing_text.format(choice)
+        return choice
 
 
 class Question(models.Model):
@@ -347,7 +360,7 @@ class DateRangeQuestion(Question):
         return self.framing_text.format(**daterange)
 
 
-class ReasonQuestion(Question):
+class ReasonQuestion(SimpleFramingTextMixin, Question):
 
     class Meta:
         proxy = True
@@ -356,13 +369,15 @@ class ReasonQuestion(Question):
         self.input_type = 'reason'
         super(ReasonQuestion, self).save(*args, **kwargs)
 
-    def get_canned_answer(self, reason, **kwargs):
-        """
-        reason is a string.
-        """
-        if self.framing_text:
-            return self.framing_text.format(reason)
-        return reason
+
+class PositiveIntegerQuestion(SimpleFramingTextMixin, Question):
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.input_type = 'positiveinteger'
+        super(PositiveIntegerQuestion, self).save(*args, **kwargs)
 
 
 INPUT_TYPE_MAP = {
@@ -371,6 +386,7 @@ INPUT_TYPE_MAP = {
     'daterange': DateRangeQuestion,
     'multichoiceonetext': MultipleChoiceOneTextQuestion,
     'reason': ReasonQuestion,
+    'positiveinteger': PositiveIntegerQuestion,
 }
 
 

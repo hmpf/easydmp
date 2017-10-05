@@ -246,7 +246,7 @@ class PlanDetailView(AbstractPlanDetailView):
                     value['answer'] = question.framing_text.format(**value['choice'])
                 elif question.input_type == 'choice':
                     value['answer'] = value['choice']
-                elif question.input_type == 'reason':
+                elif question.input_type in ('reason', 'positiveinteger'):
                     value['answer'] = value['choice']
                     if question.framing_text:
                         value['answer'] = question.framing_text.format(value['choice'])

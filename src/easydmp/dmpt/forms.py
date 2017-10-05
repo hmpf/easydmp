@@ -201,6 +201,21 @@ class ReasonForm(AbstractNodeForm):
         return 'Not set'
 
 
+class PositiveIntegerForm(AbstractNodeForm):
+
+    def _add_choice_field(self):
+        self.fields['choice'] = forms.IntegerField(
+            min_value=1,
+            label=self.label,
+            help_text=self.help_text,
+        )
+
+    def pprint(self):
+        if self.is_valid():
+            return self.cleaned_data['choice']
+        return 'Not set'
+
+
 def make_form(question, **kwargs):
     kwargs.pop('prefix', None)
     kwargs.pop('instance', None)
@@ -223,6 +238,8 @@ def make_form(question, **kwargs):
         form_type = DateRangeForm
     elif question.input_type == 'reason':
         form_type = ReasonForm
+    elif question.input_type == 'positiveinteger':
+        form_type = PositiveIntegerForm
     else:
         assert False, 'Unknown input type: {}'.format(question.input_type)
     return form_type(**kwargs)
