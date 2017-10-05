@@ -76,6 +76,11 @@ class AbstractNodeForm(forms.Form):
             'notes': self.cleaned_data.get('notes', ''),
         }
 
+    def pprint(self):
+        if self.is_valid():
+            return self.cleaned_data['choice']
+        return 'Not set'
+
 
 class BooleanForm(AbstractNodeForm):
 
@@ -121,11 +126,6 @@ class ChoiceForm(AbstractNodeForm):
             widget=forms.RadioSelect,
         )
 
-    def pprint(self):
-        if self.is_valid():
-            return self.cleaned_data['choice']
-        return 'Not set'
-
 
 class MultipleChoiceOneTextForm(AbstractNodeForm):
 
@@ -137,11 +137,6 @@ class MultipleChoiceOneTextForm(AbstractNodeForm):
             choices=choices,
             widget=forms.CheckboxSelectMultiple,
         )
-
-    def pprint(self):
-        if self.is_valid():
-            return self.cleaned_data['choice']
-        return 'Not set'
 
 
 class DateRangeForm(AbstractNodeForm):
@@ -195,11 +190,6 @@ class ReasonForm(AbstractNodeForm):
             widget=forms.Textarea,
         )
 
-    def pprint(self):
-        if self.is_valid():
-            return self.cleaned_data['choice']
-        return 'Not set'
-
 
 class PositiveIntegerForm(AbstractNodeForm):
 
@@ -209,11 +199,6 @@ class PositiveIntegerForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
         )
-
-    def pprint(self):
-        if self.is_valid():
-            return self.cleaned_data['choice']
-        return 'Not set'
 
 
 def make_form(question, **kwargs):
