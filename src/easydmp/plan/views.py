@@ -204,7 +204,8 @@ class PlanListView(LoginRequiredMixin, ListView):
     template_name = 'easydmp/plan/plan_list.html'
 
     def get_queryset(self):
-        return self.model.objects.filter(added_by=self.request.user).order_by('-added')
+        groups = self.request.user.groups.all()
+        return self.model.objects.filter(editor_group__in=groups).order_by('-added')
 
 
 class AbstractPlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailView):
