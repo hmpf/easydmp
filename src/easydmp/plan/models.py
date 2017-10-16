@@ -18,6 +18,7 @@ class Plan(models.Model):
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='added_plans')
     modified = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='modified_plans')
+    editor_group = models.ForeignKey('auth.Group', related_name='+', blank=True, null=True)
 
     class Meta:
         # Only one plan per template and version
@@ -25,3 +26,18 @@ class Plan(models.Model):
 
     def __str__(self):
         return self.title
+
+    def create_editor_group(self):
+        from django.contrib.auth.models import Group
+        group, _ = Group.objects.get_or_create(name='plan-editors-{}'.format(self.pk))
+        self.editor_group = group
+        self.save()
+
+    def set_adder_as_editor(self):
+        self.added_by.groups.add(self.editor_group)
+
+    def save(self, **kwargs):
+        super().save(**kwargs)
+        if not self.editor_group:
+            self.create_editor_group()
+            self.set_adder_as_editor()
