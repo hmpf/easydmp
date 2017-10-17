@@ -6,7 +6,14 @@ from django.core.urlresolvers import reverse, reverse_lazy
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render
 from django.views.generic import (
-    FormView, CreateView, UpdateView, DetailView, ListView, DeleteView)
+    FormView,
+    CreateView,
+    UpdateView,
+    DetailView,
+    ListView,
+    DeleteView,
+    RedirectView,
+)
 
 from easydmp.dmpt.forms import make_form, TemplateForm, DeleteForm
 from flow.models import FSA
@@ -44,7 +51,7 @@ class NewPlanView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         kwargs = {
             'plan': self.object.pk,
-            'question': self.object.template.first_question.pk,
+            'question': self.object.get_first_question().pk,
         }
         return reverse('new_question', kwargs=kwargs)
 
@@ -197,6 +204,19 @@ class NewQuestionView(AbstractQuestionView):
 #         invalidated_states.discard(question_pk)
 #         self.delete_statedata(*invalidated_states)
         return HttpResponseRedirect(self.get_success_url())
+
+
+class FirstQuestionView(LoginRequiredMixin, RedirectView):
+
+    def get_redirect_url(self, *args, **kwargs):
+        plan_pk = self.kwargs.get('plan')
+        plan = Plan.objects.get(pk=plan_pk)
+        question_pk = plan.get_first_question().pk
+        url = reverse(
+            'new_question',
+            kwargs={'plan': plan_pk, 'question': question_pk}
+        )
+        return url
 
 
 class PlanListView(LoginRequiredMixin, ListView):

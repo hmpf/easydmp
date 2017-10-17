@@ -27,6 +27,9 @@ class Plan(models.Model):
     def __str__(self):
         return self.title
 
+    def get_first_question(self):
+        return self.template.first_question
+
     def create_editor_group(self):
         from django.contrib.auth.models import Group
         group, _ = Group.objects.get_or_create(name='plan-editors-{}'.format(self.pk))
