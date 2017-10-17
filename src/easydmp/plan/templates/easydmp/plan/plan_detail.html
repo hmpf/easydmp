@@ -28,6 +28,12 @@
 
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+        <h2>Editors</h2>
+        <ul>
+        {% for user in object.editor_group.user_set.all %}
+        <li>{{ user }}
+        {% endfor %}
+        </ul>
     </div>
   </div>
 
