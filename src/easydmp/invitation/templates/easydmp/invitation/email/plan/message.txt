@@ -1,0 +1,18 @@
+You have been invited by {{ invited_by }}{% if invited_by.email_adddress %}({{ invited_by.email_adddress }}){% endif %} to help edit a data
+management plan.
+
+By visiting
+
+    {{ link }}
+
+you will get access to edit the data management plan
+"{{ plan.title }}", which was started on {{ plan.added }} by {{ plan.added_by }}.
+
+You will be asked to log in and in successfully doing so you
+should have edit access to the plan.
+
+
+Happy editing!
+
+-- 
+EasyDMP Invite Bot

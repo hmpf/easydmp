@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'flow',
     'easydmp.dmpt',
     'easydmp.plan',
+    'easydmp.invitation',
 ]
 
 MIDDLEWARE = [

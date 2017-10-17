@@ -27,4 +27,5 @@ urlpatterns = [
     url('^$', Homepage.as_view(), name='home'),
     url('^logout', logout_view, name='logout'),
     url(r'^plan/', include('easydmp.plan.urls')),
+    url(r'^invitation/', include('easydmp.invitation.urls')),
 ]

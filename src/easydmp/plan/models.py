@@ -33,8 +33,11 @@ class Plan(models.Model):
         self.editor_group = group
         self.save()
 
+    def add_user_to_editor_group(self, user):
+        user.groups.add(self.editor_group)
+
     def set_adder_as_editor(self):
-        self.added_by.groups.add(self.editor_group)
+        self.add_user_to_editor_group(self.added_by)
 
     def save(self, **kwargs):
         super().save(**kwargs)
