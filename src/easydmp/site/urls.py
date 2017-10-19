@@ -28,4 +28,6 @@ urlpatterns = [
     url('^logout', logout_view, name='logout'),
     url(r'^plan/', include('easydmp.plan.urls')),
     url(r'^invitation/', include('easydmp.invitation.urls')),
+
+    url(r'^api/v1/', include('easydmp.site.api.urls', namespace='v1')),
 ]

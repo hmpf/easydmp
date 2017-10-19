@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'crispy_forms',
+    'rest_framework',
 
     'easydmp.auth.apps.EasyDMPAuthConfig',
     'flow',
@@ -140,3 +141,12 @@ STATIC_ROOT = pathjoin(BASE_DIR, 'collected_static_files')
 # Auth
 
 AUTH_USER_MODEL = 'easydmp_auth.User'
+
+# REST API
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
+    ],
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+}
