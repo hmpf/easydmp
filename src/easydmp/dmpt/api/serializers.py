@@ -22,7 +22,15 @@ class TemplateSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Template
-        fields = '__all__'
+        fields = [
+            'id',
+            'url',
+            'title',
+            'abbreviation',
+            'version',
+            'created',
+            'published',
+        ]
 
 
 class SectionSerializer(serializers.HyperlinkedModelSerializer):
@@ -33,7 +41,15 @@ class SectionSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Section
-        fields = '__all__'
+        fields = [
+            'id',
+            'url',
+            'template',
+            'title',
+            'position',
+            'introductory_text',
+            'comment',
+        ]
 
 
 class QuestionSerializer(serializers.HyperlinkedModelSerializer):
@@ -45,6 +61,7 @@ class QuestionSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Question
         fields = [
+            'id',
             'url',
             'input_type',
             'section',
@@ -67,6 +84,7 @@ class CannedAnswerSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = CannedAnswer
         fields = [
+            'id',
             'url',
             'question',
             'choice',

@@ -20,7 +20,15 @@ class NodeSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Node
-        fields = '__all__'
+        fields = [
+            'id',
+            'url',
+            'fsa',
+            'slug',
+            'start',
+            'end',
+            'depends',
+        ]
 
 
 class EdgeSerializer(serializers.HyperlinkedModelSerializer):
@@ -31,7 +39,13 @@ class EdgeSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Edge
-        fields = '__all__'
+        fields = [
+            'id',
+            'url',
+            'condition',
+            'prev_node',
+            'next_node',
+        ]
 
 
 class FSASerializer(serializers.HyperlinkedModelSerializer):
@@ -42,4 +56,8 @@ class FSASerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = FSA
-        fields = '__all__'
+        fields = [
+            'id',
+            'url',
+            'slug',
+        ]

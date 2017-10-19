@@ -36,6 +36,7 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Plan
         fields = [
+            'id',
             'url',
             'title',
             'abbreviation',
