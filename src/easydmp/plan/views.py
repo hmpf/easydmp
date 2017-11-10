@@ -63,7 +63,7 @@ class NewPlanView(LoginRequiredMixin, CreateView):
         self.object.modified_by = self.request.user
         self.object.template = form.cleaned_data['template_type']
         self.object.save()
-        return super(NewPlanView, self).form_valid(form)
+        return super().form_valid(form)
 
 
 class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):
@@ -73,7 +73,7 @@ class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):
     pk_url_kwarg = 'plan'
 
     def get_queryset(self):
-        qs = super(DeletePlanView, self).get_queryset()
+        qs = super().get_queryset()
         return qs.filter(added_by=self.request.user)
 
 
@@ -147,7 +147,7 @@ class NewQuestionView(AbstractQuestionView):
         num_questions = neighboring_questions.count()
         num_questions_so_far = len(question.get_all_prev_questions())
         kwargs['progress'] = progress(num_questions_so_far, num_questions)
-        return super(NewQuestionView, self).get_context_data(**kwargs)
+        return super().get_context_data(**kwargs)
 
     def get_form(self, **_):
         form_kwargs = self.get_form_kwargs()
@@ -242,14 +242,14 @@ class AbstractPlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailVi
     def get_context_data(self, **kwargs):
         kwargs['data'] = self.object.data.copy()
         kwargs['text'] = self.get_canned_text()
-        return super(AbstractPlanDetailView, self).get_context_data(**kwargs)
+        return super().get_context_data(**kwargs)
 
 
 class PlanDetailView(AbstractPlanDetailView):
     template_name = 'easydmp/plan/plan_detail.html'
 
     def get_context_data(self, **kwargs):
-        kwargs = super(PlanDetailView, self).get_context_data(**kwargs)
+        kwargs = super().get_context_data(**kwargs)
         outputs = OrderedDict()
         data = kwargs['data']
         template = self.get_template()

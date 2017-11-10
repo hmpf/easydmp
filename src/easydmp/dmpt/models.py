@@ -289,7 +289,7 @@ class BooleanQuestion(Question):
 
     def save(self, *args, **kwargs):
         self.input_type = 'bool'
-        super(BooleanQuestion, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def _serialize_condition(self, answer):
         """
@@ -310,7 +310,7 @@ class ChoiceQuestion(Question):
 
     def save(self, *args, **kwargs):
         self.input_type = 'choice'
-        super(ChoiceQuestion, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def _serialize_condition(self, answer):
         """
@@ -326,7 +326,7 @@ class MultipleChoiceOneTextQuestion(Question):
 
     def save(self, *args, **kwargs):
         self.input_type = 'multichoiceonetext'
-        super(MultipleChoiceOneTextQuestion, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def get_canned_answer(self, answer, **kwargs):
         """
@@ -348,7 +348,7 @@ class DateRangeQuestion(Question):
 
     def save(self, *args, **kwargs):
         self.input_type = 'daterange'
-        super(DateRangeQuestion, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def get_canned_answer(self, daterange, **kwargs):
         """
@@ -367,7 +367,7 @@ class ReasonQuestion(SimpleFramingTextMixin, Question):
 
     def save(self, *args, **kwargs):
         self.input_type = 'reason'
-        super(ReasonQuestion, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class PositiveIntegerQuestion(SimpleFramingTextMixin, Question):
@@ -377,7 +377,7 @@ class PositiveIntegerQuestion(SimpleFramingTextMixin, Question):
 
     def save(self, *args, **kwargs):
         self.input_type = 'positiveinteger'
-        super(PositiveIntegerQuestion, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 INPUT_TYPE_MAP = {

@@ -17,7 +17,7 @@ class TemplateForm(forms.ModelForm):
         fields = ['title']
 
     def __init__(self, *args, **kwargs):
-        super(TemplateForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # crispy forms
         self.helper = FormHelper()
@@ -30,7 +30,7 @@ class TemplateForm(forms.ModelForm):
 class DeleteForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
-        super(DeleteForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # crispy forms
         self.helper = FormHelper()
@@ -49,7 +49,7 @@ class AbstractNodeForm(forms.Form):
         self.choices = kwargs.pop('choices', None)
         self.has_prevquestion = kwargs.pop('has_prevquestion', False)
         kwargs.pop('instance', None)
-        super(AbstractNodeForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self._add_choice_field()
         self._add_notes_field()
@@ -152,7 +152,7 @@ class DateRangeForm(AbstractNodeForm):
             question['upper'] = date(*map(int, end.split('-')))
         initial['choice'] = choice
         kwargs['initial'] = initial
-        super(DateRangeForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _add_choice_field(self):
         self.fields['choice'] = DateRangeField(

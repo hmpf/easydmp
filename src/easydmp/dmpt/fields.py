@@ -12,7 +12,7 @@ __all__ = ['DateRangeField']
 class DateRangeWidget(forms.MultiWidget):
     def __init__(self, attrs=None):
         widgets = (forms.DateInput, forms.DateInput)
-        super(DateRangeWidget, self).__init__(widgets, attrs)
+        super().__init__(widgets, attrs)
 
     def decompress(self, value):
         if value:
@@ -38,7 +38,7 @@ class DateRangeField(forms.MultiValueField):
         kwargs.setdefault('fields', [self.base_field(required=True), self.base_field(required=True)])
         kwargs.setdefault('required', True)
         kwargs.setdefault('require_all_fields', True)
-        super(DateRangeField, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def prepare_value(self, value):
         lower_base, upper_base = self.fields
