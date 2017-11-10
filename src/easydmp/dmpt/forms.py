@@ -115,6 +115,7 @@ class BooleanForm(AbstractNodeForm):
             return out
         return {}
 
+
 class ChoiceForm(AbstractNodeForm):
 
     def _add_choice_field(self):
@@ -201,6 +202,18 @@ class PositiveIntegerForm(AbstractNodeForm):
         )
 
 
+class ExternalChoiceForm(AbstractNodeForm):
+
+    def _add_choice_field(self):
+        choices = [(k, k) for k in self.choices]
+        self.fields['choice'] = forms.ChoiceField(
+            label=self.label,
+            help_text=self.help_text,
+            choices=choices,
+            # widget: select 2?
+        )
+
+
 def make_form(question, **kwargs):
     kwargs.pop('prefix', None)
     kwargs.pop('instance', None)
@@ -225,6 +238,8 @@ def make_form(question, **kwargs):
         form_type = ReasonForm
     elif question.input_type == 'positiveinteger':
         form_type = PositiveIntegerForm
+    elif question.input_type == 'externalchoice' and choices:
+        kwargs['choices'] = choices
     else:
         assert False, 'Unknown input type: {}'.format(question.input_type)
     return form_type(**kwargs)

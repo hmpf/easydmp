@@ -20,6 +20,7 @@ INPUT_TYPES = (
     'multichoiceonetext',
     'reason',
     'positiveinteger',
+    'externalchoice',
 )
 
 
@@ -380,6 +381,16 @@ class PositiveIntegerQuestion(SimpleFramingTextMixin, Question):
         super().save(*args, **kwargs)
 
 
+class ExternalChoiceQuestion(Question):
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.input_type = 'externalchoice'
+        super().save(*args, **kwargs)
+
+
 INPUT_TYPE_MAP = {
     'bool': BooleanQuestion,
     'choice': ChoiceQuestion,
@@ -387,6 +398,7 @@ INPUT_TYPE_MAP = {
     'multichoiceonetext': MultipleChoiceOneTextQuestion,
     'reason': ReasonQuestion,
     'positiveinteger': PositiveIntegerQuestion,
+    'externalchoice': ExternalChoiceQuestion,
 }
 
 
