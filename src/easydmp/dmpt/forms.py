@@ -5,7 +5,10 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
+from easydmp.eestore.models import EEStoreCache
+
 from .models import Template
+from .models import ExternalChoiceQuestion
 from .fields import DateRangeField
 
 
@@ -211,7 +214,13 @@ class PositiveIntegerForm(AbstractNodeForm):
 class ExternalChoiceForm(AbstractNodeForm):
 
     def _add_choice_field(self):
-        choices = [(k, k) for k in self.choices]
+        question = self.question.get_instance()
+        if question.eestore.sources.exists():
+            sources = question.eestore.sources.all()
+        else:
+            sources = question.eestore.eestore_type.sources.all()
+        qs = EEStoreCache.objects.filter(source__in=sources)
+        choices = qs.values_list('eestore_pid', 'name')
         self.fields['choice'] = forms.ChoiceField(
             label=self.label,
             help_text=self.help_text,

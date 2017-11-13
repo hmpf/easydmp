@@ -404,6 +404,14 @@ class ExternalChoiceQuestion(Question):
         self.input_type = 'externalchoice'
         super().save(*args, **kwargs)
 
+    def get_canned_answer(self, choice, **kwargs):
+        answers = self.eestore.get_cached_entries()
+        answer = answers.get(eestore_pid=choice)
+        return answer.name
+
+    def pprint(self, value):
+        return value['text']
+
 
 INPUT_TYPE_MAP = {
     'bool': BooleanQuestion,
