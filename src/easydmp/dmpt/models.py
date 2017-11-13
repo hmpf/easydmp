@@ -23,6 +23,7 @@ INPUT_TYPES = (
     'reason',
     'positiveinteger',
     'externalchoice',
+    'externalmultichoiceonetext',
 )
 
 
@@ -162,7 +163,7 @@ class Question(models.Model):
     branching_possible = False
 
     input_type = models.CharField(
-        max_length=max(map(len, INPUT_TYPES)),
+        max_length=32,
         choices=zip(INPUT_TYPES, INPUT_TYPES),
     )
     section = models.ForeignKey(Section, related_name='questions')
@@ -413,6 +414,34 @@ class ExternalChoiceQuestion(Question):
         return value['text']
 
 
+class ExternalMultipleChoiceOneTextQuestion(Question):
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.input_type = 'externalmultichoiceonetext'
+        super().save(*args, **kwargs)
+
+    def get_canned_answer(self, choice, **kwargs):
+        """
+        choice = ['list', 'of', 'answers']
+        """
+        answers = self.eestore.get_cached_entries()
+        answer = tuple(answers.filter(eestore_pid__in=choice).values_list('name', flat=True))
+
+        if len(answer) == 1:
+            return answer[0]
+
+        joined_answer = '{} and {}'.format(', '.join(answer[:-1]), answer[-1])
+        if self.framing_text:
+            return self.framing_text.format(joined_answer)
+        return joined_answer
+
+    def pprint(self, value):
+        return value['text']
+
+
 INPUT_TYPE_MAP = {
     'bool': BooleanQuestion,
     'choice': ChoiceQuestion,
@@ -421,6 +450,7 @@ INPUT_TYPE_MAP = {
     'reason': ReasonQuestion,
     'positiveinteger': PositiveIntegerQuestion,
     'externalchoice': ExternalChoiceQuestion,
+    'externalmultichoiceonetext': ExternalMultipleChoiceOneTextQuestion,
 }
 
 

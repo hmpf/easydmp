@@ -144,8 +144,8 @@ class EEStoreMount(models.Model):
                     self.sources.remove(source)
 
     def get_cached_entries(self, source=None, search=None):
-        all = EEStoreCache.objects.filter(eestore_type=self.eestore_type, source__in=self.sources.all())
-        return all
+        by_type = EEStoreCache.objects.filter(eestore_type=self.eestore_type)
+        return by_type
 
     def __str__(self):
         return '{}: {}'.format(self.eestore_type, self.question)

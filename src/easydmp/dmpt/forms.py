@@ -229,6 +229,24 @@ class ExternalChoiceForm(AbstractNodeForm):
         )
 
 
+class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
+
+    def _add_choice_field(self):
+        question = self.question.get_instance()
+        if question.eestore.sources.exists():
+            sources = question.eestore.sources.all()
+        else:
+            sources = question.eestore.eestore_type.sources.all()
+        qs = EEStoreCache.objects.filter(source__in=sources)
+        choices = qs.values_list('eestore_pid', 'name')
+        self.fields['choice'] = forms.MultipleChoiceField(
+            label=self.label,
+            help_text=self.help_text,
+            choices=choices,
+            # widgrt: select2?
+        )
+
+
 INPUT_TYPE_TO_FORMS = {
     'bool': BooleanForm,
     'choice': ChoiceForm,
@@ -237,6 +255,7 @@ INPUT_TYPE_TO_FORMS = {
     'reason': ReasonForm,
     'positiveinteger': PositiveIntegerForm,
     'externalchoice': ExternalChoiceForm,
+    'externalmultichoiceonetext': ExternalMultipleChoiceOneTextForm,
 }
 
 
