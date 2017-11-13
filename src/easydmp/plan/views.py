@@ -81,6 +81,7 @@ class AbstractQuestionMixin(object):
             question = Question.objects.get(pk=question_pk, section__in=sections)
         except Question.DoesNotExist as e:
             raise ValueError("Unknown question id: {}".format(question_pk))
+        question = question.get_instance()
         return question
 
     def get_plan_pk(self):
@@ -107,7 +108,7 @@ class NewQuestionView(AbstractQuestionView):
     def get_initial(self):
         current_data = self.object.data or {}
         previous_data = self.object.previous_data or {}
-        question_pk = self.get_question()
+        question_pk = str(self.get_question().pk)
         initial = current_data.get(question_pk, {})
         if not initial:
             initial = previous_data.get(question_pk, {})
@@ -143,13 +144,7 @@ class NewQuestionView(AbstractQuestionView):
     def get_form(self, **_):
         form_kwargs = self.get_form_kwargs()
         question = self.get_question()
-        choices = []
-        if question.input_type == 'choice':
-            choices = question.canned_answers.values_list('choice', 'canned_text')
-        if question.input_type == 'multichoiceonetext':
-            choices = question.canned_answers.values_list('choice', 'choice')
         generate_kwargs = {
-            'choices': dict(choices),
             'has_prevquestion': bool(question.get_prev_question(self.object.data)),
         }
         generate_kwargs.update(form_kwargs)
@@ -247,21 +242,11 @@ class PlanDetailView(AbstractPlanDetailView):
         for section in template.sections.all():
             section_output = OrderedDict()
             for question in section.questions.all():
+                question = question.get_instance()
                 value = data.get(str(question.pk), None)
                 if not value or value.get('choice', None) is None:
                     continue
-                if question.input_type == 'bool':
-                    value['answer'] = 'Yes' if value['choice'] else 'No'
-                elif question.input_type == 'multichoiceonetext':
-                    value['answer'] = pprint_list(value['choice'])
-                elif question.input_type == 'daterange':
-                    value['answer'] = question.framing_text.format(**value['choice'])
-                elif question.input_type == 'choice':
-                    value['answer'] = value['choice']
-                elif question.input_type in ('reason', 'positiveinteger'):
-                    value['answer'] = value['choice']
-                    if question.framing_text:
-                        value['answer'] = question.framing_text.format(value['choice'])
+                value['answer'] = question.pprint(value)
                 value['question'] = question
                 section_output[question.pk] = value
             outputs[section.title] = section_output

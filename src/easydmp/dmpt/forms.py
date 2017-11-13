@@ -43,9 +43,10 @@ class DeleteForm(forms.Form):
 class AbstractNodeForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
-        self.question_pk = kwargs.pop('question')
+        self.question = kwargs.pop('question')
+        self.question_pk = self.question.pk
         self.label = kwargs.pop('label')
-        self.help_text = getattr(self.question_pk, 'help_text', '')
+        self.help_text = getattr(self.question.pk, 'help_text', '')
         self.choices = kwargs.pop('choices', None)
         self.has_prevquestion = kwargs.pop('has_prevquestion', False)
         kwargs.pop('instance', None)
@@ -119,11 +120,16 @@ class BooleanForm(AbstractNodeForm):
 class ChoiceForm(AbstractNodeForm):
 
     def _add_choice_field(self):
-        choices = [(k, k) for k in self.choices]
+        choices = self.question.canned_answers.values_list('choice', 'canned_text')
+        fixed_choices = []
+        for (k, v) in choices:
+            if not v:
+                v = k
+            fixed_choices.append((k, v))
         self.fields['choice'] = forms.ChoiceField(
             label=self.label,
             help_text=self.help_text,
-            choices=choices,
+            choices=fixed_choices,
             widget=forms.RadioSelect,
         )
 
@@ -131,7 +137,7 @@ class ChoiceForm(AbstractNodeForm):
 class MultipleChoiceOneTextForm(AbstractNodeForm):
 
     def _add_choice_field(self):
-        choices = self.choices.items()
+        choices = self.question.canned_answers.values_list('choice', 'choice')
         self.fields['choice'] = forms.MultipleChoiceField(
             label=self.label,
             help_text=self.help_text,
@@ -214,6 +220,17 @@ class ExternalChoiceForm(AbstractNodeForm):
         )
 
 
+INPUT_TYPE_TO_FORMS = {
+    'bool': BooleanForm,
+    'choice': ChoiceForm,
+    'multichoiceonetext': MultipleChoiceOneTextForm,
+    'daterange': DateRangeForm,
+    'reason': ReasonForm,
+    'positiveinteger': PositiveIntegerForm,
+    'externalchoice': ExternalChoiceForm,
+}
+
+
 def make_form(question, **kwargs):
     kwargs.pop('prefix', None)
     kwargs.pop('instance', None)
@@ -224,22 +241,7 @@ def make_form(question, **kwargs):
         'label': question.label,
     }
     kwargs.update(answerdict)
-    if question.input_type == 'bool':
-        form_type = BooleanForm
-    elif question.input_type == 'choice' and choices:
-        form_type = ChoiceForm
-        kwargs['choices'] = choices
-    elif question.input_type == 'multichoiceonetext' and choices:
-        form_type = MultipleChoiceOneTextForm
-        kwargs['choices'] = choices
-    elif question.input_type == 'daterange':
-        form_type = DateRangeForm
-    elif question.input_type == 'reason':
-        form_type = ReasonForm
-    elif question.input_type == 'positiveinteger':
-        form_type = PositiveIntegerForm
-    elif question.input_type == 'externalchoice' and choices:
-        kwargs['choices'] = choices
-    else:
+    form_type = INPUT_TYPE_TO_FORMS.get(question.input_type, None)
+    if form_type is None:
         assert False, 'Unknown input type: {}'.format(question.input_type)
     return form_type(**kwargs)

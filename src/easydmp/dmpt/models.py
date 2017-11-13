@@ -2,6 +2,8 @@ from django.db import models
 from django.utils.encoding import force_text
 from django.utils.text import slugify
 
+from easydmp.utils import pprint_list
+
 """
 Question and CannedAnswer have the following API re. Node and Edge:
 
@@ -220,6 +222,9 @@ class Question(models.Model):
             canned = answer
         return canned
 
+    def pprint(self, value):
+        return value['choice']
+
     def create_node(self, fsa=None):
         from flow.models import Node, FSA
         label = self.label if self.label else self.id
@@ -302,6 +307,9 @@ class BooleanQuestion(Question):
             return 'Yes'
         return 'No'
 
+    def pprint(self, value):
+        return 'Yes' if value['choice'] else 'No'
+
 
 class ChoiceQuestion(Question):
     branching_possible = True
@@ -341,6 +349,9 @@ class MultipleChoiceOneTextQuestion(Question):
             return self.framing_text.format(joined_answer)
         return joined_answer
 
+    def pprint(self, value):
+        return pprint_list(value['choice'])
+
 
 class DateRangeQuestion(Question):
 
@@ -359,6 +370,9 @@ class DateRangeQuestion(Question):
         }
         """
         return self.framing_text.format(**daterange)
+
+    def pprint(self, value):
+        return self.framing_text.format(**value['choice'])
 
 
 class ReasonQuestion(SimpleFramingTextMixin, Question):
