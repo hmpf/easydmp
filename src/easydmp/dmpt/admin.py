@@ -65,6 +65,8 @@ class QuestionAdmin(admin.ModelAdmin):
     )
     actions = [
         'create_node',
+        'increment_position',
+        'decrement_position',
     ]
     list_filter = ['section']
     inlines = [CannedAnswerInline]
@@ -75,4 +77,14 @@ class QuestionAdmin(admin.ModelAdmin):
                 q.create_node()
     create_node.short_description = 'Create node'
 
+    def increment_position(self, request, queryset):
+        for q in queryset.order_by('-position'):
+            q.position += 1
+            q.save()
+    increment_position.short_description = 'Increment position by 1'
 
+    def decrement_position(self, request, queryset):
+        for q in queryset.order_by('position'):
+            q.position += 1
+            q.save()
+    decrement_position.short_description = 'Decrement position by 1'
