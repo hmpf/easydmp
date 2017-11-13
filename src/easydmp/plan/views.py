@@ -15,10 +15,10 @@ from django.views.generic import (
     RedirectView,
 )
 
+from easydmp.utils import pprint_list
 from easydmp.dmpt.forms import make_form, TemplateForm, DeleteForm
-from flow.models import FSA
-
 from easydmp.dmpt.models import Template, Question, Section
+from flow.models import FSA
 
 from .models import Plan
 from .forms import PlanForm
@@ -27,15 +27,6 @@ from .forms import PlanForm
 def progress(so_far, all):
     "Returns percentage done, as float"
     return so_far/float(all)*100
-
-
-def pprint_list(list_):
-    if not list_:
-        return u''
-    if len(list_) == 1:
-        return list_[0]
-    first_part = ', '.join(list_[:-1])
-    return '{} and {}'.format(first_part, list_[-1])
 
 
 class DeleteFormMixin(FormView):
