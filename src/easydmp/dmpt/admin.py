@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
 
+from easydmp.eestore.models import EEStoreMount
+
 from .models import Template, Section, Question, CannedAnswer
 
 
@@ -53,6 +55,24 @@ class CannedAnswerInline(admin.StackedInline):
     model = CannedAnswer
 
 
+class EEStoreMountInline(admin.StackedInline):
+    model = EEStoreMount
+
+
+class EEStoreTypeFilter(admin.SimpleListFilter):
+    title = 'EEStore type'
+    parameter_name = 'eestore'
+
+    def lookups(self, request, model_admin):
+        types = EEStoreMount.objects.values_list('eestore_type__name', flat=True).distinct()
+        return tuple(zip(*(types, types)))
+
+    def queryset(self, request, queryset):
+        if self.value():
+            queryset = queryset.filter(eestore__eestore_type__name=self.value())
+        return queryset
+
+
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
     list_display = (
@@ -61,15 +81,29 @@ class QuestionAdmin(admin.ModelAdmin):
         'label',
         'question',
         'input_type',
-        'node',
+        'has_node',
+        'get_mount',
     )
     actions = [
         'create_node',
         'increment_position',
         'decrement_position',
     ]
-    list_filter = ['section']
-    inlines = [CannedAnswerInline]
+    list_filter = [EEStoreTypeFilter, 'section']
+    inlines = [
+        CannedAnswerInline,
+        EEStoreMountInline,
+    ]
+
+    def has_node(self, obj):
+        return True if obj.node else False
+    has_node.short_description = 'Node'
+    has_node.boolean = True
+
+    def get_mount(self, obj):
+        return obj.eestore.eestore_type if obj.eestore else ''
+    get_mount.short_description = 'EEStore'
+    get_mount.admin_order_field = 'eestore'
 
     def create_node(self, request, queryset):
         for q in queryset.all():
@@ -88,3 +122,4 @@ class QuestionAdmin(admin.ModelAdmin):
             q.position += 1
             q.save()
     decrement_position.short_description = 'Decrement position by 1'
+
