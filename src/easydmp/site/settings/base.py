@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'easydmp.dmpt',
     'easydmp.plan',
     'easydmp.invitation',
+    'easydmp.eestore',
 ]
 
 MIDDLEWARE = [
