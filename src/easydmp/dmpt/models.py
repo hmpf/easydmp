@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.encoding import force_text
+from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from django.utils.text import slugify
 
 from easydmp.utils import pprint_list
@@ -24,6 +26,7 @@ INPUT_TYPES = (
     'positiveinteger',
     'externalchoice',
     'externalmultichoiceonetext',
+    'namedurl',
 )
 
 
@@ -225,6 +228,9 @@ class Question(models.Model):
 
     def pprint(self, value):
         return value['choice']
+
+    def pprint_html(self, value):
+        return self.pprint(value)
 
     def create_node(self, fsa=None):
         from flow.models import Node, FSA
@@ -442,6 +448,33 @@ class ExternalMultipleChoiceOneTextQuestion(Question):
         return value['text']
 
 
+class NamedURLQuestion(Question):
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.input_type = 'namedurl'
+        super().save(*args, **kwargs)
+
+    def get_canned_answer(self, choice, **kwargs):
+        if not choice.get('name', None):
+            return choice['url']
+        return '{url} "{name}"'.format(**choice)
+
+    def pprint(self, value):
+        url = value['choice']['url']
+        name = value['choice'].get('name', None)
+        if name:
+            return '{url} ({name})'.format(url=url, name=name)
+        return url
+
+    def pprint_html(self, value):
+        url = value['choice']['url']
+        name = value['choice'].get('name', url)
+        return format_html('<a href="{}">{}</a>', url, name)
+
+
 INPUT_TYPE_MAP = {
     'bool': BooleanQuestion,
     'choice': ChoiceQuestion,
@@ -451,6 +484,7 @@ INPUT_TYPE_MAP = {
     'positiveinteger': PositiveIntegerQuestion,
     'externalchoice': ExternalChoiceQuestion,
     'externalmultichoiceonetext': ExternalMultipleChoiceOneTextQuestion,
+    'namedurl': NamedURLQuestion,
 }
 
 

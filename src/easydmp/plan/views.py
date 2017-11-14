@@ -246,7 +246,7 @@ class PlanDetailView(AbstractPlanDetailView):
                 value = data.get(str(question.pk), None)
                 if not value or value.get('choice', None) is None:
                     continue
-                value['answer'] = question.pprint(value)
+                value['answer'] = question.pprint_html(value)
                 value['question'] = question
                 section_output[question.pk] = value
             outputs[section.title] = section_output

@@ -9,7 +9,7 @@ from easydmp.eestore.models import EEStoreCache
 
 from .models import Template
 from .models import ExternalChoiceQuestion
-from .fields import DateRangeField
+from .fields import DateRangeField, NamedURLField
 
 
 class TemplateForm(forms.ModelForm):
@@ -247,6 +247,15 @@ class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
         )
 
 
+class NamedURLForm(AbstractNodeForm):
+
+    def _add_choice_field(self):
+        self.fields['choice'] = NamedURLField(
+            label=self.label,
+            help_text=self.help_text,
+        )
+
+
 INPUT_TYPE_TO_FORMS = {
     'bool': BooleanForm,
     'choice': ChoiceForm,
@@ -256,6 +265,7 @@ INPUT_TYPE_TO_FORMS = {
     'positiveinteger': PositiveIntegerForm,
     'externalchoice': ExternalChoiceForm,
     'externalmultichoiceonetext': ExternalMultipleChoiceOneTextForm,
+    'namedurl': NamedURLForm,
 }
 
 

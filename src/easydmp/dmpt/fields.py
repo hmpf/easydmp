@@ -5,7 +5,10 @@ from django.core import exceptions
 from django.forms.widgets import MultiWidget
 from django.utils.translation import ugettext_lazy as _
 
-__all__ = ['DateRangeField']
+__all__ = [
+    'DateRangeField',
+    'NamedURLField',
+]
 
 
 class DateRangeWidget(MultiWidget):
@@ -80,3 +83,43 @@ class DateRangeField(forms.MultiValueField):
             )
         else:
             return range_value
+
+
+class NamedURLWidget(forms.MultiWidget):
+    template_name = 'widgets/namedurl_widget.html'
+
+    def __init__(self, attrs=None, *args, **kwargs):
+        widgets = (
+            forms.URLInput(attrs=attrs),
+            forms.TextInput(attrs=attrs),
+        )
+        self.widgets = widgets
+        super().__init__(widgets, attrs)
+
+    def decompress(self, value):
+        if value:
+            url, name = value['url'], value['name']
+            return url, name
+        return (None, None)
+
+
+class NamedURLField(forms.MultiValueField):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['widget'] = NamedURLWidget
+        kwargs['require_all_fields'] = False
+        fields = [
+            forms.URLField(
+                required=True,
+                error_messages={
+                    'incomplete': 'Enter at least a URL',
+                }
+            ),
+            forms.CharField(required=False),
+        ]
+        super().__init__(fields, *args, **kwargs)
+
+    def compress(self, value):
+        if self.required and not value[0]:
+            raise forms.ValidationError('URL not entered')
+        return {'url': value[0], 'name': value[1]}
