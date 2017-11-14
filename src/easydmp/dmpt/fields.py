@@ -1,30 +1,37 @@
-from psycopg2.extras import DateRange, DateTimeTZRange, NumericRange
+from psycopg2.extras import DateRange
 
 from django import forms
 from django.core import exceptions
 from django.forms.widgets import MultiWidget
-from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 
 __all__ = ['DateRangeField']
 
 
-class DateRangeWidget(forms.MultiWidget):
-    def __init__(self, attrs=None):
-        widgets = (forms.DateInput, forms.DateInput)
+class DateRangeWidget(MultiWidget):
+    template_name = 'widgets/daterange_widget.html'
+
+    def __init__(self, attrs=None, date_format=None, *args, **kwargs):
+        default_attrs = {'class': 'dateinput'}
+        if attrs:
+            attrs.update(**default_attrs)
+        else:
+            attrs = default_attrs
+        widgets = (
+            forms.DateInput(attrs=attrs, format=date_format),
+            forms.DateInput(attrs=attrs, format=date_format),
+        )
+        self.widgets = widgets
         super().__init__(widgets, attrs)
 
     def decompress(self, value):
-        if value:
+        if value and all(value):
             return (value['lower'], value['upper'])
         return (None, None)
 
-    def format_output(self, rendered_widgets):
-        widget_context = {'lower': rendered_widgets[0], 'upper': rendered_widgets[1],}
-        return render_to_string('widgets/daterange_widget.html', widget_context)
-
 
 class DateRangeField(forms.MultiValueField):
+    widget = DateRangeWidget
     default_error_messages = {'invalid': _('Enter two valid dates.')}
     base_field = forms.DateField
     range_type = DateRange
@@ -32,13 +39,14 @@ class DateRangeField(forms.MultiValueField):
         'invalid': _('Enter two valid values.'),
         'bound_ordering': _('The start of the range must not exceed the end of the range.'),
     }
+    required = True
+    require_all_fields = True
 
-    def __init__(self, **kwargs):
-        kwargs.setdefault('widget', DateRangeWidget())
-        kwargs.setdefault('fields', [self.base_field(required=True), self.base_field(required=True)])
-        kwargs.setdefault('required', True)
-        kwargs.setdefault('require_all_fields', True)
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        fields = [
+            self.base_field(), self.base_field()
+        ]
+        super().__init__(fields, *args, **kwargs)
 
     def prepare_value(self, value):
         lower_base, upper_base = self.fields
@@ -47,7 +55,7 @@ class DateRangeField(forms.MultiValueField):
                 lower_base.prepare_value(value.lower),
                 upper_base.prepare_value(value.upper),
             ]
-        if value is None:
+        if not value:
             return [
                 lower_base.prepare_value(None),
                 upper_base.prepare_value(None),
