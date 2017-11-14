@@ -18,7 +18,7 @@
 <tbody>
 {% for question_pk, value in section.items %}
 <tr>
-    <th><a href="{% url 'new_question' plan=object.id question=question_pk %}">{{ value.question }}<th>
+    <th><a href="{% url 'new_question' plan=object.id question=question_pk %}">{{ value.question }}</a></th>
     <td>{{ value.answer }}</td>
     <td>{{ value.notes }}</td>
 </tr>
