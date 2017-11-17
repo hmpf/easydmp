@@ -12,6 +12,9 @@ from .models import ExternalChoiceQuestion
 from .fields import DateRangeField, NamedURLField
 
 
+FORM_CLASS = 'blueForms'
+
+
 class TemplateForm(forms.ModelForm):
     template_type = forms.ModelChoiceField(queryset=Template.objects.exclude(published=None))
 
@@ -25,7 +28,7 @@ class TemplateForm(forms.ModelForm):
         # crispy forms
         self.helper = FormHelper()
         self.helper.form_id = 'id-plan'
-        self.helper.form_class = 'blueForms'
+        self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Next'))
 
@@ -38,7 +41,7 @@ class DeleteForm(forms.Form):
         # crispy forms
         self.helper = FormHelper()
         self.helper.form_id = 'id-plan'
-        self.helper.form_class = 'blueForms'
+        self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Yes, really delete'))
 
@@ -61,7 +64,7 @@ class AbstractNodeForm(forms.Form):
         # crispy forms
         self.helper = FormHelper()
         self.helper.form_id = 'id-{}'.format(self.question_pk)
-        self.helper.form_class = 'blueForms'
+        self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
         if self.has_prevquestion:
             self.helper.add_input(Submit('prev', 'Prev'))
