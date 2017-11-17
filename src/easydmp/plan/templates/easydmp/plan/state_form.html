@@ -29,9 +29,12 @@
           {{ progress|floatformat:"0" }}% complete
         </div>
       </div>
-      [
-{% crispy form %}
-]
+
+      <form class="{{ form.helper.form_class }}" id="{{ form.helper.form_id }}" method="{{ form.helper.form_method }}">
+        {% crispy form %}
+        {% crispy notesform %}
+      </form>
+
 <div style="display: none" class="answers">
     {% for answer in answers %}<div id="answer-{{ answer.choice }}" style="display: none">{{ answer.canned_text }}</div>{% endfor %}
     <div id="framing-text">{{ framing_text }}</div>

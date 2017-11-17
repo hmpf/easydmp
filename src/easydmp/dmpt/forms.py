@@ -46,6 +46,25 @@ class DeleteForm(forms.Form):
         self.helper.add_input(Submit('submit', 'Yes, really delete'))
 
 
+class NotesForm(forms.Form):
+    notes = forms.CharField(required=False, widget=forms.Textarea)
+
+    def __init__(self, *args, **kwargs):
+        self.has_prevquestion = kwargs.pop('has_prevquestion', False)
+        kwargs.pop('instance', None)
+        super().__init__(*args, **kwargs)
+
+        # crispy forms
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.form_id = 'id-notes'
+        self.helper.form_class = FORM_CLASS
+        self.helper.form_method = 'post'
+        if self.has_prevquestion:
+            self.helper.add_input(Submit('prev', 'Prev'))
+        self.helper.add_input(Submit('submit', 'Next'))
+
+
 class AbstractNodeForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
@@ -54,33 +73,24 @@ class AbstractNodeForm(forms.Form):
         self.label = kwargs.pop('label')
         self.help_text = getattr(self.question.pk, 'help_text', '')
         self.choices = kwargs.pop('choices', None)
-        self.has_prevquestion = kwargs.pop('has_prevquestion', False)
         kwargs.pop('instance', None)
         super().__init__(*args, **kwargs)
 
         self._add_choice_field()
-        self._add_notes_field()
 
         # crispy forms
         self.helper = FormHelper()
+        self.helper.form_tag = False
         self.helper.form_id = 'id-{}'.format(self.question_pk)
         self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
-        if self.has_prevquestion:
-            self.helper.add_input(Submit('prev', 'Prev'))
-        self.helper.add_input(Submit('submit', 'Next'))
 
     def _add_choice_field(self):
         pass
 
-    def _add_notes_field(self):
-        notes = forms.CharField(required=False, widget=forms.Textarea)
-        self.fields['notes'] = notes
-
     def serialize(self):
         return {
             'choice': self.cleaned_data['choice'],
-            'notes': self.cleaned_data.get('notes', ''),
         }
 
     def pprint(self):
@@ -110,7 +120,6 @@ class BooleanForm(AbstractNodeForm):
 
     def serialize(self):
         out = {
-            'notes': self.cleaned_data.get('notes', ''),
             'choice': None,
         }
         if self.is_valid():
@@ -184,7 +193,6 @@ class DateRangeForm(AbstractNodeForm):
                         'start': start.isoformat(),
                         'end': end.isoformat(),
                     },
-                'notes': self.cleaned_data.get('notes', ''),
             }
         return {}
 

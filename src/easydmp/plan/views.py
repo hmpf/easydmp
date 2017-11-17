@@ -16,7 +16,7 @@ from django.views.generic import (
 )
 
 from easydmp.utils import pprint_list
-from easydmp.dmpt.forms import make_form, TemplateForm, DeleteForm
+from easydmp.dmpt.forms import make_form, TemplateForm, DeleteForm, NotesForm
 from easydmp.dmpt.models import Template, Question, Section
 from flow.models import FSA
 
@@ -27,6 +27,10 @@ from .forms import PlanForm
 def progress(so_far, all):
     "Returns percentage done, as float"
     return so_far/float(all)*100
+
+
+def has_prevquestion(question, data):
+     return bool(question.get_prev_question(data))
 
 
 class DeleteFormMixin(FormView):
@@ -129,6 +133,7 @@ class NewQuestionView(AbstractQuestionView):
         question = self.get_question()
         kwargs['question'] = question
         kwargs['question_pk'] = question.pk
+        kwargs['notesform'] = kwargs.get('notesform', self.get_notesform())
         kwargs['label'] = question.label
         kwargs['answers'] = question.canned_answers.values()
         kwargs['framing_text'] = question.framing_text
@@ -141,14 +146,20 @@ class NewQuestionView(AbstractQuestionView):
         kwargs['progress'] = progress(num_questions_so_far, num_questions)
         return super().get_context_data(**kwargs)
 
-    def get_form(self, **_):
+    def get_notesform(self, **_):
         form_kwargs = self.get_form_kwargs()
         question = self.get_question()
         generate_kwargs = {
-            'has_prevquestion': bool(question.get_prev_question(self.object.data)),
+            'has_prevquestion': has_prevquestion(question, self.object.data),
         }
         generate_kwargs.update(form_kwargs)
-        form = make_form(question, **generate_kwargs)
+        form = NotesForm(**generate_kwargs)
+        return form
+
+    def get_form(self, **_):
+        form_kwargs = self.get_form_kwargs()
+        question = self.get_question()
+        form = make_form(question, **form_kwargs)
         return form
 
     def delete_statedata(self, *args):
@@ -167,13 +178,16 @@ class NewQuestionView(AbstractQuestionView):
             }
             return HttpResponseRedirect(reverse('new_question', kwargs=kwargs))
         form = self.get_form()
-        if form.is_valid():
-            return self.form_valid(form)
+        notesform = self.get_notesform()
+        if form.is_valid() and notesform.is_valid():
+            return self.form_valid(form, notesform)
         else:
-            return self.form_invalid(form)
+            return self.form_invalid(form, notesform)
 
-    def form_valid(self, form):
+    def form_valid(self, form, notesform):
+        notes = notesform.cleaned_data.get('notes', '')
         state_switch = form.serialize()
+        state_switch['notes'] = notes
         question_pk = self.get_question_pk()
         # save change
         current_data = self.object.data
@@ -190,6 +204,10 @@ class NewQuestionView(AbstractQuestionView):
 #         invalidated_states.discard(question_pk)
 #         self.delete_statedata(*invalidated_states)
         return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form, notesform):
+        return self.render_to_response(
+            self.get_context_data(form=form, notesform=notesform))
 
 
 class FirstQuestionView(LoginRequiredMixin, RedirectView):
