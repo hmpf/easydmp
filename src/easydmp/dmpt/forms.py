@@ -259,12 +259,63 @@ class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
 
 
 class NamedURLForm(AbstractNodeForm):
+    # High magic form with node-magic that cannot be used in a formset
 
     def _add_choice_field(self):
         self.fields['choice'] = NamedURLField(
             label=self.label,
             help_text=self.help_text,
         )
+
+
+class NamedURLFormSetForm(forms.Form):
+    # Low magic form to be used in a formset
+    #
+    # The formset has the node-magic
+    choice = NamedURLField(label='') # Hide the label from crispy forms
+
+
+class AbstractNodeFormSet(forms.BaseFormSet):
+
+    def __init__(self, **kwargs):
+        self.question = kwargs.pop('question')
+        self.question_pk = self.question.pk
+        self.label = kwargs.pop('label')
+        self.help_text = getattr(self.question_pk, 'help_text', '')
+        self.choices = kwargs.pop('choices', None)
+        kwargs.pop('instance', None)
+        initial = kwargs.get('initial', None)
+        if initial:
+            assert False, initial
+        super().__init__(**kwargs)
+
+        # crispy forms
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.form_id = 'id-{}'.format(self.question_pk)
+        self.helper.form_class = FORM_CLASS
+        self.helper.form_method = 'post'
+
+    def serialize(self):
+        choices = []
+        for form_choice in self.cleaned_data:
+            if form_choice.get('DELETE', False): continue
+            choice = form_choice.get('choice', None)
+            if not choice: continue
+            choice_dict = {'url': choice['url'], 'name': choice['name']}
+            choices.append(choice_dict)
+        return {
+            'choice': choices,
+        }
+
+
+MultiNamedURLOneTextFormSet = forms.formset_factory(
+    NamedURLFormSetForm,
+    min_num=1,
+    formset=AbstractNodeFormSet,
+    can_delete=True,
+)
+
 
 
 INPUT_TYPE_TO_FORMS = {
@@ -277,6 +328,7 @@ INPUT_TYPE_TO_FORMS = {
     'externalchoice': ExternalChoiceForm,
     'externalmultichoiceonetext': ExternalMultipleChoiceOneTextForm,
     'namedurl': NamedURLForm,
+    'multinamedurlonetext': MultiNamedURLOneTextFormSet,
 }
 
 

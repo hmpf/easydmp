@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
-from django.utils.html import format_html
+from django.utils.html import format_html, escape
 from django.utils.text import slugify
 
 from easydmp.utils import pprint_list
@@ -27,6 +27,7 @@ INPUT_TYPES = (
     'externalchoice',
     'externalmultichoiceonetext',
     'namedurl',
+    'multinamedurlonetext',
 )
 
 
@@ -475,6 +476,53 @@ class NamedURLQuestion(Question):
         return format_html('<a href="{}">{}</a>', url, name)
 
 
+class MultiNamedURLOneTextQuestion(Question):
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.input_type = 'multinamedurlonetext'
+        super().save(*args, **kwargs)
+
+    def get_canned_answer(self, choice, **kwargs):
+        urlpairs = []
+        for pair in choice:
+            if not pair.get('name', None):
+                urlpairs.append(pair['url'])
+            else:
+                urlpairs.append('{url} "{name}"'.format(**pair))
+
+        if len(urlpairs) == 1:
+            if self.framing_text:
+                return self.framing_text.format(urlpairs[0])
+            return urlpairs[0]
+
+        joined_pairs = '{} and {}'.format(', '.join(urlpairs[:-1]), urlpairs[-1])
+        if self.framing_text:
+            return self.framing_text.format(joined_pairs)
+        return joined_pairs
+
+    def pprint(self, value):
+        return value['text']
+
+    def pprint_html(self, value):
+        choices = value['choice']
+        urlpairs = []
+        for choice in choices:
+            url = choice['url']
+            name = choice.get('name', '') or url
+            urlpairs.append('<a href="{}">{}</a>'.format(url, escape(name)))
+
+        if len(urlpairs) == 1:
+            return mark_safe(urlpairs[0])
+
+        joined_pairs = '{} and {}'.format(', '.join(urlpairs[:-1]), urlpairs[-1])
+        if self.framing_text:
+            return mark_safe(self.framing_text.format(joined_pairs))
+        return mark_safe(joined_pairs)
+
+
 INPUT_TYPE_MAP = {
     'bool': BooleanQuestion,
     'choice': ChoiceQuestion,
@@ -485,6 +533,7 @@ INPUT_TYPE_MAP = {
     'externalchoice': ExternalChoiceQuestion,
     'externalmultichoiceonetext': ExternalMultipleChoiceOneTextQuestion,
     'namedurl': NamedURLQuestion,
+    'multinamedurlonetext': MultiNamedURLOneTextQuestion,
 }
 
 
