@@ -74,6 +74,8 @@ class AbstractNodeForm(forms.Form):
         self.help_text = getattr(self.question.pk, 'help_text', '')
         self.choices = kwargs.pop('choices', None)
         kwargs.pop('instance', None)
+        initial = self.deserialize(kwargs.get('initial', {}))
+        kwargs['initial'] = initial
         super().__init__(*args, **kwargs)
 
         self._add_choice_field()
@@ -87,6 +89,9 @@ class AbstractNodeForm(forms.Form):
 
     def _add_choice_field(self):
         pass
+
+    def deserialize(self, initial):
+        return initial
 
     def serialize(self):
         return {
@@ -163,18 +168,16 @@ class MultipleChoiceOneTextForm(AbstractNodeForm):
 
 class DateRangeForm(AbstractNodeForm):
 
-    def __init__(self, *args, **kwargs):
-        initial = kwargs.pop('initial', {})
-        choice = initial.pop('choice', {})
+    def deserialize(self, initial):
+        choice = initial.get('choice', {})
         if choice:
             start = choice.pop('start')
             end = choice.pop('end')
             question = {}
             question['lower'] = date(*map(int, start.split('-')))
             question['upper'] = date(*map(int, end.split('-')))
-        initial['choice'] = choice
-        kwargs['initial'] = initial
-        super().__init__(*args, **kwargs)
+            initial['choice'] = question
+        return initial
 
     def _add_choice_field(self):
         self.fields['choice'] = DateRangeField(
@@ -284,9 +287,8 @@ class AbstractNodeFormSet(forms.BaseFormSet):
         self.help_text = getattr(self.question_pk, 'help_text', '')
         self.choices = kwargs.pop('choices', None)
         kwargs.pop('instance', None)
-        initial = kwargs.get('initial', None)
-        if initial:
-            assert False, initial
+        initial = self.deserialize(kwargs.get('initial', []))
+        kwargs['initial'] = initial
         super().__init__(**kwargs)
 
         # crispy forms
@@ -295,6 +297,12 @@ class AbstractNodeFormSet(forms.BaseFormSet):
         self.helper.form_id = 'id-{}'.format(self.question_pk)
         self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
+
+    def deserialize(self, initial):
+        data = initial.get('choice', [])
+        for i, item in enumerate(data):
+            data[i] = {'choice': item}
+        return data
 
     def serialize(self):
         choices = []
