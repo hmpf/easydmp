@@ -73,6 +73,28 @@ class EEStoreTypeFilter(admin.SimpleListFilter):
         return queryset
 
 
+class SectionFilter(admin.SimpleListFilter):
+    title = 'Section'
+    parameter_name = 'section'
+
+    def lookups(self, request, model_admin):
+        sections = Section.objects.values_list('id', 'title').distinct()
+        template_id = request.GET.get('section__template__id__exact', None)
+        if template_id:
+            sections = sections.filter(template__id=template_id)
+        lookups = []
+        for (k, v) in sections:
+            if not v:
+                v = '- untitled -'
+            lookups.append((k, v))
+        return lookups
+
+    def queryset(self, request, queryset):
+        if self.value():
+            queryset = queryset.filter(section__id=self.value())
+        return queryset
+
+
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
     list_display = (
@@ -89,7 +111,11 @@ class QuestionAdmin(admin.ModelAdmin):
         'increment_position',
         'decrement_position',
     ]
-    list_filter = [EEStoreTypeFilter, 'section']
+    list_filter = [
+        EEStoreTypeFilter,
+        'section__template',
+        SectionFilter,
+    ]
     inlines = [
         CannedAnswerInline,
         EEStoreMountInline,
