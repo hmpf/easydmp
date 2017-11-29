@@ -47,3 +47,12 @@ class Plan(models.Model):
         if not self.editor_group:
             self.create_editor_group()
             self.set_adder_as_editor()
+
+    def create_new_version(self):
+        self.id = None
+        self.version += self.version
+        super().save(force_insert=True)
+        editors = self.editor_group.user_set.all()
+        self.create_editor_group()
+        for editor in editors:
+            self.add_user_to_editor_group(editor)
