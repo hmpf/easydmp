@@ -55,39 +55,41 @@ class Node(models.Model):
 
     def get_next_node_many(self, next_nodes, data):
         depends = self.depends if self.depends else self
-        key = data[str(depends.pk)]['choice']
-        next_node = next_nodes.get(condition=key)
-        return next_node.next_node
+        condition = data[str(depends.slug)]
+        for edge in next_nodes:
+            if depends.slug in data:
+                if edge.condition == condition:
+                    return edge.next_node
+        return None
 
     def get_next_node(self, nodes):
-        next_nodes = self.next_nodes.all()
-        if next_nodes.count() == 1:  # simple node
-            return next_nodes.get().next_node
-        elif next_nodes.count() > 1:  # complex node
-            return self.get_next_node_many(next_nodes, nodes)
+        edges = self.next_nodes.all()
+        next_nodes = set([edge.next_node for edge in edges])
+        if len(next_nodes) == 1: # simple node
+            return next_nodes.pop()
+        if len(next_nodes) > 1:  # complex node
+            next_node = self.get_next_node_many(edges, nodes)
+            return next_node
         # end node or overridden
         return None
 
-    def get_prev_node_many(self, prev_nodes, nodes):
-        nodes = nodes.copy()
-        nodes[self.slug] = None
-        paths = self.fsa.find_paths_to(self.slug)
-        ordered_nodes = tuple([s[0] for s in self.fsa.order_data(nodes)])
-        good_path = None
-        for path in paths:
-            if path[:len(ordered_nodes)] == ordered_nodes:
-                good_path = path
-                break
-        prev_nodeslug = good_path[good_path.index(self.slug)-1]
-        prev_node = self.fsa.nodemap[prev_nodeslug]
-        return prev_node
+    def get_prev_node_many(self, prev_nodes, data):
+        for edge in prev_nodes:
+            prev_node = edge.prev_node
+            prev_node_slug = prev_node.slug
+            if prev_node_slug in data:
+                if edge.condition == data[prev_node_slug]:
+                    return prev_node
+        return None
 
     def get_prev_node(self, nodes):
-        prev_nodes = self.prev_nodes.all()
-        if prev_nodes.count() == 1:  # simple node
-            return prev_nodes.get().prev_node
-        elif prev_nodes.count() > 1:  # complex node
-            return self.get_prev_node_many(prev_nodes, nodes)
+        edges = self.prev_nodes.all()
+        prev_nodes = set([edge.prev_node for edge in edges])
+        if len(prev_nodes) == 1:  # simple node
+            return prev_nodes.pop()
+        if len(prev_nodes) > 1:  # complex node
+            prev_node = self.get_prev_node_many(edges, nodes)
+            return prev_node
         # start node or overridden
         return None
 
@@ -110,11 +112,11 @@ class Edge(models.Model):
     )
 
     class Meta:
-        unique_together = ('prev_node', 'next_node')
+        unique_together = ('condition', 'prev_node', 'next_node')
 
     def __str__(self):
         me = self.prev_node
-        return '{} ({} is {}) -> {}'.format(
+        return '{} ({} is "{}") -> {}'.format(
             me, me, self.condition, self.next_node
         )
 
@@ -161,15 +163,15 @@ class FSA(models.Model):
     def generate_graph(self):
         graph = {}
         for node in self.nodes.all():
-            goes_to = list()
+            goes_to = set()
             for s in node.next_nodes.all():
-                goes_to.append(s.next_node.slug if s.next_node else None)
-            graph[node.slug] = goes_to
+                goes_to.add(s.next_node.slug if s.next_node else None)
+            graph[node.slug] = list(goes_to)
         return graph
 
     def _find_all_paths(self, graph, start, path=[]):
         path = path + [start]
-        if start is None or start.end:
+        if start is None or self.nodes.get(slug=start).end:
             return [path]
         if start not in graph:
             return []
@@ -246,8 +248,9 @@ class FSA(models.Model):
         """Sort data according to possible graphs
 
         Incidentally, removes unknown nodes"""
+        paths = self.find_possible_paths_for_data(data)
         # All graphs start the same so just pick one
-        keys = self.find_possible_paths_for_data(data).pop()
+        keys = paths.pop()
         ordered_data = [(s, data.get(s)) for s in keys if s in data]
         return ordered_data
 

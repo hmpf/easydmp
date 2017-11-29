@@ -244,13 +244,30 @@ class Question(models.Model):
         )
         self.save()
 
+    @classmethod
+    def map_choice_to_condition(cls, question, answer):
+        """Convert the `choice` in an answer to an Edge.condition
+
+        The choice is unwrapped from its structure, and set to empty if the
+        question type cannot branch.
+        """
+        q = question.get_instance()
+        condition = ''
+        if q.branching_possible:
+            # The choice is used to look up an Edge.condition
+            condition = str(answer.get('choice', ''))
+        return condition
+
+    @classmethod
     def map_answers_to_nodes(self, answers):
-        "Convert question pks to node pks in the answers, if any"
+        """Convert question pks to node pks, and choices to conditions
+        """
         data = {}
         for question_pk, answer in answers.items():
             q = Question.objects.get(pk=question_pk)
             if not q.node: continue
-            data[str(q.node.pk)] = answer
+            condition = self.map_choice_to_condition(q, answer)
+            data[str(q.node.slug)] = condition
         return data
 
     def get_all_next_questions(self):
@@ -285,7 +302,7 @@ class Question(models.Model):
                 return prev_section.last_question
             return None
 
-        if not self.node:
+        if not self.node or self.node.start:
             return list(prev_questions)[-1]
 
         data = self.map_answers_to_nodes(answers)

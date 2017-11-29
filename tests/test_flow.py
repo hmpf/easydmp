@@ -11,6 +11,13 @@ from flow.models import FSA
 
 
 def generate_nodes(start, **canned_data):
+    """
+    s1 ('True') -> s2
+    s1 ('False') -> s3
+    s2 -> s4
+    s3 -> s4
+    s4 -> s5
+    """
     s1 = Node.objects.create(slug='s1', **canned_data)
     s2 = Node.objects.create(slug='s2', **canned_data)
     s3 = Node.objects.create(slug='s3', **canned_data)
@@ -51,37 +58,55 @@ class TestNodeNextnodeMethods(CannedData, test.TestCase):
         result = s.get_next_node(None)
         self.assertEqual(result, None)
 
+    def test_single_nextnode(self):
+        s1 = Node.objects.create(slug='s1', **self.canned_data, start=True)
+        s2 = Node.objects.create(slug='s2', **self.canned_data)
+        sr12 = Edge.objects.create(prev_node=s1, next_node=s2)
+        result = s1.get_next_node({s1.slug: ''})
+        self.assertEqual(result, s2)
+
     def test_branching_nextnode(self):
-        s1 = Node.objects.create(slug='s1', **self.canned_data)
+        s1 = Node.objects.create(slug='s1', **self.canned_data, start=True)
         s2 = Node.objects.create(slug='s2', **self.canned_data)
         s3 = Node.objects.create(slug='s3', **self.canned_data)
-        sr12 = Edge.objects.create(condition=True, prev_node=s1, next_node=s2)
-        sr13 = Edge.objects.create(condition=False, prev_node=s1, next_node=s3)
-        s1_pk = str(s1.pk)
-        with self.assertRaises(Edge.DoesNotExist):
-            result_None = s1.get_next_node({s1_pk: {'choice': None}})
-        result_True = s1.get_next_node({s1_pk: {'choice': True}})
+        sr12 = Edge.objects.create(condition='True', prev_node=s1, next_node=s2)
+        sr13 = Edge.objects.create(condition='False', prev_node=s1, next_node=s3)
+        # Non-existant condition
+        result_None = s1.get_next_node({s1.slug: None})
+        self.assertEqual(result_None, None)
+        result_True = s1.get_next_node({s1.slug: 'True'})
         self.assertEqual(result_True, s2)
-        result_False = s1.get_next_node({s1_pk: {'choice': False}})
+        result_False = s1.get_next_node({s1.slug: 'False'})
         self.assertEqual(result_False, s3)
 
     def test_branching_depends_nextnode(self):
-        s0 = Node.objects.create(slug='s0', **self.canned_data)
+        """
+        s1 -> s2
+        s1 -> s3
+        """
+        s0 = Node.objects.create(slug='s0', **self.canned_data, start=True)
         s1 = Node.objects.create(slug='s1', depends=s0, **self.canned_data)
         s2 = Node.objects.create(slug='s2', **self.canned_data)
         s3 = Node.objects.create(slug='s3', **self.canned_data)
         sr12 = Edge.objects.create(condition=True, prev_node=s1, next_node=s2)
         sr13 = Edge.objects.create(condition=False, prev_node=s1, next_node=s3)
-        s0_pk = str(s0.pk)
-        with self.assertRaises(Edge.DoesNotExist):
-            result_None = s1.get_next_node({s0_pk: {'choice': None}})
-        result_True = s1.get_next_node({s0_pk: {'choice': True}})
+        # Non-existant condition
+        result_None = s1.get_next_node({s0.slug: None})
+        self.assertEqual(result_None, None)
+        result_True = s1.get_next_node({s0.slug: 'True'})
         self.assertEqual(result_True, s2)
-        result_False = s1.get_next_node({s0_pk: {'choice': False}})
+        result_False = s1.get_next_node({s0.slug: 'False'})
         self.assertEqual(result_False, s3)
 
 
 class TestNodePrevNodeTestCase(CannedData, test.TestCase):
+
+    def test_single_prevnode(self):
+        s1 = Node.objects.create(slug='s1', **self.canned_data, start=True)
+        s2 = Node.objects.create(slug='s2', **self.canned_data)
+        sr12 = Edge.objects.create(prev_node=s1, next_node=s2)
+        result = s2.get_prev_node({s1.slug: ''})
+        self.assertEqual(result, s1)
 
     def test_xor_multiple_prevnode(self):
         """
@@ -90,21 +115,19 @@ class TestNodePrevNodeTestCase(CannedData, test.TestCase):
         s2 -> s4
         s3 -> s4
         """
-        s1 = Node.objects.create(slug='s1', **self.canned_data)
+        s1 = Node.objects.create(slug='s1', **self.canned_data, start=True)
         s2 = Node.objects.create(slug='s2', **self.canned_data)
         s3 = Node.objects.create(slug='s3', **self.canned_data)
         s4 = Node.objects.create(slug='s4', **self.canned_data)
         sr1 = Edge.objects.create(next_node=s1)
-        sr12 = Edge.objects.create(condition=True, prev_node=s1, next_node=s2)
-        sr13 = Edge.objects.create(condition=False, prev_node=s1, next_node=s3)
-        sr24 = Edge.objects.create(condition=False, prev_node=s2, next_node=s4)
-        sr34 = Edge.objects.create(condition=False, prev_node=s3, next_node=s4)
-        sr4end = Edge.objects.create(condition=False, prev_node=s4)
-        self.fsa.start = s1
-        self.fsa.save()
-        result_True = s4.get_prev_node({'s1': {'choice': True}, 's2': {'choice': None}})
+        sr12 = Edge.objects.create(condition='True', prev_node=s1, next_node=s2)
+        sr13 = Edge.objects.create(condition='False', prev_node=s1, next_node=s3)
+        sr24 = Edge.objects.create(condition='False', prev_node=s2, next_node=s4)
+        sr34 = Edge.objects.create(condition='False', prev_node=s3, next_node=s4)
+        sr4end = Edge.objects.create(condition='False', prev_node=s4)
+        result_True = s4.get_prev_node({'s1': 'True', 's2': 'False'})
         self.assertEqual(result_True, s2)
-        result_True = s4.get_prev_node({'s1': {'choice': False}, 's3': {'choice': None}})
+        result_True = s4.get_prev_node({'s1': 'False', 's3': 'False'})
         self.assertEqual(result_True, s3)
 
     def test_shortcut_multiple_prevnode(self):
@@ -113,19 +136,17 @@ class TestNodePrevNodeTestCase(CannedData, test.TestCase):
         s1 -> s3
         s2 -> s3
         """
-        s1 = Node.objects.create(slug='s1', **self.canned_data)
+        s1 = Node.objects.create(slug='s1', **self.canned_data, start=True)
         s2 = Node.objects.create(slug='s2', **self.canned_data)
         s3 = Node.objects.create(slug='s3', **self.canned_data)
         sr1 = Edge.objects.create(next_node=s1)
-        sr12 = Edge.objects.create(condition=True, prev_node=s1, next_node=s2)
-        sr13 = Edge.objects.create(condition=False, prev_node=s1, next_node=s3)
+        sr12 = Edge.objects.create(condition='True', prev_node=s1, next_node=s2)
+        sr13 = Edge.objects.create(condition='False', prev_node=s1, next_node=s3)
         sr23 = Edge.objects.create(prev_node=s2, next_node=s3)
-        sr3end = Edge.objects.create(condition=False, prev_node=s3)
-        self.fsa.start = s1
-        self.fsa.save()
-        result_True = s3.get_prev_node({'s1': {'choice': True}, 's2': {'choice': None}})
+        sr3end = Edge.objects.create(condition='False', prev_node=s3)
+        result_True = s3.get_prev_node({'s1': 'True', 's2': ''})
         self.assertEqual(result_True, s2)
-        result_False = s3.get_prev_node({'s1': {'choice': False}})
+        result_False = s3.get_prev_node({'s1': 'False'})
         self.assertEqual(result_False, s1)
 
 
