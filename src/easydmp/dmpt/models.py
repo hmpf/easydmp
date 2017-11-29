@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 from django.utils.html import format_html, escape
 from django.utils.text import slugify
 
+from .errors import TemplateDesignError
 from easydmp.utils import pprint_list
 
 """
@@ -287,7 +288,10 @@ class Question(models.Model):
         data = self.map_answers_to_nodes(answers)
         next_node = self.node.get_next_node(data)
         if next_node:
-            return next_node.payload
+            try:
+                return next_node.payload
+            except Question.DoesNotExist:
+                raise TemplateDesignError('Error in template design: next node ({}) is not hooked up to a question'.format(next_node))
 
         return None
 
@@ -308,7 +312,10 @@ class Question(models.Model):
         data = self.map_answers_to_nodes(answers)
         prev_node = self.node.get_prev_node(data)
         if prev_node:
-            return prev_node.payload
+            try:
+                return prev_node.payload
+            except Question.DoesNotExist:
+                raise TemplateDesignError('Error in template design: prev node ({}) is not hooked up to a question'.format(prev_node))
 
         return None
 

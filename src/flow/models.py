@@ -6,6 +6,8 @@ from django.db import models
 
 import graphviz as gv
 
+from .errors import FSANoStartnodeError
+
 
 class Node(models.Model):
     """
@@ -139,7 +141,10 @@ class FSA(models.Model):
 
 
     def get_startnode(self):
-        return Node.objects.get(start=True, fsa=self)
+        try:
+            return Node.objects.get(start=True, fsa=self)
+        except Node.DoesNotExist:
+            raise FSANoStartnodeError()
 
     @property
     def start(self):
