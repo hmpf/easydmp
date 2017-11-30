@@ -153,11 +153,11 @@ class Section(models.Model):
 
 
 class SimpleFramingTextMixin:
+    """Generate a canned answer for a non-branching, atomic type
 
+    This includes strings, but excludes any other iterables.
+    """
     def get_canned_answer(self, choice, **kwargs):
-        """
-        choice is a non-sequence type.
-        """
         choice = str(choice)
         if self.framing_text:
             return self.framing_text.format(choice)
@@ -165,6 +165,24 @@ class SimpleFramingTextMixin:
 
 
 class Question(models.Model):
+    """The database representation of a question
+
+    Questions come in many subtypes, stored in `input_type`.
+
+    To convert a question to its subtype, run `get_class()` for the class of an
+    instance and `get_instance()` for the instance itself.
+
+    If branching_possible is True:
+
+    * The question *must* have at least one `CannedAnswer`
+    * If branching, the `CannedAnswer.choice` must reflect a
+      `flow.Edge.condition`. This is set by `map_choice_to_condition()`
+
+    If branching_possible is False:
+
+    * The question need not have a `CannedAnswer`.
+    * The `choice` is converted to an empty string.
+    """
     branching_possible = False
 
     input_type = models.CharField(
@@ -194,15 +212,24 @@ class Question(models.Model):
         return self.question
 
     def get_class(self):
+        """Get the correct class of a raw Question-instance
+
+        The subtype is stored in the attribute `input_type`
+        """
         return INPUT_TYPE_MAP.get(self.input_type, self.__class__)
 
     def get_instance(self):
+        """Convert a raw Question-instance to its subtype
+
+        The subtype is stored in the attribute `input_type`i
+        """
         cls = self.get_class()
         return cls.objects.get(pk=self.pk)
 
     def _serialize_condition(self, _):
-        """
-        Convert an answer into a lookup key, if applicable
+        """Convert an answer into a lookup key, if applicable
+
+        This is only applicable if `branching_possible` is True.
         """
         return NotImplemented
 
@@ -229,9 +256,11 @@ class Question(models.Model):
         return canned
 
     def pprint(self, value):
+        "Return a plaintext representation of the `choice`"
         return value['choice']
 
     def pprint_html(self, value):
+        "Return an HTML representation of the `choice`"
         return self.pprint(value)
 
     def create_node(self, fsa=None):
@@ -261,8 +290,7 @@ class Question(models.Model):
 
     @classmethod
     def map_answers_to_nodes(self, answers):
-        """Convert question pks to node pks, and choices to conditions
-        """
+        "Convert question pks to node pks, and choices to conditions"
         data = {}
         for question_pk, answer in answers.items():
             q = Question.objects.get(pk=question_pk)
@@ -320,6 +348,10 @@ class Question(models.Model):
         return None
 
 class BooleanQuestion(Question):
+    """A branch-capable question answerable with "Yes" or "No"
+
+    The choice is converted to True or False.
+    """
     branching_possible = True
 
     class Meta:
@@ -344,6 +376,7 @@ class BooleanQuestion(Question):
 
 
 class ChoiceQuestion(Question):
+    "A branch-capable question answerable with one of a small set of choices"
     branching_possible = True
 
     class Meta:
@@ -361,6 +394,7 @@ class ChoiceQuestion(Question):
 
 
 class MultipleChoiceOneTextQuestion(Question):
+    "A non-branch-capable question answerable with one or more of a small set of choices"
 
     class Meta:
         proxy = True
@@ -386,6 +420,7 @@ class MultipleChoiceOneTextQuestion(Question):
 
 
 class DateRangeQuestion(Question):
+    "A non-branch-capable question answerable with a daterange"
 
     class Meta:
         proxy = True
@@ -408,6 +443,7 @@ class DateRangeQuestion(Question):
 
 
 class ReasonQuestion(SimpleFramingTextMixin, Question):
+    "A non-branch-capable question answerable with plaintext"
 
     class Meta:
         proxy = True
@@ -418,6 +454,7 @@ class ReasonQuestion(SimpleFramingTextMixin, Question):
 
 
 class PositiveIntegerQuestion(SimpleFramingTextMixin, Question):
+    "A non-branch-capable question answerable with a positive integer"
 
     class Meta:
         proxy = True
@@ -428,6 +465,12 @@ class PositiveIntegerQuestion(SimpleFramingTextMixin, Question):
 
 
 class ExternalChoiceQuestion(Question):
+    """A non-branch-capable question answerable with a single choice
+
+    The choices are fetched and cached from an EEStore via an
+    `easydmp.eestore.models.EEStorePluginMount`. This is used when there are
+    too many for a drop down/radio field list.
+    """
 
     class Meta:
         proxy = True
@@ -446,6 +489,12 @@ class ExternalChoiceQuestion(Question):
 
 
 class ExternalMultipleChoiceOneTextQuestion(Question):
+    """A non-branch-capable question answerable with multiple choices
+
+    The choices are fetched and cached from an EEStore via an
+    `easydmp.eestore.models.EEStorePluginMount`. This is used when there are
+    too many for a standard multiselect.
+    """
 
     class Meta:
         proxy = True
@@ -474,6 +523,10 @@ class ExternalMultipleChoiceOneTextQuestion(Question):
 
 
 class NamedURLQuestion(Question):
+    """A non-branch-capable question answerable with an url
+
+    A name/title/description for the url is optional.
+    """
 
     class Meta:
         proxy = True
@@ -501,6 +554,10 @@ class NamedURLQuestion(Question):
 
 
 class MultiNamedURLOneTextQuestion(Question):
+    """A non-branch-capable question answerable with several urls
+
+    A name/title/description per url is optional.
+    """
 
     class Meta:
         proxy = True
@@ -562,6 +619,7 @@ INPUT_TYPE_MAP = {
 
 
 class CannedAnswer(models.Model):
+    "Defines the possible answers for a branch-capable question"
     question = models.ForeignKey(Question, related_name='canned_answers')
     choice = models.CharField(max_length=255,
                               help_text='Human friendly view of condition')
