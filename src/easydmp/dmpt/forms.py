@@ -65,20 +65,19 @@ class NotesForm(forms.Form):
         self.helper.add_input(Submit('submit', 'Next'))
 
 
-class AbstractNodeForm(forms.Form):
+class AbstractNodeMixin():
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         self.question = kwargs.pop('question')
         self.question_pk = self.question.pk
-        self.label = kwargs.pop('label')
-        self.help_text = getattr(self.question.pk, 'help_text', '')
-        self.choices = kwargs.pop('choices', None)
+        label = self.question.label
+        self.label = ' '.join((label, self.question.question))
+        self.help_text = getattr(self.question_pk, 'help_text', '')
         kwargs.pop('instance', None)
-        initial = self.deserialize(kwargs.get('initial', {}))
+        initial = self.deserialize(kwargs.get('initial', []))
         kwargs['initial'] = initial
-        super().__init__(*args, **kwargs)
-
-        self._add_choice_field()
+        kwargs['prefix'] = str(self.question_pk)
+        super().__init__(**kwargs)
 
         # crispy forms
         self.helper = FormHelper()
@@ -86,6 +85,13 @@ class AbstractNodeForm(forms.Form):
         self.helper.form_id = 'id-{}'.format(self.question_pk)
         self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
+
+
+class AbstractNodeForm(AbstractNodeMixin, forms.Form):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._add_choice_field()
 
     def _add_choice_field(self):
         pass
@@ -278,25 +284,7 @@ class NamedURLFormSetForm(forms.Form):
     choice = NamedURLField(label='') # Hide the label from crispy forms
 
 
-class AbstractNodeFormSet(forms.BaseFormSet):
-
-    def __init__(self, **kwargs):
-        self.question = kwargs.pop('question')
-        self.question_pk = self.question.pk
-        self.label = kwargs.pop('label')
-        self.help_text = getattr(self.question_pk, 'help_text', '')
-        self.choices = kwargs.pop('choices', None)
-        kwargs.pop('instance', None)
-        initial = self.deserialize(kwargs.get('initial', []))
-        kwargs['initial'] = initial
-        super().__init__(**kwargs)
-
-        # crispy forms
-        self.helper = FormHelper()
-        self.helper.form_tag = False
-        self.helper.form_id = 'id-{}'.format(self.question_pk)
-        self.helper.form_class = FORM_CLASS
-        self.helper.form_method = 'post'
+class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
 
     def deserialize(self, initial):
         data = initial.get('choice', [])
@@ -343,13 +331,7 @@ INPUT_TYPE_TO_FORMS = {
 def make_form(question, **kwargs):
     kwargs.pop('prefix', None)
     kwargs.pop('instance', None)
-    choices = kwargs.get('choices', None)
-    answerdict = {
-        'question': question,
-        'prefix': str(question.pk),
-        'label': question.label,
-    }
-    kwargs.update(answerdict)
+    kwargs['question'] = question
     form_type = INPUT_TYPE_TO_FORMS.get(question.input_type, None)
     if form_type is None:
         assert False, 'Unknown input type: {}'.format(question.input_type)
