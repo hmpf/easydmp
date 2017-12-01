@@ -120,6 +120,7 @@ class QuestionAdmin(admin.ModelAdmin):
         CannedAnswerInline,
         EEStoreMountInline,
     ]
+    save_on_top = True
 
     def has_node(self, obj):
         return True if obj.node else False
