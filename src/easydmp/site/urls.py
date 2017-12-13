@@ -16,7 +16,7 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 
-from easydmp.site.views import Homepage, logout_view
+from easydmp.site.views import Homepage, LoginView, logout_view
 
 urlpatterns = [
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
@@ -25,6 +25,7 @@ urlpatterns = [
     url('^psa/', include('social_django.urls', namespace='social')),
 
     url('^$', Homepage.as_view(), name='home'),
+    url('^login/', LoginView.as_view(), name='login-selector'),
     url('^logout', logout_view, name='logout'),
     url(r'^plan/', include('easydmp.plan.urls')),
     url(r'^invitation/', include('easydmp.invitation.urls')),
