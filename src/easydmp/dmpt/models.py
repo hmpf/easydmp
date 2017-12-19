@@ -299,23 +299,37 @@ class Question(models.Model):
             data[str(q.node.slug)] = condition
         return data
 
+    def get_first_question_in_next_section(self):
+        next_section = self.section.get_next_section()
+        if next_section:
+            return next_section.first_question
+        return None
+
     def get_all_next_questions(self):
         return Question.objects.filter(section=self.section, position__gt=self.position)
 
     def get_next_question(self, answers=None):
         next_questions = self.get_all_next_questions()
         if not next_questions.exists():
-            next_section = self.section.get_next_section()
-            if next_section:
-                return next_section.first_question
-            return None
+            return self.get_first_question_in_next_section()
 
-        if not self.node or not self.node.next_nodes.exists():
+        if not self.node:
+            return next_questions[0]
+
+        if self.node.end:
+            # Break out of section because fsa.end == True
+            return self.get_first_question_in_next_section()
+
+        if not self.node.next_nodes.exists():
             return next_questions[0]
 
         data = self.map_answers_to_nodes(answers)
         next_node = self.node.get_next_node(data)
         if next_node:
+            # Break out of section because fsa.end == True
+            if next_node.end:
+                return self.get_first_question_in_next_section()
+            # Not at the end, get payload
             try:
                 return next_node.payload
             except Question.DoesNotExist:
