@@ -1,8 +1,10 @@
 from collections import OrderedDict
 from itertools import chain
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse, reverse_lazy
+from django.db import IntegrityError
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render
 from django.views.generic import (
@@ -15,7 +17,7 @@ from django.views.generic import (
     RedirectView,
 )
 
-from easydmp.utils import pprint_list
+from easydmp.utils import pprint_list, utc_epoch
 from easydmp.dmpt.forms import make_form, TemplateForm, DeleteForm, NotesForm
 from easydmp.dmpt.models import Template, Question, Section
 from flow.models import FSA
@@ -38,7 +40,10 @@ class DeleteFormMixin(FormView):
 
 
 class NewPlanView(LoginRequiredMixin, CreateView):
-    """Create a new empty plan from the given template"""
+    """Create a new empty plan from the given template
+
+    Chceks that the same adder do not have a plan of the same name already.
+    """
     template_name = 'easydmp/plan/newplan_form.html'
     model = Plan
     form_class = PlanForm
@@ -50,6 +55,18 @@ class NewPlanView(LoginRequiredMixin, CreateView):
         }
         return reverse('new_question', kwargs=kwargs)
 
+    def dedup_title(self):
+        qs = self.model.objects.filter(
+            added_by=self.request.user,
+            template=self.object.template,
+            title=self.object.title,
+        )
+        if qs.exists():
+            epoch = utc_epoch()
+            self.object.title = '{} {}'.format(self.object.title, epoch)
+            return True
+        return False
+
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.data = {}
@@ -57,8 +74,14 @@ class NewPlanView(LoginRequiredMixin, CreateView):
         self.object.added_by = self.request.user
         self.object.modified_by = self.request.user
         self.object.template = form.cleaned_data['template_type']
-        self.object.save()
-        return super().form_valid(form)
+        try:
+            self.object.save()
+        except IntegrityError:
+            deduped = self.dedup_title()
+            if deduped:
+                messages.warning(self.request, 'You have already created a plan with this title. Title changed to prevent duplicates')
+                self.object.save()
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):

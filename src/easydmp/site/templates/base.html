@@ -76,7 +76,11 @@
 		</div>
 	</div>
 <div class="container">
-	
+{% if messages %}
+  {% for message in messages %}
+  <div role="alert" class="alert">{{ message }}</div>
+  {% endfor %}
+{% endif %}
 {% block content %}
 </div>
 {% endblock %}
