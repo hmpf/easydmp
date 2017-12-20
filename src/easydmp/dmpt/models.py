@@ -421,6 +421,10 @@ class MultipleChoiceOneTextQuestion(Question):
         """
         answer = ['list', 'of', 'answers']
         """
+
+        if not answer:
+            return ''
+
         if len(answer) == 1:
             return answer[0]
 
@@ -523,6 +527,9 @@ class ExternalMultipleChoiceOneTextQuestion(Question):
         """
         answers = self.eestore.get_cached_entries()
         answer = tuple(answers.filter(eestore_pid__in=choice).values_list('name', flat=True))
+
+        if not answer:
+            return ''
 
         if len(answer) == 1:
             return answer[0]
