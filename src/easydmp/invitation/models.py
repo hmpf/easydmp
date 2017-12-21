@@ -45,6 +45,10 @@ class AbstractEmailInvitation(models.Model):
         self.used = utcnow()
         self.save()
 
+    def revoke_invitation(self):
+        if not self.used:
+            self.delete()
+
     def get_context_data(self, **context):
         data = {
             'invitation': self,

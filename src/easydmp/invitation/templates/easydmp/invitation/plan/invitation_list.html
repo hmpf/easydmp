@@ -29,7 +29,10 @@
     <td>{{ invitation.is_valid|yesno }}</td>
     <td>{{ invitation.used|default:'Not yet' }}</td>
     <td>
-        {% if not invitation.used %}<a href="{% url 'invitation_plan_editor_resend' uuid=invitation.uuid %}">Resend</a>{% endif %}
+        {% if not invitation.used %}
+        <a href="{% url 'invitation_plan_editor_resend' uuid=invitation.uuid %}">Resend</a>
+        <a href="{% url 'invitation_plan_editor_revoke' uuid=invitation.uuid %}">Revoke</a>
+        {% endif %}
     </td>
 </tr>
 {% endfor %}

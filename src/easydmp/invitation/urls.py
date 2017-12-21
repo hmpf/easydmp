@@ -5,6 +5,7 @@ from .views import (
     ListPlanEditorInvitationView,
     AcceptPlanEditorInvitationView,
     ResendPlanEditorInvitationView,
+    RevokePlanEditorInvitationView,
 )
 
 
@@ -16,4 +17,5 @@ urlpatterns = [
     url(r'plan/' + PLAN_RE + r'/editor/new/$', CreatePlanEditorInvitationView.as_view(), name='invitation_plan_editor_create'),
     url(UUID_RE + r'/plan/editor/resend/$', ResendPlanEditorInvitationView.as_view(), name='invitation_plan_editor_resend'),
     url(UUID_RE + r'/plan/editor/accept/$', AcceptPlanEditorInvitationView.as_view(), name='invitation_plan_editor_accept'),
+    url(UUID_RE + r'/plan/editor/revoke/$', RevokePlanEditorInvitationView.as_view(), name='invitation_plan_editor_revoke'),
 ]
