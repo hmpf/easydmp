@@ -33,7 +33,9 @@ class MultiEmailField(forms.Field):
 
 
 class EmailAddressForm(forms.Form):
-    email_addresses = MultiEmailField()
+    email_addresses = MultiEmailField(
+        help_text="Enter one or more email addresses, one per line"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
