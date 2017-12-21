@@ -146,7 +146,7 @@ class QuestionAdmin(admin.ModelAdmin):
 
     def decrement_position(self, request, queryset):
         for q in queryset.order_by('position'):
-            q.position += 1
+            q.position -= 1
             q.save()
     decrement_position.short_description = 'Decrement position by 1'
 
