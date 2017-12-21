@@ -121,11 +121,23 @@ class Section(models.Model):
 
     @property
     def first_question(self):
-        return self.questions.order_by('position')[0]
+        if self.questions.exists():
+            return self.questions.order_by('position')[0]
+        # See if there is a next section in case this one has no questions
+        next_section = self.get_next_section()
+        if next_section:
+            return next_section.first_question
+        return None
 
     @property
     def last_question(self):
-        return self.questions.order_by('-position')[0]
+        if self.questions.exists():
+            return self.questions.order_by('-position')[0]
+        # See if there is a prev section in case this one has no questions
+        prev_section = self.get_prev_section()
+        if prev_section:
+            return prev_section.last_question
+        return None
 
     def generate_canned_text(self, data):
         texts = []
