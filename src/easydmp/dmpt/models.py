@@ -171,9 +171,7 @@ class SimpleFramingTextMixin:
     """
     def get_canned_answer(self, choice, **kwargs):
         choice = str(choice)
-        if self.framing_text:
-            return self.framing_text.format(choice)
-        return choice
+        return self.frame_canned_answer(choice)
 
 
 class Question(models.Model):
@@ -373,6 +371,12 @@ class Question(models.Model):
 
         return None
 
+    def frame_canned_answer(self, answer):
+        if self.framing_text:
+            return self.framing_text.format(answer)
+        return answer
+
+
 class BooleanQuestion(Question):
     """A branch-capable question answerable with "Yes" or "No"
 
@@ -438,12 +442,10 @@ class MultipleChoiceOneTextQuestion(Question):
             return ''
 
         if len(answer) == 1:
-            return answer[0]
+            return self.frame_canned_answer(answer[0])
 
         joined_answer = '{} and {}'.format(', '.join(answer[:-1]), answer[-1])
-        if self.framing_text:
-            return self.framing_text.format(joined_answer)
-        return joined_answer
+        return self.frame_canned_answer(joined_answer)
 
     def pprint(self, value):
         return pprint_list(value['choice'])
@@ -466,7 +468,10 @@ class DateRangeQuestion(Question):
             'end': date(),
         }
         """
-        return self.framing_text.format(**daterange)
+        framing_text = self.framing_text
+        if not framing_text:
+            framing_text = 'From {start} to {end}'
+        return framing_text.format(**daterange)
 
     def pprint(self, value):
         return self.framing_text.format(**value['choice'])
@@ -511,8 +516,12 @@ class ExternalChoiceQuestion(Question):
 
     def get_canned_answer(self, choice, **kwargs):
         answers = self.eestore.get_cached_entries()
-        answer = answers.get(eestore_pid=choice)
-        return answer.name
+        try:
+            answer = answers.get(eestore_pid=choice)
+        except answers.model.DoesNotExist:
+            # Prevent 500 if the EE cache is empty
+            return ''
+        return self.frame_canned_answer(answer.name)
 
     def pprint(self, value):
         return value['text']
@@ -540,16 +549,14 @@ class ExternalMultipleChoiceOneTextQuestion(Question):
         answers = self.eestore.get_cached_entries()
         answer = tuple(answers.filter(eestore_pid__in=choice).values_list('name', flat=True))
 
-        if not answer:
+        if not answer: # Prevent 500 if the EE cache is empty
             return ''
 
         if len(answer) == 1:
-            return answer[0]
-
-        joined_answer = '{} and {}'.format(', '.join(answer[:-1]), answer[-1])
-        if self.framing_text:
-            return self.framing_text.format(joined_answer)
-        return joined_answer
+            canned_answer = answer[0]
+        else:
+            canned_answer = '{} and {}'.format(', '.join(answer[:-1]), answer[-1])
+        return self.frame_canned_answer(canned_answer)
 
     def pprint(self, value):
         return value['text']
@@ -570,8 +577,10 @@ class NamedURLQuestion(Question):
 
     def get_canned_answer(self, choice, **kwargs):
         if not choice.get('name', None):
-            return choice['url']
-        return '{url} "{name}"'.format(**choice)
+            answer = choice['url']
+        else:
+            answer = '{url} "{name}"'.format(**choice)
+        return self.frame_canned_answer(answer)
 
     def pprint(self, value):
         url = value['choice']['url']
@@ -613,9 +622,7 @@ class MultiNamedURLOneTextQuestion(Question):
             return urlpairs[0]
 
         joined_pairs = '{} and {}'.format(', '.join(urlpairs[:-1]), urlpairs[-1])
-        if self.framing_text:
-            return self.framing_text.format(joined_pairs)
-        return joined_pairs
+        return self.frame_canned_answer(joined_pairs)
 
     def pprint(self, value):
         return value['text']
