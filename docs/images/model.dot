@@ -1,0 +1,30 @@
+digraph model {
+    subgraph  cluster_eestore {
+        label="eestore";
+        EEStorePluginMount -> EEStoreType [label="has"];
+        EEStorePluginMount -> EEStoreSource [style=dotted, label="may have"];
+        EEStoreSource -> EEStoreType [label="has"];
+        EEStoreCache -> EEStoreSource [label="has"];
+    }
+    EEStorePluginMount -> Question [label="has"];
+    subgraph cluster_dmpt {
+        label="dmpt";
+        Question -> Section [label="has"];
+        Section -> Template [label="has"];
+        CannedAnswer -> Question [label="has"];
+    }
+    subgraph  cluster_plan {
+        label="plan";
+        Plan;
+    }
+    Plan -> Template [label="has"];
+    node[group=right];
+    subgraph  cluster_flow {
+        label="flow";
+        "Edge" -> "Node" [style=dotted, label="may have"];
+        "Node" -> "FSA" [label="has"];
+    }
+    Question -> "Node" [style=dotted, label="may have"];
+    CannedAnswer -> "Edge" [style=dotted, label="may have"];
+    node[group=left];
+}

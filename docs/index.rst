@@ -18,8 +18,9 @@ See the :doc:`overview <overview>`.
    :maxdepth: 2
    :caption: Contents:
 
-   installation
    overview
+   installation
+   development
 
 
 

@@ -5,32 +5,33 @@ Overview
 EasyDMP's main design goal is to be easy to use for researchers
 writing a data management plan, based on a template.
 
-The data planner answers a series of questions by choosing among
+The researcher answers a series of questions by choosing among
 a limited set of possible answers, and has space for notes for
-each answer. The template designer adapting an existing set of
-questions therefore needs to rewrite the questions to facilitate
-this, and needs to design the canned responses carefully.
+each answer. An HTML file suitable for importing into document
+processing tools is generated from the answers, as well as
+a JSON-dump, for export to other types of tools.
 
-The answers the planners make to the question are stored as
-a *flow*, a serialized traversal of a directed acyclic graph
-(DAG). By running the flow through a finite state machine (FSM)
-the answers are mapped to canned responses, building up to a text
-that appears to be hand written. This is then suitable for being
-attached, in paper form if need be, to a project proposal.
+Questions have a type, depending on the expected type of answer.
+For instance, Yes vs. No, a date range, one or more choices of
+a short set of hand-written predefined choices, one or more
+choices from an auto-generated large set of choices, one or more
+urls. Each question also has a position, in order to be able to
+show them in the correct order. Some question types can lead to
+branching, for instance if a dataset not sensitive, questions
+regarding how to safe guard the data can be skipped.
 
-Each question is connected to its own FSM. Each FSM is part of
-a section, and each section is part of a template. The sections
-can be reordered and the FSMs can be reordered within each
-section.
+Whenever it makes sense, an answer is translated to a "canned
+answer", for instance a "Yes" to "Does this dataset contain
+sensitive data" can be converted to "This dataset does contain
+sensitive data." For other question types, the answer can be put
+inside a framing text. A question "When will the data be
+collected?", which is answered with the date range 2017-2020, can
+be converted to "The data will be collected between 2017 and
+2020".
 
-A template, a section and a specific FSM can all be copied to be
-reused in a different template, section or FSM. Templates are
-versioned, and the system handles multiple templates
-simultaneously. A specific plan is made from a specific versioned
-template, and each plan is also versioned.
-
-.. _figure_birds_eye_overview:
-.. figure:: images/easydmp-overview.*
-
-   Figure 1: Bird's eye view
-
+Every template has one or more designers. It is the designers'
+task to write the canned answers and framing texts so that the
+text in the generated HTML makes sense. It is the responsibilty of
+the researchers making plans to assure that any text written in
+free text fields, like "Notes", makes sense together with the
+canned answers.
