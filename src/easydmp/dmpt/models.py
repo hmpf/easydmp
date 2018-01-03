@@ -26,7 +26,9 @@ INPUT_TYPES = (
     'reason',
     'positiveinteger',
     'externalchoice',
+    'extchoicenotlisted',
     'externalmultichoiceonetext',
+    'extmultichoicenotlistedonetext',
     'namedurl',
     'multinamedurlonetext',
 )
@@ -530,6 +532,72 @@ class ExternalChoiceQuestion(Question):
         return value['text']
 
 
+class ExternalChoiceNotListedQuestion(Question):
+    """A branch-capable question answerable with a single choice
+
+    The choices are fetched and cached from an EEStore via an
+    `easydmp.eestore.models.EEStorePluginMount`. This is used when there are
+    too many for a standard multiselect.
+
+    If the user chooses "Not listed", which is a CannedAnswer, it is possible
+    to branch.
+    """
+    branching_possible = True
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.input_type = 'extchoicenotlisted'
+        super().save(*args, **kwargs)
+
+    def get_canned_answer(self, choice, **kwargs):
+        """
+        choice = {
+            'choices': ['list', 'of', 'answers'],
+            'not-listed': bool()
+        }
+        """
+        choice = choice.get('choices', '')
+        notlisted = choice.get('not-listed', False)
+        answers = self.eestore.get_cached_entries()
+        answer = None
+
+        if choice:
+            try:
+                answer = answers.get(eestore_pid=choice)
+            except answers.model.DoesNotExist:
+                pass
+
+        if not answer: # Prevent 500 if the EE cache is empty
+            # Nothing chosen but checkbox hooked off
+            if notlisted:
+                canned_answer = super().get_canned_answer('not-listed', **kwargs)
+                if canned_answer and canned_answer != 'not-listed':
+                    return self.frame_canned_answer(canned_answer)
+                return ''
+            else:
+                return ''
+
+        return self.frame_canned_answer(answer)
+
+    def map_choice_to_condition(self, answer):
+        """Convert the `choice` in an answer to an Edge.condition
+
+        The choice is unwrapped from its structure, and set to empty if the
+        question type cannot branch.
+        """
+        choice = {}
+        if self.branching_possible:
+            # The choice is used to look up an Edge.condition
+            choice = answer.get('choice', {})
+        condition = str(choice.get('not-listed', False))
+        return condition
+
+    def pprint(self, value):
+        return value['text']
+
+
 class ExternalMultipleChoiceOneTextQuestion(Question):
     """A non-branch-capable question answerable with multiple choices
 
@@ -560,6 +628,72 @@ class ExternalMultipleChoiceOneTextQuestion(Question):
         else:
             canned_answer = '{} and {}'.format(', '.join(answer[:-1]), answer[-1])
         return self.frame_canned_answer(canned_answer)
+
+    def pprint(self, value):
+        return value['text']
+
+
+class ExternalMultipleChoiceNotListedOneTextQuestion(Question):
+    """A branch-capable question answerable with multiple choices
+
+    The choices are fetched and cached from an EEStore via an
+    `easydmp.eestore.models.EEStorePluginMount`. This is used when there are
+    too many for a standard multiselect.
+
+    If the user chooses "Not listed", which is a CannedAnswer, it is possible
+    to branch.
+    """
+    branching_possible = True
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.input_type = 'extmultichoicenotlistedonetext'
+        super().save(*args, **kwargs)
+
+    def get_canned_answer(self, choice, **kwargs):
+        """
+        choice = {
+            'choices': ['list', 'of', 'answers'],
+            'not-listed': bool()
+        }
+        """
+        choices = choice.get('choices', ())
+        notlisted = choice.get('not-listed', False)
+        answers = self.eestore.get_cached_entries()
+        answer = None
+        if choices:
+            answer = tuple(answers.filter(eestore_pid__in=choices).values_list('name', flat=True))
+
+        if not answer: # Prevent 500 if the EE cache is empty
+            # Nothing chosen but checkbox hooked off
+            if notlisted:
+                canned_answer = super().get_canned_answer('not-listed', **kwargs)
+                if canned_answer and canned_answer != 'not-listed':
+                    return self.frame_canned_answer(canned_answer)
+                return ''
+            else:
+                return ''
+
+        if len(answer) == 1:
+            canned_answer = answer[0]
+        else:
+            canned_answer = '{} and {}'.format(', '.join(answer[:-1]), answer[-1])
+        return self.frame_canned_answer(canned_answer)
+
+    def map_choice_to_condition(self, answer):
+        """Convert the `choice` in an answer to an Edge.condition
+
+        The choice is unwrapped from its structure, and set to empty if the
+        question type cannot branch.
+        """
+        choice = {}
+        if self.branching_possible:
+            # The choice is used to look up an Edge.condition
+            choice = answer.get('choice', {})
+        condition = str(choice.get('not-listed', False))
+        return condition
 
     def pprint(self, value):
         return value['text']
@@ -655,7 +789,9 @@ INPUT_TYPE_MAP = {
     'reason': ReasonQuestion,
     'positiveinteger': PositiveIntegerQuestion,
     'externalchoice': ExternalChoiceQuestion,
+    'extchoicenotlisted': ExternalChoiceNotListedQuestion,
     'externalmultichoiceonetext': ExternalMultipleChoiceOneTextQuestion,
+    'extmultichoicenotlistedonetext': ExternalMultipleChoiceNotListedOneTextQuestion,
     'namedurl': NamedURLQuestion,
     'multinamedurlonetext': MultiNamedURLOneTextQuestion,
 }

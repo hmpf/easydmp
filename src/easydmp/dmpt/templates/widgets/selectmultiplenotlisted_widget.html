@@ -1,0 +1,2 @@
+{% with widget.subwidgets.0 as widget %}{% include widget.template_name %}{% endwith %}<br />
+{% with widget.subwidgets.1 as widget %}<label for"{{ widget.id }}">Not listed</label> {% include widget.template_name %}{% endwith %}

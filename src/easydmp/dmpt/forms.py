@@ -9,7 +9,10 @@ from easydmp.eestore.models import EEStoreCache
 
 from .models import Template
 from .models import ExternalChoiceQuestion
-from .fields import DateRangeField, NamedURLField
+from .fields import DateRangeField
+from .fields import NamedURLField
+from .fields import ChoiceNotListedField
+from .fields import MultipleChoiceNotListedField
 
 
 FORM_CLASS = 'blueForms'
@@ -249,6 +252,24 @@ class ExternalChoiceForm(AbstractNodeForm):
         )
 
 
+class ExternalChoiceNotListedForm(AbstractNodeForm):
+
+    def _add_choice_field(self):
+        question = self.question.get_instance()
+        if question.eestore.sources.exists():
+            sources = question.eestore.sources.all()
+        else:
+            sources = question.eestore.eestore_type.sources.all()
+        qs = EEStoreCache.objects.filter(source__in=sources)
+        choices = qs.values_list('eestore_pid', 'name')
+        self.fields['choice'] = ChoiceNotListedField(
+            label=self.label,
+            help_text=self.help_text,
+            choices=choices,
+            # widgrt: select2?
+        )
+
+
 class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
 
     def _add_choice_field(self):
@@ -260,6 +281,24 @@ class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
         qs = EEStoreCache.objects.filter(source__in=sources)
         choices = qs.values_list('eestore_pid', 'name')
         self.fields['choice'] = forms.MultipleChoiceField(
+            label=self.label,
+            help_text=self.help_text,
+            choices=choices,
+            # widgrt: select2?
+        )
+
+
+class ExternalMultipleChoiceNotListedOneTextForm(AbstractNodeForm):
+
+    def _add_choice_field(self):
+        question = self.question.get_instance()
+        if question.eestore.sources.exists():
+            sources = question.eestore.sources.all()
+        else:
+            sources = question.eestore.eestore_type.sources.all()
+        qs = EEStoreCache.objects.filter(source__in=sources)
+        choices = qs.values_list('eestore_pid', 'name')
+        self.fields['choice'] = MultipleChoiceNotListedField(
             label=self.label,
             help_text=self.help_text,
             choices=choices,
@@ -322,7 +361,9 @@ INPUT_TYPE_TO_FORMS = {
     'reason': ReasonForm,
     'positiveinteger': PositiveIntegerForm,
     'externalchoice': ExternalChoiceForm,
+    'extchoicenotlisted': ExternalChoiceNotListedForm,
     'externalmultichoiceonetext': ExternalMultipleChoiceOneTextForm,
+    'extmultichoicenotlistedonetext': ExternalMultipleChoiceNotListedOneTextForm,
     'namedurl': NamedURLForm,
     'multinamedurlonetext': MultiNamedURLOneTextFormSet,
 }
