@@ -288,16 +288,14 @@ class Question(models.Model):
         )
         self.save()
 
-    @classmethod
-    def map_choice_to_condition(cls, question, answer):
+    def map_choice_to_condition(self, answer):
         """Convert the `choice` in an answer to an Edge.condition
 
         The choice is unwrapped from its structure, and set to empty if the
         question type cannot branch.
         """
-        q = question.get_instance()
         condition = ''
-        if q.branching_possible:
+        if self.branching_possible:
             # The choice is used to look up an Edge.condition
             condition = str(answer.get('choice', ''))
         return condition
@@ -309,7 +307,8 @@ class Question(models.Model):
         for question_pk, answer in answers.items():
             q = Question.objects.get(pk=question_pk)
             if not q.node: continue
-            condition = self.map_choice_to_condition(q, answer)
+            q = q.get_instance()
+            condition = q.map_choice_to_condition(answer)
             data[str(q.node.slug)] = condition
         return data
 
