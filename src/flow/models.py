@@ -2,6 +2,7 @@
 
 from pathlib import PurePath, Path
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 import graphviz as gv
@@ -41,6 +42,12 @@ class Node(models.Model):
         unique_together = ('fsa', 'slug')
 
     def __str__(self):  # pragma: no cover
+        try:
+            return self.payload.legend()
+        except ObjectDoesNotExist:
+            pass
+        except AttributeError:
+            pass
         return self.slug
 
 #     def save(self, *args, **kwargs):
@@ -117,6 +124,12 @@ class Edge(models.Model):
         unique_together = ('condition', 'prev_node', 'next_node')
 
     def __str__(self):
+        try:
+            return self.payload.legend()
+        except ObjectDoesNotExist:
+            pass
+        except AttributeError:
+            pass
         me = self.prev_node
         return '{} ({} is "{}") -> {}'.format(
             me, me, self.condition, self.next_node

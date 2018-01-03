@@ -221,6 +221,10 @@ class Question(models.Model):
             return '{} {}'.format(self.label, self.question)
         return self.question
 
+    def legend(self):
+        qstring = str(self)
+        return '{}({}): {}'.format(self.section.template, self.section.position, qstring)
+
     def get_class(self):
         """Get the correct class of a raw Question-instance
 
