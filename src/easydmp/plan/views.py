@@ -55,12 +55,12 @@ class NewPlanView(LoginRequiredMixin, CreateView):
         }
         return reverse('new_question', kwargs=kwargs)
 
+    def existing_with_same_title(self):
+        return self.model.objects.filter(template=self.object.template,
+                                         title=self.object.title,)
+
     def dedup_title(self):
-        qs = self.model.objects.filter(
-            added_by=self.request.user,
-            template=self.object.template,
-            title=self.object.title,
-        )
+        qs = self.existing_with_same_title()
         if qs.exists():
             epoch = utc_epoch()
             self.object.title = '{} {}'.format(self.object.title, epoch)
@@ -74,13 +74,7 @@ class NewPlanView(LoginRequiredMixin, CreateView):
         self.object.added_by = self.request.user
         self.object.modified_by = self.request.user
         self.object.template = form.cleaned_data['template_type']
-        try:
-            self.object.save()
-        except IntegrityError:
-            deduped = self.dedup_title()
-            if deduped:
-                messages.warning(self.request, 'You have already created a plan with this title. Title changed to prevent duplicates')
-                self.object.save()
+        self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 
 

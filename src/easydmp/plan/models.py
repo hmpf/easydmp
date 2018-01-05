@@ -20,10 +20,6 @@ class Plan(models.Model):
     modified_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='modified_plans')
     editor_group = models.ForeignKey('auth.Group', related_name='+', blank=True, null=True)
 
-    class Meta:
-        # Only one plan per template and version
-        unique_together = ('template', 'version', 'title')
-
     def __str__(self):
         return self.title
 
