@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import IntegrityError
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponseServerError
 from django.shortcuts import render
 from django.views.generic import (
     FormView,
@@ -55,17 +55,25 @@ class NewPlanView(LoginRequiredMixin, CreateView):
         }
         return reverse('new_question', kwargs=kwargs)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def existing_with_same_title(self):
         return self.model.objects.filter(template=self.object.template,
                                          title=self.object.title,)
 
-    def dedup_title(self):
+    def find_existing(self):
+        user = self.request.user
         qs = self.existing_with_same_title()
-        if qs.exists():
-            epoch = utc_epoch()
-            self.object.title = '{} {}'.format(self.object.title, epoch)
-            return True
-        return False
+        if not qs:
+            return None
+        groups = user.groups.all()
+        qs = qs.filter(editor_group__in=groups)
+        if not qs:
+            return None
+        return qs
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
@@ -74,8 +82,16 @@ class NewPlanView(LoginRequiredMixin, CreateView):
         self.object.added_by = self.request.user
         self.object.modified_by = self.request.user
         self.object.template = form.cleaned_data['template_type']
-        self.object.save()
-        return HttpResponseRedirect(self.get_success_url())
+        existing = self.find_existing()
+        if not existing:
+            self.object.save()
+            return HttpResponseRedirect(self.get_success_url())
+        if existing.count() == 1:
+            hop_to = existing[0]
+            # send message
+            return HttpResponseRedirect(reverse('plan_detail', kwargs={'plan': hop_to.pk}))
+        # multiple plans with same editor, template and title exists
+        return HttpResponseServerError()
 
 
 class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):

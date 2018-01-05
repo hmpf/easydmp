@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django import forms
 
 from crispy_forms.helper import FormHelper
@@ -16,6 +17,7 @@ class PlanForm(forms.ModelForm):
         fields = ['title']
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super(PlanForm, self).__init__(*args, **kwargs)
 
         # crispy forms
@@ -24,3 +26,15 @@ class PlanForm(forms.ModelForm):
         self.helper.form_class = 'blueForms'
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Next'))
+
+    def clean(self):
+        super().clean()
+        if self.user:
+            template = self.cleaned_data['template_type']
+            title = self.cleaned_data['title']
+            groups = self.user.groups.all()
+            qs_count = Plan.objects.filter(template=template, title=title,
+                                           editor_group__in=groups).exists()
+            if qs_count:
+                error = 'You already have edit access to plans named {} for the template {}, please rename the plan'
+                raise ValidationError(error.format(title, template))
