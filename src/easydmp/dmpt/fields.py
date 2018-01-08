@@ -5,34 +5,14 @@ from django.core import exceptions
 from django.forms.widgets import MultiWidget
 from django.utils.translation import ugettext_lazy as _
 
+from .widgets import *
+
 __all__ = [
     'DateRangeField',
     'NamedURLField',
     'ChoiceNotListedField',
     'MultipleChoiceNotListedField',
 ]
-
-
-class DateRangeWidget(MultiWidget):
-    template_name = 'widgets/daterange_widget.html'
-
-    def __init__(self, attrs=None, date_format=None, *args, **kwargs):
-        default_attrs = {'class': 'dateinput'}
-        if attrs:
-            attrs.update(**default_attrs)
-        else:
-            attrs = default_attrs
-        widgets = (
-            forms.DateInput(attrs=attrs, format=date_format),
-            forms.DateInput(attrs=attrs, format=date_format),
-        )
-        self.widgets = widgets
-        super().__init__(widgets, attrs)
-
-    def decompress(self, value):
-        if value and all(value):
-            return (value['lower'], value['upper'])
-        return (None, None)
 
 
 class DateRangeField(forms.MultiValueField):
@@ -87,24 +67,6 @@ class DateRangeField(forms.MultiValueField):
             return range_value
 
 
-class NamedURLWidget(forms.MultiWidget):
-    template_name = 'widgets/namedurl_widget.html'
-
-    def __init__(self, attrs=None, *args, **kwargs):
-        widgets = (
-            forms.URLInput(attrs=attrs),
-            forms.TextInput(attrs=attrs),
-        )
-        self.widgets = widgets
-        super().__init__(widgets, attrs)
-
-    def decompress(self, value):
-        if value:
-            url, name = value['url'], value['name']
-            return url, name
-        return (None, None)
-
-
 class NamedURLField(forms.MultiValueField):
 
     def __init__(self, *args, **kwargs):
@@ -125,27 +87,6 @@ class NamedURLField(forms.MultiValueField):
         if self.required and not value[0]:
             raise forms.ValidationError('URL not entered')
         return {'url': value[0], 'name': value[1]}
-
-
-class SelectNotListed(MultiWidget):
-    template_name = 'widgets/selectnotlisted_widget.html'
-    is_required = False
-    required = False
-
-    def __init__(self, attrs=None, choices=(), *args, **kwargs):
-        assert choices, 'No "choices" given'
-        widgets = (
-            forms.Select(attrs=attrs, choices=choices),
-            forms.CheckboxInput(attrs=attrs),
-        )
-        super().__init__(widgets, attrs)
-
-    def decompress(self, value):
-        if value is not None:
-            choices = value.get('choices', None)
-            listed = value.get('not-listed', None)
-            return (choices, listed)
-        return (None, None)
 
 
 class ChoiceNotListedField(forms.MultiValueField):
@@ -173,27 +114,6 @@ class ChoiceNotListedField(forms.MultiValueField):
         if not any(value):
             raise forms.ValidationError('At least one of the fields must be filled out')
         return {'choices': value[0], 'not-listed': value[1]}
-
-
-class SelectMultipleNotListed(MultiWidget):
-    template_name = 'widgets/selectmultiplenotlisted_widget.html'
-    is_required = False
-    required = False
-
-    def __init__(self, attrs=None, choices=(), *args, **kwargs):
-        assert choices, 'No "choices" given'
-        widgets = (
-            forms.SelectMultiple(attrs=attrs, choices=choices),
-            forms.CheckboxInput(attrs=attrs),
-        )
-        super().__init__(widgets, attrs)
-
-    def decompress(self, value):
-        if value is not None:
-            choices = value.get('choices', None)
-            listed = value.get('not-listed', None)
-            return (choices, listed)
-        return (None, None)
 
 
 class MultipleChoiceNotListedField(forms.MultiValueField):
