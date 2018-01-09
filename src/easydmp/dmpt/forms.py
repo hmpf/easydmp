@@ -317,11 +317,7 @@ class NamedURLForm(AbstractNodeForm):
         )
 
 
-class NamedURLFormSetForm(forms.Form):
-    # Low magic form to be used in a formset
-    #
-    # The formset has the node-magic
-    choice = NamedURLField(label='') # Hide the label from crispy forms
+# Formsets
 
 
 class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
@@ -332,23 +328,41 @@ class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
             data[i] = {'choice': item}
         return data
 
+    @classmethod
+    def generate_choice(cls, choice):
+        raise NotImplemented
+
     def serialize(self):
         choices = []
         for form_choice in self.cleaned_data:
             if form_choice.get('DELETE', False): continue
             choice = form_choice.get('choice', None)
             if not choice: continue
-            choice_dict = {'url': choice['url'], 'name': choice['name']}
+            choice_dict = self.generate_choice(choice)
             choices.append(choice_dict)
         return {
             'choice': choices,
         }
 
 
+class NamedURLFormSetForm(forms.Form):
+    # Low magic form to be used in a formset
+    #
+    # The formset has the node-magic
+    choice = NamedURLField(label='') # Hide the label from crispy forms
+
+
+class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
+
+    @classmethod
+    def generate_choice(cls, choice):
+        return {'url': choice['url'], 'name': choice['name']}
+
+
 MultiNamedURLOneTextFormSet = forms.formset_factory(
     NamedURLFormSetForm,
     min_num=1,
-    formset=AbstractNodeFormSet,
+    formset=AbstractMultiNamedURLOneTextFormSet,
     can_delete=True,
 )
 
