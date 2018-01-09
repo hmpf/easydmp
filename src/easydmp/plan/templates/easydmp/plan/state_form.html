@@ -14,7 +14,7 @@
 <h3>{{ section.title }}</h3>
 <div>{{ section.introductory_text }}</div>
       <div class="breadcrumbs">
-<h4>{% for q in questions_in_section %}
+<h4>{% for q in path %}
     <span>
         {% if question_pk != q.pk %}<a href="{% url 'new_question' plan=object.pk question=q.pk %}">{{ q }}</a>
         {% else %}

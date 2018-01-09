@@ -164,13 +164,15 @@ class NewQuestionView(AbstractQuestionView):
     def get_context_data(self, **kwargs):
         template = self.get_template()
         question = self.get_question()
+        section = question.section
+        path = section.find_path(self.object.data)
+        kwargs['path'] = path
         kwargs['question'] = question
         kwargs['question_pk'] = question.pk
         kwargs['notesform'] = kwargs.get('notesform', self.get_notesform())
         kwargs['label'] = question.label
         kwargs['answers'] = question.canned_answers.values()
         kwargs['framing_text'] = question.framing_text
-        section = question.section
         kwargs['section'] = section
         neighboring_questions = Question.objects.filter(section=section)
         kwargs['questions_in_section'] = neighboring_questions
@@ -292,7 +294,7 @@ class PlanDetailView(AbstractPlanDetailView):
         template = self.get_template()
         for section in template.sections.all():
             section_output = OrderedDict()
-            for question in section.questions.all():
+            for question in section.find_path(data):
                 question = question.get_instance()
                 value = data.get(str(question.pk), None)
                 if not value or value.get('choice', None) is None:

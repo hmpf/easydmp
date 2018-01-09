@@ -165,6 +165,47 @@ class Section(models.Model):
             return prev_sections[0]
         return None
 
+    # graphing code
+    def find_path(self, data):
+        if not data:
+            return []
+        if not self.questions.exists():
+            # No path in this section
+            return []
+        all_in_section = set(self.questions.all())
+        path = []
+        next = self.first_question
+        while next and all_in_section:
+            path.append(next)
+            all_in_section.discard(next)
+            if next.is_last_in_section():
+                break
+            try:
+                next = next.get_next_question(data, in_section=True)
+            except TemplateDesignError:
+                # section end, probably
+                break
+            except KeyError:
+                # template likely has changed
+                break
+        return path
+
+    @staticmethod
+    def generate_forwards_path(path):
+        """Turn [1, 2, 3] into {1: 2, 2: 3, 3: None}"""
+        forwards_path = {}
+        if path:
+            for i, pk in enumerate(path[:-1]):
+                forwards_path[pk] = path[i+1]
+            forwards_path[path[-1]] = None
+        return forwards_path
+
+    @staticmethod
+    def generate_backwards_path(path):
+        """Turn [1, 2, 3] into {1: None, 2: 1, 3: 2}"""
+        path = reversed(path)
+        return self.generate_forwards_path(path)
+
 
 class SimpleFramingTextMixin:
     """Generate a canned answer for a non-branching, atomic type
@@ -323,7 +364,7 @@ class Question(models.Model):
     def get_all_next_questions(self):
         return Question.objects.filter(section=self.section, position__gt=self.position)
 
-    def get_next_question(self, answers=None):
+    def get_next_question(self, answers=None, in_section=False):
         next_questions = self.get_all_next_questions()
         if not next_questions.exists():
             return self.get_first_question_in_next_section()
@@ -331,7 +372,7 @@ class Question(models.Model):
         if not self.node:
             return next_questions[0]
 
-        if self.node.end:
+        if self.node.end and not in_section:
             # Break out of section because fsa.end == True
             return self.get_first_question_in_next_section()
 
@@ -342,7 +383,7 @@ class Question(models.Model):
         next_node = self.node.get_next_node(data)
         if next_node:
             # Break out of section because fsa.end == True
-            if next_node.end:
+            if next_node.end and not in_section:
                 return self.get_first_question_in_next_section()
             # Not at the end, get payload
             try:
@@ -376,10 +417,26 @@ class Question(models.Model):
 
         return None
 
+    def is_last_in_section(self):
+        if not self.get_all_next_questions().exists():
+            return True
+        if self.node:
+            if self.node.end:
+                return True
+#             next_nodes = self.node.next_nodes.all()
+#             if next_nodes:
+# 
+#                 return True
+        return False
+
+#     def get_next_via_path
+
+
     def frame_canned_answer(self, answer):
         if self.framing_text:
             return self.framing_text.format(answer)
         return answer
+
 
 
 class BooleanQuestion(Question):
