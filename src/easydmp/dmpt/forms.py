@@ -13,6 +13,7 @@ from .fields import DateRangeField
 from .fields import NamedURLField
 from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
+from .widgets import DMPTRadioSelect
 
 
 FORM_CLASS = 'blueForms'
@@ -124,7 +125,7 @@ class BooleanForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
             choices=choices,
-            widget=forms.RadioSelect,
+            widget=DMPTRadioSelect,
         )
 
     def pprint(self):
@@ -159,7 +160,7 @@ class ChoiceForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
             choices=fixed_choices,
-            widget=forms.RadioSelect,
+            widget=DMPTRadioSelect,
         )
 
 

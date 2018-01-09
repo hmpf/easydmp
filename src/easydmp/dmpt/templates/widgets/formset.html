@@ -1,0 +1,11 @@
+{% with form as formset %}
+{{ formset.management_form }}
+{% for f in formset %}
+<div id="div-{{ f.prefix }}" class="control-group">
+    <div class="controls">
+        {{ f.choice }}
+        <label> Delete: {{ f.DELETE }}</label>
+    </div>
+</div>
+{% endfor %}
+{% endwith %}

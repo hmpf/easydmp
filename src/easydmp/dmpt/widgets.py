@@ -2,11 +2,26 @@ from django import forms
 from django.forms.widgets import MultiWidget
 
 __all__ = [
+    # simple
+    'DMPTRadioSelect',
+
+    # complex
     'DateRangeWidget',
     'NamedURLWidget',
     'SelectNotListed',
     'SelectMultipleNotListed',
 ]
+
+
+# Overridden standard widgets
+
+class DMPTRadioSelect(forms.RadioSelect):
+    template_name = 'widgets/radio.html'
+    option_template_name = 'widgets/radio_option.html'
+
+
+
+# Multiwidgets
 
 
 class DateRangeWidget(MultiWidget):

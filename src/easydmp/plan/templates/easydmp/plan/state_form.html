@@ -31,7 +31,16 @@
       </div>
 
       <form class="{{ form.helper.form_class }}" id="{{ form.helper.form_id }}" method="{{ form.helper.form_method }}">
-        {% crispy form %}
+          {% csrf_token %}
+          <label class="control-label requiredField">{{ form.label }}<span class="asteriskField">*</span></label>
+          {% if form.forms %}
+          {% include "widgets/formset.html" %}
+          {% else %}
+          <div class="control-group">
+              {{ form.choice }}
+          </div>
+          {% endif %}
+
         {% crispy notesform %}
       </form>
 
