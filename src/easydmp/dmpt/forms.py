@@ -13,6 +13,7 @@ from .fields import DateRangeField
 from .fields import NamedURLField
 from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
+from .fields import DMPTypedReasonField
 from .widgets import DMPTRadioSelect
 
 
@@ -367,6 +368,31 @@ MultiNamedURLOneTextFormSet = forms.formset_factory(
 )
 
 
+class DMPTypedReasonFormSetForm(forms.Form):
+    # Low magic form to be used in a formset
+    #
+    # The formset has the node-magic
+    choice = DMPTypedReasonField(label='')
+
+
+class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
+
+    @classmethod
+    def generate_choice(cls, choice):
+        return {
+            'reason': choice['reason'],
+            'type': choice['type'],
+            'access_url': choice.get('access_url', ''),
+        }
+
+
+MultiDMPTypedReasonOneTextFormSet = forms.formset_factory(
+    DMPTypedReasonFormSetForm,
+    min_num=1,
+    formset=AbstractMultiDMPTypedReasonOneTextFormSet,
+    can_delete=True,
+)
+
 
 INPUT_TYPE_TO_FORMS = {
     'bool': BooleanForm,
@@ -381,6 +407,7 @@ INPUT_TYPE_TO_FORMS = {
     'extmultichoicenotlistedonetext': ExternalMultipleChoiceNotListedOneTextForm,
     'namedurl': NamedURLForm,
     'multinamedurlonetext': MultiNamedURLOneTextFormSet,
+    'multidmptypedreasononetext': MultiDMPTypedReasonOneTextFormSet,
 }
 
 

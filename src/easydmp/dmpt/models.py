@@ -1,4 +1,5 @@
 from django.db import models
+from django.template import engines, Context
 from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 from django.utils.html import format_html, escape
@@ -31,7 +32,17 @@ INPUT_TYPES = (
     'extmultichoicenotlistedonetext',
     'namedurl',
     'multinamedurlonetext',
+    'multidmptypedreasononetext',
 )
+
+DJANGO_TEMPLATE_ENGINE = engines['django']
+
+
+def render_from_string(template_string, context=None):
+    if context is None:
+        context = {}
+    template = DJANGO_TEMPLATE_ENGINE.from_string(template_string)
+    return template.render(context)
 
 
 def _force_items_to_str(dict_):
@@ -838,6 +849,43 @@ class MultiNamedURLOneTextQuestion(Question):
         return mark_safe(joined_pairs)
 
 
+class MultiDMPTypedReasonOneTextQuestion(Question):
+    """A non-branch-capable question answerable several type+reason+url sets
+
+    The url is optional.
+
+    The framing text for the canned answer utilizes the Django template system,
+    not standard python string formatting. If there is no framing text
+    a serialized version of the raw choice is returned.
+    """
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.input_type = 'multidmptypedreasononetext'
+        super().save(*args, **kwargs)
+
+    def get_canned_answer(self, choice, **kwargs):
+        if not self.framing_text:
+            return str(choice)
+        return mark_safe(render_from_string(self.framing_text, {'choices': choice}))
+
+    def pprint(self, value):
+        return value['text']
+
+    def pprint_html(self, value):
+        choices = value['choice']
+        template = """<dl>{% for triple in choices %}
+<dt>{{ triple.type }}</dt>
+<dd>Because {{ triple.reason }}</dd>
+{% if triple.access_url %}<dd><a href="{{ triple.access_url }}">Access instructions</a></dd>{% endif %}
+{% endfor %}
+</dl>
+"""
+        return mark_safe(render_from_string(template, {'choices': choices}))
+
+
 INPUT_TYPE_MAP = {
     'bool': BooleanQuestion,
     'choice': ChoiceQuestion,
@@ -851,6 +899,7 @@ INPUT_TYPE_MAP = {
     'extmultichoicenotlistedonetext': ExternalMultipleChoiceNotListedOneTextQuestion,
     'namedurl': NamedURLQuestion,
     'multinamedurlonetext': MultiNamedURLOneTextQuestion,
+    'multidmptypedreasononetext': MultiDMPTypedReasonOneTextQuestion,
 }
 
 

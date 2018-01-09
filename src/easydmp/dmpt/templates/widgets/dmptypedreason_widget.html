@@ -1,0 +1,3 @@
+{% with widget.subwidgets.0 as widget %}The <label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>data type</label> {% include widget.template_name %}{% endwith %} will be restricted because<br />
+{% with widget.subwidgets.1 as widget %}{% include widget.template_name %}{% endwith %}.<br />
+{% with widget.subwidgets.2 as widget %}<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>How to access (url)</label> {% include widget.template_name %}{% endwith %}

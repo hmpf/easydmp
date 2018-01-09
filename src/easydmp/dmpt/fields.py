@@ -12,6 +12,7 @@ __all__ = [
     'NamedURLField',
     'ChoiceNotListedField',
     'MultipleChoiceNotListedField',
+    'DMPTypedReasonField',
 ]
 
 
@@ -141,3 +142,25 @@ class MultipleChoiceNotListedField(forms.MultiValueField):
         if not any(value):
             raise forms.ValidationError('At least one of the fields must be filled out')
         return {'choices': value[0], 'not-listed': value[1]}
+
+
+class DMPTypedReasonField(forms.MultiValueField):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['widget'] = DMPTypedReasonWidget
+        kwargs['require_all_fields'] = True
+        kwargs['required'] = False
+        fields = [
+            forms.CharField(required=True),
+            forms.CharField(required=True),
+            forms.URLField(required=False),
+        ]
+        super().__init__(fields, *args, **kwargs)
+
+    def validate(self, value):
+        values = (value.get('type', False), value.get('reason', False))
+        if not all(values):
+            raise ValidationError(self.error_messages['incomplete'], code='incomplete')
+
+    def compress(self, value):
+        return {'type': value[0], 'reason': value[1], 'url': value[2]}
