@@ -15,6 +15,9 @@ from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
 from .fields import DMPTypedReasonField
 from .widgets import DMPTRadioSelect
+from .widgets import DMPTRadioSelect
+from .widgets import Select2Widget
+from .widgets import Select2MultipleWidget
 
 
 FORM_CLASS = 'blueForms'
@@ -250,7 +253,7 @@ class ExternalChoiceForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
             choices=choices,
-            # widget: select 2?
+            widget=Select2Widget,
         )
 
 
@@ -268,7 +271,6 @@ class ExternalChoiceNotListedForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
             choices=choices,
-            # widgrt: select2?
         )
 
 
@@ -286,7 +288,7 @@ class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
             choices=choices,
-            # widgrt: select2?
+            widget=Select2MultipleWidget,
         )
 
 
@@ -304,7 +306,6 @@ class ExternalMultipleChoiceNotListedOneTextForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
             choices=choices,
-            # widgrt: select2?
         )
 
 

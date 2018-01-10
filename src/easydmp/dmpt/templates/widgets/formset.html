@@ -1,11 +1,22 @@
 {% with form as formset %}
 {{ formset.management_form }}
-{% for f in formset %}
-<div id="div-{{ f.prefix }}" class="control-group">
-    <div class="controls">
-        {{ f.choice }}
-        <label> Delete: {{ f.DELETE }}</label>
+<div id="formset">
+    {% for f in formset %}
+    <div class="control-group">
+        <div class="controls">
+            {{ f.choice }}
+            <label> Delete: {{ f.DELETE }}</label>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+<input type="button" value="+" id="add_row" />
+<div id="empty_form" style="display:none">
+    <div class="control-group">
+        <div class="controls">
+            {{ formset.empty_form.choice }}
+            <label> Delete: {{ formset.empty_form.DELETE }}</label>
+        </div>
     </div>
 </div>
-{% endfor %}
 {% endwith %}

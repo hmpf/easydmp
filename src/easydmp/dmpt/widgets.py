@@ -1,7 +1,14 @@
 from django import forms
 from django.forms.widgets import MultiWidget
 
+from django_select2.forms import Select2Widget
+from django_select2.forms import Select2MultipleWidget
+
 __all__ = [
+    # select2
+    'Select2Widget',
+    'Select2MultipleWidget',
+
     # simple
     'DMPTRadioSelect',
 
@@ -73,7 +80,7 @@ class SelectNotListed(MultiWidget):
     def __init__(self, attrs=None, choices=(), *args, **kwargs):
         assert choices, 'No "choices" given'
         widgets = (
-            forms.Select(attrs=attrs, choices=choices),
+            Select2Widget(attrs=attrs, choices=choices),
             forms.CheckboxInput(attrs=attrs),
         )
         super().__init__(widgets, attrs)
@@ -94,7 +101,7 @@ class SelectMultipleNotListed(MultiWidget):
     def __init__(self, attrs=None, choices=(), *args, **kwargs):
         assert choices, 'No "choices" given'
         widgets = (
-            forms.SelectMultiple(attrs=attrs, choices=choices),
+            Select2MultipleWidget(attrs=attrs, choices=choices),
             forms.CheckboxInput(attrs=attrs),
         )
         super().__init__(widgets, attrs)

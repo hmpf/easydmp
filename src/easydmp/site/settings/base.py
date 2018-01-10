@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     'crispy_forms',
     'rest_framework',
+    'django_select2',
 
     'easydmp.auth.apps.EasyDMPAuthConfig',
     'flow',
