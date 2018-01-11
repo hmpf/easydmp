@@ -293,10 +293,11 @@ class Question(models.Model):
     def get_instance(self):
         """Convert a raw Question-instance to its subtype
 
-        The subtype is stored in the attribute `input_type`i
+        The subtype is stored in the attribute `input_type`
         """
         cls = self.get_class()
-        return cls.objects.get(pk=self.pk)
+        self.__class__ = cls
+        return self
 
     def _serialize_condition(self, _):
         """Convert an answer into a lookup key, if applicable
@@ -362,8 +363,11 @@ class Question(models.Model):
     def map_answers_to_nodes(self, answers):
         "Convert question pks to node pks, and choices to conditions"
         data = {}
+        questions = {str(q.pk): q for q in (Question.objects
+                                            .select_related('node')
+                                            .filter(pk__in=answers.keys())) }
         for question_pk, answer in answers.items():
-            q = Question.objects.get(pk=question_pk)
+            q = questions[question_pk]
             if not q.node: continue
             q = q.get_instance()
             condition = q.map_choice_to_condition(answer)
