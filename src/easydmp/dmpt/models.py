@@ -269,6 +269,10 @@ class Question(models.Model):
     class Meta:
         unique_together = ('section', 'position')
         ordering = ('section', 'position')
+        indexes = [
+            models.Index(fields=['input_type', 'id']),
+            models.Index(fields=['section', 'position']),
+        ]
 
     def __str__(self):
         if self.label:
