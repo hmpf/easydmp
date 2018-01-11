@@ -1,1 +1,2 @@
 pydot
+django-debug-toolbar==1.9.1
