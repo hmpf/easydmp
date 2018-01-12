@@ -6,6 +6,16 @@ from jsonfield import JSONField
 # With postgres 9.4+, use this instead
 # from django.contrib.postgres.fields import JSONField
 
+from .utils import purge_answer
+
+
+class PlanQuerySet(models.QuerySet):
+
+    def purge_answer(self, question_pk):
+        qs = self.all()
+        for plan in qs:
+            purge_answer(plan, question_pk)
+
 
 class Plan(models.Model):
     title = models.CharField(max_length=255)
@@ -19,6 +29,8 @@ class Plan(models.Model):
     modified = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='modified_plans')
     editor_group = models.ForeignKey('auth.Group', related_name='+', blank=True, null=True)
+
+    objects = PlanQuerySet.as_manager()
 
     def __str__(self):
         return self.title
