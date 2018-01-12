@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+from functools import lru_cache
 from pathlib import PurePath, Path
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -41,12 +42,11 @@ class Node(models.Model):
         ordering = ('fsa',)
         unique_together = ('fsa', 'slug')
 
+    @lru_cache(None)
     def __str__(self):  # pragma: no cover
         try:
             return self.payload.legend()
-        except ObjectDoesNotExist:
-            pass
-        except AttributeError:
+        except (ObjectDoesNotExist, AttributeError):
             pass
         return self.slug
 
@@ -74,7 +74,7 @@ class Node(models.Model):
     def get_next_node(self, nodes):
         edges = self.next_nodes.all()
         next_nodes = set([edge.next_node for edge in edges])
-        if len(next_nodes) == 1: # simple node
+        if len(next_nodes) == 1:  # simple node
             return next_nodes.pop()
         if len(next_nodes) > 1:  # complex node
             next_node = self.get_next_node_many(edges, nodes)
@@ -123,12 +123,11 @@ class Edge(models.Model):
     class Meta:
         unique_together = ('condition', 'prev_node', 'next_node')
 
+    @lru_cache(None)
     def __str__(self):
         try:
             return self.payload.legend()
-        except ObjectDoesNotExist:
-            pass
-        except AttributeError:
+        except (ObjectDoesNotExist, AttributeError):
             pass
         me = self.prev_node
         return '{} ({} is "{}") -> {}'.format(
@@ -151,7 +150,6 @@ class FSA(models.Model):
     @property
     def nodemap(self):
         return {s.slug: s for s in self.nodes.all()}
-
 
     def get_startnode(self):
         try:
@@ -299,7 +297,7 @@ class FSA(models.Model):
             dot.node(node.slug, **node_args)
         return dot.source
 
-    def view_dotsource(self, format, dotsource=None): # pragma: no cover
+    def view_dotsource(self, format, dotsource=None):  # pragma: no cover
         """Generate and show the fsa structure
 
         This only makes sense to run on a local computer that has a monitor,

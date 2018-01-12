@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from django.db import models
 from django.template import engines, Context
 from django.utils.encoding import force_text
@@ -59,6 +61,7 @@ class Template(models.Model):
     class Meta:
         unique_together = ('version', 'title')
 
+    @lru_cache(None)
     def __str__(self):
         if self.abbreviation:
             return self.abbreviation
@@ -129,6 +132,7 @@ class Section(models.Model):
             ('template', 'position'),
         )
 
+    @lru_cache(None)
     def __str__(self):
         return '{}: {}'.format(self.template, self.title)
 
@@ -274,6 +278,7 @@ class Question(models.Model):
             models.Index(fields=['section', 'position']),
         ]
 
+    @lru_cache(None)
     def __str__(self):
         if self.label:
             return '{} {}'.format(self.label, self.question)
@@ -925,6 +930,7 @@ class CannedAnswer(models.Model):
     def label(self):
         return self.choice
 
+    @lru_cache(None)
     def __str__(self):
         return '{}: "{}" {}'.format(self.question.question, self.choice, self.canned_text)
 
