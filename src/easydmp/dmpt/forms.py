@@ -68,7 +68,7 @@ class AbstractNodeMixin():
         self.question_pk = self.question.pk
         label = self.question.label
         self.label = ' '.join((label, self.question.question))
-        self.help_text = getattr(self.question_pk, 'help_text', '')
+        self.help_text = getattr(self.question, 'help_text', '')
         kwargs.pop('instance', None)
         initial = self.deserialize(kwargs.get('initial', []))
         kwargs['initial'] = initial
