@@ -151,16 +151,17 @@ class DMPTypedReasonField(forms.MultiValueField):
         kwargs['require_all_fields'] = True
         kwargs['required'] = False
         fields = [
-            forms.CharField(required=True),
-            forms.CharField(required=True),
+            forms.CharField(
+                required=True, error_messages={'incomplete': 'Enter a data type.'},
+            ),
+            forms.CharField(
+                required=True, error_messages={'incomplete': 'Enter a reason.'},
+            ),
             forms.URLField(required=False),
         ]
         super().__init__(fields, *args, **kwargs)
 
-    def validate(self, value):
-        values = (value.get('type', False), value.get('reason', False))
-        if not all(values):
-            raise ValidationError(self.error_messages['incomplete'], code='incomplete')
-
     def compress(self, value):
+        if not value:
+            raise ValidationError(self.error_messages['incomplete'], code='incomplete')
         return {'type': value[0], 'reason': value[1], 'url': value[2]}
