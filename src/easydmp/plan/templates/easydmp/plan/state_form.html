@@ -4,34 +4,43 @@
 {{ form.media.css }}
 {% endblock %}
 {% block content %}
+  <div class="row uninett-color-white uninett-whole-row">
+      <!-- empty row -->
+  </div>
+  <div class="row uninett-whole-row">
+    <p class="breadcrumbs">
+    <span class="breadcrumb"><a href="{% url 'plan_list' %}">Your plans</a></span>
+    <span class="breadcrumb-separator">&gt;</span>
+    <span class="breadcrumb"><a href="{% url 'plan_detail' plan=object.pk %}">{{ object|capfirst }}</a></span>
+    <span class="breadcrumb-separator">&gt;</span>
+    <span class="breadcrumb">{{ path.0 }}</span>
+    </p>
+  </div>
   <div class="row">
     <div class="col-lg-12">
-      <div class="jumbotron uninett-color-lightBlue">
-        <h2>Data Management Plan generator</h2>
+      <div class="jumbotron uninett-color-darkBlue">
+          <h1>{{ object|capfirst }}</h1>
       </div>
     </div>
   </div>
 
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-<h3>{{ section.title }}</h3>
-<div>{{ section.introductory_text }}</div>
-      <div class="breadcrumbs">
-<h4>{% for q in path %}
-    <span>
-        {% if question_pk != q.pk %}<a href="{% url 'new_question' plan=object.pk question=q.pk %}">{{ q }}</a>
-        {% else %}
-        {% if question_pk == q.pk %}<strong style="text-weight: bold; background: #333; color: white ">{{ q }}</strong>{% else %}{{ q }}{% endif %}
-        {% endif %}
-    </span>
-    {% endfor %}
-</h4>
+      <h3>{{ section.title }}</h3>
+      <div class="section-introduction">{{ section.introductory_text }}</div>
+      {% if user.is_superuser %}
+      <div class="path">
+        <h4>{% for q in path %}
+          <span>
+            {% if question_pk != q.pk %}<a href="{% url 'new_question' plan=object.pk question=q.pk %}">{{ q }}</a>
+            {% else %}
+            {% if question_pk == q.pk %}<strong style="text-weight: bold; background: #333; color: white ">{{ q }}</strong>{% else %}{{ q }}{% endif %}
+            {% endif %}
+          </span>
+          {% endfor %}
+        </h4>
       </div>
-      <div class="progress">
-        <div class="progress-bar" role="progressbar" aria-valuenow="{{ progress|floatformat:"0" }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ progress|floatformat:"0" }}%">
-          {{ progress|floatformat:"0" }}% complete
-        </div>
-      </div>
+      {% endif %}
 
       <form class="{{ form.helper.form_class }}" id="{{ form.helper.form_id }}" method="{{ form.helper.form_method }}">
           {% csrf_token %}
