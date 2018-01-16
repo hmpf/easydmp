@@ -14,8 +14,6 @@ from .fields import NamedURLField
 from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
 from .fields import DMPTypedReasonField
-from .widgets import DMPTRadioSelect
-from .widgets import DMPTRadioSelect
 from .widgets import Select2Widget
 from .widgets import Select2MultipleWidget
 
@@ -62,16 +60,6 @@ class NotesForm(forms.Form):
         kwargs.pop('instance', None)
         super().__init__(*args, **kwargs)
 
-        # crispy forms
-        self.helper = FormHelper()
-        self.helper.form_tag = False
-        self.helper.form_id = 'id-notes'
-        self.helper.form_class = FORM_CLASS
-        self.helper.form_method = 'post'
-        if self.has_prevquestion:
-            self.helper.add_input(Submit('prev', 'Prev'))
-        self.helper.add_input(Submit('submit', 'Next'))
-
 
 class AbstractNodeMixin():
 
@@ -86,13 +74,6 @@ class AbstractNodeMixin():
         kwargs['initial'] = initial
         kwargs['prefix'] = str(self.question_pk)
         super().__init__(**kwargs)
-
-        # crispy forms
-        self.helper = FormHelper()
-        self.helper.form_tag = False
-        self.helper.form_id = 'id-{}'.format(self.question_pk)
-        self.helper.form_class = FORM_CLASS
-        self.helper.form_method = 'post'
 
 
 class AbstractNodeForm(AbstractNodeMixin, forms.Form):
@@ -129,7 +110,7 @@ class BooleanForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
             choices=choices,
-            widget=DMPTRadioSelect,
+            widget=forms.RadioSelect,
         )
 
     def pprint(self):
@@ -164,7 +145,7 @@ class ChoiceForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
             choices=fixed_choices,
-            widget=DMPTRadioSelect,
+            widget=forms.RadioSelect,
         )
 
 
