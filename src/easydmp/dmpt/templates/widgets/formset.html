@@ -1,10 +1,15 @@
 {% with form as formset %}
 {{ formset.management_form }}
-<div id="formset">
+<div class="formset">
     {% for f in formset %}
     <div class="control-group">
         <div class="controls">
             {{ f.choice }}
+            {% if f.errors %}
+            <div class="errors">
+            {{ f.choice.errors }}
+            </div>
+            {% endif %}
             <label> Delete: {{ f.DELETE }}</label>
         </div>
     </div>
