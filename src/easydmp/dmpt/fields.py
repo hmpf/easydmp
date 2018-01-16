@@ -1,7 +1,7 @@
 from psycopg2.extras import DateRange
 
 from django import forms
-from django.core import exceptions
+from django.core.exceptions import ValidationError
 from django.forms.widgets import MultiWidget
 from django.utils.translation import ugettext_lazy as _
 
@@ -53,14 +53,14 @@ class DateRangeField(forms.MultiValueField):
             return None
         lower, upper = values
         if lower is not None and upper is not None and lower > upper:
-            raise exceptions.ValidationError(
+            raise ValidationError(
                 self.error_messages['bound_ordering'],
                 code='bound_ordering',
             )
         try:
             range_value = self.range_type(lower, upper)
         except TypeError:
-            raise exceptions.ValidationError(
+            raise ValidationError(
                 self.error_messages['invalid'],
                 code='invalid',
             )
@@ -86,7 +86,7 @@ class NamedURLField(forms.MultiValueField):
 
     def compress(self, value):
         if self.required and not value[0]:
-            raise forms.ValidationError('URL not entered')
+            raise ValidationError('URL not entered')
         return {'url': value[0], 'name': value[1]}
 
 
@@ -113,7 +113,7 @@ class ChoiceNotListedField(forms.MultiValueField):
 
     def compress(self, value):
         if not any(value):
-            raise forms.ValidationError('At least one of the fields must be filled out')
+            raise ValidationError('At least one of the fields must be filled out')
         return {'choices': value[0], 'not-listed': value[1]}
 
 
@@ -140,7 +140,7 @@ class MultipleChoiceNotListedField(forms.MultiValueField):
 
     def compress(self, value):
         if not any(value):
-            raise forms.ValidationError('At least one of the fields must be filled out')
+            raise ValidationError('At least one of the fields must be filled out')
         return {'choices': value[0], 'not-listed': value[1]}
 
 
