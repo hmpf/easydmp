@@ -224,6 +224,12 @@ class Section(models.Model):
         return self.generate_forwards_path(path)
 
 
+class NoCheckMixin:
+
+    def is_valid(self):
+        return True
+
+
 class SimpleFramingTextMixin:
     """Generate a canned answer for a non-branching, atomic type
 
@@ -285,6 +291,9 @@ class Question(models.Model):
         if self.label:
             return '{} {}'.format(self.label, self.question)
         return self.question
+
+    def is_valid(self):
+        raise NotImplementedError
 
     def legend(self):
         qstring = str(self)
@@ -464,7 +473,6 @@ class Question(models.Model):
         return answer
 
 
-
 class BooleanQuestion(Question):
     """A branch-capable question answerable with "Yes" or "No"
 
@@ -478,6 +486,12 @@ class BooleanQuestion(Question):
     def save(self, *args, **kwargs):
         self.input_type = 'bool'
         super().save(*args, **kwargs)
+
+    def is_valid(self):
+        canned_answers = self.canned_answers.values_list('choice', flat=True)
+        if set(canned_answers) == set(('Yes', 'No')):
+            return True
+        return False
 
     def _serialize_condition(self, answer):
         """
@@ -504,6 +518,11 @@ class ChoiceQuestion(Question):
         self.input_type = 'choice'
         super().save(*args, **kwargs)
 
+    def is_valid(self):
+        if self.canned_answers.count() > 1:
+            return True
+        return False
+
     def _serialize_condition(self, answer):
         """
         Return answer unchanged
@@ -520,6 +539,11 @@ class MultipleChoiceOneTextQuestion(Question):
     def save(self, *args, **kwargs):
         self.input_type = 'multichoiceonetext'
         super().save(*args, **kwargs)
+
+    def is_valid(self):
+        if self.canned_answers.count() > 1:
+            return True
+        return False
 
     def get_canned_answer(self, answer, **kwargs):
         """
@@ -539,7 +563,7 @@ class MultipleChoiceOneTextQuestion(Question):
         return pprint_list(value['choice'])
 
 
-class DateRangeQuestion(Question):
+class DateRangeQuestion(NoCheckMixin, Question):
     "A non-branch-capable question answerable with a daterange"
 
     class Meta:
@@ -565,7 +589,7 @@ class DateRangeQuestion(Question):
         return self.framing_text.format(**value['choice'])
 
 
-class ReasonQuestion(SimpleFramingTextMixin, Question):
+class ReasonQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
     "A non-branch-capable question answerable with plaintext"
 
     class Meta:
@@ -576,7 +600,7 @@ class ReasonQuestion(SimpleFramingTextMixin, Question):
         super().save(*args, **kwargs)
 
 
-class PositiveIntegerQuestion(SimpleFramingTextMixin, Question):
+class PositiveIntegerQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
     "A non-branch-capable question answerable with a positive integer"
 
     class Meta:
@@ -587,7 +611,15 @@ class PositiveIntegerQuestion(SimpleFramingTextMixin, Question):
         super().save(*args, **kwargs)
 
 
-class ExternalChoiceQuestion(Question):
+class EEStoreMixin:
+
+    def is_valid(self):
+        if self.eestore:
+            return True
+        return False
+
+
+class ExternalChoiceQuestion(EEStoreMixin, Question):
     """A non-branch-capable question answerable with a single choice
 
     The choices are fetched and cached from an EEStore via an
@@ -615,7 +647,7 @@ class ExternalChoiceQuestion(Question):
         return value['text']
 
 
-class ExternalChoiceNotListedQuestion(Question):
+class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
     """A branch-capable question answerable with a single choice
 
     The choices are fetched and cached from an EEStore via an
@@ -681,7 +713,7 @@ class ExternalChoiceNotListedQuestion(Question):
         return value['text']
 
 
-class ExternalMultipleChoiceOneTextQuestion(Question):
+class ExternalMultipleChoiceOneTextQuestion(EEStoreMixin, Question):
     """A non-branch-capable question answerable with multiple choices
 
     The choices are fetched and cached from an EEStore via an
@@ -716,7 +748,7 @@ class ExternalMultipleChoiceOneTextQuestion(Question):
         return value['text']
 
 
-class ExternalMultipleChoiceNotListedOneTextQuestion(Question):
+class ExternalMultipleChoiceNotListedOneTextQuestion(EEStoreMixin, Question):
     """A branch-capable question answerable with multiple choices
 
     The choices are fetched and cached from an EEStore via an
@@ -782,7 +814,7 @@ class ExternalMultipleChoiceNotListedOneTextQuestion(Question):
         return value['text']
 
 
-class NamedURLQuestion(Question):
+class NamedURLQuestion(NoCheckMixin, Question):
     """A non-branch-capable question answerable with an url
 
     A name/title/description for the url is optional.
@@ -815,7 +847,7 @@ class NamedURLQuestion(Question):
         return format_html('<a href="{}">{}</a>', url, name)
 
 
-class MultiNamedURLOneTextQuestion(Question):
+class MultiNamedURLOneTextQuestion(NoCheckMixin, Question):
     """A non-branch-capable question answerable with several urls
 
     A name/title/description per url is optional.
@@ -864,7 +896,7 @@ class MultiNamedURLOneTextQuestion(Question):
         return mark_safe(joined_pairs)
 
 
-class MultiDMPTypedReasonOneTextQuestion(Question):
+class MultiDMPTypedReasonOneTextQuestion(NoCheckMixin, Question):
     """A non-branch-capable question answerable several type+reason+url sets
 
     The url is optional.
