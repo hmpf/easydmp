@@ -279,18 +279,11 @@ class AbstractPlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailVi
         return text
 
     def get_context_data(self, **kwargs):
-        kwargs['data'] = self.object.data.copy()
-        kwargs['text'] = self.get_canned_text()
-        return super().get_context_data(**kwargs)
-
-
-class PlanDetailView(AbstractPlanDetailView):
-    template_name = 'easydmp/plan/plan_detail.html'
-
-    def get_context_data(self, **kwargs):
         kwargs = super().get_context_data(**kwargs)
+        data = self.object.data.copy()
+        kwargs['data'] = data
+        kwargs['text'] = self.get_canned_text()
         outputs = OrderedDict()
-        data = kwargs['data']
         template = self.get_template()
         for section in template.sections.all():
             section_output = OrderedDict()
@@ -303,9 +296,12 @@ class PlanDetailView(AbstractPlanDetailView):
                 value['question'] = question
                 section_output[question.pk] = value
             outputs[section.title] = section_output
-        #kwargs['output'] = OrderedDict(template.order_data(outputs))
         kwargs['output'] = outputs
         return kwargs
+
+
+class PlanDetailView(AbstractPlanDetailView):
+    template_name = 'easydmp/plan/plan_detail.html'
 
 
 class GeneratedPlanHTMLView(AbstractPlanDetailView):
