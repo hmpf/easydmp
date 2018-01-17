@@ -11,6 +11,9 @@ import graphviz as gv
 from .errors import FSANoStartnodeError
 
 
+SLUG_LENGTH = 40
+
+
 class Node(models.Model):
     """
     Defaults, fallbacks; interface for all nodes
@@ -28,7 +31,7 @@ class Node(models.Model):
     """
 
     fsa = models.ForeignKey('FSA', related_name='nodes')
-    slug = models.SlugField(max_length=16)
+    slug = models.SlugField(max_length=SLUG_LENGTH)
     start = models.BooleanField(default=False)
     end = models.BooleanField(default=False)
     depends = models.ForeignKey(
@@ -138,7 +141,7 @@ class Edge(models.Model):
 class FSA(models.Model):
     GRAPHVIZ_TMPDIR = '/tmp/flow_graphviz'
 
-    slug = models.SlugField(max_length=16)
+    slug = models.SlugField(max_length=SLUG_LENGTH)
 
     class Meta:
         verbose_name = 'FSA'
