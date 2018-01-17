@@ -159,7 +159,9 @@ class Section(models.Model):
     def generate_canned_text(self, data):
         texts = []
         for question in self.questions.order_by('position'):
-            texts.append(question.get_instance().generate_canned_text(data))
+            answer = question.get_instance().generate_canned_text(data)
+            if not isinstance(answer.get('text', ''), bool):
+                texts.append(answer)
         return texts
 
     def get_all_next_sections(self):
