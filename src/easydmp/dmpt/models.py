@@ -276,7 +276,8 @@ class Question(models.Model):
     framing_text = models.TextField(blank=True)
     comment = models.TextField(blank=True, null=True)
     node = models.OneToOneField('flow.Node', related_name='payload',
-                                blank=True, null=True)
+                                blank=True, null=True,
+                                on_delete=models.SET_NULL)
 
     class Meta:
         unique_together = ('section', 'position')
@@ -958,7 +959,7 @@ class CannedAnswer(models.Model):
     canned_text = models.TextField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     edge = models.OneToOneField('flow.Edge', related_name='payload', blank=True,
-                           null=True)
+                           null=True, on_delete=models.SET_NULL)
 
     @property
     def label(self):
