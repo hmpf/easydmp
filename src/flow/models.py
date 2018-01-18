@@ -2,9 +2,13 @@
 
 from functools import lru_cache
 from pathlib import PurePath, Path
+from uuid import uuid4
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.db import transaction
+from django.db.models import Q
+from django.forms import model_to_dict
 
 import graphviz as gv
 
@@ -53,17 +57,9 @@ class Node(models.Model):
             pass
         return self.slug
 
-#     def save(self, *args, **kwargs):
-#         if not self.slug:
-
-
-#     def clone(self, *args, **kwargs):
-#         kwargs.pop('force_insert', None)
-#         kwargs.pop('force_update', None)
-#         suffix = '-clone'
-#         self.name = self.name[:16-len(suffix)] + suffix
-#         self.save(force_insert=True, *args, **kwargs)
-#         return self
+    def clone(self, fsa):
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'fsa', 'depends'])
+        return self.__class__.objects.create(fsa=fsa, **self_dict)
 
     def get_next_node_many(self, next_nodes, data):
         depends = self.depends if self.depends else self
@@ -137,6 +133,13 @@ class Edge(models.Model):
             me, me, self.condition, self.next_node
         )
 
+    def clone(self, prev, next):
+        return self.__class__.objects.create(
+            prev_node=prev,
+            next_node=next,
+            condition=self.condition
+        )
+
 
 class FSA(models.Model):
     GRAPHVIZ_TMPDIR = '/tmp/flow_graphviz'
@@ -149,6 +152,28 @@ class FSA(models.Model):
 
     def __str__(self):  # pragma: no cover
         return self.slug
+
+    @transaction.atomic
+    def clone(self, slug=None):
+        slug = slug if slug else str(uuid4())
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'slug'])
+        new = self.__class__.objects.create(slug=slug, **self_dict)
+        # clone nodes
+        mapping = {}
+        for node in self.nodes.all():
+            mapping[node] = node.clone(new)
+        # set depends on nodes
+        for node in new.nodes.all():
+            node.depends = mapping.get(node.depends, None)
+            node.save()
+        # clone edges
+        for edge in Edge.objects.filter(
+            Q(prev_node__in=mapping) | Q(next_node__in=mapping)).distinct():
+            edge.clone(
+                mapping.get(edge.prev_node, None),
+                mapping.get(edge.next_node, None)
+            )
+        return new
 
     @property
     def nodemap(self):
