@@ -51,7 +51,19 @@ def _force_items_to_str(dict_):
     return {force_text(k): force_text(v) for k, v in dict_.items()}
 
 
-class Template(models.Model):
+class RenumberMixin:
+
+    def _renumber_positions(self, objects):
+        """Renumber positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)
+
+        <objects> must already be sorted by position.
+        """
+        for i, obj in enumerate(objects, 1):
+            obj.position = i
+            obj.save()
+
+
+class Template(RenumberMixin, models.Model):
     title = models.CharField(max_length=255)
     abbreviation = models.CharField(max_length=8, blank=True)
     version = models.PositiveIntegerField(default=1)
@@ -66,6 +78,11 @@ class Template(models.Model):
         if self.abbreviation:
             return self.abbreviation
         return self.title
+
+    def renumber_positions(self):
+        """Renumber section positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
+        sections = self.sections.order_by('position')
+        self._renumber_positions(sections)
 
     @property
     def questions(self):
@@ -99,7 +116,7 @@ class Template(models.Model):
         return texts
 
 
-class Section(models.Model):
+class Section(RenumberMixin, models.Model):
     """A section of a :model:`dmpt.Template`.
 
     **Attributes**
@@ -135,6 +152,11 @@ class Section(models.Model):
     @lru_cache(None)
     def __str__(self):
         return '{}: {}'.format(self.template, self.title)
+
+    def renumber_positions(self):
+        """Renumber question positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
+        questions = self.questions.order_by('position')
+        self._renumber_positions(questions)
 
     @property
     def first_question(self):
@@ -240,7 +262,7 @@ class SimpleFramingTextMixin:
         return self.frame_canned_answer(choice)
 
 
-class Question(models.Model):
+class Question(RenumberMixin, models.Model):
     """The database representation of a question
 
     Questions come in many subtypes, stored in `input_type`.
@@ -292,6 +314,12 @@ class Question(models.Model):
         if self.label:
             return '{} {}'.format(self.label, self.question)
         return self.question
+
+    def renumber_positions(self):
+        """Renumber canned answer positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
+        cas = self.canned_answers.order_by('position')
+        if cas.count() > 1:
+            self._renumber_positions(cas)
 
     def is_valid(self):
         raise NotImplementedError
