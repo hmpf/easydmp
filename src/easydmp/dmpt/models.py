@@ -954,6 +954,12 @@ INPUT_TYPE_MAP = {
 class CannedAnswer(models.Model):
     "Defines the possible answers for a branch-capable question"
     question = models.ForeignKey(Question, related_name='canned_answers')
+    position = models.PositiveIntegerField(
+        default=1,
+        help_text='Position in question. Just used for ordering.',
+        blank=True,
+        null=True,
+    )
     choice = models.CharField(max_length=255,
                               help_text='Human friendly view of condition')
     canned_text = models.TextField(blank=True, null=True)
