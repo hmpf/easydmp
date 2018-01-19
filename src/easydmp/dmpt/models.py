@@ -1,7 +1,11 @@
 from collections import OrderedDict
 from functools import lru_cache
+from uuid import uuid4
 
+from django.apps import apps
 from django.db import models
+from django.db import transaction
+from django.db.models import Q
 from django.forms import model_to_dict
 from django.template import engines, Context
 from django.utils.encoding import force_text
@@ -83,11 +87,31 @@ class Template(RenumberMixin, models.Model):
     class Meta:
         unique_together = ('version', 'title')
 
-    @lru_cache(None)
     def __str__(self):
         if self.abbreviation:
             return self.abbreviation
         return self.title
+
+    @transaction.atomic
+    def clone(self, title=None):
+        """Clone the template and save it as <title>
+
+        If <title> is not given, add a random uuid to the existing ``title``.
+        The version is reset to 1 and the new template is hidden from view by
+        ``published`` not being set.
+
+        Also recursively clones all sections, questions, canned answers,
+        EEStore mounts, FSAs, nodes and edges."""
+        if not title:
+            title = '{} ({})'.format(self.title, uuid4())
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'title',
+                                                 'version', 'published'])
+        new = self.__class__.objects.create(title=title, version=1, **self_dict)
+        # clone sections, which clones questions, canned answers, fsas and eestore mounts
+        section_mapping = {}
+        for section in self.sections.all():
+            section.clone(new)
+        return new
 
     def renumber_positions(self):
         """Renumber section positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
@@ -187,6 +211,51 @@ class Section(RenumberMixin, models.Model):
     @lru_cache(None)
     def __str__(self):
         return '{}: {}'.format(self.template, self.title)
+
+    @transaction.atomic
+    def clone(self, template):
+        """Make a complete copy of the section and put it in <template>
+
+        Copies questions, canned answers, EEStore mounts, FSAs, nodes and edges.
+        """
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'template'])
+        new = self.__class__.objects.create(template=template, **self_dict)
+        question_mapping = {}
+        for question in self.questions.all():
+            question_mapping[question] = question.clone(new)
+        self.clone_fsas(question_mapping, new)
+        return new
+
+    @transaction.atomic
+    def clone_fsas(self, question_mapping, section):
+        """Clone FSAs, which also clones nodes and edges
+
+        Hook up nodes and edges of the FSAs to questions and canned answers."""
+        node_questions = self.questions.prefetch_related('canned_answers').filter(node__isnull=False)
+        fsas = [q.node.fsa for q in node_questions.distinct()]
+        fsa_mapping = {}
+        # clone fsa
+        for fsa in fsas:
+            title = 's{}-{}'.format(section.pk, fsa.slug)
+            fsa_mapping[fsa] = fsa.clone(title)
+        # hook up new questions to new fsa nodes
+        Edge = apps.get_model('flow', 'Edge')
+        edge_qs = Edge.objects.select_related('prev_node')
+        for question in node_questions:
+            node = question.node
+            new_fsa = fsa_mapping[node.fsa]
+            new_node = new_fsa.nodes.get(slug=node.slug)
+            new_question = question_mapping[question]
+            new_question.node = new_node
+            new_question.save()
+            # hook up new canned answers to new fsa edges
+            old_edges = edge_qs.filter(prev_node=question.node)
+            new_edges = edge_qs.filter(prev_node=new_question.node)
+            edge_mapping = {edge: new_edges.get(condition=edge.condition) for edge in old_edges}
+            for ca in question.canned_answers.filter(edge__isnull=False):
+                new_ca = new_question.canned_answers.get(choice=ca.choice)
+                new_ca.edge = edge_mapping[ca.edge]
+                new_ca.save()
 
     def renumber_positions(self):
         """Renumber question positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
@@ -355,6 +424,20 @@ class Question(RenumberMixin, models.Model):
         if self.label:
             return '{} {}'.format(self.label, self.question)
         return self.question
+
+    def delete(self):
+        self.node.edges.delete()
+        self.node.fsa.delete()
+
+    @transaction.atomic
+    def clone(self, section):
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'section', 'node'])
+        new = self.__class__.objects.create(section=section, **self_dict)
+        for ca in self.canned_answers.all():
+            ca.clone(new)
+        if getattr(self, 'eestore', None):
+            self.eestore.clone(new)
+        return new
 
     def renumber_positions(self):
         """Renumber canned answer positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
@@ -1035,6 +1118,10 @@ class CannedAnswer(models.Model):
     @lru_cache(None)
     def __str__(self):
         return '{}: "{}" {}'.format(self.question.question, self.choice, self.canned_text)
+
+    def clone(self, question):
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'question', 'edge'])
+        return self.__class__.objects.create(question=question, **self_dict)
 
     def convert_choice_to_condition(self):
         if self.question.input_type == 'bool':

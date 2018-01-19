@@ -148,6 +148,14 @@ class EEStoreMount(models.Model):
                 if not source.eestore_type == self.eestore_type:
                     self.sources.remove(source)
 
+    def clone(self, question):
+        new = self.__class__.objects.create(
+            question=question,
+            eestore_type=self.eestore_type,
+        )
+        for source in self.sources.all():
+            new.sources.add(source)
+
     def get_cached_entries(self, source=None, search=None):
         by_type = EEStoreCache.objects.filter(eestore_type=self.eestore_type)
         return by_type
