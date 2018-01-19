@@ -1,0 +1,108 @@
+
+h2{
+  margin-bottom: 1em;
+}
+
+.container .row .dmpsummary tr th{
+  vertical-align: top;
+  width: 45%;
+  line-height: 4em;
+}
+
+.container .row .dmpsummary tbody:first-of-type h3{
+      border-top: none;
+      margin-top: 0px;
+      padding-top: 0px;
+    }
+
+tbody tr th h3{
+    width: 100%;
+    border-top: 1px solid #969696;
+    display: block;
+    margin-top: 2em;
+    margin-bottom: 1.4em;
+    padding-top: 2em;
+    font-weight: bold;
+}
+
+.container .row .dmpsummary tr td{
+  width: 43%;
+  line-height: 1em;
+  vertical-align: top;
+  display: inline-block;
+  height: 4.5em;
+}
+
+ .container .row .dmpsummary tr td:nth-of-type(2){
+   margin-left: 4.5%;
+ }
+
+.container .row .dmpsummary tr td:last-of-type{
+  width: 5%;
+  margin-left: 4.5%;
+  float: right;
+  text-align: right;
+}
+
+/* Editors Box */
+.uninett-color-white ul{
+  margin-bottom: 1em;
+}
+.uninett-color-white ul li{
+  line-height: 2em;
+}
+
+/* Edit Page */
+
+.breadcrumbs .breadcrumb{
+  color: black;
+  background: none;
+  opacity: 1;
+}
+.breadcrumb-separator{
+  vertical-align: middle;
+}
+.select2-container{
+  width: 100% !important;
+}
+.controls .textarea{
+  width: 100%;
+}
+#question-position{
+  width: 85%;
+  display: inline-block;
+  text-align: center;
+}
+.form-actions .btn-primary{
+  width: 7%;
+  min-width: 34px;
+}
+.form-actions #id-next{
+  float: right;
+}
+
+@media screen and (max-width: 991px){
+  .form-actions .btn-primary{
+    width: 10%;
+  }
+  #question-position{
+    width: 79%;
+  }
+}
+@media screen and (max-width: 630px){
+  .form-actions .btn-primary{
+    width: 15%;
+  }
+  #question-position{
+    width: 65%;
+  }
+}
+
+@media screen and (max-width: 450px){
+  .form-actions .btn-primary{
+    width: 20%;
+  }
+  #question-position{
+    width: 55%;
+  }
+}
