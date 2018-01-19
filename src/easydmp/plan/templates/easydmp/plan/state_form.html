@@ -1,6 +1,9 @@
 {% extends "easydmp/plan/base.html" %}
 {% load crispy_forms_tags %}
 {% block extrahead %}
+<style type="text/css">
+.path .current { text-weight: bold; background: #333; color: white }
+</style>
 {{ form.media.css }}
 {% endblock %}
 {% block content %}
@@ -30,12 +33,12 @@
       <div class="section-introduction">{{ section.introductory_text }}</div>
       <div class="section-comment">{{ section.comment }}</div>
       {% if user.is_superuser %}
-      <div class="path">
+      <div class="superuser path">
         <h4>{% for q in path %}
           <span>
             {% if question_pk != q.pk %}<a href="{% url 'new_question' plan=object.pk question=q.pk %}">{{ q }}</a>
             {% else %}
-            {% if question_pk == q.pk %}<strong style="text-weight: bold; background: #333; color: white ">{{ q }}</strong>{% else %}{{ q }}{% endif %}
+            {% if question_pk == q.pk %}<strong class="current">{{ q }}</strong>{% else %}{{ q }}{% endif %}
             {% endif %}
           </span>
           {% endfor %}
