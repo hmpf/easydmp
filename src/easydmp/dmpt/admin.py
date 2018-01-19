@@ -8,9 +8,8 @@ from .models import Template, Section, Question, CannedAnswer
 
 @admin.register(Template)
 class TemplateAdmin(admin.ModelAdmin):
-    list_display = (
-        'title',
-    )
+    list_display = ('id', 'title')
+    list_display_links = ('title', 'id')
 
 
 @admin.register(Section)
@@ -18,9 +17,27 @@ class SectionAdmin(admin.ModelAdmin):
     list_display = (
         'template',
         'position',
+        'id',
         'title',
     )
+    list_display_links = ('template', 'id', 'position')
     list_filter = ('template',)
+    actions = [
+        'increment_position',
+        'decrement_position',
+    ]
+
+    def increment_position(self, request, queryset):
+        for q in queryset.order_by('-position'):
+            q.position += 1
+            q.save()
+    increment_position.short_description = 'Increment position by 1'
+
+    def decrement_position(self, request, queryset):
+        for q in queryset.order_by('position'):
+            q.position -= 1
+            q.save()
+    decrement_position.short_description = 'Decrement position by 1'
 
 
 @admin.register(CannedAnswer)
@@ -28,8 +45,11 @@ class CannedAnswerAdmin(admin.ModelAdmin):
     list_display = (
         'question',
         'choice',
-        'edge',
+        'position',
+        'id',
+        'has_edge',
     )
+    list_display_links = ('id', 'question')
     actions = [
         'create_edge',
         'update_edge',
@@ -49,6 +69,11 @@ class CannedAnswerAdmin(admin.ModelAdmin):
             else:
                 q.create_edge()
     update_edge.short_description = 'Update edge'
+
+    def has_edge(self, obj):
+        return True if obj.edge else False
+    has_edge.short_description = 'Edge'
+    has_edge.boolean = True
 
 
 class CannedAnswerInline(admin.StackedInline):
@@ -99,13 +124,15 @@ class SectionFilter(admin.SimpleListFilter):
 class QuestionAdmin(admin.ModelAdmin):
     list_display = (
         'position',
-        'section',
+        'id',
         'label',
         'question',
+        'section',
         'input_type',
         'has_node',
         'get_mount',
     )
+    list_display_links = ('position', 'id', 'question')
     actions = [
         'create_node',
         'increment_position',

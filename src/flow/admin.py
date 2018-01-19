@@ -40,8 +40,8 @@ class PrevEdgeInline(admin.StackedInline):
 
 
 class EdgeAdmin(admin.ModelAdmin):
-    list_display = ['condition', 'prev_node', 'next_node', has_payload]
-    list_display_links = ['condition', 'prev_node']
+    list_display = ['id', 'condition', 'prev_node', 'next_node', has_payload]
+    list_display_links = ['id', 'condition', 'prev_node']
     list_filter = [PayloadListFilter]
 admin.site.register(Edge, EdgeAdmin)
 
@@ -51,7 +51,8 @@ class NodeInline(admin.StackedInline):
 
 
 class NodeAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'depends', 'fsa', has_payload]
+    list_display = ['id', '__str__', 'depends', 'fsa', has_payload]
+    list_display_links = ['id']
     list_filter = [PayloadListFilter, 'fsa']
     inlines = [PrevEdgeInline]
 
