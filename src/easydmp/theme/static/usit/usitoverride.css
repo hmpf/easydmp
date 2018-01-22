@@ -65,7 +65,7 @@ tbody tr th h3{
 .select2-container{
   width: 100% !important;
 }
-.controls .textarea{
+.controls textarea{
   width: 100%;
 }
 #question-position{

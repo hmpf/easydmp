@@ -13,10 +13,17 @@
   <!-- Summary Box -->
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+        <div id="summary_header">
+          <h2>Plan overview</h2>
+          <div class="actions">
+            <a id="action_html" href="{% url 'generated_plan_html' plan=object.id %}">HTML</a>
+            <a id="action_delete" href="{% url 'plan_delete' plan=object.id %}">Delete this plan (no undo)</a>
+          </div>
+        </div>
         {% if output.items %}
         <div class="dmpsummary">
             {% for section_title, sectiondata in output.items %}
-            <div class="section">
+            <div class="section" id="{{ section_title|slugify }}">
             <h3 class="section_title">{{ section_title }}</h3>
             {% if sectiondata.section.introductory_text %}
             <div class="section_introduction">{{ sectiondata.section.introductory_text }}</div>
@@ -46,7 +53,8 @@
         {% else %}
         <p>No questions answered. <a href="{% url 'first_question' plan=object.id %}">Start here</a>.</p>
         {% endif %}
-</div></div>
+    </div>
+  </div>
 
   <!-- Editors Box -->
   <div class="row uninett-color-white uninett-whole-row">
@@ -63,23 +71,7 @@
     </div>
   </div>
 
-  <div class="row uninett-color-white uninett-whole-row">
-    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-<h2>Generated text</h2>
-
-<table class="dmptable"r>
-<td><a href="{% url 'generated_plan_text' plan=object.id %}">Text</a></td>
-<td><a href="{% url 'generated_plan_html' plan=object.id %}">Html</a></td>
-<td><a href="{% url 'generated_plan_pdf' plan=object.id %}">PDF</a></td>
-</table>
-</div></div>
-  <div class="row uninett-color-white uninett-whole-row">
-    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-<h2>Action</h2>
-<p><a href="{% url 'plan_delete' plan=object.id %}">Delete this plan (no undo)</a></p>
-</div></div>
 <div>
-    <br />
     <br />
     <br />
 </div>
