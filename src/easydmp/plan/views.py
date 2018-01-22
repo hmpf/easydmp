@@ -16,6 +16,7 @@ from django.views.generic import (
     DeleteView,
     RedirectView,
 )
+from django.utils.html import mark_safe
 
 from easydmp.utils import pprint_list, utc_epoch
 from easydmp.dmpt.forms import make_form, TemplateForm, DeleteForm, NotesForm
@@ -285,7 +286,7 @@ class AbstractPlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailVi
         kwargs['text'] = self.get_canned_text()
         outputs = OrderedDict()
         template = self.get_template()
-        for section in template.sections.all():
+        for section in template.sections.order_by('position'):
             section_output = OrderedDict()
             for question in section.find_path(data):
                 question = question.get_instance()
@@ -295,7 +296,13 @@ class AbstractPlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailVi
                 value['answer'] = question.pprint_html(value)
                 value['question'] = question
                 section_output[question.pk] = value
-            outputs[section.title] = section_output
+            outputs[section.title] = {
+                'data': section_output,
+                'section': {
+                    'introductory_text': mark_safe(section.introductory_text),
+                    'comment': mark_safe(section.comment),
+                }
+            }
         kwargs['output'] = outputs
         return kwargs
 
