@@ -133,6 +133,12 @@ class Edge(models.Model):
             me, me, self.condition, self.next_node
         )
 
+    def save(self, **kwargs):
+        super().save(**kwargs)
+        # remove edges without nodes
+        if self.prev_node is self.next_node is None:
+            self.delete()
+
     def clone(self, prev, next):
         return self.__class__.objects.create(
             prev_node=prev,
