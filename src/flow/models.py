@@ -144,7 +144,7 @@ class Edge(models.Model):
 class FSA(models.Model):
     GRAPHVIZ_TMPDIR = '/tmp/flow_graphviz'
 
-    slug = models.SlugField(max_length=SLUG_LENGTH)
+    slug = models.SlugField(max_length=SLUG_LENGTH, unique=True)
 
     class Meta:
         verbose_name = 'FSA'
@@ -156,8 +156,9 @@ class FSA(models.Model):
     @transaction.atomic
     def clone(self, slug=None):
         slug = slug if slug else str(uuid4())
-        self_dict = model_to_dict(self, exclude=['id', 'pk', 'slug'])
-        new = self.__class__.objects.create(slug=slug, **self_dict)
+        created, new = self.__class__.objects.get_or_create(slug=slug)
+        if not created:
+            return new
         # clone nodes
         mapping = {}
         for node in self.nodes.all():
