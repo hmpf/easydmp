@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from itertools import chain
 
 from django.contrib import messages
@@ -284,26 +283,8 @@ class AbstractPlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailVi
         data = self.object.data.copy()
         kwargs['data'] = data
         kwargs['text'] = self.get_canned_text()
-        outputs = OrderedDict()
         template = self.get_template()
-        for section in template.sections.order_by('position'):
-            section_output = OrderedDict()
-            for question in section.find_path(data):
-                question = question.get_instance()
-                value = data.get(str(question.pk), None)
-                if not value or value.get('choice', None) is None:
-                    continue
-                value['answer'] = question.pprint_html(value)
-                value['question'] = question
-                section_output[question.pk] = value
-            outputs[section.title] = {
-                'data': section_output,
-                'section': {
-                    'introductory_text': mark_safe(section.introductory_text),
-                    'comment': mark_safe(section.comment),
-                }
-            }
-        kwargs['output'] = outputs
+        kwargs['output'] = template.get_summary(data)
         return kwargs
 
 

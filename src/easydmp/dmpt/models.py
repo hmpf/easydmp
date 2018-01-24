@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from functools import lru_cache
 
 from django.db import models
@@ -126,6 +127,27 @@ class Template(RenumberMixin, models.Model):
                 'text': canned_text,
             })
         return texts
+
+    def get_summary(self, data):
+        summary = OrderedDict()
+        for section in self.sections.order_by('position'):
+            section_summary = OrderedDict()
+            for question in section.find_path(data):
+                question = question.get_instance()
+                value = data.get(str(question.pk), None)
+                if not value or value.get('choice', None) is None:
+                    continue
+                value['answer'] = question.pprint_html(value)
+                value['question'] = question
+                section_summary[question.pk] = value
+            summary[section.title] = {
+                'data': section_summary,
+                'section': {
+                    'introductory_text': mark_safe(section.introductory_text),
+                    'comment': mark_safe(section.comment),
+                }
+            }
+        return summary
 
 
 class Section(RenumberMixin, models.Model):
