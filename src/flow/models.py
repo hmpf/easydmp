@@ -156,7 +156,7 @@ class FSA(models.Model):
     @transaction.atomic
     def clone(self, slug=None):
         slug = slug if slug else str(uuid4())
-        created, new = self.__class__.objects.get_or_create(slug=slug)
+        new, created = self.__class__.objects.get_or_create(slug=slug)
         if not created:
             return new
         # clone nodes
