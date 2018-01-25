@@ -46,6 +46,18 @@
                 </dd>
             </dl>
             {% endfor %}
+            {% else %}
+            {% if sectiondata.section.first_question %}
+            {% with sectiondata.section.first_question as question %}
+            <p>You have not answered any of the question in this section yet. A link to the first question follows below.</p>
+            <dl class="questionrow">
+                <dt class="question">{{ question }}</dt>
+                <dd class="answer">
+                <p class="actions"><a href="{% url 'new_question' plan=object.id question=question.pk %}">New</a></p>
+                </dd>
+            </dl>
+            {% endwith %}
+            {% endif %}
             {% endif %}
             </div>
             {% endfor %}

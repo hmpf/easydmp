@@ -143,6 +143,7 @@ class Template(RenumberMixin, models.Model):
             summary[section.title] = {
                 'data': section_summary,
                 'section': {
+                    'first_question': section.get_first_question(),
                     'introductory_text': mark_safe(section.introductory_text),
                     'comment': mark_safe(section.comment),
                 }
@@ -192,10 +193,16 @@ class Section(RenumberMixin, models.Model):
         questions = self.questions.order_by('position')
         self._renumber_positions(questions)
 
-    @property
-    def first_question(self):
+    def get_first_question(self):
         if self.questions.exists():
             return self.questions.order_by('position')[0]
+        return None
+
+    @property
+    def first_question(self):
+        first_question = self.get_first_question()
+        if first_question:
+            return first_question
         # See if there is a next section in case this one has no questions
         next_section = self.get_next_section()
         if next_section:
