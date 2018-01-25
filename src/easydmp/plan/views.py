@@ -142,6 +142,11 @@ class AbstractQuestionView(LoginRequiredMixin, AbstractQuestionMixin, UpdateView
 
 class NewQuestionView(AbstractQuestionView):
 
+    def set_referer(self, request):
+        self.referer = request.META.get('HTTP_REFERER', None)
+        if not self.object.data:
+            self.referer = reverse('plan_list')
+
     def get_initial(self):
         current_data = self.object.data or {}
         previous_data = self.object.previous_data or {}
@@ -191,6 +196,7 @@ class NewQuestionView(AbstractQuestionView):
         num_questions = neighboring_questions.count()
         num_questions_so_far = len(question.get_all_prev_questions())
         kwargs['progress'] = progress(num_questions_so_far, num_questions)
+        kwargs['referrer'] = self.referer  # Not a typo! From the http header
         return super().get_context_data(**kwargs)
 
     def get_notesform(self, **_):
@@ -215,8 +221,14 @@ class NewQuestionView(AbstractQuestionView):
             self.object.data.pop(statename, None)
         self.object.save()
 
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.set_referer(request)
+        return super().get(request, *args, **kwargs)
+
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        self.set_referer(request)
         form = self.get_form()
         notesform = self.get_notesform()
         if form.is_valid() and notesform.is_valid():
