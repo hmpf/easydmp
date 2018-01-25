@@ -3,7 +3,9 @@ from functools import lru_cache
 from uuid import uuid4
 
 from django.apps import apps
+from django.contrib.admin.utils import NestedObjects
 from django.db import models
+from django.db import router
 from django.db import transaction
 from django.db.models import Q
 from django.forms import model_to_dict
@@ -65,6 +67,43 @@ def print_url(urldict):
     return format_html(format, url, escape(name))
 
 
+class DeletionMixin:
+    """Extend django's model deletion functionality"""
+
+    def collect(self, using=None, **kwargs):
+        """Collect objects related to self
+
+        Designed to be extended. Get the collector for self with super()::
+
+            collector = super().collect(using=using, **kwargs)
+
+        Add a queryset with::
+
+            collector.collect(queryset)
+
+        Add an instance with::
+
+            collector.collect([instance])
+
+        Finally, return the collector.
+        """
+        using = using or router.db_for_write(self.__class__, instance=self)
+        assert self._get_pk_val() is not None, (
+            "%s object can't be deleted because its %s attribute is set to None." %
+            (self._meta.object_name, self._meta.pk.attname)
+        )
+
+        collector = NestedObjects(using=using)
+        collector.collect([self], **kwargs)
+        return collector
+
+    @transaction.atomic
+    def delete(self, **kwargs):
+        collector = self.collect(**kwargs)
+        return collector.delete()
+    delete.alters_data = True
+
+
 class RenumberMixin:
 
     def _renumber_positions(self, objects):
@@ -75,9 +114,10 @@ class RenumberMixin:
         for i, obj in enumerate(objects, 1):
             obj.position = i
             obj.save()
+    _renumber_positions.alters_data = True
 
 
-class Template(RenumberMixin, models.Model):
+class Template(DeletionMixin, RenumberMixin, models.Model):
     title = models.CharField(max_length=255)
     abbreviation = models.CharField(max_length=8, blank=True)
     version = models.PositiveIntegerField(default=1)
@@ -91,6 +131,19 @@ class Template(RenumberMixin, models.Model):
         if self.abbreviation:
             return self.abbreviation
         return self.title
+
+    def collect(self, using='default', **kwargs):
+        collector = super().collect(using=using, **kwargs)
+        if self.questions.exists():
+            Edge = apps.get_model('flow', 'Edge')
+            nodes = [q.node for q in self.questions.all() if q.node]
+            fsas = set(n.fsa for n in nodes)
+            collector.collect(tuple(fsas))
+            edges = set()
+            for n in nodes:
+                edges.update(set(n.next_nodes.all() | n.prev_nodes.all()))
+            collector.collect(tuple(edges))
+        return collector
 
     @transaction.atomic
     def clone(self, title=None):
@@ -175,7 +228,7 @@ class Template(RenumberMixin, models.Model):
         return summary
 
 
-class Section(RenumberMixin, models.Model):
+class Section(DeletionMixin, RenumberMixin, models.Model):
     """A section of a :model:`dmpt.Template`.
 
     **Attributes**
@@ -256,6 +309,19 @@ class Section(RenumberMixin, models.Model):
                 new_ca = new_question.canned_answers.get(choice=ca.choice)
                 new_ca.edge = edge_mapping[ca.edge]
                 new_ca.save()
+
+    def collect(self, using='default', **kwargs):
+        collector = super().collect(using=using, **kwargs)
+        if self.questions.exists():
+            Edge = apps.get_model('flow', 'Edge')
+            nodes = [q.node for q in self.questions.all() if q.node]
+            fsas = set(n.fsa for n in nodes)
+            collector.collect(tuple(fsas))
+            edges = set()
+            for n in nodes:
+                edges.update(set(n.next_nodes.all() | n.prev_nodes.all()))
+            collector.collect(tuple(edges))
+        return collector
 
     def renumber_positions(self):
         """Renumber question positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
@@ -372,7 +438,7 @@ class SimpleFramingTextMixin:
         return self.frame_canned_answer(choice, frame)
 
 
-class Question(RenumberMixin, models.Model):
+class Question(DeletionMixin, RenumberMixin, models.Model):
     """The database representation of a question
 
     Questions come in many subtypes, stored in `input_type`.
@@ -425,9 +491,13 @@ class Question(RenumberMixin, models.Model):
             return '{} {}'.format(self.label, self.question)
         return self.question
 
-    def delete(self):
-        self.node.edges.delete()
-        self.node.fsa.delete()
+    def collect(self, using='default', **kwargs):
+        collector = super().collect(using=using, **kwargs)
+        if self.node:
+            edges = set(self.node.next_nodes.all() | self.node.prev_nodes.all())
+            collector.collect(tuple(edges))
+            collector.collect([self.node])
+        return collector
 
     @transaction.atomic
     def clone(self, section):
@@ -1095,7 +1165,7 @@ INPUT_TYPE_MAP = {
 }
 
 
-class CannedAnswer(models.Model):
+class CannedAnswer(DeletionMixin, models.Model):
     "Defines the possible answers for a branch-capable question"
     question = models.ForeignKey(Question, related_name='canned_answers')
     position = models.PositiveIntegerField(
@@ -1118,6 +1188,12 @@ class CannedAnswer(models.Model):
     @lru_cache(None)
     def __str__(self):
         return '{}: "{}" {}'.format(self.question.question, self.choice, self.canned_text)
+
+    def collect(self, using='default', **kwargs):
+        collector = super().collect(self, using=using, **kwargs)
+        if self.edge:
+            collector.collect([self.edge])
+        return collector
 
     def clone(self, question):
         self_dict = model_to_dict(self, exclude=['id', 'pk', 'question', 'edge'])
