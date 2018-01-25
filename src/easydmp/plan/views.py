@@ -154,12 +154,24 @@ class NewQuestionView(AbstractQuestionView):
     def get_success_url(self):
         question = self.get_question()
         current_data = self.object.data
-        next_question = question.get_next_question(current_data)
-        kwargs = {'plan': self.object.pk}
-        if next_question:
+        kwargs = {
+            'plan': self.object.pk,
+            'question': question.pk,
+        }
+
+        if 'prev' in self.request.POST:
+            prev_question = question.get_prev_question(self.object.data)
+            kwargs['question'] = prev_question.pk
+
+        if 'next' in self.request.POST:
+            next_question = question.get_next_question(current_data)
+            if not next_question:
+                # Finished answering all questions
+                return reverse('plan_detail', kwargs=kwargs)
             kwargs['question'] = next_question.pk
-            return reverse('new_question', kwargs=kwargs)
-        return reverse('plan_detail', kwargs=kwargs)
+
+        # Go to next on 'next', prev on 'prev', stay on same page otherwise
+        return reverse('new_question', kwargs=kwargs)
 
     def get_context_data(self, **kwargs):
         template = self.get_template()
@@ -205,16 +217,10 @@ class NewQuestionView(AbstractQuestionView):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        if 'prev' in request.POST:
-            prev_question = self.get_question().get_prev_question(self.object.data)
-            kwargs = {
-                'question': prev_question.pk,
-                'plan': self.object.pk,
-            }
-            return HttpResponseRedirect(reverse('new_question', kwargs=kwargs))
         form = self.get_form()
         notesform = self.get_notesform()
         if form.is_valid() and notesform.is_valid():
+            self.request = request
             return self.form_valid(form, notesform)
         else:
             return self.form_invalid(form, notesform)
