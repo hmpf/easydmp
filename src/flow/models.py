@@ -34,7 +34,7 @@ class Node(models.Model):
     next_nodes, prev_nodes: where to next
     """
 
-    fsa = models.ForeignKey('FSA', related_name='nodes')
+    fsa = models.ForeignKey('FSA', related_name='nodes', on_delete=models.CASCADE)
     slug = models.SlugField(max_length=SLUG_LENGTH)
     start = models.BooleanField(default=False)
     end = models.BooleanField(default=False)

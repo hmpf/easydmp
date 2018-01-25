@@ -27,7 +27,11 @@ class EEStoreType(models.Model):
 
 
 class EEStoreSource(models.Model):
-    eestore_type = models.ForeignKey(EEStoreType, related_name='sources')
+    eestore_type = models.ForeignKey(
+        EEStoreType,
+        related_name='sources',
+        on_delete=models.CASCADE,
+    )
     name = models.CharField(max_length=64)
 
     class Meta:
@@ -103,8 +107,16 @@ class EEStoreCacheManager(models.Manager):
 class EEStoreCache(models.Model):
     eestore_pid = models.CharField(unique=True, max_length=255)
     eestore_id = models.IntegerField()
-    eestore_type = models.ForeignKey(EEStoreType, related_name='records')
-    source = models.ForeignKey(EEStoreSource, related_name='records')
+    eestore_type = models.ForeignKey(
+        EEStoreType,
+        related_name='records',
+        on_delete=models.CASCADE,
+    )
+    source = models.ForeignKey(
+        EEStoreSource,
+        related_name='records',
+        on_delete=models.CASCADE,
+    )
 
     name = models.CharField(max_length=255)
     uri = models.URLField(blank=True)
@@ -130,8 +142,12 @@ class EEStoreMount(models.Model):
 
     If no <sources> are given, all sources are used.
     """
-    question = models.OneToOneField('dmpt.Question', related_name='eestore')
-    eestore_type = models.ForeignKey(EEStoreType)
+    question = models.OneToOneField(
+        'dmpt.Question',
+        related_name='eestore',
+        on_delete=models.CASCADE,
+    )
+    eestore_type = models.ForeignKey(EEStoreType, on_delete=models.CASCADE)
     sources = models.ManyToManyField(
         EEStoreSource,
         help_text='Select a subset of the eestore types\' sources here. Keep empty to select all types.',
