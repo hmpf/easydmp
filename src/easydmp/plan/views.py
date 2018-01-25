@@ -154,21 +154,21 @@ class NewQuestionView(AbstractQuestionView):
     def get_success_url(self):
         question = self.get_question()
         current_data = self.object.data
-        kwargs = {
-            'plan': self.object.pk,
-            'question': question.pk,
-        }
+        kwargs = {'plan': self.object.pk}
 
-        if 'prev' in self.request.POST:
+        if 'summary' in self.request.POST:
+            return reverse('plan_detail', kwargs=kwargs)
+        elif 'prev' in self.request.POST:
             prev_question = question.get_prev_question(self.object.data)
             kwargs['question'] = prev_question.pk
-
-        if 'next' in self.request.POST:
+        elif 'next' in self.request.POST:
             next_question = question.get_next_question(current_data)
             if not next_question:
                 # Finished answering all questions
                 return reverse('plan_detail', kwargs=kwargs)
             kwargs['question'] = next_question.pk
+        else:
+            kwargs['question'] = question.pk
 
         # Go to next on 'next', prev on 'prev', stay on same page otherwise
         return reverse('new_question', kwargs=kwargs)

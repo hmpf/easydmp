@@ -7,18 +7,6 @@
 {{ form.media.css }}
 {% endblock %}
 {% block content %}
-  <div class="row uninett-color-white uninett-whole-row">
-      <!-- empty row -->
-  </div>
-  <div class="row uninett-whole-row">
-    <p class="breadcrumbs">
-    <span class="breadcrumb"><a href="{% url 'plan_list' %}">Your plans</a></span>
-    <span class="breadcrumb-separator">&gt;</span>
-    <span class="breadcrumb"><a href="{% url 'plan_detail' plan=object.pk %}">{{ object|capfirst }}</a></span>
-    <span class="breadcrumb-separator">&gt;</span>
-    <span class="breadcrumb">{{ path.0 }}</span>
-    </p>
-  </div>
   <div class="row">
     <div class="col-lg-12">
       <div class="jumbotron uninett-color-darkBlue">
@@ -48,7 +36,10 @@
 
       <form class="blueForms" id="id-{{ form.prefix }}" method="POST">
           {% csrf_token %}
-          <label class="control-label requiredField">{{ form.label }}<span class="asteriskField">*</span></label>
+          <div class="question-label">
+            <label class="control-label requiredField">{{ form.label }}<span class="asteriskField">*</span></label>
+            <input type="submit" name="summary" class="summary-link" value="Go to overview">
+          </div>
           <p class="question-help">{{ form.help_text }}</p>
           <p class="question-comment" style="">{{ form.question.comment }}</p>
 
