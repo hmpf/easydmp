@@ -13,6 +13,11 @@ __all__ = [
 class Homepage(TemplateView):
     template_name = 'index.html'
 
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated():
+            return redirect('plan_list')
+        return super().get(request, *args, **kwargs)
+
 
 class LoginView(TemplateView):
     template_name = 'login.html'

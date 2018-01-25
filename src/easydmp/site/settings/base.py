@@ -145,6 +145,7 @@ STATIC_ROOT = pathjoin(BASE_DIR, 'collected_static_files')
 AUTH_USER_MODEL = 'easydmp_auth.User'
 
 LOGIN_URL = 'login-selector'
+LOGIN_REDIRECT_URL = '/plan/'
 
 # REST API
 
