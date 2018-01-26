@@ -11,7 +11,7 @@ def _prep_dotsource(graphviz_tmpdir):
     path.mkdir(mode=0o750, parents=True, exist_ok=True)
 
 
-def view_dotsource(format, dotsource, graphviz_tmpdir):
+def view_dotsource(format, dotsource, graphviz_tmpdir, cleanup=True):
     """Generate and show the fsa structure
 
     This only makes sense to run on a local computer that has a monitor,
@@ -26,7 +26,7 @@ def view_dotsource(format, dotsource, graphviz_tmpdir):
         source=dotsource,
         format=format,
     )
-    graph.view(cleanup=True)
+    graph.view(cleanup=cleanup)
 
 
 def render_dotsource_to_file(format, filename, dotsource, graphviz_tmpdir, directory=''):
@@ -39,11 +39,14 @@ def render_dotsource_to_file(format, filename, dotsource, graphviz_tmpdir, direc
     filename: store the file locally at this location
     doutsource: show dotsource, do not generate from this fsa"""
     _prep_dotsource(graphviz_tmpdir)
-    path = PurePath(filename)
+    extension = '.' + format
     # remove directories, for great paranoia
-    filename = path.name
+    filename = PurePath(filename).name
     # The gv library saves as <filename> + <format> so remove any suffix
-    filename = filename.stem
+    try:
+        filename = PurePath(filename).stem
+    except AttributeError:
+        assert False, (type(filename),)
     # Add subdir to default dir, if any
     try:
         directory = Path(directory).relative_to(graphviz_tmpdir)
@@ -57,5 +60,5 @@ def render_dotsource_to_file(format, filename, dotsource, graphviz_tmpdir, direc
         directory=str(directory),
     )
     graph.render(cleanup=True)
-    full_path = directory / filename.with_suffix(format)
+    full_path = directory / PurePath(filename).with_suffix(extension)
     return full_path

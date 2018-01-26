@@ -2,6 +2,8 @@ from collections import OrderedDict
 from functools import lru_cache
 from uuid import uuid4
 
+import graphviz as gv
+
 from django.apps import apps
 from django.contrib.admin.utils import NestedObjects
 from django.db import models
@@ -14,6 +16,8 @@ from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 from django.utils.html import format_html, escape
 from django.utils.text import slugify
+
+from flow.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
 
 from .errors import TemplateDesignError
 from easydmp.utils import pprint_list
@@ -242,6 +246,7 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
     the default position is 1. A specific title and a specific position can
     only be used once per template, this is checked when attempting to save.
     """
+    GRAPHVIZ_TMPDIR = '/tmp/dmpt/'
     template = models.ForeignKey(Template, related_name='sections')
     title = models.CharField(
         max_length=255,
@@ -420,6 +425,35 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
         """Turn [1, 2, 3] into {1: None, 2: 1, 3: 2}"""
         path = reversed(path)
         return self.generate_forwards_path(path)
+
+    def generate_dotsource(self):
+        global gv
+        dot = gv.Digraph()
+
+        for question in self.questions.all():
+            q_kwargs = {}
+            q_kwargs['label'] = str(question)
+            if question.pk == self.get_first_question().pk:
+                q_kwargs['shape'] = 'doublecircle'
+            q_id = 'q{}'.format(question.pk)
+            dot.node(q_id, **q_kwargs)
+            next_questions = question.get_potential_next_questions()
+            for choice, next_question in next_questions:
+                nq_id = 'q{}'.format(next_question.pk)
+                e_kwargs = {'label': choice}
+                dot.edge(q_id, nq_id, **e_kwargs)
+        return dot.source
+
+    def view_dotsource(self, format, dotsource=None):  # pragma: no cover
+        if not dotsource:
+            dotsource = self.generate_dotsource()
+        view_dotsource(format, dotsource, self.GRAPHVIZ_TMPDIR)
+
+    def render_dotsource_to_file(self, format, filename, directory='', dotsource=None):
+        _prep_dotsource(self.GRAPHVIZ_TMPDIR)
+        if not dotsource:
+            dotsource = self.generate_dotsource()
+        return render_dotsource_to_file(format, filename, dotsource, self.GRAPHVIZ_TMPDIR, directory)
 
 
 class NoCheckMixin:
@@ -621,6 +655,26 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
 
     def get_all_next_questions(self):
         return Question.objects.filter(section=self.section, position__gt=self.position)
+
+    def get_potential_next_questions(self):
+        all_next_questions = self.get_all_next_questions()
+        if not all_next_questions.exists():
+            return set()
+        if not self.node:
+            return set([('->', all_next_questions[0])])
+        edges = self.node.next_nodes.all()
+        if not edges:
+            return set([('=>', all_next_questions[0])])
+        next_questions = []
+        for edge in edges:
+            edge_payload = getattr(edge, 'payload', None)
+            condition = edge.condition
+            if edge_payload:
+                condition = str(getattr(edge_payload, 'legend', condition))
+            node_payload = getattr(edge.next_node, 'payload', None)
+            next_questions.append((condition, node_payload))
+        next_questions = set(next_questions)
+        return next_questions
 
     def get_next_question(self, answers=None, in_section=False):
         next_questions = self.get_all_next_questions()
