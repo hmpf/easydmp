@@ -144,8 +144,6 @@ class NewQuestionView(AbstractQuestionView):
 
     def set_referer(self, request):
         self.referer = request.META.get('HTTP_REFERER', None)
-        if not self.object.data:
-            self.referer = reverse('plan_list')
 
     def get_initial(self):
         current_data = self.object.data or {}
