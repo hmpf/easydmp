@@ -1,7 +1,6 @@
 # encoding: utf-8
 
 from functools import lru_cache
-from pathlib import PurePath, Path
 from uuid import uuid4
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -13,6 +12,7 @@ from django.forms import model_to_dict
 import graphviz as gv
 
 from .errors import FSANoStartnodeError
+from .graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
 
 
 SLUG_LENGTH = 40
@@ -305,11 +305,6 @@ class FSA(models.Model):
         ordered_data = [(s, data.get(s)) for s in keys if s in data]
         return ordered_data
 
-    def _prep_dotsource(self):
-        """Create workdir for graphviz"""
-        path = Path(self.GRAPHVIZ_TMPDIR)
-        path.mkdir(mode=0o750, parents=True, exist_ok=True)
-
     def generate_dotsource(self):
         global gv
         dot = gv.Digraph()
@@ -333,53 +328,12 @@ class FSA(models.Model):
         return dot.source
 
     def view_dotsource(self, format, dotsource=None):  # pragma: no cover
-        """Generate and show the fsa structure
-
-        This only makes sense to run on a local computer that has a monitor,
-        and depends on the OS recognizing the format to find a program to open
-        the result with.
-
-        format: a format supported by graphviz
-        doutsource: show dotsource, do not generate from this fsa"""
-        self._prep_dotsource()
         if not dotsource:
             dotsource = self.generate_dotsource()
-        graph = gv.Source(
-            directory=str(self.GRAPHVIZ_TMPDIR),
-            source=dotsource,
-            format=format,
-        )
-        graph.view(cleanup=True)
+        view_dotsource(format, dotsource, self.GRAPHVIZ_TMPDIR)
 
     def render_dotsource_to_file(self, format, filename, directory='', dotsource=None):
-        """Generate and store a file of the fsa structure
-
-        This will create a file at <filename> on the computer this software
-        runs on.
-
-        format: a format supported by graphviz
-        filename: store the file locally at this location
-        doutsource: show dotsource, do not generate from this fsa"""
-        self._prep_dotsource()
+        _prep_dotsource(self.GRAPHVIZ_TMPDIR)
         if not dotsource:
             dotsource = self.generate_dotsource()
-        path = PurePath(filename)
-        # remove directories, for great paranoia
-        filename = path.name
-        # The gv library saves as <filename> + <format> so remove any suffix
-        filename = filename.stem
-        # Add subdir to default dir, if any
-        try:
-            directory = Path(directory).relative_to(self.GRAPHVIZ_TMPDIR)
-        except ValueError:
-            directory = Path(self.GRAPHVIZ_TMPDIR)
-        directory.mkdir(mode=0o750, exist_ok=True, parents=True)
-        graph = gv.Source(
-            source=dotsource,
-            format=format,
-            filename=filename,
-            directory=str(directory),
-        )
-        graph.render(cleanup=True)
-        full_path = directory / filename.with_suffix(format)
-        return full_path
+        return render_dotsource_to_file(format, filename, dotsource, self.GRAPHVIZ_TMPDIR, directory)
