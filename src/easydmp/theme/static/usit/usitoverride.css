@@ -1,47 +1,166 @@
 
+/* new css*/
+/* general elements */
 h2{
-  margin-bottom: 1em;
+  font-weight: bold;
 }
 
-.container .row .dmpsummary tr th{
-  vertical-align: top;
-  width: 45%;
-  line-height: 4em;
+h3{
+  color: #337db1;
+  font-weight: 600;
+  /*font-size: 2.5rem;*/
 }
 
-.container .row .dmpsummary tbody:first-of-type h3{
-      border-top: none;
-      margin-top: 0px;
-      padding-top: 0px;
-    }
-
-tbody tr th h3{
-    width: 100%;
-    border-top: 1px solid #969696;
-    display: block;
-    margin-top: 2em;
-    margin-bottom: 1.4em;
-    padding-top: 2em;
-    font-weight: bold;
+/* navigation */
+.navbar-brand{
+  margin-top: -5px;
 }
-
-.container .row .dmpsummary tr td{
-  width: 43%;
-  line-height: 1em;
-  vertical-align: top;
-  display: inline-block;
-  height: 4.5em;
-}
-
- .container .row .dmpsummary tr td:nth-of-type(2){
-   margin-left: 4.5%;
- }
-
-.container .row .dmpsummary tr td:last-of-type{
-  width: 5%;
-  margin-left: 4.5%;
+.navbar-nav{
+  margin: 17px 0 20px 0;
   float: right;
-  text-align: right;
+}
+.navbar-default .navbar-nav > li > a{
+  color: #005c9e;
+  font-weight: 600;
+}
+.nav .btn-default{
+  margin-top: -3.2px;
+  display: inline-block;
+  background: transparent;
+  color:  #005c9e;
+  border: none;
+  font-size: 15px;
+  padding: 0;
+  font-weight: 600;
+}
+
+.nav .btn-default:hover{
+  color: #000;
+}
+
+/* demo banner */
+.demo{
+  width: 100% !important;
+  background: #00404b;
+}
+.demo p {
+  display: block;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+  color: #ffffff;
+  margin-bottom: 0px;
+  line-height: 35px;
+}
+
+.divider{
+  width: 100%;
+  /*height: 20px;*/
+  display: block;
+}
+
+.jumbotron{
+  padding: 1.5em 40px;
+  /*margin-top: 28px;*/
+  margin-top: 48px;
+  background-color: #00404c !important;
+}
+
+.jumbotron h1, .jumbotron h2{
+  font-size: 45px;
+  margin-bottom: 0px;
+  color: #ffffff;
+  font-weight: normal;
+}
+#action_html{
+  margin-right: 1em;
+}
+
+.section{
+  position: relative;
+  border-top: 2px solid #979797;
+  margin: 2em 0;
+  padding: 4em 0 2em 0;
+}
+
+.section_title{
+  max-width: 80%;
+  padding-bottom: .5em;
+}
+
+.question{
+  font-weight: 600;
+  padding-bottom: .5em;
+  max-width: 80%;
+}
+
+dd, .section_introduction p {
+    max-width: 80%;
+  }
+
+#summary_header h2{
+  display: inline-block;
+}
+
+#summary_header .actions{
+  display: inline-block;
+  float: right;
+  margin-top: 5px;
+}
+
+#\32 1-making-data-findable-including-provisions-for-metadata,
+#\32 2-making-data-openly-accessible,
+#\32 3-making-data-interoperable,
+#\32 4-increase-data-reuse,
+#\32 5-allocation-of-resources
+{
+  border-top: none !important;
+  padding: 0;
+  margin-top: 4em;
+}
+
+#\32 1-making-data-findable-including-provisions-for-metadata p.actions,
+#\32 2-making-data-openly-accessible p.actions,
+#\32 3-making-data-interoperable p.actions,
+#\32 4-increase-data-reuse p.actions,
+#\32 5-allocation-of-resources p.actions
+{
+    top: 0;
+  }
+
+#\32-fair-data {
+  padding-bottom: 0;
+}
+#\32 1-making-data-findable-including-provisions-for-metadata .section_title,
+#\32 2-making-data-openly-accessible .section_title,
+#\32 3-making-data-interoperable .section_title,
+#\32 4-increase-data-reuse .section_title,
+#\32 5-allocation-of-resources .section_title
+{
+  /*color: #337db1;*/
+  color: #000000;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+#\32 1-making-data-findable-including-provisions-for-metadata .questionrow,
+#\32 2-making-data-openly-accessible .questionrow,
+#\32 3-making-data-interoperable .questionrow,
+#\32 4-increase-data-reuse .questionrow,
+#\32 5-allocation-of-resources .questionrow
+{
+  margin-left: 1.5em;
+}
+
+.questionrow{
+  position: relative;
+}
+
+p.actions{
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 
 /* Editors Box */
@@ -52,7 +171,31 @@ tbody tr th h3{
   line-height: 2em;
 }
 
+
 /* Edit Page */
+.container .row .col-lg-12{
+  /*margin-top: 20px;*/
+}
+.btn-group {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+.summary-link{
+  position: absolute !important;
+  top: 0;
+  right: 40px;
+  font-size: 18px;
+  background: transparent;
+  color:  #005c9e;
+  border: none;
+  padding: 0;
+}
+.summary-link:hover{
+  background-color: transparent;
+  text-decoration: underline;
+  color: #005c9e;
+}
 
 .breadcrumbs .breadcrumb{
   color: black;
@@ -79,6 +222,61 @@ tbody tr th h3{
 }
 .form-actions #id-next{
   float: right;
+}
+
+
+/* your plans */
+.dmptable {
+  width: 100%;
+  margin-top: 2em;
+}
+.dmptable tr th, .dmptable tr td{
+  padding-bottom: 0.2em;
+}
+
+.dmptable tr td:nth-child(3),
+.dmptable tr th:nth-child(3),
+.dmptable tr td:nth-child(4),
+.dmptable tr th:nth-child(4),
+.dmptable tr td:nth-child(5),
+.dmptable tr th:nth-child(5)
+{
+  float: right;
+  width: 30%;
+}
+#create_new_plan{
+  margin-top: 3em;
+}
+
+/* Create new plan page */
+#id_title{
+  margin-bottom: 1.5em;
+}
+#submit-id-submit{
+  margin-top: 3em;
+}
+
+/* media queries */
+
+@media screen and (min-width: 768px) {
+  .demo p {
+      width: 750px;
+  }
+  .jumbotron {
+    padding-right: 40px !important;
+    padding-left: 40px !important;
+  }
+}
+
+@media screen and (min-width: 992px){
+  .demo p {
+      width: 970px;
+  }
+}
+@media screen and (min-width: 1200px){
+  .demo p {
+      width: 1170px;
+  }
 }
 
 @media screen and (max-width: 991px){
