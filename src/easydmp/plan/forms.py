@@ -77,3 +77,33 @@ class UpdatePlanForm(CheckExistingTitleMixin, forms.ModelForm):
         if self.user:
             title = self.cleaned_data['title']
             self.is_valid_title(title, self.user, self.instance.template)
+
+
+class SaveAsPlanForm(CheckExistingTitleMixin, forms.ModelForm):
+    CHOICES = ((True, 'Yes'), (False, 'No'))
+    keep_editors = forms.ChoiceField(
+        choices=CHOICES,
+        help_text='If "Yes", copy over all editors from the original plan',
+        widget=forms.RadioSelect(choices=CHOICES),
+    )
+
+    class Meta:
+        model = Plan
+        fields = ['title', 'abbreviation']
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        # crispy forms
+        self.helper = FormHelper()
+        self.helper.form_id = 'id-plan-save-as'
+        self.helper.form_class = 'blueForms'
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Save As'))
+
+    def clean(self):
+        super().clean()
+        if self.user:
+            title = self.cleaned_data['title']
+            self.is_valid_title(title, self.user, self.instance.template)

@@ -74,6 +74,23 @@ class Plan(models.Model):
             self.create_editor_group()
             self.set_adder_as_editor()
 
+    def save_as(self, title, user, abbreviation='', keep_editors=True, **kwargs):
+        new = self.__class__(
+            title=title,
+            abbreviation=abbreviation,
+            template=self.template,
+            data=self.data,
+            previous_data=self.previous_data,
+            added_by=user,
+            modified_by=user,
+        )
+        new.save()
+        if keep_editors:
+            editors = set(self.editor_group.user_set.all())
+            for editor in editors:
+                new.add_user_to_editor_group(editor)
+        return new
+
     def create_new_version(self):
         self.id = None
         self.version += self.version

@@ -1,0 +1,20 @@
+{% extends "easydmp/plan/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
+          <h1>Save as new plan</h1>
+          {% comment %}
+          te "{{ object.title|capfirst }} {{ object.added|date:"Y-m-t H:i:s" }}"?</h1>
+          {% endcomment %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row uninett-color-white uninett-whole-row">
+    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+        <h2>Save "{{ object.title|capfirst }}" as new</h2>
+        {% crispy form %}
+</div></div>
+{% endblock content %}

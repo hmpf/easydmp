@@ -25,6 +25,7 @@ from flow.models import FSA
 from .models import Plan
 from .forms import NewPlanForm
 from .forms import UpdatePlanForm
+from .forms import SaveAsPlanForm
 
 
 def progress(so_far, all):
@@ -160,6 +161,26 @@ class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(added_by=self.request.user)
+
+
+class SaveAsPlanView(LoginRequiredMixin, UpdateView):
+    model = Plan
+    template_name = 'easydmp/plan/plan_confirm_save_as.html'
+    success_url = reverse_lazy('plan_list')
+    pk_url_kwarg = 'plan'
+    form_class = SaveAsPlanForm
+
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('editor_group')
+        user_groups = self.request.user.groups.all()
+        return qs.filter(editor_group__in=user_groups)
+
+    def form_valid(self, form):
+        title = form.cleaned_data['title']
+        abbreviation = form.cleaned_data.get('abbreviation', '')
+        keep_editors = form.cleaned_data.get('keep_editors', True)
+        self.object.save_as(title, self.request.user, abbreviation, keep_editors)
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class AbstractQuestionMixin:
