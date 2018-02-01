@@ -7,18 +7,18 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db import transaction
 from django.db.models import Q
-from django.forms import model_to_dict
 
 import graphviz as gv
 
 from .errors import FSANoStartnodeError
 from .graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
+from .modelmixins import ClonableModel
 
 
 SLUG_LENGTH = 40
 
 
-class Node(models.Model):
+class Node(ClonableModel):
     """
     Defaults, fallbacks; interface for all nodes
 
@@ -58,8 +58,11 @@ class Node(models.Model):
         return self.slug
 
     def clone(self, fsa):
-        self_dict = model_to_dict(self, exclude=['id', 'pk', 'fsa', 'depends'])
-        return self.__class__.objects.create(fsa=fsa, **self_dict)
+        new = self.__class__(slug=self.slug, fsa=fsa, start=self.start,
+                             end=self.end)
+        new.set_cloned_from(self)
+        new.save()
+        return new
 
     def get_next_node_many(self, next_nodes, data):
         depends = self.depends if self.depends else self
@@ -102,7 +105,7 @@ class Node(models.Model):
         return None
 
 
-class Edge(models.Model):
+class Edge(ClonableModel):
     condition = models.CharField(max_length=64, blank=True)
     prev_node = models.ForeignKey(
         Node,
@@ -140,14 +143,13 @@ class Edge(models.Model):
             self.delete()
 
     def clone(self, prev, next):
-        return self.__class__.objects.create(
-            prev_node=prev,
-            next_node=next,
-            condition=self.condition
-        )
+        new = self.__class__(prev_node=prev, next_node=next, condition=self.condition)
+        new.set_cloned_from(self)
+        new.save()
+        return new
 
 
-class FSA(models.Model):
+class FSA(ClonableModel):
     GRAPHVIZ_TMPDIR = '/tmp/flow_graphviz'
 
     slug = models.SlugField(max_length=SLUG_LENGTH, unique=True)
@@ -165,6 +167,8 @@ class FSA(models.Model):
         new, created = self.__class__.objects.get_or_create(slug=slug)
         if not created:
             return new
+        new.set_cloned_from(self)
+        new.save()
         # clone nodes
         mapping = {}
         for node in self.nodes.all():

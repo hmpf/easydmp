@@ -37,23 +37,27 @@ class PayloadListFilter(admin.SimpleListFilter):
 class PrevEdgeInline(admin.StackedInline):
     model = Edge
     fk_name = 'prev_node'
+    exclude = ('cloned_from', 'cloned_when')
 
 
 class EdgeAdmin(admin.ModelAdmin):
     list_display = ['id', 'condition', 'prev_node', 'next_node', has_payload]
     list_display_links = ['id', 'condition', 'prev_node']
     list_filter = [PayloadListFilter]
+    readonly_fields = ('cloned_from', 'cloned_when')
 admin.site.register(Edge, EdgeAdmin)
 
 
 class NodeInline(admin.StackedInline):
     model = Node
+    exclude = ('cloned_from', 'cloned_when')
 
 
 class NodeAdmin(admin.ModelAdmin):
     list_display = ['id', '__str__', 'depends', 'fsa', has_payload]
     list_display_links = ['id']
     list_filter = [PayloadListFilter, 'fsa']
+    readonly_fields = ('cloned_from', 'cloned_when')
     inlines = [PrevEdgeInline]
 
 admin.site.register(Node, NodeAdmin)
@@ -61,5 +65,6 @@ admin.site.register(Node, NodeAdmin)
 
 class FSAAdmin(admin.ModelAdmin):
     list_display = ['slug', 'id']
+    readonly_fields = ('cloned_from', 'cloned_when')
     inlines = [NodeInline]
 admin.site.register(FSA, FSAAdmin)
