@@ -40,7 +40,7 @@
               <div class="question-label">
                 <label class="control-label requiredField">{{ form.label }}<span class="asteriskField">*</span></label>
                 <div class="btn-group">
-                    <input type="submit" name="summary" class="btn btn-default summary-link" value="Save and view">
+                  <input type="submit" name="summary" class="btn btn-default summary-link" value="Go to overview">
                 </div>
               </div>
               <p class="question-help">{{ form.help_text }}</p>
@@ -79,6 +79,7 @@
                 <input type="submit" name="next" value="Next" class="btn btn-primary" id="id-next" />
               </div>
           </form>
+          <div class="col-lg-12 savetxt">Your answers are automatically saved</div>
           <div style="display: none" class="answers">
             {% for answer in answers %}
             <div id="answer-canned-{{ answer.choice }}" style="display: none">{{ answer.canned_text }}</div>
