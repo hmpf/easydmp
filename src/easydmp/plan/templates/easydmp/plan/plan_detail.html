@@ -22,7 +22,7 @@
         <div class="dmpsummary">
             {% for section_title, sectiondata in output.items %}
             <div class="section section_depth_{{ sectiondata.section.depth }} " id="{{ sectiondata.section.full_title|slugify }}">
-                <h3 class="section_title">{{ sectiondata.section.full_title }}</h3>
+                <h3 class="section_title"><a href="{% url 'section_detail' section=sectiondata.section.pk plan=object.id %}">{{ sectiondata.section.full_title }}</a></h3>
                 {% if sectiondata.section.introductory_text %}
                 <div class="section_introduction">{{ sectiondata.section.introductory_text }}</div>
                 {% endif %}

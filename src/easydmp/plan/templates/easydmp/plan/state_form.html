@@ -15,6 +15,20 @@
     </div>
   </div>
 
+  <!-- start progress / status bar // USIT-code -->
+  <div class="row uninett-whole-row progressbar">
+    <ul>
+    {% for section in section_progress %}
+    <li {% if section.status %}class="{{ section.status }}"{% endif %}>
+          <div class="progressbar2"></div>
+          <span><a href="{% url 'section_detail' plan=object.id section=section.pk %}">{{ section.label }}</a></span>
+          {{ section.title }}
+      </li>
+    {% endfor %}
+    </ul>
+  </div>
+  <!-- end progress / status bar // USIT-code -->
+
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
       <div class="section section-depth-{{ section.section_depth }}">

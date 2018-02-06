@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect, Http404, HttpResponseServerError
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import (
     FormView,
     CreateView,
@@ -33,6 +33,27 @@ def progress(so_far, all):
 
 def has_prevquestion(question, data):
      return bool(question.get_prev_question(data))
+
+
+def get_section_progress(plan, current_section=None):
+    sections = plan.template.sections.filter(section_depth=1).order_by('position')
+    visited_sections = plan.visited_sections.all()
+    section_struct = []
+    current_section = current_section.get_topmost_section()
+    for section in sections:
+        section_dict = {
+            'label': section.label,
+            'title': section.title,
+            'full_title': section.full_title(),
+            'pk': section.pk,
+            'status': 'new',
+        }
+        if section in visited_sections:
+            section_dict['status'] = 'visited'
+        if section == current_section:
+            section_dict['status'] = 'active'
+        section_struct.append(section_dict)
+    return section_struct
 
 
 class DeleteFormMixin(FormView):
@@ -105,7 +126,7 @@ class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):
         return qs.filter(added_by=self.request.user)
 
 
-class AbstractQuestionMixin(object):
+class AbstractQuestionMixin:
 
     def get_question_pk(self):
         question_pk = self.kwargs.get('question')
@@ -127,9 +148,12 @@ class AbstractQuestionMixin(object):
     def get_queryset(self):
         return self.model.objects.filter(pk=self.get_plan_pk())
 
-    def get_template(self):
+    def get_plan(self):
         plan_id = self.get_plan_pk()
-        plan = Plan.objects.get(id=plan_id)
+        return Plan.objects.get(id=plan_id)
+
+    def get_template(self):
+        plan = self.get_plan()
         return plan.template
 
 
@@ -195,6 +219,7 @@ class NewQuestionView(AbstractQuestionView):
         num_questions_so_far = len(question.get_all_prev_questions())
         kwargs['progress'] = progress(num_questions_so_far, num_questions)
         kwargs['referrer'] = self.referer  # Not a typo! From the http header
+        kwargs['section_progress'] = get_section_progress(self.object, section)
         return super().get_context_data(**kwargs)
 
     def get_notesform(self, **_):
@@ -247,7 +272,7 @@ class NewQuestionView(AbstractQuestionView):
         previous_data = self.object.previous_data
         previous_data[question_pk] = state_switch
         self.object.previous_data = previous_data
-        self.object.save()
+        self.object.save(question=self.get_question())
         # remove invalidated states
 #         paths_from = self.get_template().find_paths_from(question_pk)
 #         invalidated_states = set(chain(*paths_from))
@@ -320,3 +345,100 @@ class GeneratedPlanPlainTextView(AbstractPlanDetailView):
 class GeneratedPlanPDFView(AbstractPlanDetailView):
     template_name = 'easydmp/plan/generated_plan.pdf'
     content_type = 'text/plain'
+
+
+class SectionDetailView(DetailView):
+    model = Section
+    pk_url_kwarg = 'section'
+    template_name = 'easydmp/plan/section_detail.html'
+
+    def get_plan(self, *args, **kwargs):
+        plan_id = kwargs['plan']
+        try:
+            plan = Plan.objects.get(id=plan_id)
+        except Section.DoesNotExist:
+            raise Http404
+        return plan
+
+    def check_plan(self, plan, section):
+        if plan.template != section.template:
+            return False
+        return True
+
+    def get_section(self, *args, **kwargs):
+        section_id = kwargs['section']
+        plan = self.get_plan(*args, **kwargs)
+        try:
+            section = Section.objects.get(id=section_id)
+        except Section.DoesNotExist:
+            raise Http404
+        if not self.check_plan(plan, section):
+            raise Http404
+        return section
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        plan = self.get_plan(**self.kwargs)
+        correct_plan = self.check_plan(plan, obj)
+        if correct_plan:
+            return obj
+        raise Http404
+
+    def dispatch(self, *args, **kwargs):
+        section = self.get_section(**self.kwargs)
+        plan = self.get_plan(**self.kwargs)
+
+        # Set visited empty section
+        plan.visited_sections.add(section)
+        topmost = section.get_topmost_section()
+        if topmost:
+            plan.visited_sections.add(topmost)
+
+        # Redirect to first question if any
+        question = section.get_first_question()
+        if question:
+            return redirect('new_question', question=question.pk, plan=plan.pk)
+
+        # Show page for empty section
+        return super().dispatch(*args, **kwargs)
+
+    def next(self):
+        "Generate link to next page"
+        plan = self.get_plan(**self.kwargs)
+        next_section = self.object.get_next_section()
+        if next_section is not None:
+            question = next_section.get_first_question()
+            if question:
+                return reverse('new_question', kwargs={'question': question.pk,
+                                                   'plan': plan.pk })
+            return reverse('section_detail', kwargs={'plan': plan.pk,
+                                                     'section':
+                                                     next_section.pk})
+        return reverse('plan_detail', kwargs={'plan': plan.pk})
+
+    def prev(self):
+        "Generate link to previous page"
+        plan = self.get_plan(**self.kwargs)
+        prev_section = self.object.get_prev_section()
+        if prev_section is not None:
+            question = prev_section.get_first_question()
+            if question:
+                return reverse('new_question', kwargs={'question': question.pk,
+                                                   'plan': plan.pk })
+            return reverse('section_detail', kwargs={'plan': plan.pk,
+                                                     'section':
+                                                     prev_section.pk})
+        return reverse('plan_detail', kwargs={'plan': plan.pk})
+
+    def get_context_data(self, **kwargs):
+        plan = self.get_plan(**self.kwargs)
+        next = self.object.get_next_section()
+        prev = self.object.get_prev_section()
+        context = {
+            'plan': plan,
+            'next': self.next(),
+            'prev': self.prev(),
+            'section_progress': get_section_progress(plan, self.object),
+        }
+        context.update(**kwargs)
+        return super().get_context_data(**context)

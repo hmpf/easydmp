@@ -399,6 +399,12 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
             return prev_sections[0]
         return None
 
+    def get_topmost_section(self):
+        obj = self
+        while obj.super_section is not None:
+            obj = obj.super_section
+        return obj
+
     # graphing code
     def find_path(self, data):
         if not data:
