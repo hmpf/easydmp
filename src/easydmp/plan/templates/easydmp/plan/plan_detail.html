@@ -21,44 +21,44 @@
         {% if output.items %}
         <div class="dmpsummary">
             {% for section_title, sectiondata in output.items %}
-            <div class="section" id="{{ section_title|slugify }}">
-            <h3 class="section_title">{{ section_title }}</h3>
-            {% if sectiondata.section.introductory_text %}
-            <div class="section_introduction">{{ sectiondata.section.introductory_text }}</div>
-            {% endif %}
-            {% if sectiondata.section.comment %}
-            <div class="section_comment"><td colspan="3">{{ sectiondata.section.comment }}</div>
-            {% endif %}
-            {% if sectiondata.data %}
-            {% for question_pk, value in sectiondata.data.items %}
-            <dl class="questionrow">
-                <dt class="question">{{ value.question }}</dt>
-                <dd class="answer">{{ value.answer }}
-                    {% if value.notes %}<br />
-                    <div class="notes">
-                        <b>Notes:</b>
-                        {{ value.notes }}
-                    </div>
-                    {% endif %}
-                <p class="actions"><a href="{% url 'new_question' plan=object.id question=question_pk %}">Edit</a></p>
-                </dd>
-            </dl>
-            {% endfor %}
-            {% else %}
-            {% if sectiondata.section.first_question %}
-            {% with sectiondata.section.first_question as question %}
-            <p>You have not answered any of the question in this section yet. A link to the first question follows below.</p>
-            <dl class="questionrow">
-                <dt class="question">{{ question }}</dt>
-                <dd class="answer">
-                <p class="actions"><a href="{% url 'new_question' plan=object.id question=question.pk %}">New</a></p>
-                </dd>
-            </dl>
-            {% endwith %}
-            {% endif %}
-            {% endif %}
-            </div>
-            {% endfor %}
+            <div class="section section_depth_{{ sectiondata.section.depth }} " id="{{ sectiondata.section.full_title|slugify }}">
+                <h3 class="section_title">{{ sectiondata.section.full_title }}</h3>
+                {% if sectiondata.section.introductory_text %}
+                <div class="section_introduction">{{ sectiondata.section.introductory_text }}</div>
+                {% endif %}
+                {% if sectiondata.section.comment %}
+                <div class="section_comment"><td colspan="3">{{ sectiondata.section.comment }}</div>
+                {% endif %}
+                {% if sectiondata.data %}
+                {% for question_pk, value in sectiondata.data.items %}
+                <dl class="questionrow">
+                    <dt class="question">{{ value.question }}</dt>
+                    <dd class="answer">{{ value.answer }}
+                        {% if value.notes %}<br />
+                        <div class="notes">
+                            <b>Notes:</b>
+                            {{ value.notes }}
+                        </div>
+                        {% endif %}
+                    <p class="actions"><a href="{% url 'new_question' plan=object.id question=question_pk %}">Edit</a></p>
+                    </dd>
+                </dl>
+                {% endfor %}
+                {% else %}
+                {% if sectiondata.section.first_question %}
+                {% with sectiondata.section.first_question as question %}
+                <p>You have not answered any of the question in this section yet. A link to the first question follows below.</p>
+                <dl class="questionrow">
+                    <dt class="question">{{ question }}</dt>
+                    <dd class="answer">
+                    <p class="actions"><a href="{% url 'new_question' plan=object.id question=question.pk %}">New</a></p>
+                    </dd>
+                </dl>
+                {% endwith %}
+                {% endif %}
+                {% endif %}
+                </div>
+                {% endfor %}
         </div>
         {% else %}
         <p>No questions answered. <a href="{% url 'first_question' plan=object.id %}">Start here</a>.</p>

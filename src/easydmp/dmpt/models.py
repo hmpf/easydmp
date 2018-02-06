@@ -221,9 +221,15 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
                 value['answer'] = question.pprint_html(value)
                 value['question'] = question
                 section_summary[question.pk] = value
-            summary[section.title] = {
+            summary[section.full_title()] = {
                 'data': section_summary,
                 'section': {
+                    'depth': section.section_depth,
+                    'label': section.label,
+                    'title': section.title,
+                    'section': section,
+                    'full_title': section.full_title(),
+                    'pk': section.pk,
                     'first_question': section.get_first_question(),
                     'introductory_text': mark_safe(section.introductory_text),
                     'comment': mark_safe(section.comment),
@@ -248,6 +254,7 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
     """
     GRAPHVIZ_TMPDIR = '/tmp/dmpt/'
     template = models.ForeignKey(Template, related_name='sections')
+    label = models.CharField(max_length=16, blank=True)
     title = models.CharField(
         max_length=255,
         blank=True,
@@ -259,6 +266,8 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
     )
     introductory_text = models.TextField(blank=True)
     comment = models.TextField(blank=True)
+    super_section = models.ForeignKey('self', null=True, blank=True, related_name='subsections')
+    section_depth = models.PositiveSmallIntegerField(default=1)
 
     class Meta:
         unique_together = (
@@ -268,7 +277,12 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
 
     @lru_cache(None)
     def __str__(self):
-        return '{}: {}'.format(self.template, self.title)
+        return '{}: {}'.format(self.template, self.full_title())
+
+    def full_title(self):
+        if self.label:
+            return '{} {}'.format(self.label, self.title)
+        return self.title
 
     @transaction.atomic
     def clone(self, template):

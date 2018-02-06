@@ -17,10 +17,12 @@ class SectionAdmin(admin.ModelAdmin):
     list_display = (
         'template',
         'position',
+        'section_depth',
         'id',
+        'label',
         'title',
     )
-    list_display_links = ('template', 'id', 'position')
+    list_display_links = ('template', 'section_depth', 'id', 'position')
     list_filter = ('template',)
     actions = [
         'increment_position',

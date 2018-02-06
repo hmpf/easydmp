@@ -17,73 +17,75 @@
 
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-      <h3>{{ section.title }}</h3>
-      <div class="section-introduction">{{ section.introductory_text }}</div>
-      <div class="section-comment">{{ section.comment }}</div>
-      {% if user.is_superuser %}
-      <div class="superuser path">
-        <h4>{% for q in path %}
-          <span>
-            {% if question_pk != q.pk %}<a href="{% url 'new_question' plan=object.pk question=q.pk %}">{{ q }}</a>
-            {% else %}
-            {% if question_pk == q.pk %}<strong class="current">{{ q }}</strong>{% else %}{{ q }}{% endif %}
-            {% endif %}
-          </span>
-          {% endfor %}
-        </h4>
-      </div>
-      {% endif %}
-
-      <form class="blueForms" id="id-{{ form.prefix }}" method="POST">
-          {% csrf_token %}
-          <div class="question-label">
-            <label class="control-label requiredField">{{ form.label }}<span class="asteriskField">*</span></label>
-            <div class="btn-group">
-                <input type="submit" name="summary" class="btn btn-default summary-link" value="Save and view">
-            </div>
+      <div class="section section-depth-{{ section.section_depth }}">
+          <h3>{{ section.full_title }}</h3>
+          <div class="section-introduction">{{ section.introductory_text }}</div>
+          <div class="section-comment">{{ section.comment }}</div>
+          {% if user.is_superuser %}
+          <div class="superuser path">
+            <h4>{% for q in path %}
+              <span>
+                {% if question_pk != q.pk %}<a href="{% url 'new_question' plan=object.pk question=q.pk %}">{{ q }}</a>
+                {% else %}
+                {% if question_pk == q.pk %}<strong class="current">{{ q }}</strong>{% else %}{{ q }}{% endif %}
+                {% endif %}
+              </span>
+              {% endfor %}
+            </h4>
           </div>
-          <p class="question-help">{{ form.help_text }}</p>
-          <p class="question-comment" style="">{{ form.question.comment }}</p>
+          {% endif %}
+
+          <form class="blueForms" id="id-{{ form.prefix }}" method="POST">
+              {% csrf_token %}
+              <div class="question-label">
+                <label class="control-label requiredField">{{ form.label }}<span class="asteriskField">*</span></label>
+                <div class="btn-group">
+                    <input type="submit" name="summary" class="btn btn-default summary-link" value="Save and view">
+                </div>
+              </div>
+              <p class="question-help">{{ form.help_text }}</p>
+              <p class="question-comment" style="">{{ form.question.comment }}</p>
 
 
-          <div class="form-body">
-              {{ form.non_field_errors }}
-              {% if form.forms %}
-              {% include "widgets/formset.html" %}
-              {% else %}
-              <div class="control-group">
-                  {{ form.choice }}
-                  {% if form.choice.errors %}
-                  <div class="errors">
-                  {{ form.choice.errors }}
+              <div class="form-body">
+                  {{ form.non_field_errors }}
+                  {% if form.forms %}
+                  {% include "widgets/formset.html" %}
+                  {% else %}
+                  <div class="control-group">
+                      {{ form.choice }}
+                      {% if form.choice.errors %}
+                      <div class="errors">
+                      {{ form.choice.errors }}
+                      </div>
+                      {% endif %}
                   </div>
                   {% endif %}
-              </div>
-              {% endif %}
 
-              <div id="div_id_notes" class="control-group notes">
-                  <label for="id_notes" class="control-label">Notes</label>
-                  <div class="controls">
-                      {{ notesform.notes }}
+                  <div id="div_id_notes" class="control-group notes">
+                      <label for="id_notes" class="control-label">Notes</label>
+                      <div class="controls">
+                          {{ notesform.notes }}
+                      </div>
                   </div>
               </div>
-          </div>
 
-          <div class="form-actions">
-            {{ notesform.non_field_errors }}
-            {% if notesform.has_prevquestion %}
-            <input type="submit" name="prev" value="Prev" class="btn btn-primary" id="id-prev" />
-            {% endif %}
-            <span id="question-position" >Question {{ form.question.position }}/{{ section.questions.count }}</span>
-            <input type="submit" name="next" value="Next" class="btn btn-primary" id="id-next" />
+              <div class="form-actions">
+                {{ notesform.non_field_errors }}
+                {% if notesform.has_prevquestion %}
+                <input type="submit" name="prev" value="Prev" class="btn btn-primary" id="id-prev" />
+                {% endif %}
+                <span id="question-position" >Question {{ form.question.position }}/{{ section.questions.count }}</span>
+                <input type="submit" name="next" value="Next" class="btn btn-primary" id="id-next" />
+              </div>
+          </form>
+          <div style="display: none" class="answers">
+            {% for answer in answers %}
+            <div id="answer-canned-{{ answer.choice }}" style="display: none">{{ answer.canned_text }}</div>
+            <div id="answer-comment-{{ answer.choice }}" style="display: none">{{ answer.comment }}</div>
+            {% endfor %}
+            <div id="framing-text">{{ framing_text }}</div>
           </div>
-      </form>
-      <div style="display: none" class="answers">
-        {% for answer in answers %}
-        <div id="answer-canned-{{ answer.choice }}" style="display: none">{{ answer.canned_text }}</div>
-        <div id="answer-comment-{{ answer.choice }}" style="display: none">{{ answer.comment }}</div>
-        {% endfor %}
-        <div id="framing-text">{{ framing_text }}</div>
       </div>
     </div>
   </div>
