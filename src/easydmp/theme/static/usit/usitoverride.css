@@ -60,19 +60,18 @@ h3{
   /*height: 20px;*/
   display: block;
 }
-
 .jumbotron{
-  padding: 1.5em 40px;
+  padding: 1em 0px;
   margin-top: 48px;
-  background-color: #00404c !important;
+  background-color: transparent !important;
 }
 
 .jumbotron h1, .jumbotron h2{
-  font-size: 45px;
+  font-size: 40px;
   margin-bottom: 0px;
-  color: #ffffff;
+  color: #000000 !important;
   font-weight: normal;
-  font-family:'colfaxthin', Arial, sans-serif;
+  font-family:'colfaxRegular', Arial, sans-serif;
 }
 #action_html{
   margin-right: 1em;
@@ -174,8 +173,77 @@ p.actions{
 .uninett-color-white ul li{
   line-height: 2em;
 }
-
 /* Edit Page */
+/* progress / status bar */
+.progressbar {
+  padding-bottom: 20px;
+}
+.progressbar ul {
+  padding: 0px;
+  width: 100%;
+  display: flex;
+  margin-bottom: 0px;
+}
+.progressbar ul li {
+  position: relative;
+  float: left;
+  list-style: none;
+  text-align: center;
+  flex-shrink: 0;
+  flex-grow: 1;
+  font-size: 13px;
+}
+.progressbar2 {
+ width: 100%;
+ height: 1px;
+ position: absolute;
+ top: 25px;
+ background-color: #000;
+ z-index: -1;
+}
+.progressbar ul li:first-of-type .progressbar2{
+  width: 50% !important;
+  right: 0;
+}
+.progressbar ul li:last-of-type .progressbar2{
+  width: 50%;
+  left: 0;
+}
+.progressbar ul li span {
+  width: 50px;
+  height: 50px;
+  border: 1px solid black;
+  display: block;
+  background-color: #eeebe8;
+  text-align: center;
+  margin: auto;
+  border-radius: 50%;
+  line-height: 50px;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.progressbar ul li.active span {
+  background-color: #337db1;
+  border-color: #337db1;
+  color: white;
+}
+
+.progressbar ul li.visited span {
+  background-color: #dad8d6;
+  border-color: #dad8d6;
+}
+
+/* Autosave message */
+.savetxt {
+  width: 100%;
+  display: block;
+  text-align: center;
+  color: #adaeaf;
+  font-size: 15px;
+  margin-bottom: -20px;
+}
+
 textarea {
   width: 100%;
 }
@@ -184,19 +252,19 @@ textarea {
 }
 .btn-group {
   position: absolute;
-  right: 0;
+  left: 0;
   top: 0;
 }
 .summary-link{
   position: absolute !important;
   top: 0;
-  right: 40px;
+  left: 40px;
   font-family: 'colfaxRegular', Arial, sans-serif;
-  font-size: 18px;
   background: transparent;
-  color:  #005c9e;
   border: none;
   padding: 0;
+  color: #337db1;
+  font-size: 15px;
 }
 .summary-link:hover{
   background-color: transparent;
@@ -268,8 +336,8 @@ textarea {
       width: 750px;
   }
   .jumbotron {
-    padding-right: 40px !important;
-    padding-left: 40px !important;
+    padding-right: 0px !important;
+    padding-left: 0px !important;
   }
 }
 
