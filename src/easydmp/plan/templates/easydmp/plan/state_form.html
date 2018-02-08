@@ -57,7 +57,7 @@
                   <input type="submit" name="summary" class="btn btn-default summary-link" value="Go to overview">
                 </div>
               </div>
-              <p class="question-help">{{ form.help_text }}</p>
+              <p class="question-help">{{ form.help_text|safe }}</p>
               <p class="question-comment" style="">{{ form.question.comment }}</p>
 
 
