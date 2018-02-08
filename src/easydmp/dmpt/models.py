@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from functools import lru_cache
+from textwrap import fill
 from uuid import uuid4
 
 import graphviz as gv
@@ -450,18 +451,29 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
         global gv
         dot = gv.Digraph()
 
-        for question in self.questions.all():
+        s_kwargs = {'shape': 'doublecircle'}
+        s_start_id = 's-{}-start'.format(self.pk)
+        dot.node(s_start_id, label='Start', **s_kwargs)
+        s_end_id = 's-{}-end'.format(self.pk)
+        dot.node(s_end_id, label='End', **s_kwargs)
+        for question in self.questions.order_by('position'):
             q_kwargs = {}
-            q_kwargs['label'] = str(question)
-            if question.pk == self.get_first_question().pk:
-                q_kwargs['shape'] = 'doublecircle'
+            q_kwargs['label'] = fill(str(question), 20)
             q_id = 'q{}'.format(question.pk)
+            if question.pk == self.get_first_question().pk:
+                dot.edge(s_start_id, q_id, **s_kwargs)
             dot.node(q_id, **q_kwargs)
             next_questions = question.get_potential_next_questions()
-            for choice, next_question in next_questions:
-                nq_id = 'q{}'.format(next_question.pk)
-                e_kwargs = {'label': choice}
-                dot.edge(q_id, nq_id, **e_kwargs)
+            if next_questions:
+                for choice, next_question in next_questions:
+                    if next_question:
+                        nq_id = 'q{}'.format(next_question.pk)
+                    else:
+                        nq_id = s_end_id
+                    e_kwargs = {'label': fill(choice, 15)}
+                    dot.edge(q_id, nq_id, **e_kwargs)
+            else:
+                dot.edge(q_id, s_end_id)
         return dot.source
 
     def view_dotsource(self, format, dotsource=None):  # pragma: no cover
