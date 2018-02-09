@@ -105,15 +105,13 @@ class SectionFilter(admin.SimpleListFilter):
     parameter_name = 'section'
 
     def lookups(self, request, model_admin):
-        sections = Section.objects.values_list('id', 'title').distinct()
+        sections = Section.objects.all()
         template_id = request.GET.get('section__template__id__exact', None)
         if template_id:
-            sections = sections.filter(template__id=template_id)
+            sections = sections.filter(template_id=template_id)
         lookups = []
-        for (k, v) in sections:
-            if not v:
-                v = '- untitled -'
-            lookups.append((k, v))
+        for section in sections:
+            lookups.append((section.pk, str(section)))
         return lookups
 
     def queryset(self, request, queryset):
