@@ -52,5 +52,5 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class PlanViewSet(ReadOnlyModelViewSet):
-    queryset = Plan.objects.all()
+    queryset = Plan.objects.exclude(published=None)
     serializer_class = PlanSerializer
