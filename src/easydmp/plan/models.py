@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.timezone import now as tznow
 
 from jsonfield import JSONField
 
@@ -29,6 +30,11 @@ class Plan(models.Model):
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='added_plans')
     modified = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='modified_plans')
+    published = models.DateTimeField(blank=True, null=True)
+    published_by = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                     related_name='published_plans',
+                                     blank=True, null=True,
+                                     on_delete=models.SET_NULL)
     editor_group = models.ForeignKey('auth.Group', related_name='+', blank=True, null=True)
 
     objects = PlanQuerySet.as_manager()
@@ -70,3 +76,8 @@ class Plan(models.Model):
         self.create_editor_group()
         for editor in editors:
             self.add_user_to_editor_group(editor)
+
+    def publish(self, user):
+        self.published = tznow()
+        self.published_by = user
+        self.save()
