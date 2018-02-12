@@ -28,7 +28,10 @@
             <td>{{ object.template }}</a></td>
             <td>{{ object.added|date:"Y-m-d" }}</td>
             <td><a href="{% url 'generated_plan_html' plan=object.id %}">Html</a></td>
-            <td><a href="{% url 'plan_delete' plan=object.id %}">Delete</a></td>
+            <td>
+                <a href="{% url 'update_plan' plan=object.id %}">Rename</a>
+                <a href="{% url 'plan_delete' plan=object.id %}">Delete</a>
+            </td>
           </tr>
           {% endfor %}
         </tbody>

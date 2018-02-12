@@ -2,6 +2,7 @@ from django.conf.urls import url
 
 from .views import (
     NewPlanView,
+    UpdatePlanView,
     DeletePlanView,
     NewQuestionView,
     FirstQuestionView,
@@ -24,6 +25,7 @@ QUESTION_PAGEROOT_RE = r'^%s/%s/' % (PLAN_RE, QUESTION_RE)
 urlpatterns = [
     url(r'^$', PlanListView.as_view(), name='plan_list'),
     url(r'^new/$', NewPlanView.as_view(), name='new_plan'),
+    url(PLAN_PAGEROOT_RE + 'update/$', UpdatePlanView.as_view(), name='update_plan'),
     url(PLAN_PAGEROOT_RE + 'first/new/$', FirstQuestionView.as_view(), name='first_question'),
     url(QUESTION_PAGEROOT_RE + r'new/$', NewQuestionView.as_view(), name='new_question'),
     url(SECTION_PAGEROOT_RE + r'$', SectionDetailView.as_view(), name='section_detail'),

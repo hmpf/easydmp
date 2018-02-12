@@ -23,7 +23,8 @@ from easydmp.dmpt.models import Template, Question, Section
 from flow.models import FSA
 
 from .models import Plan
-from .forms import PlanForm
+from .forms import NewPlanForm
+from .forms import UpdatePlanForm
 
 
 def progress(so_far, all):
@@ -60,14 +61,7 @@ class DeleteFormMixin(FormView):
     form_class = DeleteForm
 
 
-class NewPlanView(LoginRequiredMixin, CreateView):
-    """Create a new empty plan from the given template
-
-    Chceks that the same adder do not have a plan of the same name already.
-    """
-    template_name = 'easydmp/plan/newplan_form.html'
-    model = Plan
-    form_class = PlanForm
+class AbstractPlanViewMixin:
 
     def get_success_url(self):
         kwargs = {
@@ -96,6 +90,23 @@ class NewPlanView(LoginRequiredMixin, CreateView):
             return None
         return qs
 
+
+class NewPlanView(AbstractPlanViewMixin, LoginRequiredMixin, CreateView):
+    """Create a new empty plan from the given template
+
+    Chceks that the same adder do not have a plan of the same name already.
+    """
+    template_name = 'easydmp/plan/newplan_form.html'
+    model = Plan
+    form_class = NewPlanForm
+
+    def get_success_url(self):
+        kwargs = {
+            'plan': self.object.pk,
+            'question': self.object.get_first_question().pk,
+        }
+        return reverse('new_question', kwargs=kwargs)
+
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.data = {}
@@ -106,6 +117,31 @@ class NewPlanView(LoginRequiredMixin, CreateView):
         existing = self.find_existing()
         if not existing:
             self.object.save()
+            return HttpResponseRedirect(self.get_success_url())
+        if existing.count() == 1:
+            hop_to = existing[0]
+            # send message
+            return HttpResponseRedirect(reverse('plan_detail', kwargs={'plan': hop_to.pk}))
+        # multiple plans with same editor, template and title exists
+        return HttpResponseServerError()
+
+
+class UpdatePlanView(AbstractPlanViewMixin, LoginRequiredMixin, UpdateView):
+    template_name = 'easydmp/plan/updateplan_form.html'
+    model = Plan
+    pk_url_kwarg = 'plan'
+    form_class = UpdatePlanForm
+
+    def get_success_url(self):
+        kwargs = {
+            'plan': self.object.pk,
+        }
+        return reverse('plan_detail', kwargs=kwargs)
+
+    def form_valid(self, form):
+        existing = self.find_existing()
+        if not existing:
+            self.object = form.save()
             return HttpResponseRedirect(self.get_success_url())
         if existing.count() == 1:
             hop_to = existing[0]
