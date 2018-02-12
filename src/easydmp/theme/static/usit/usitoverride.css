@@ -10,7 +10,6 @@ h3{
   font-weight: 600;
   /*font-size: 2.5rem;*/
 }
-
 /* navigation */
 .navbar-brand{
   margin-top: -5px;
@@ -57,8 +56,10 @@ h3{
 
 .divider{
   width: 100%;
-  /*height: 20px;*/
   display: block;
+}
+.uninett-pattern1 {
+  background-image: none !important;
 }
 .jumbotron{
   padding: 1em 0px;
@@ -119,10 +120,11 @@ dd, .section_introduction p {
   padding: 0;
   margin-top: 4em;
 }
-#\32 5-allocation-of-resources {
+#\32 5-allocation-of-resources, #\32 4-increase-data-reuse {
     padding-bottom: 2em;
   }
 
+/*
 #\32 1-making-data-findable-including-provisions-for-metadata p.actions,
 #\32 2-making-data-openly-accessible p.actions,
 #\32 3-making-data-interoperable p.actions,
@@ -131,6 +133,7 @@ dd, .section_introduction p {
 {
     top: 0;
   }
+*/
 
 #\32-fair-data {
   padding-bottom: 0;
@@ -226,14 +229,19 @@ p.actions{
 .progressbar ul li.active span {
   background-color: #337db1;
   border-color: #337db1;
-  color: white;
+  color: #ffffff;
+}
+.progressbar ul li.active span a {
+  color: #ffffff;
 }
 
 .progressbar ul li.visited span {
   background-color: #dad8d6;
   border-color: #dad8d6;
 }
-
+.question-label .control-label {
+  font-family: 'colfaxBold', Arial, sans-serif;
+}
 /* Autosave message */
 .savetxt {
   width: 100%;
@@ -241,7 +249,8 @@ p.actions{
   text-align: center;
   color: #adaeaf;
   font-size: 15px;
-  margin-bottom: -20px;
+  margin-bottom: -1em;
+  margin-top: 2.5em;
 }
 
 textarea {
@@ -277,18 +286,31 @@ textarea {
 }
 .controls textarea{
   width: 100%;
-}
-#question-position{
-  width: 85%;
-  display: inline-block;
-  text-align: center;
+  height: 150px;
 }
 .form-actions {
+  position: relative;
   padding-top: 1em;
+}
+#question-position{
+  width: 100%;
+  display: inline-block;
+  text-align: center;
+  position: absolute;
+  left: 0;
+  z-index: 0;
 }
 .form-actions .btn-primary{
   width: 7%;
-  min-width: 34px;
+  min-width: 34px
+  z-index: 100;
+  position: absolute;
+}
+#id-prev {
+  left: 0;
+}
+#id-next {
+  right: 0;
 }
 .form-actions #id-next{
   float: right;
