@@ -48,6 +48,8 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
             'added_by',
             'modified',
             'modified_by',
+            'published',
+            'published_by',
         ]
 
 
