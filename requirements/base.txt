@@ -8,3 +8,4 @@ whitenoise>=3.3
 djangorestframework>=3.4
 django-select2>=6.0.1
 dj-database-url>=0.4.2
+psycopg2>=2.4.0
