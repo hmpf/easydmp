@@ -19,8 +19,14 @@ class PlanQuerySet(models.QuerySet):
 
 
 class Plan(models.Model):
-    title = models.CharField(max_length=255)
-    abbreviation = models.CharField(max_length=8, blank=True)
+    title = models.CharField(
+        max_length=255,
+        help_text='The title of the plan itself, used in the generated file'
+    )
+    abbreviation = models.CharField(
+        max_length=8, blank=True,
+        help_text='An abbreviation of the plan title, if needed.',
+    )
     version = models.PositiveIntegerField(default=1)
     template = models.ForeignKey('dmpt.Template', related_name='plans')
     data = JSONField(default={})
