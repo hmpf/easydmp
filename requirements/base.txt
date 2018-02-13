@@ -7,3 +7,4 @@ django-crispy-forms>=1.6
 whitenoise>=3.3
 djangorestframework>=3.4
 django-select2>=6.0.1
+dj-database-url>=0.4.2
