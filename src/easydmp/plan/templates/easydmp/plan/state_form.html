@@ -57,7 +57,7 @@
                   <input type="submit" name="summary" class="btn btn-default summary-link" value="Go to overview">
                 </div>
               </div>
-              <p class="question-help">{{ form.help_text|safe }}</p>
+              <p class="help_text question-help">{{ form.help_text|safe }}</p>
               <p class="question-comment" style="">{{ form.question.comment }}</p>
 
 
@@ -76,9 +76,10 @@
                   </div>
                   {% endif %}
 
-                  <div id="div_id_notes" class="control-group notes">
-                      <label for="id_notes" class="control-label">Notes</label>
+                  <div id="div_id_{{ question_pk }}_notes" class="control-group notes">
+                      <label for="{{ notesform.notes.id_for_label }}" class="control-label">{{ notesform.notes.label }}</label>
                       <div class="controls">
+                          <div class="help_text">{{ notesform.notes.help_text|safe }}</div>
                           {{ notesform.notes }}
                       </div>
                   </div>

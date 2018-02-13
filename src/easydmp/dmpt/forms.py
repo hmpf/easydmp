@@ -53,7 +53,12 @@ class DeleteForm(forms.Form):
 
 
 class NotesForm(forms.Form):
-    notes = forms.CharField(required=False, widget=forms.Textarea)
+    notes = forms.CharField(
+        label='More information',
+        help_text='If you need to go more in depth, do so here. This will be shown in the generated text',
+        required=False,
+        widget=forms.Textarea
+    )
 
     def __init__(self, *args, **kwargs):
         self.has_prevquestion = kwargs.pop('has_prevquestion', False)
