@@ -14,7 +14,7 @@ class PlanForm(forms.ModelForm):
 
     class Meta:
         model = Plan
-        fields = ['title']
+        fields = ['title', 'abbreviation']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
