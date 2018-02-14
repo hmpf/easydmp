@@ -419,6 +419,9 @@ textarea {
 #submit-id-submit{
   margin-top: 3em;
 }
+#submit-id-cancel{
+  margin-top: 3em;
+}
 
 /* media queries */
 
