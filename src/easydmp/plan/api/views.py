@@ -37,6 +37,7 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
         model = Plan
         fields = [
             'id',
+            'uuid',
             'url',
             'title',
             'abbreviation',
@@ -48,6 +49,8 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
             'added_by',
             'modified',
             'modified_by',
+            'locked',
+            'locked_by',
             'published',
             'published_by',
         ]

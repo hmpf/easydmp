@@ -49,7 +49,9 @@
                             {{ value.notes }}
                         </div>
                         {% endif %}
+                        {% if not object.locked %}
                     <p class="actions"><a href="{% url 'new_question' plan=object.id question=question_pk %}">Edit</a></p>
+                        {% endif %}
                     </dd>
                 </dl>
                 {% endfor %}
@@ -60,7 +62,9 @@
                 <dl class="questionrow">
                     <dt class="question">{{ question }}</dt>
                     <dd class="answer">
+                        {% if not object.locked %}
                     <p class="actions"><a href="{% url 'new_question' plan=object.id question=question.pk %}">New</a></p>
+                        {% endif %}
                     </dd>
                 </dl>
                 {% endwith %}

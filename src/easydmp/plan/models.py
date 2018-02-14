@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from django.conf import settings
 from django.db import models
 from django.utils.timezone import now as tznow
@@ -28,6 +30,7 @@ class Plan(models.Model):
         help_text='An abbreviation of the plan title, if needed.',
     )
     version = models.PositiveIntegerField(default=1)
+    uuid = models.UUIDField(default=uuid4, editable=False)
     template = models.ForeignKey('dmpt.Template', related_name='plans')
     data = JSONField(default={})
     previous_data = JSONField(default={})
@@ -36,6 +39,10 @@ class Plan(models.Model):
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='added_plans')
     modified = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='modified_plans')
+    locked = models.DateTimeField(blank=True, null=True)
+    locked_by = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                  related_name='locked_plans', blank=True,
+                                  null=True, on_delete=models.SET_NULL)
     published = models.DateTimeField(blank=True, null=True)
     published_by = models.ForeignKey(settings.AUTH_USER_MODEL,
                                      related_name='published_plans',
@@ -100,7 +107,18 @@ class Plan(models.Model):
         for editor in editors:
             self.add_user_to_editor_group(editor)
 
-    def publish(self, user):
-        self.published = tznow()
+    def lock(self, user, timestamp=None, wait_to_save=False):
+        timestamp = timestamp if timestamp else tznow()
+        self.locked = timestamp
+        self.locked_by = user
+        # save obj now, don't wait for some other method after this
+        if not wait_to_save:
+            self.save()
+
+    def publish(self, user, timestamp=None):
+        timestamp = timestamp if timestamp else tznow()
+        if not self.locked:
+            self.lock(user, timestamp, True)
+        self.published = timestamp
         self.published_by = user
         self.save()
