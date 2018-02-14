@@ -11,6 +11,23 @@ h3{
   /*font-size: 2.5rem;*/
 }
 /* navigation */
+.slider {
+	overflow-y: hidden;
+	max-height: 114px; /* approximate max height */
+	transition-property: all;
+	transition-duration: .5s;
+	transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
+}
+.slider.closed {
+	max-height: 0;
+}
+.navbar {
+  min-height: 0px;
+}
+
+.nav-up {
+    top: -114px;
+}
 .navbar-brand{
   margin-top: -5px;
 }
@@ -73,6 +90,15 @@ h3{
   color: #000000 !important;
   font-weight: normal;
   font-family:'colfaxRegular', Arial, sans-serif;
+}
+.jumbotron-small {
+  margin-top: -1.3em;
+  padding-top: 0;
+  padding-bottom: 1.5em;
+}
+
+.jumbotron-small h1 {
+  font-size: 30px !important;
 }
 #action_html{
   margin-right: 1em;
@@ -181,6 +207,37 @@ p.actions{
 .progressbar {
   padding-bottom: 20px;
 }
+.progressbar-small {
+  height: 40px;
+  overflow: hidden;
+  padding-bottom: 0;
+  margin-bottom: -1em;
+  margin-top: 0px;
+}
+
+.withfadeout {
+  -webkit-transition: all .5s ease-in-out;
+  -moz-transition: all .5s ease-in-out;
+  -ms-transition: all .5s ease-in-out;
+  -o-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+}
+.withfadein {
+-webkit-transition: all .5s ease-out 0s;
+  -moz-transition: all .5s ease-out 0s;
+  -ms-transition: all .5s ease-out 0s;
+  -o-transition: all .5s ease-out 0s;
+  transition: all .5s ease-out 0s;
+}
+.progressbar-small ul li span {
+  width: 30px !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  font-size: 13px !important;
+}
+.progressbar-small .progressbar2 {
+  top: 15px;
+}
 .progressbar ul {
   padding: 0px;
   width: 100%;
@@ -195,6 +252,16 @@ p.actions{
   flex-shrink: 0;
   flex-grow: 1;
   font-size: 13px;
+}
+.progressbar ul li a:hover span{
+  border: 1px solid #337db1;
+  background: #337db1;
+}
+.progressbar ul li a:hover span a {
+  color: #ffffff;
+}
+.progressbar ul li a:hover {
+    text-decoration: none;
 }
 .progressbar2 {
  width: 100%;
@@ -268,11 +335,12 @@ textarea {
   position: absolute !important;
   top: 0;
   left: 40px;
+  text-decoration: underline;
   font-family: 'colfaxRegular', Arial, sans-serif;
   background: transparent;
   border: none;
   padding: 0;
-  color: #337db1;
+  color: #005c9e;
   font-size: 15px;
 }
 .summary-link:hover{
@@ -302,15 +370,16 @@ textarea {
 }
 .form-actions .btn-primary{
   width: 7%;
-  min-width: 34px
+  min-width: 34px;
   z-index: 100;
-  position: absolute;
 }
 #id-prev {
   left: 0;
+  position: absolute;
 }
 #id-next {
   right: 0;
+  position: absolute;
 }
 .form-actions #id-next{
   float: right;

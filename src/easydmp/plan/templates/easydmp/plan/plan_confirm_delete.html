@@ -4,13 +4,14 @@
   <div class="row">
     <div class="col-lg-12">
       <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-<h1>Really delete "{{ object.title|capfirst }} {{ object.added|date:"Y-m-t H:i:s" }}"?</h1>
+<h1>"{{ object.title|capfirst }} {{ object.added|date:"Y-m-t H:i:s" }}"</h1>
       </div>
     </div>
   </div>
 
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+        <p>Are you sure you really want to delete this plan?</p>
         {% crispy form %}
 </div></div>
 {% endblock content %}

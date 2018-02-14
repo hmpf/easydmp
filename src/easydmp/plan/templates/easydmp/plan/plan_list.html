@@ -10,7 +10,9 @@
 
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-      <h2>Existing plans</h2>
+      <div id="create_new_plan">
+      <h2><a href="{% url 'new_plan' %}">+ Create new</a></h2>
+      </div>
       <table class="dmptable" width="80%">
         <thead>
           <tr>
@@ -30,18 +32,13 @@
             <td><a href="{% url 'generated_plan_html' plan=object.id %}">Html</a></td>
             <td>
                 <a href="{% url 'update_plan' plan=object.id %}">Rename</a>
-                <br />
-                <a href="{% url 'plan_saveas' plan=object.id %}">Save As</a>
-                <br />
+                <a href="{% url 'plan_saveas' plan=object.id %}">Save&nbsp;As</a>
                 <a href="{% url 'plan_delete' plan=object.id %}">Delete</a>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-      <div id="create_new_plan">
-      <h3><a href="{% url 'new_plan' %}">Create a new plan</a></h3>
-      </div>
     </div>
   </div>
 {% endblock content %}

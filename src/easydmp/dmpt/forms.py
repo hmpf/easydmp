@@ -49,7 +49,8 @@ class DeleteForm(forms.Form):
         self.helper.form_id = 'id-plan'
         self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Yes, really delete'))
+        self.helper.add_input(Submit('submit', 'Yes'))
+        self.helper.add_input(Submit('cancel', 'No'))
 
 
 class NotesForm(forms.Form):

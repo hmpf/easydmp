@@ -162,6 +162,11 @@ class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):
         qs = super().get_queryset()
         return qs.filter(added_by=self.request.user)
 
+    def delete(self, request, *args, **kwargs):
+        if 'cancel' in request.POST:
+            return HttpResponseRedirect(self.get_success_url())
+        return super().delete(request, *args, **kwargs)
+
 
 class SaveAsPlanView(LoginRequiredMixin, UpdateView):
     model = Plan

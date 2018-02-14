@@ -15,12 +15,9 @@
           <h2>Plan overview</h2>
           <div class="actions">
             <a id="action_html" href="{% url 'generated_plan_html' plan=object.id %}">HTML</a>
-              <br/>
             <a id="action_rename" href="{% url 'update_plan' plan=object.id %}">Rename</a>
-              <br/>
             <a id="action_save_as" href="{% url 'plan_saveas' plan=object.id %}">Save As</a>
-              <br/>
-            <a id="action_delete" href="{% url 'plan_delete' plan=object.id %}">Delete this plan (no undo)</a>
+            <a id="action_delete" href="{% url 'plan_delete' plan=object.id %}">Delete</a>
           </div>
         </div>
         {% if output.items %}
