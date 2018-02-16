@@ -394,22 +394,9 @@ textarea {
 .dmptable tr th, .dmptable tr td{
   padding-bottom: 0.2em;
 }
-.dmptable tr td:nth-child(3),
-.dmptable tr th:nth-child(3),
-.dmptable tr td:nth-child(4),
-.dmptable tr th:nth-child(4),
-.dmptable tr td:nth-child(5),
-.dmptable tr th:nth-child(5)
-{
-  float: right;
-  width: 30%;
-}
 .dmptable tr td:nth-child(5), .dmptable tr th:nth-child(5) {
     width: 32%;
     padding-right: 4%;
-}
-.dmptable tr th:nth-child(5) {
-  float: left !important;
 }
 .dmptable tbody tr td:last-child a{
 }

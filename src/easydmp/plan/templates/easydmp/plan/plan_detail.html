@@ -13,12 +13,18 @@
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
         <div id="summary_header">
           <h2>Plan overview</h2>
-          <div class="actions">
-            <a id="action_html" href="{% url 'generated_plan_html' plan=object.id %}">HTML</a>
-            <a id="action_invite" href="{% url 'invitation_plan_editor_create' plan=object.id %}">Invite</a>
-            <a id="action_rename" href="{% url 'update_plan' plan=object.id %}">Rename</a>
-            <a id="action_save_as" href="{% url 'plan_saveas' plan=object.id %}">Save As</a>
-            <a id="action_delete" href="{% url 'plan_delete' plan=object.id %}">Delete</a>
+          <div class="actions dropdown">
+            <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              Actions
+            <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+              <li><a id="action_html" href="{% url 'generated_plan_html' plan=object.id %}">Generated HTML</a></li>
+              <li><a id="action_invite" href="{% url 'invitation_plan_editor_create' plan=object.id %}">Invite</a></li>
+              <li><a id="action_rename" href="{% url 'update_plan' plan=object.id %}">Rename</a></li>
+              <li><a id="action_save_as" href="{% url 'plan_saveas' plan=object.id %}">Save As</a></li>
+              <li><a id="action_delete" href="{% url 'plan_delete' plan=object.id %}">Delete</a></li>
+            </ul>
           </div>
         </div>
         {% if output.items %}

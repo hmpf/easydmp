@@ -18,9 +18,8 @@
           <tr>
             <th>Name</th>
             <th>Template</th>
-            <th>Created</th>
-            <th>Download</th>
             <th>Actions</th>
+            <th>Created</th>
           </tr>
         </thead>
         <tbody>
@@ -28,13 +27,20 @@
           <tr>
             <td><a href="{% url 'plan_detail' plan=object.id %}">{{ object.title|capfirst }}</a></td>
             <td>{{ object.template }}</a></td>
-            <td>{{ object.added|date:"Y-m-d" }}</td>
-            <td><a href="{% url 'generated_plan_html' plan=object.id %}">Html</a></td>
             <td>
-                <a href="{% url 'update_plan' plan=object.id %}">Rename</a>
-                <a href="{% url 'plan_saveas' plan=object.id %}">Save&nbsp;As</a>
-                <a href="{% url 'plan_delete' plan=object.id %}">Delete</a>
+               <div class="dropdown">
+                 <button class="btn btn-default dropdown-toggle" type="button" id="actionsMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                   <span class="caret"></span>
+                 </button>
+                 <ul class="dropdown-menu" aria-labelledby="actionsMenu">
+                   <li><a href="{% url 'generated_plan_html' plan=object.id %}">Dwonload Html</a></li>
+                   <li><a href="{% url 'update_plan' plan=object.id %}">Rename</a></li>
+                   <li><a href="{% url 'plan_saveas' plan=object.id %}">Save&nbsp;As</a></li>
+                   <li><a href="{% url 'plan_delete' plan=object.id %}">Delete</a></li>
+                 </ul>
+               </div>
             </td>
+            <td>{{ object.added|date:"Y-m-d" }}</td>
           </tr>
           {% endfor %}
         </tbody>
