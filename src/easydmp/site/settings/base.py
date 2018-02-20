@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'crispy_forms',
     'rest_framework',
     'django_select2',
+    'django_filters',
+    'rest_framework_filters',
 
     'easydmp.auth.apps.EasyDMPAuthConfig',
     'flow',
@@ -159,4 +161,5 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
     ],
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'DEFAULT_FILTER_BACKENDS': ('rest_framework_filters.backends.DjangoFilterBackend',),
 }

@@ -1,10 +1,24 @@
-from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework import serializers
 from rest_framework.fields import JSONField
+from rest_framework.viewsets import ReadOnlyModelViewSet
+
+from django_filters.rest_framework.filterset import FilterSet
 
 from easydmp.auth.api.views import UserSerializer
 
 from easydmp.plan.models import Plan
+
+
+class PlanFilter(FilterSet):
+
+    class Meta:
+        model = Plan
+        fields = {
+            'added': ['lt', 'gt', 'lte', 'gte'],
+            'modified': ['lt', 'gt', 'lte', 'gte'],
+            'locked': ['lt', 'gt', 'lte', 'gte'],
+            'published': ['lt', 'gt', 'lte', 'gte'],
+        }
 
 
 class PlanSerializer(serializers.HyperlinkedModelSerializer):
@@ -59,3 +73,4 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
 class PlanViewSet(ReadOnlyModelViewSet):
     queryset = Plan.objects.exclude(published=None)
     serializer_class = PlanSerializer
+    filter_class = PlanFilter
