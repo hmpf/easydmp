@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from copy import deepcopy
 from functools import lru_cache
 from textwrap import fill
 from uuid import uuid4
@@ -212,6 +213,7 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
 
     def get_summary(self, data):
         summary = OrderedDict()
+        data = deepcopy(data)  # 1/2 Make absolutely sure we're working on a copy
         for section in self.sections.order_by('position'):
             section_summary = OrderedDict()
             for question in section.find_path(data):
@@ -219,6 +221,8 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
                 value = data.get(str(question.pk), None)
                 if not value or value.get('choice', None) is None:
                     continue
+                # 2/2 Otherwise this might edit the actual plan data in memory!
+                # Mutable types strike back..
                 value['answer'] = question.pprint_html(value)
                 value['question'] = question
                 section_summary[question.pk] = value
@@ -613,7 +617,7 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
         return NotImplemented
 
     def generate_canned_text(self, data):
-        answer = data.get(str(self.pk), {})
+        answer = deepcopy(data.get(str(self.pk), {}))  # Very explicitly work on a copy
         choice = answer.get('choice', None)
         canned = ''
         if choice:
