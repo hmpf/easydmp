@@ -59,6 +59,7 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
             'template',
             'data',
             'previous_data',
+            'generated_html',
             'added',
             'added_by',
             'modified',

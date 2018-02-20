@@ -403,21 +403,10 @@ class AbstractPlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailVi
     model = Plan
     pk_url_kwarg = 'plan'
 
-    def get_canned_text(self):
-        data = self.object.data.copy()
-        return self.get_template().generate_canned_text(data)
-
-    def massage_text(self, text):
-        return text
-
     def get_context_data(self, **kwargs):
-        kwargs = super().get_context_data(**kwargs)
-        data = self.object.data.copy()
-        kwargs['data'] = data
-        kwargs['text'] = self.get_canned_text()
-        template = self.get_template()
-        kwargs['output'] = template.get_summary(data)
-        return kwargs
+        context = self.object.get_context_for_generated_text()
+        context.update(**kwargs)
+        return super().get_context_data(**context)
 
 
 class PlanDetailView(AbstractPlanDetailView):

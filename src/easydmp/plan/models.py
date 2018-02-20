@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.db import models
+from django.template.loader import render_to_string
 from django.utils.timezone import now as tznow
 
 from jsonfield import JSONField
@@ -10,6 +11,9 @@ from jsonfield import JSONField
 # from django.contrib.postgres.fields import JSONField
 
 from .utils import purge_answer
+
+
+GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
 
 
 class PlanQuerySet(models.QuerySet):
@@ -35,6 +39,7 @@ class Plan(models.Model):
     data = JSONField(default={})
     previous_data = JSONField(default={})
     visited_sections = models.ManyToManyField('dmpt.Section', related_name='+', blank=True)
+    generated_html = models.TextField(blank=True)
     added = models.DateTimeField(auto_now_add=True)
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='added_plans')
     modified = models.DateTimeField(auto_now=True)
@@ -115,10 +120,27 @@ class Plan(models.Model):
         if not wait_to_save:
             self.save()
 
+    def get_context_for_generated_text(self):
+        data = self.data.copy()
+        output = self.template.get_summary(data)
+        text = self.template.generate_canned_text(data)
+        return {
+            'data': data,
+            'output': output,
+            'text': text,
+            'plan': self,
+            'template': self.template,
+        }
+
+    def generate_html(self):
+        context = self.get_context_for_generated_text()
+        return render_to_string(GENERATED_HTML_TEMPLATE, context)
+
     def publish(self, user, timestamp=None):
         timestamp = timestamp if timestamp else tznow()
         if not self.locked:
             self.lock(user, timestamp, True)
+        self.generated_html = self.generate_html()
         self.published = timestamp
         self.published_by = user
         self.save()

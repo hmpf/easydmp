@@ -40,13 +40,13 @@ class PlanAdmin(admin.ModelAdmin):
         for q in queryset.filter(locked__isnull=True):
             q.lock(request.user)
             self.message_user(request, 'Successfully locked "{}"'.format(str(q)))
-        lock.short_description = 'Lock (set read-only) plans'
+    lock.short_description = 'Lock (set read-only) plans'
 
     def publish(self, request, queryset):
         for q in queryset.filter(locked__isnull=True, published__isnull=True):
             q.publish(request.user)
             self.message_user(request, 'Successfully published "{}"'.format(str(q)))
-        publish.short_description = 'Publish plans'
+    publish.short_description = 'Publish plans'
 
 
 @admin.register(PlanComment)

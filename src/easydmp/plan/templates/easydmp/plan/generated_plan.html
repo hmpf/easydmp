@@ -18,8 +18,8 @@
         <tr><th>Version</th><td>{{ plan.version }}</td></tr>
         <tr>
             <th>Template</th>
-            <td>{{ plan.template }}
-                {% if plan.template.version != 1 %}{{ plan.template.version }}{% endif %}
+            <td>{{ template }}
+                {% if template.version != 1 %}{{ template.version }}{% endif %}
             </td>
         </tr>
         <tr><th>Last modified date</th><td>{{ plan.modified }}</td></tr>
