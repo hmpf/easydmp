@@ -987,15 +987,15 @@ class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
         self.input_type = 'extchoicenotlisted'
         super().save(*args, **kwargs)
 
-    def get_canned_answer(self, choice, frame=True, **kwargs):
+    def get_canned_answer(self, choice_dict, frame=True, **kwargs):
         """
         choice = {
             'choices': ['list', 'of', 'answers'],
             'not-listed': bool()
         }
         """
-        choice = choice.get('choices', '')
-        notlisted = choice.get('not-listed', False)
+        choice = choice_dict.get('choices', '')
+        notlisted = choice_dict.get('not-listed', False)
         answer = ''
 
         if choice:
@@ -1089,15 +1089,15 @@ class ExternalMultipleChoiceNotListedOneTextQuestion(EEStoreMixin, Question):
         self.input_type = 'extmultichoicenotlistedonetext'
         super().save(*args, **kwargs)
 
-    def get_canned_answer(self, choice, frame=True, **kwargs):
+    def get_canned_answer(self, choice_dict, frame=True, **kwargs):
         """
         choice = {
             'choices': ['list', 'of', 'answers'],
             'not-listed': bool()
         }
         """
-        choices = choice.get('choices', ())
-        notlisted = choice.get('not-listed', False)
+        choices = choice_dict.get('choices', ())
+        notlisted = choice_dict.get('not-listed', False)
         answers = self.get_entries(choices)
 
         out = []
