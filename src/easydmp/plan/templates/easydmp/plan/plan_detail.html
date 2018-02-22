@@ -12,7 +12,7 @@
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
         <div id="summary_header">
-          <h2>Plan overview</h2>
+          <h2>{{ object.title|capfirst }}</h2>
           <div class="actions dropdown">
             <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
               Actions
@@ -20,9 +20,9 @@
             </button>
             <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
               <li><a id="action_html" href="{% url 'generated_plan_html' plan=object.id %}">Generated HTML</a></li>
-              <li><a id="action_invite" href="{% url 'invitation_plan_editor_create' plan=object.id %}">Invite</a></li>
+              <li><a id="action_invite" href="{% url 'invitation_plan_editor_create' plan=object.id %}">Invite editors</a></li>
               <li><a id="action_rename" href="{% url 'update_plan' plan=object.id %}">Rename</a></li>
-              <li><a id="action_save_as" href="{% url 'plan_saveas' plan=object.id %}">Save As</a></li>
+              <li><a id="action_save_as" href="{% url 'plan_saveas' plan=object.id %}">Copy as new</a></li>
               <li><a id="action_delete" href="{% url 'plan_delete' plan=object.id %}">Delete</a></li>
             </ul>
           </div>
@@ -63,7 +63,7 @@
                     <dt class="question">{{ question }}</dt>
                     <dd class="answer">
                         {% if not object.locked %}
-                    <p class="actions"><a href="{% url 'new_question' plan=object.id question=question.pk %}">New</a></p>
+                    <p class="actions"><a href="{% url 'new_question' plan=object.id question=question.pk %}">Edit</a></p>
                         {% endif %}
                     </dd>
                 </dl>
