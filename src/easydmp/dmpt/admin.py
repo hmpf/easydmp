@@ -129,19 +129,22 @@ class QuestionAdmin(admin.ModelAdmin):
         'question',
         'section',
         'input_type',
+        'obligatory',
         'has_node',
         'get_mount',
     )
     list_display_links = ('position', 'id', 'question')
     actions = [
         'create_node',
+        'toggle_obligatory',
         'increment_position',
         'decrement_position',
     ]
     list_filter = [
-        EEStoreTypeFilter,
+        'obligatory',
         'section__template',
         SectionFilter,
+        EEStoreTypeFilter,
     ]
     inlines = [
         CannedAnswerInline,
@@ -165,6 +168,12 @@ class QuestionAdmin(admin.ModelAdmin):
                 q.create_node()
     create_node.short_description = 'Create node'
 
+    def toggle_obligatory(self, request, queryset):
+        for q in queryset.all():
+            q.obligatory = not q.obligatory
+            q.save()
+    toggle_obligatory.short_description = 'Toggle obligatoriness'
+
     def increment_position(self, request, queryset):
         for q in queryset.order_by('-position'):
             q.position += 1
@@ -176,4 +185,3 @@ class QuestionAdmin(admin.ModelAdmin):
             q.position -= 1
             q.save()
     decrement_position.short_description = 'Decrement position by 1'
-
