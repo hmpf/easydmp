@@ -82,13 +82,13 @@
                       <div class="controls">
                           <div class="help_text">{{ notesform.notes.help_text|safe }}</div>
                           {{ notesform.notes }}
+                          {{ notesform.non_field_errors }}
                       </div>
                   </div>
                   {% endif %}
               </div>
 
               <div class="form-actions">
-                {{ notesform.non_field_errors }}
                 {% if form.has_prevquestion %}
                 <input type="submit" name="prev" value="Prev" class="btn btn-primary" id="id-prev" />
                 {% endif %}
@@ -97,6 +97,30 @@
               </div>
           </form>
           <div class="col-lg-12 savetxt">Your answers are automatically saved</div>
+
+          <form class="blueForms" id="id-{{ question_pk }}-comment" action="{% url 'new_comment' plan=object.pk question=question.pk %}" method="POST">
+              <div id="div_id_{{ question_pk }}_comments" class="control-group comment">
+                  <label for="{{ commentform.comment.id_for_label }}" class="control-label">{{ commentform.comment.label }}</label>
+                  <div class="controls">
+                      <div class="help_text">{{ commentform.comment.help_text|safe }}</div>
+                      {{ commentform.comment }}
+                      {{ commentform.non_field_errors }}
+                  </div>
+              <div class="form-actions">
+                <input type="submit" name="submitcomment" value="Comment" class="btn btn-primary" id="id-comment" />
+              </div>
+              </div>
+              {% csrf_token %}
+          </form>
+          <div class="comments">
+              {% for comment in object.comments.all %}
+              <div class="comment">
+                  <h4 class="added_by">On {{ comment.added|date:"c" }}, {{ comment.added_by }} commented:</h4>
+                  {{ comment.comment }}
+              </div>
+              {% endfor %}
+          </div>
+
           <div style="display: none" class="answers">
             {% for answer in answers %}
             <div id="answer-canned-{{ answer.choice }}" style="display: none">{{ answer.canned_text }}</div>

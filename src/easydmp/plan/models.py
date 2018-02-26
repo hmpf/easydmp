@@ -122,3 +122,11 @@ class Plan(models.Model):
         self.published = timestamp
         self.published_by = user
         self.save()
+
+
+class PlanComment(models.Model):
+    plan = models.ForeignKey(Plan, related_name='comments')
+    question = models.ForeignKey('dmpt.Question')
+    comment = models.TextField()
+    added = models.DateTimeField(auto_now_add=True)
+    added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='plan_comments')

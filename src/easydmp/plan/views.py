@@ -23,9 +23,11 @@ from easydmp.dmpt.models import Template, Question, Section
 from flow.models import FSA
 
 from .models import Plan
+from .models import PlanComment
 from .forms import NewPlanForm
 from .forms import UpdatePlanForm
 from .forms import SaveAsPlanForm
+from .forms import PlanCommentForm
 
 
 def progress(so_far, all):
@@ -271,6 +273,7 @@ class NewQuestionView(AbstractQuestionView):
         kwargs['question'] = question
         kwargs['question_pk'] = question.pk
         kwargs['notesform'] = kwargs.get('notesform', self.get_notesform())
+        kwargs['commentform'] = kwargs.get('commentform', self.get_commentform())
         kwargs['label'] = question.label
         kwargs['answers'] = question.canned_answers.values()
         kwargs['framing_text'] = question.framing_text
@@ -300,6 +303,11 @@ class NewQuestionView(AbstractQuestionView):
         }
         generate_kwargs.update(form_kwargs)
         form = make_form(question, **generate_kwargs)
+        return form
+
+    def get_commentform(self, **_):
+        form_kwargs = self.get_form_kwargs()
+        form = PlanCommentForm(**form_kwargs)
         return form
 
     def delete_statedata(self, *args):
@@ -361,6 +369,25 @@ class FirstQuestionView(LoginRequiredMixin, RedirectView):
             kwargs={'plan': plan_pk, 'question': question_pk}
         )
         return url
+
+
+class AddCommentView(LoginRequiredMixin, AbstractQuestionMixin, CreateView):
+    model = PlanComment
+    form_class = PlanCommentForm
+
+    def get_success_url(self):
+        question_pk = self.get_question_pk()
+        plan_pk = self.get_plan_pk()
+        kwargs = {'plan': plan_pk, 'question': question_pk}
+        return reverse('new_question', kwargs=kwargs)
+
+    def form_valid(self, form):
+        comment = form.cleaned_data.get('comment', '')
+        question_pk = self.get_question_pk()
+        plan_pk = self.get_plan_pk()
+        PlanComment.objects.create(plan_id=plan_pk, question_id=question_pk,
+                                   comment=comment, added_by=self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class PlanListView(LoginRequiredMixin, ListView):
