@@ -62,7 +62,6 @@ class NotesForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
-        self.has_prevquestion = kwargs.pop('has_prevquestion', False)
         kwargs.pop('instance', None)
         super().__init__(*args, **kwargs)
 
@@ -70,6 +69,7 @@ class NotesForm(forms.Form):
 class AbstractNodeMixin():
 
     def __init__(self, **kwargs):
+        self.has_prevquestion = kwargs.pop('has_prevquestion', False)
         self.question = kwargs.pop('question')
         self.question_pk = self.question.pk
         label = self.question.label
@@ -85,6 +85,7 @@ class AbstractNodeMixin():
 class AbstractNodeForm(AbstractNodeMixin, forms.Form):
 
     def __init__(self, **kwargs):
+        self.has_prevquestion = kwargs.pop('has_prevquestion', False)
         super().__init__(**kwargs)
         self._add_choice_field()
 

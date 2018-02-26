@@ -528,6 +528,7 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
     * The `choice` is converted to an empty string.
     """
     branching_possible = False
+    has_notes = True
 
     input_type = models.CharField(
         max_length=32,
@@ -906,6 +907,7 @@ class DateRangeQuestion(NoCheckMixin, Question):
 
 class ReasonQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
     "A non-branch-capable question answerable with plaintext"
+    has_notes = False
 
     class Meta:
         proxy = True

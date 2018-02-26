@@ -76,6 +76,7 @@
                   </div>
                   {% endif %}
 
+                  {% if question.has_notes %}
                   <div id="div_id_{{ question_pk }}_notes" class="control-group notes">
                       <label for="{{ notesform.notes.id_for_label }}" class="control-label">{{ notesform.notes.label }}</label>
                       <div class="controls">
@@ -83,11 +84,12 @@
                           {{ notesform.notes }}
                       </div>
                   </div>
+                  {% endif %}
               </div>
 
               <div class="form-actions">
                 {{ notesform.non_field_errors }}
-                {% if notesform.has_prevquestion %}
+                {% if form.has_prevquestion %}
                 <input type="submit" name="prev" value="Prev" class="btn btn-primary" id="id-prev" />
                 {% endif %}
                 <span id="question-position" >Question {{ form.question.position }}/{{ section.questions.count }}</span>
