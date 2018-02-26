@@ -34,6 +34,30 @@ class PayloadListFilter(admin.SimpleListFilter):
         return queryset
 
 
+class EmptyEdgeFilter(admin.SimpleListFilter):
+    title = 'Empty'
+    parameter_name = 'empty'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('both', 'Both'),
+            ('none', 'None'),
+            ('prev', 'Previous'),
+            ('next', 'Next'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'both':
+            return queryset.filter(prev_node__isnull=True, next_node__isnull=True)
+        if self.value() == 'none':
+            return queryset.filter(prev_node__isnull=False, next_node__isnull=False)
+        if self.value() == 'prev':
+            return queryset.filter(prev_node__isnull=True, next_node__isnull=False)
+        if self.value() == 'next':
+            return queryset.filter(prev_node__isnull=False, next_node__isnull=True)
+        return queryset
+
+
 class PrevEdgeInline(admin.StackedInline):
     model = Edge
     fk_name = 'prev_node'
@@ -43,7 +67,7 @@ class PrevEdgeInline(admin.StackedInline):
 class EdgeAdmin(admin.ModelAdmin):
     list_display = ['id', 'condition', 'prev_node', 'next_node', has_payload]
     list_display_links = ['id', 'condition', 'prev_node']
-    list_filter = [PayloadListFilter]
+    list_filter = [PayloadListFilter, EmptyEdgeFilter]
     readonly_fields = ('cloned_from', 'cloned_when')
 admin.site.register(Edge, EdgeAdmin)
 
