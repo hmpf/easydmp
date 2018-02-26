@@ -169,7 +169,12 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
         # clone sections, which clones questions, canned answers, fsas and eestore mounts
         section_mapping = {}
         for section in self.sections.all():
-            section.clone(new)
+            new_section = section.clone(new)
+            section_mapping[section] = new_section
+        for old_section, new_section in section_mapping.items():
+            if old_section.super_section:
+                new_section.super_section = section_mapping[old_section.super_section]
+                new_section.save()
         return new
 
     def renumber_positions(self):
@@ -295,7 +300,7 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
 
         Copies questions, canned answers, EEStore mounts, FSAs, nodes and edges.
         """
-        self_dict = model_to_dict(self, exclude=['id', 'pk', 'template'])
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'template', 'super_section'])
         new = self.__class__.objects.create(template=template, **self_dict)
         question_mapping = {}
         for question in self.questions.all():
