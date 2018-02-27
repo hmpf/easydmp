@@ -288,11 +288,9 @@ class NewQuestionView(AbstractQuestionView):
         return super().get_context_data(**kwargs)
 
     def get_notesform(self, **_):
-        form = None
         form_kwargs = self.get_form_kwargs()
         question = self.get_question()
-        if question.has_notes:
-            form = NotesForm(**form_kwargs)
+        form = NotesForm(**form_kwargs)
         return form
 
     def get_form(self, **_):
