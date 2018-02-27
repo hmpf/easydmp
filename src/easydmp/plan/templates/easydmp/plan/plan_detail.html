@@ -1,30 +1,30 @@
 {% extends "easydmp/plan/base.html" %}
+{% load static %}
 {% block content %}
-  <div class="row">
-    <div class="col-lg-12">
-      <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-          <h1>{{ object.title|capfirst }}</h1>
-      </div>
-    </div>
-  </div>
-
   <!-- Summary Box -->
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
         <div id="summary_header">
           <h2>{{ object.title|capfirst }}</h2>
           <div class="actions dropdown">
-            <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-              Actions
-            <span class="caret"></span>
+            <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapseExample" aria-controls="collapseExample">
+                <span class="caret"></span>
             </button>
-            <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-              <li><a id="action_html" href="{% url 'generated_plan_html' plan=object.id %}">Generated HTML</a></li>
-              <li><a id="action_invite" href="{% url 'invitation_plan_editor_create' plan=object.id %}">Invite editors</a></li>
-              <li><a id="action_rename" href="{% url 'update_plan' plan=object.id %}">Rename</a></li>
-              <li><a id="action_save_as" href="{% url 'plan_saveas' plan=object.id %}">Copy as new</a></li>
-              <li><a id="action_delete" href="{% url 'plan_delete' plan=object.id %}">Delete</a></li>
+            <div class="collapse" id="collapseExample">
+            <ul class="plan-actions">
+                <li><a href="{% url 'update_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-edit.png' %}"/>Rename</a></li>
+                <li><a href="{% url 'invitation_plan_editor_create' plan=object.id %}"><img src="{% static 'usit/icons/icon-people.png' %}"/>Invite coworkers</a></li>
+              <!-- publish
+                  <li><a href="https://easydmp.paas2.uninett.no/plan/155/generated.html"><img src="{% static 'usit/icons/icon-publish.png' %}"/>Publish (read only)</a></li>
+              -->
+              <li><a href="{% url 'plan_delete' plan=object.id %}"><img src="{% static 'usit/icons/icon-delete.png' %}"/>Delete</a></li>
+              <li><a href="{% url 'plan_saveas' plan=object.id %}"><img src="{% static 'usit/icons/icon-duplicate.png' %}"/>Duplicate</a></li>
+              <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'usit/icons/icon-export.png' %}"/>Export</a></li>
+              <!-- print
+                  <li><a href="https://easydmp.paas2.uninett.no/plan/155/delete/"><img src="./EasyDMP_files/icons/icon-print.png' %}"/>Print</a></li>
+              -->
             </ul>
+            </div>
           </div>
         </div>
         {% if output.items %}
@@ -93,9 +93,4 @@
         <p><a href="{% url 'invitation_plan_editor_list' plan=object.pk %}">Show invitations</a></p>
     </div>
   </div>
-
-<div>
-    <br />
-    <br />
-</div>
 {% endblock content %}
