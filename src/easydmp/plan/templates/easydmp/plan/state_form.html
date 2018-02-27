@@ -19,7 +19,7 @@
     <div class="btn-group">
         <div class="wrap">
             <span class='caret'></span>
-            <input type="submit" name="summary" class="btn btn-default summary-link" value="Go to plan summary">
+            <a class="summary-link" href="{% url 'plan_detail' plan=object.pk %}">Go to plan summary</a>
         </div>
     </div>
     <div class="col-lg-12 savetxt">Your answers are automatically saved</div>
