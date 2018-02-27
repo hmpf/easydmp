@@ -42,7 +42,7 @@
                 {% for question_pk, value in sectiondata.data.items %}
                 <dl class="questionrow">
                     <dt class="question">{{ value.question }}</dt>
-                    <dd class="answer">{{ value.answer }}
+                    <dd class="answer">{{ value.answer|default_if_none:"" }}
                         {% if value.notes %}<br />
                         <div class="notes">
                             <b>Notes:</b>

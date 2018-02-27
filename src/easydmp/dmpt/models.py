@@ -221,14 +221,16 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
         data = deepcopy(data)  # 1/2 Make absolutely sure we're working on a copy
         for section in self.sections.order_by('position'):
             section_summary = OrderedDict()
-            for question in section.find_path(data):
+            for question in section.find_minimal_path(data):
+                value = {}
                 question = question.get_instance()
-                value = data.get(str(question.pk), None)
-                if not value or value.get('choice', None) is None:
-                    continue
+                answer = data.get(str(question.pk), None)
+                if not answer or answer.get('choice', None) is None:
+                    value['answer'] = None
+                else:
+                    value['answer'] = question.pprint_html(answer)
                 # 2/2 Otherwise this might edit the actual plan data in memory!
                 # Mutable types strike back..
-                value['answer'] = question.pprint_html(value)
                 value['question'] = question
                 section_summary[question.pk] = value
             summary[section.full_title()] = {
@@ -414,6 +416,15 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
         while obj.super_section is not None:
             obj = obj.super_section
         return obj
+
+    def find_minimal_path(self, data=None):
+        minimal_qs = self.questions.filter(obligatory=True).order_by('position')
+        if not data:
+            return list(minimal_qs)
+        answered_pks = [int(pk) for pk in data.keys()]
+        answered_qs = self.questions.filter(pk__in=answered_pks)
+        qs = minimal_qs | answered_qs
+        return list(qs.distinct().order_by('position'))
 
     # graphing code
     def find_path(self, data):
