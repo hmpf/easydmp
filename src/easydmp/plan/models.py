@@ -40,6 +40,11 @@ class Plan(models.Model):
     previous_data = JSONField(default={})
     visited_sections = models.ManyToManyField('dmpt.Section', related_name='+', blank=True)
     generated_html = models.TextField(blank=True)
+    doi = models.URLField(
+        blank=True,
+        default='',
+        help_text='Use the URLified DOI, https://dx.doi.org/<doi>',
+    )
     added = models.DateTimeField(auto_now_add=True)
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='added_plans')
     modified = models.DateTimeField(auto_now=True)
