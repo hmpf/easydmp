@@ -997,6 +997,13 @@ dt {
 
 }
 
+footer {
+    padding-top: 1em;
+}
+footer p {
+    padding-top: 1em;
+}
+
 
 
 @media only screen and (-webkit-min-device-pixel-ratio: 1.5),
