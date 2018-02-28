@@ -6,8 +6,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}EasyDMP{% endblock title %}</title>
-    <link rel="stylesheet" href="{% static 'usit/bootstrap.css' %}" />
-    <link rel="stylesheet" href="{% static 'usit/jquery-ui,css' %}">
+    <link rel="stylesheet" href="{% static 'bootstrap3/css/bootstrap.css' %}" />
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.css">
     <link rel="stylesheet" href="{% static 'usit/uninett.css' %}" />
     <link rel="stylesheet" href="{% static 'usit/usitoverride.css' %}">
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -103,9 +103,9 @@
   </div>
 
 <div class="postload">
-<script src="{% static 'usit/jquery.min.js' %}"></script>
-<script src="{% static 'usit/jquery-ui.min.js' %}"></script>
-<script src="{% static 'usit/bootstrap.min.js' %}"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
+<script src="{% static 'bootstrap3/js/bootstrap.min.js' %}"></script>
 <script src="{% static 'usit/usitoverride.js' %}"></script>
 {% block postload %}{% endblock %}
 </div>
