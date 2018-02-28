@@ -375,10 +375,16 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
             return next_section.first_question
         return None
 
-    @property
-    def last_question(self):
+    def get_last_question(self, in_section=False):
         if self.questions.exists():
             return self.questions.order_by('-position')[0]
+        return None
+
+    @property
+    def last_question(self):
+        last_question = self.get_last_question()
+        if last_question:
+            return last_question
         # See if there is a prev section in case this one has no questions
         prev_section = self.get_prev_section()
         if prev_section:
@@ -703,8 +709,18 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
 
     def get_first_question_in_next_section(self):
         next_section = self.section.get_next_section()
-        if next_section:
-            return next_section.first_question
+        while next_section:
+            if next_section.questions.exists():
+                return next_section.first_question
+            next_section = next_section.get_next_section()
+        return None
+
+    def get_last_question_in_prev_section(self):
+        prev_section = self.section.get_prev_section()
+        while prev_section:
+            if prev_section.questions.exists():
+                return prev_section.last_question
+            prev_section = prev_section.get_prev_section()
         return None
 
     def get_all_next_questions(self):
@@ -762,12 +778,12 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
     def get_all_prev_questions(self):
         return Question.objects.filter(section=self.section, position__lt=self.position)
 
-    def get_prev_question(self, answers=None):
+    def get_prev_question(self, answers=None, in_section=False):
         prev_questions = self.get_all_prev_questions()
         if not prev_questions.exists():
-            prev_section = self.section.get_prev_section()
-            if prev_section:
-                return prev_section.last_question
+            prev_question = self.get_last_question_in_prev_section()
+            if prev_question and not in_section:
+                return prev_question
             return None
 
         if not self.node or self.node.start:
@@ -781,7 +797,7 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
             except Question.DoesNotExist:
                 raise TemplateDesignError('Error in template design: prev node ({}) is not hooked up to a question'.format(prev_node))
 
-        return None
+        return list(prev_questions)[-1]
 
     def is_last_in_section(self):
         if not self.get_all_next_questions().exists():
