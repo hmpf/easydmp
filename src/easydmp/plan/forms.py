@@ -114,3 +114,18 @@ class PlanCommentForm(forms.ModelForm):
     class Meta:
         model = PlanComment
         fields = ['comment']
+
+
+class ConfirmForm(forms.Form):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('instance')
+        super().__init__(*args, **kwargs)
+
+        # crispy forms
+        self.helper = FormHelper()
+        self.helper.form_id = 'id-plan-publish'
+        self.helper.form_class = 'blueForms'
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Yes'))
+        self.helper.add_input(Submit('cancel', 'No'))

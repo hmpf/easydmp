@@ -28,6 +28,7 @@ from .forms import NewPlanForm
 from .forms import UpdatePlanForm
 from .forms import SaveAsPlanForm
 from .forms import PlanCommentForm
+from .forms import ConfirmForm
 
 
 def progress(so_far, all):
@@ -188,6 +189,22 @@ class SaveAsPlanView(LoginRequiredMixin, UpdateView):
         keep_editors = form.cleaned_data.get('keep_editors', True)
         self.object.save_as(title, self.request.user, abbreviation, keep_editors)
         return HttpResponseRedirect(self.get_success_url())
+
+
+class PublishPlanView(LoginRequiredMixin, UpdateView):
+    template_name = 'easydmp/plan/plan_confirm_publish.html'
+    form_class = ConfirmForm
+    model = Plan
+    pk_url_kwarg = 'plan'
+
+    def get_success_url(self):
+        return reverse('plan_detail', kwargs={'plan': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.publish(request.user)
+        return HttpResponseRedirect(success_url)
 
 
 class AbstractQuestionMixin:
