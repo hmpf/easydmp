@@ -20,6 +20,7 @@ from django.utils.html import mark_safe
 from easydmp.utils import pprint_list, utc_epoch
 from easydmp.dmpt.forms import make_form, TemplateForm, DeleteForm, NotesForm
 from easydmp.dmpt.models import Template, Question, Section
+from easydmp.project.forms import ProjectForm
 from flow.models import FSA
 
 from .models import Plan
@@ -78,6 +79,11 @@ class AbstractPlanViewMixin:
         kwargs['user'] = self.request.user
         return kwargs
 
+    def get_projectform(self, **_):
+        form_kwargs = self.get_form_kwargs()
+        form = ProjectForm(**form_kwargs)
+        return form
+
     def existing_with_same_title(self):
         return self.model.objects.filter(template=self.object.template,
                                          title=self.object.title,)
@@ -110,7 +116,10 @@ class NewPlanView(AbstractPlanViewMixin, LoginRequiredMixin, CreateView):
         }
         return reverse('new_question', kwargs=kwargs)
 
-    def form_valid(self, form):
+    def form_valid(self, form, projectform):
+        assert False, projectform.cleaned_data
+        if projectform.cleaned_data:
+            project = projectform
         self.object = form.save(commit=False)
         self.object.data = {}
         self.object.previous_data = {}
@@ -127,6 +136,24 @@ class NewPlanView(AbstractPlanViewMixin, LoginRequiredMixin, CreateView):
             return HttpResponseRedirect(reverse('plan_detail', kwargs={'plan': hop_to.pk}))
         # multiple plans with same editor, template and title exists
         return HttpResponseServerError()
+
+    def form_invalid(self, form, projectform):
+        return self.render_to_response(self.get_context_data(form=form, projectform=projectform))
+
+    def get_context_data(self, **kwargs):
+        if 'projectform' not in kwargs:
+            kwargs['projectform'] = self.get_projectform()
+        return super().get_context_data(**kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.object = None
+        form = self.get_form()
+        projectform = self.get_projectform()
+        if form.is_valid() and projectform.is_valid():
+            self.request = request
+            return self.form_valid(form, projectform)
+        else:
+            return self.form_invalid(form, projectform)
 
 
 class UpdatePlanView(AbstractPlanViewMixin, LoginRequiredMixin, UpdateView):

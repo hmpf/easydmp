@@ -37,6 +37,7 @@ class Plan(models.Model):
         max_length=8, blank=True,
         help_text='A short abbreviation of the plan title, for internal use. Not shown in the generated file.',
     )
+    project = models.ForeignKey('easydmp_project.Project', blank=True, null=True)
     version = models.PositiveIntegerField(default=1)
     uuid = models.UUIDField(default=uuid4, editable=False)
     template = models.ForeignKey('dmpt.Template', related_name='plans')
