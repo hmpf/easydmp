@@ -180,6 +180,9 @@ a {
   padding-right: 1em;
 }
 .content-wrap .section_introduction{
+  padding: 2em 0;
+}
+.content-wrap .questionrow:first-of-type {
   padding-top: 2em;
 }
 .question{
@@ -477,9 +480,8 @@ p.actions{
   margin-top: 2.8px;
   margin-left: 5px;
   cursor: pointer;
-  opacity: 0.5;
   float: left;
-  font-family: 'colfaxBold', Arial, sans-serif;
+  font-family: 'colfaxRegular', Arial, sans-serif;
 }
 
 .progressbar ul li:hover p{
@@ -515,9 +517,8 @@ p.actions{
 .progressbar ul li span {
   width: 30px;
   height: 30px;
-  border: 1px solid #337db1;
   display: inline-block;
-  background-color: #eeebe8;
+  background-color: #ffffff;
   text-align: center;
   margin: auto;
   border-radius: 50%;
@@ -533,12 +534,14 @@ p.actions{
   color: #ffffff;
 }
 .progressbar ul li.active p {
-  opacity: 1;
+  font-family: 'colfaxBold' , Arial, sans-serif;
+  color: #337cb2;
 }
+/*
 .progressbar ul li.visited span {
   background-color: #dad8d6;
   border-color: #dad8d6;
-}
+}*/
 /* end progressbar */
 .section-depth-1 h3 {
       width: 100%;
@@ -647,7 +650,7 @@ textarea {
 .dmptable tbody tr:last-of-type {
     border-bottom: none !important;
 }
-.dmptable tr th, .dmptable tr td, .dmptable tr .actiondd {
+/*.dmptable tr th, .dmptable tr td, .dmptable tr .actiondd {
   padding-bottom: 0.2em;
   display: inline-block;
   width: 32%;
@@ -655,9 +658,21 @@ textarea {
   line-height: 60px;
   float: left;
   padding-right: 0px !important;
+}*/
+.dmptable tr th, .dmptable tr td, .dmptable tr .actiondd {
+  padding-bottom: 0.2em;
+  display: inline-block;
+  width: 33%;
+  height: 60px;
+  line-height: 60px;
+  float: left;
+  padding-right: 0px !important;
+}
+.dmptable tr td .date {
+
 }
 .dmptable tr td:nth-child(1) {
-  width: 38% !important;
+  width: 34% !important;
   font-weight: bold;
   font-family:'colfaxBold', Arial, sans-serif;
 }
@@ -831,7 +846,7 @@ tr .dropdown .btn-default .caret {
 }*/
 .slider2{
   overflow-y: hidden;
-	max-height: 185px !important; /* approximate max height */
+	max-height: 108px !important; /* approximate max height */
 	transition-property: all;
 	transition-duration: .5s;
 	transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
@@ -842,7 +857,7 @@ tr .dropdown .btn-default .caret {
 .dynamicdiv {
   display: none;
   width: 100%;
-  height: 185px;
+  height: 108px;
 }
 .dropdown-menu li, .plan-actions li {
   width: 33.333%;
@@ -885,6 +900,8 @@ tr .dropdown .btn-default .caret {
   float: right;
   padding-right: 10px;
 }
+/** ny css updated table your plans**/
+
 
 /* Create new plan page */
 #id_title{
@@ -899,6 +916,23 @@ tr .dropdown .btn-default .caret {
 /* save as new / duplicate page */
 #div_id_keep_editors .radio{
     padding: .5em 1.5em;
+}
+
+/* footer */
+.footer {
+  width: 100%;
+  background-color: #00404a !important;
+  margin: 0px !important;
+  margin-left: 0px !important;
+  height: auto !important;
+  left: 0px !important;
+}
+.footer p, .footer a , .footer{
+  color: #ffffff !important;
+}
+.footer a:hover {
+  color: #ffffff !important;
+  text-decoration: underline;
 }
 /* media queries */
 
