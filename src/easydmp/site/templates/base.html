@@ -38,6 +38,7 @@
         table.dmptable th {
           padding-right: 1ex;
         }
+
         .asteriskField { color: red }
         .control-group ul { list-style-type: none; }
         .superuser {
@@ -46,6 +47,43 @@
             border-width: 1px 6px 1px 6px;
             background-color: #f2f2f2;
         }
+
+        .dmptable tr td:nth-child(1) {
+        width: 30% !important;
+        font-weight: bold;
+      }
+      .dmptable tr .actiondd td {
+          width: 100% !important;
+      }
+      .dmptable tr td:nth-child(3) {
+        float: left !important;
+      }
+      .dmptable tr td, .dmptable tr td:nth-child(3) {
+          width: 23% !important;
+          float: left;
+        }
+        body .dmptable tr .actiondd {
+          float: right !important;
+          width: 12% !important;
+        }
+        body .dmptable tr td.status {
+            width: 12% !important;
+        }
+        td.status span {
+          width:  12px;
+          height: 12px;
+          border-radius: 50%;
+          margin-top: 24px;
+          margin-right: 7px;
+          display: inline-block;
+          float: left;
+        }
+          td.status.ongoing span {
+          background: #94cd47;
+        }
+        td.status.published span {
+        background: #9a9a9a;
+      }
     </style>
     {% block extrahead %}{% endblock %}
 </head>

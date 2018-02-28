@@ -17,6 +17,11 @@
           <tr>
             <td><a href="{% url 'plan_detail' plan=object.id %}">{{ object.title|capfirst }}</a></td>
             <td>{{ object.template }}</a></td>
+            {% if object.published %}
+            <td class="status published"><span></span>Published</td>
+            {% else %}
+            <td class="status ongoing"><span></span>Ongoing</td>
+            {% endif %}
             <td>
                <div class="dropdown">
                  <button class="btn btn-default dropdown-toggle" type="button" id="actionsMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
