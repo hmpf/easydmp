@@ -635,11 +635,17 @@ textarea {
 .dmptable {
   width: 100%;
   margin-top: 0px;
-  display: block;
+//  display: block;
+  margin-bottom: 6em;
 }
-.dmptable tbody {
-  display: block;
+.dmptable tbody tr:last-of-type {
+    border-bottom: none !important;
 }
+.dmptable tbody tr {
+  min-height: 60px;
+  border-bottom: 1px dashed #efebe9;
+}
+/*
 .dmptable tbody tr {
   position: relative;
   display: block;
@@ -647,9 +653,10 @@ textarea {
   width: 100%;
   border-bottom: 1px dashed #efebe9;
 }
-.dmptable tbody tr:last-of-type {
-    border-bottom: none !important;
+.dmptable tbody {
+  display: block;
 }
+*/
 /*.dmptable tr th, .dmptable tr td, .dmptable tr .actiondd {
   padding-bottom: 0.2em;
   display: inline-block;
@@ -658,7 +665,6 @@ textarea {
   line-height: 60px;
   float: left;
   padding-right: 0px !important;
-}*/
 .dmptable tr th, .dmptable tr td, .dmptable tr .actiondd {
   padding-bottom: 0.2em;
   display: inline-block;
@@ -671,6 +677,8 @@ textarea {
 .dmptable tr td .date {
 
 }
+}*/
+/*
 .dmptable tr td:nth-child(1) {
   width: 34% !important;
   font-weight: bold;
@@ -680,16 +688,21 @@ textarea {
   float: right !important;
   width: 15% !important;
 }
+*/
+
+/*
 body .dmptable tr .actiondd{
   width: 15% !important;
 }
 .dmptable tr .actiondd td{
   width: 100% !important;
 }
+*/
+
+/*
 .dmptable tr td:nth-child(1) a {
   display: block;
 }
-/*
 tr .dropdown .btn-default {
   background: url("icons/icon-options-black.png") no-repeat center right;
   background-size: 12%;
@@ -886,8 +899,10 @@ tr .dropdown .btn-default .caret {
   height: 20px;
   margin-right: 10px;
 }
+
+/*
 .dmptable tr th:nth-child(5) {
-  float: left !important;
+//  float: left !important;
 }
 .actiondd a {
   padding-right: 1ex;
@@ -896,11 +911,12 @@ tr .dropdown .btn-default .caret {
   font-weight: normal !important;
   font-family:'colfaxRegular', Arial, sans-serif !important;
 }
+*/
+/** ny css updated table your plans**/
 .dmptable tr td .dropdown button {
-  float: right;
+//  float: right;
   padding-right: 10px;
 }
-/** ny css updated table your plans**/
 
 
 /* Create new plan page */

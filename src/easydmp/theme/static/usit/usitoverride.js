@@ -33,8 +33,10 @@ $( document ).ready(function() {
        parentli.wrap( setlink );
      });
    } */
+    /*
   var actiondd = "<div class='actiondd'></div>"
   $(".dmptable tbody tr td:last-child").wrap(actiondd);
+    */
 });
 /*
 $(window).bind('mousewheel', function(event) {
