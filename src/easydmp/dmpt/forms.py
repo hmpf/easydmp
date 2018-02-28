@@ -85,7 +85,6 @@ class AbstractNodeMixin():
 class AbstractNodeForm(AbstractNodeMixin, forms.Form):
 
     def __init__(self, **kwargs):
-        self.has_prevquestion = kwargs.pop('has_prevquestion', False)
         super().__init__(**kwargs)
         self._add_choice_field()
 
