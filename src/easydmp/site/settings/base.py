@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'flow',
     'easydmp.dmpt',
     'easydmp.plan',
+    'easydmp.project',
     'easydmp.invitation',
     'easydmp.eestore',
 ]
