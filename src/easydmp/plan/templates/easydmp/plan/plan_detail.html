@@ -32,6 +32,10 @@
             {% for section_title, sectiondata in output.items %}
             <div class="section section_depth_{{ sectiondata.section.depth }} " id="{{ sectiondata.section.full_title|slugify }}">
                 <h3 class="section_title"><a href="{% url 'section_detail' section=sectiondata.section.pk plan=object.id %}">{{ sectiondata.section.full_title }}</a></h3>
+                <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#{{ sectiondata.section.full_title|slugify }} .content-wrap" aria-expanded="false" aria-controls="collapseExample">
+                <span class="caret"></span>
+                </button>
+                <div class="content-wrap collapse" aria-expanded="false" style="height: 0px;">
                 {% if sectiondata.section.introductory_text %}
                 <div class="section_introduction">{{ sectiondata.section.introductory_text }}</div>
                 {% endif %}
@@ -55,20 +59,7 @@
                     </dd>
                 </dl>
                 {% endfor %}
-                {% else %}
-                {% if sectiondata.section.first_question %}
-                {% with sectiondata.section.first_question as question %}
-                <p>You have not answered any of the question in this section yet. A link to the first question follows below.</p>
-                <dl class="questionrow">
-                    <dt class="question">{{ question }}</dt>
-                    <dd class="answer">
-                        {% if not object.locked %}
-                    <p class="actions"><a href="{% url 'new_question' plan=object.id question=question.pk %}">Edit</a></p>
-                        {% endif %}
-                    </dd>
-                </dl>
-                {% endwith %}
-                {% endif %}
+                </div>
                 {% endif %}
                 </div>
                 {% endfor %}
