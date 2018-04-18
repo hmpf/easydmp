@@ -54,11 +54,14 @@
 
 
 body {
-	background-color:#eeebe8;
+    /*
+	background-color: #eeebe8;
+    */
 	font-family: 'colfaxRegular', Arial, sans-serif;
 	font-size: 16px;
 	line-height: 1.6;
 	padding-top: 70px;
+	background-image: url("/static/eudat/bg_page.png")}
 }
 
 
