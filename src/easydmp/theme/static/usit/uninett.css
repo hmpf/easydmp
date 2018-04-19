@@ -1,56 +1,58 @@
+/*
 @font-face{ 
 	font-family: 'colfaxThin';
-	src: url('../fonts/colfaxThin.eot');
-	src: url('../fonts/colfaxThin.eot?#iefix') format('embedded-opentype'),
-	     url('../fonts/colfaxThin.woff') format('woff'),
-	     url('../fonts/colfaxThin.ttf') format('truetype'),
-	     url('../fonts/colfaxThin.svg#webfont') format('svg');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxThin.eot');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxThin.eot?#iefix') format('embedded-opentype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxThin.woff') format('woff'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxThin.ttf') format('truetype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxThin.svg#webfont') format('svg');
 }
 
 @font-face{ 
 	font-family: 'colfaxLight';
-	src: url('../fonts/colfaxLight.eot');
-	src: url('../fonts/colfaxLight.eot?#iefix') format('embedded-opentype'),
-	     url('../fonts/colfaxLight.woff') format('woff'),
-	     url('../fonts/colfaxLight.ttf') format('truetype'),
-	     url('../fonts/colfaxLight.svg#webfont') format('svg');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxLight.eot');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxLight.eot?#iefix') format('embedded-opentype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxLight.woff') format('woff'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxLight.ttf') format('truetype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxLight.svg#webfont') format('svg');
 }
 
 @font-face{ 
 	font-family: 'colfaxRegular';
-	src: url('../fonts/colfaxRegular.eot');
-	src: url('../fonts/colfaxRegular.eot?#iefix') format('embedded-opentype'),
-	     url('../fonts/colfaxRegular.woff') format('woff'),
-	     url('../fonts/colfaxRegular.ttf') format('truetype'),
-	     url('../fonts/colfaxRegular.svg#webfont') format('svg');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxRegular.eot');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxRegular.eot?#iefix') format('embedded-opentype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxRegular.woff') format('woff'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxRegular.ttf') format('truetype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxRegular.svg#webfont') format('svg');
 }
 
 @font-face{ 
 	font-family: 'colfaxRegularItalic';
-	src: url('../fonts/colfaxRegularItalic.eot');
-	src: url('../fonts/colfaxRegularItalic.eot?#iefix') format('embedded-opentype'),
-	     url('../fonts/colfaxRegularItalic.woff') format('woff'),
-	     url('../fonts/colfaxRegularItalic.ttf') format('truetype'),
-	     url('../fonts/colfaxRegularItalic.svg#webfont') format('svg');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxRegularItalic.eot');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxRegularItalic.eot?#iefix') format('embedded-opentype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxRegularItalic.woff') format('woff'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxRegularItalic.ttf') format('truetype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxRegularItalic.svg#webfont') format('svg');
 }
 
 @font-face{ 
 	font-family: 'colfaxMedium';
-	src: url('../fonts/colfaxMedium.eot');
-	src: url('../fonts/colfaxMedium.eot?#iefix') format('embedded-opentype'),
-	     url('../fonts/colfaxMedium.woff') format('woff'),
-	     url('../fonts/colfaxMedium.ttf') format('truetype'),
-	     url('../fonts/colfaxMedium.svg#webfont') format('svg');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxMedium.eot');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxMedium.eot?#iefix') format('embedded-opentype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxMedium.woff') format('woff'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxMedium.ttf') format('truetype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxMedium.svg#webfont') format('svg');
 }
 
 @font-face{ 
 	font-family: 'colfaxBold';
-	src: url('../fonts/colfaxBold.eot');
-	src: url('../fonts/colfaxBold.eot?#iefix') format('embedded-opentype'),
-	     url('../fonts/colfaxBold.woff') format('woff'),
-	     url('../fonts/colfaxBold.ttf') format('truetype'),
-	     url('../fonts/colfaxBold.svg#webfont') format('svg');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxBold.eot');
+	src: url('/static/external/uninett-bootstrap-theme/fonts/colfaxBold.eot?#iefix') format('embedded-opentype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxBold.woff') format('woff'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxBold.ttf') format('truetype'),
+	     url('/static/external/uninett-bootstrap-theme/fonts/colfaxBold.svg#webfont') format('svg');
 }
+*/
 
 
 body {
@@ -416,7 +418,7 @@ input[type="search"] {
 
 
 .uninett-pattern1 {
-	background-image:url(../images/uninett_struktur1.jpg);
+	background-image:url(/static/external/uninett-bootstrap-theme/images/uninett_struktur1.jpg);
 	
 }
 
@@ -702,7 +704,7 @@ input[type="search"] {
 }
 
 .uninett-ul-li {
-	background-image: url(../images/li.png);
+	background-image: url(/static/external/uninett-bootstrap-theme/images/li.png);
 	background-repeat: no-repeat;
 	background-position: 0px 8px; 
 	padding-left: 14px; 
@@ -1018,7 +1020,7 @@ only screen and (min-resolution: 240dpi) {
 	}
 	
 	.uninett-ul-li {
-		background-image: url(../images/li@2x.png);
+		background-image: url(/static/external/uninett-bootstrap-theme/images/li@2x.png);
 		line-height: 26px;
 		background-size: 8px;
 	}
