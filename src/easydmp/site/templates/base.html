@@ -76,13 +76,15 @@
           {% if request.user.is_staff %}
           <li><a href="{% url 'admin:index' %}">Admin</a></li>
           {% endif %}
-            <li>
-                <a href="{% url 'logout' %}"><button type="button" class="btn btn-default">Log out</button></a>
-            </li>
+          <li>
+              <a href="{% url 'logout' %}"><button type="button" class="btn btn-default">Log out</button></a>
+          </li>
           {% else %}
-            <li class="uninett-login">
-                <a href="{% url 'login-selector' %}"><button type="button" class="btn btn-default uninett-login-btn"><span class="glyphicon glyphicon-user uninett-fontColor-red"></span>Log in</button></a>
-            </li>
+          <li><a href="/about/">About</a></li>
+          <li><a href="mailto:support@easydmp.sigma2.no">Support</a></li>
+          <li class="uninett-login">
+              <a href="{% url 'login-selector' %}"><button type="button" class="btn btn-default uninett-login-btn"><span class="glyphicon glyphicon-user uninett-fontColor-red"></span>Log in</button></a>
+          </li>
           {% endif %}
 
         </ul>
