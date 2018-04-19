@@ -71,6 +71,8 @@
           {% if request.user.is_authenticated %}
           <li><a href="{% url 'plan_list' %}">Your plans</a></li>
           <li><a href="{% url 'new_plan' %}">Create a new plan</a></li>
+          <li><a href="/about/">About</a></li>
+          <li><a href="mailto:support@easydmp.sigma2.no">Support</a></li>
           {% if request.user.is_staff %}
           <li><a href="{% url 'admin:index' %}">Admin</a></li>
           {% endif %}
@@ -96,8 +98,6 @@
 
     <footer>
     <div class="row uninett-whole-row">
-        <h3><a href="/about/">About</a></h3>
-        <h3><a href="mailto:support@easydmp.sigma2.no">Support</a></h3>
         <p>
         <a href="https://eudat.eu/"><img src="{% static 'eudat/logo.png' %}" alt="EUDAT logo" width="250px"></a>
         <span style="padding: 1em"> </span>
