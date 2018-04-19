@@ -31,7 +31,11 @@ except NameError:
     # Assure that DEBUG is set and safe
     DEBUG = False
 
-DEBUG = bool(int(getenv('DEBUG', DEBUG)))
+try:
+    DEBUG = bool(int(getenv('DEBUG', DEBUG)))
+except ValueError:
+    # Broken env-variable, default to safety
+    DEBUG = False
 
 INSTALLED_APPS += [
     'social_django',
