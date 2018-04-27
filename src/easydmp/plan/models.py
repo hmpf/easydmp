@@ -27,11 +27,10 @@ class PlanQuerySet(models.QuerySet):
 class Plan(models.Model):
     title = models.CharField(
         max_length=255,
-        help_text='''The title of the final plan document itself, used as the
-        topmost header in the generated file. We recommend something that
-        includes the name of the project the plan is for, e.g., "Preliminary
-        data plan for &lt;project&gt;", "Revised data plan for &lt;project&gt;",
-        etc.'''
+        help_text='''This title will be used as the title of the generated
+        data management plan document. We recommend something that includes the
+        name of the project the plan is for, e.g., "Preliminary data plan for
+        &lt;project&gt;", "Revised data plan for &lt;project&gt;", etc.'''
     )
     abbreviation = models.CharField(
         max_length=8, blank=True,
