@@ -526,6 +526,9 @@ class SimpleFramingTextMixin:
     This includes strings, but excludes any other iterables.
     """
     def get_canned_answer(self, choice, frame=True, **kwargs):
+        if not choice:
+            return ''
+
         choice = str(choice)
         return self.frame_canned_answer(choice, frame)
 
@@ -650,6 +653,9 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
 
     def get_canned_answer(self, answer, frame=None, **kwargs):
         if not self.canned_answers.exists():
+            return ''
+
+        if not answer:
             return ''
 
         if self.canned_answers.count() == 1:
@@ -930,6 +936,9 @@ class DateRangeQuestion(NoCheckMixin, Question):
             'end': date(),
         }
         """
+        if not daterange:
+            return ''
+
         framing_text = self.framing_text or self.DEFAULT_FRAMING_TEXT
         return framing_text.format(**daterange)
 
@@ -995,6 +1004,9 @@ class ExternalChoiceQuestion(EEStoreMixin, Question):
         super().save(*args, **kwargs)
 
     def get_canned_answer(self, choice, frame=True, **kwargs):
+        if not choice:
+            return ''
+
         answers = self.get_entries([choice])
         if not answers:
             return ''
@@ -1028,6 +1040,9 @@ class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
             'not-listed': bool()
         }
         """
+        if not choice_dict:
+            return ''
+
         choice = choice_dict.get('choices', '')
         notlisted = choice_dict.get('not-listed', False)
         answer = ''
@@ -1082,6 +1097,9 @@ class ExternalMultipleChoiceOneTextQuestion(EEStoreMixin, Question):
         """
         choice = ['list', 'of', 'answers']
         """
+        if not choice:
+            return ''
+
         answers = self.get_entries(choice)
 
         if not answers: # Prevent 500 if the EE cache is empty
@@ -1130,6 +1148,9 @@ class ExternalMultipleChoiceNotListedOneTextQuestion(EEStoreMixin, Question):
             'not-listed': bool()
         }
         """
+        if not choice_dict:
+            return ''
+
         choices = choice_dict.get('choices', ())
         notlisted = choice_dict.get('not-listed', False)
         answers = self.get_entries(choices)
@@ -1190,6 +1211,9 @@ class NamedURLQuestion(NoCheckMixin, Question):
         super().save(*args, **kwargs)
 
     def get_canned_answer(self, choice, frame=True, **kwargs):
+        if not choice:
+            return ''
+
         answer = print_url(choice)
         return self.frame_canned_answer(answer, frame)
 
@@ -1218,6 +1242,9 @@ class MultiNamedURLOneTextQuestion(NoCheckMixin, Question):
         super().save(*args, **kwargs)
 
     def get_canned_answer(self, choice, frame=True, **kwargs):
+        if not choice:
+            return u''
+
         urlpairs = []
         for pair in choice:
             urlpairs.append(print_url(pair))
@@ -1262,6 +1289,9 @@ class MultiDMPTypedReasonOneTextQuestion(NoCheckMixin, Question):
         super().save(*args, **kwargs)
 
     def get_canned_answer(self, choice, **kwargs):
+        if not choice:
+            return ''
+
         framing_text = self.framing_text if self.framing_text else self.DEFAULT_FRAMING_TEXT
         return mark_safe(render_from_string(framing_text, {'choices': choice}))
 
