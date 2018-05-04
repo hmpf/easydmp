@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from psycopg2.extras import DateRange
 
 from django import forms
@@ -66,6 +68,15 @@ class DateRangeField(forms.MultiValueField):
             )
         else:
             return range_value
+
+    def serialize(self):
+        fixed_attrs = (
+            ('title', str(self.__name__)),
+            ('widget', str(self.widget)),
+
+        )
+        field_dict = OrdereDict(fixed_attrs)
+        return field_dict
 
 
 class NamedURLField(forms.MultiValueField):

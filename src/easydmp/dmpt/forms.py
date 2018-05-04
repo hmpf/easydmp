@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from datetime import date
 
 from django import forms
@@ -81,6 +82,28 @@ class AbstractNodeMixin():
         kwargs['prefix'] = str(self.question_pk)
         super().__init__(**kwargs)
 
+    def serialize_form(self):
+        dict_form = OrderedDict(question_pk=self.question_pk)
+        choice_attrs = OrderedDict(
+            label=self.label,
+            help_text=self.help_text,
+            required=True,
+            input=self.serialize_choice(),
+        )
+        notes = NotesForm.base_fields['notes']
+        notes_attrs = OrderedDict(
+            label=notes.label,
+            help_text=notes.help_text,
+            required=False,
+            input={'type': 'string'}
+        )
+        dict_form['choice'] = choice_attrs
+        dict_form['notes'] = notes_attrs
+        return dict_form
+
+    def serialize_choice(self):
+        raise NotImplemented
+
 
 class AbstractNodeForm(AbstractNodeMixin, forms.Form):
 
@@ -104,8 +127,16 @@ class AbstractNodeForm(AbstractNodeMixin, forms.Form):
             return self.cleaned_data['choice']
         return 'Not set'
 
+    def serialize_choice(self):
+        attrs = {'type': self.json_type}
+        choices = getattr(self.fields['choice'], 'choices', None)
+        if choices:
+            attrs['choices'] = choices
+        return attrs
+
 
 class BooleanForm(AbstractNodeForm):
+    json_type = 'boolean'
 
     def _add_choice_field(self):
         choices = (
@@ -137,8 +168,14 @@ class BooleanForm(AbstractNodeForm):
             return out
         return {}
 
+    def serialize_choice(self):
+        attrs = super().serialize_choice()
+        attrs['type'] = 'boolean'
+        return attrs
+
 
 class ChoiceForm(AbstractNodeForm):
+    json_type = 'string'
 
     def _add_choice_field(self):
         choices = self.question.canned_answers.values_list('choice', 'canned_text')
@@ -156,6 +193,7 @@ class ChoiceForm(AbstractNodeForm):
 
 
 class MultipleChoiceOneTextForm(AbstractNodeForm):
+    json_type = 'array'
 
     def _add_choice_field(self):
         choices = self.question.canned_answers.values_list('choice', 'choice')
@@ -166,8 +204,14 @@ class MultipleChoiceOneTextForm(AbstractNodeForm):
             widget=forms.CheckboxSelectMultiple,
         )
 
+    def serialize_choice(self):
+        attrs = super().serialize_choice()
+        attrs['items'] = {'type': 'string'}
+        return attrs
+
 
 class DateRangeForm(AbstractNodeForm):
+    json_type = 'object'
 
     def deserialize(self, initial):
         choice = initial.get('choice', {})
@@ -205,8 +249,26 @@ class DateRangeForm(AbstractNodeForm):
             return '{}–{}'.format(self.serialize())
         return 'Not set'
 
+    def serialize_choice(self):
+        attrs = super().serialize_choice()
+        attrs['properties'] = {
+            'start': {
+                'description': 'Start date',
+                'format': 'date',
+                'type': 'string',
+            },
+            'end': {
+                'description': 'End date',
+                'format': 'date',
+                'type': 'string',
+            },
+        }
+        attrs['required'] = ['start', 'end']
+        return attrs
+
 
 class ReasonForm(AbstractNodeForm):
+    json_type = 'string'
 
     def _add_choice_field(self):
         self.fields['choice'] = forms.CharField(
@@ -217,6 +279,7 @@ class ReasonForm(AbstractNodeForm):
 
 
 class PositiveIntegerForm(AbstractNodeForm):
+    json_type = 'number'
 
     def _add_choice_field(self):
         self.fields['choice'] = forms.IntegerField(
@@ -225,8 +288,14 @@ class PositiveIntegerForm(AbstractNodeForm):
             help_text=self.help_text,
         )
 
+    def serialize_choice(self):
+        attrs = super().serialize_choice()
+        attrs['exclusiveMinimum'] = 1
+        return attrs
+
 
 class ExternalChoiceForm(AbstractNodeForm):
+    json_type = 'string'
 
     def _add_choice_field(self):
         question = self.question.get_instance()
@@ -245,6 +314,7 @@ class ExternalChoiceForm(AbstractNodeForm):
 
 
 class ExternalChoiceNotListedForm(AbstractNodeForm):
+    json_type = 'object'
 
     def _add_choice_field(self):
         question = self.question.get_instance()
@@ -260,8 +330,20 @@ class ExternalChoiceNotListedForm(AbstractNodeForm):
             choices=choices,
         )
 
+    def serialize_choice(self):
+        attrs = super().serialize_choice()
+        attrs['properties'] = {
+            'choices': {
+                'type': 'string',
+            },
+            'not-listed': {'type': 'boolean'}
+        }
+        attrs['required'] = ['choices', 'not-listed']
+        return attrs
+
 
 class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
+    json_type = 'array'
 
     def _add_choice_field(self):
         question = self.question.get_instance()
@@ -278,8 +360,14 @@ class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
             widget=Select2MultipleWidget,
         )
 
+    def serialize_choice(self):
+        attrs = super().serialize_choice()
+        attrs['items'] = {'type': 'string'}
+        return attrs
+
 
 class ExternalMultipleChoiceNotListedOneTextForm(AbstractNodeForm):
+    json_type = 'object'
 
     def _add_choice_field(self):
         question = self.question.get_instance()
@@ -295,9 +383,22 @@ class ExternalMultipleChoiceNotListedOneTextForm(AbstractNodeForm):
             choices=choices,
         )
 
+    def serialize_choice(self):
+        attrs = super().serialize_choice()
+        attrs['properties'] = {
+            'choices': {
+                'type': 'array',
+                'items': {'string'},
+            },
+            'not-listed': {'type': 'boolean'}
+        }
+        attrs['required'] = ['choices', 'not-listed']
+        return attrs
+
 
 class NamedURLForm(AbstractNodeForm):
     # High magic form with node-magic that cannot be used in a formset
+    json_type = 'object'
 
     def _add_choice_field(self):
         self.fields['choice'] = NamedURLField(
@@ -305,11 +406,24 @@ class NamedURLForm(AbstractNodeForm):
             help_text=self.help_text,
         )
 
+    def serialize_choice(self):
+        attrs = super().serialize_choice()
+        attrs['properties'] = {
+            'url': {
+                'type': 'string',
+                'format': 'uri',
+            },
+            'name': {'type': 'string'}
+        }
+        attrs['required'] = ['url']
+        return attrs
+
 
 # Formsets
 
 
 class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
+    json_type = 'array'
 
     def deserialize(self, initial):
         data = initial.get('choice', [])
@@ -333,6 +447,18 @@ class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
             'choice': choices,
         }
 
+    def serialize_choice(self):
+        return OrderedDict(
+            type=self.json_type,
+            items=OrderedDict(
+                type='object',
+                **self.serialize_subform(),
+            )
+        )
+
+    def serialize_subform(self):
+        raise NotImplemented
+
 
 class NamedURLFormSetForm(forms.Form):
     # Low magic form to be used in a formset
@@ -346,6 +472,20 @@ class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
     @classmethod
     def generate_choice(cls, choice):
         return {'url': choice['url'], 'name': choice['name']}
+
+    def serialize_subform(self):
+        return {
+            'properties': {
+                'url': {
+                    'type': 'string',
+                    'format': 'uri',
+                },
+                'name': {
+                    'type': 'string',
+                },
+            },
+            'required': ['url'],
+        }
 
 
 MultiNamedURLOneTextFormSet = forms.formset_factory(
@@ -371,6 +511,23 @@ class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
             'reason': choice['reason'],
             'type': choice['type'],
             'access_url': choice.get('access_url', ''),
+        }
+
+    def serialize_subform(self):
+        return {
+            'properties': {
+                'type': {
+                    'type': 'string',
+                },
+                'access_url': {
+                    'type': 'string',
+                    'format': 'uri',
+                },
+                'reason': {
+                    'type': 'string',
+                },
+            },
+            'required': ['type'],
         }
 
 

@@ -20,7 +20,11 @@ class SectionViewSet(ReadOnlyModelViewSet):
 
 class QuestionViewSet(ReadOnlyModelViewSet):
     queryset = Question.objects.all()
-    serializer_class = QuestionSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return HeavyQuestionSerializer
+        return LightQuestionSerializer
 
 
 class CannedAnswerViewSet(ReadOnlyModelViewSet):
