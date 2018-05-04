@@ -114,6 +114,7 @@ class ChoiceNotListedField(forms.MultiValueField):
             forms.ChoiceField(required=False, choices=choices),
             forms.BooleanField(required=False),
         ]
+        self.choices = choices
         super().__init__(fields=fields, error_messages=error_messages,
                          widget=widget, *args, **kwargs)
 
@@ -141,6 +142,7 @@ class MultipleChoiceNotListedField(forms.MultiValueField):
             forms.MultipleChoiceField(required=False, choices=choices),
             forms.BooleanField(required=False),
         ]
+        self.choices = choices
         super().__init__(fields=fields, error_messages=error_messages,
                          widget=widget, *args, **kwargs)
 
