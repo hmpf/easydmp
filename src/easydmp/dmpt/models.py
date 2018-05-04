@@ -1036,7 +1036,7 @@ class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
     def get_canned_answer(self, choice_dict, frame=True, **kwargs):
         """
         choice = {
-            'choices': ['list', 'of', 'answers'],
+            'choices': 'answer',
             'not-listed': bool()
         }
         """
