@@ -730,9 +730,18 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
         return None
 
     def get_all_following_questions(self):
+        "Return a qs of all questions in the same section with higher pos"
         return Question.objects.filter(section=self.section, position__gt=self.position)
 
     def get_potential_next_questions(self):
+        """Return a set of potential next questions
+
+        Format: a set of tuples (type, question) where ``type`` is a string:
+
+        "->": No node, question next in order by position
+        "=>": Node but no edges, question next in order by position
+        string: Edge condition or CannedAnswer legend
+        """
         all_following_questions = self.get_all_following_questions()
         if not all_following_questions.exists():
             return set()
@@ -782,6 +791,7 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
         return None
 
     def get_all_preceding_questions(self):
+        "Return a qs of all questions in the same section with lower pos"
         return Question.objects.filter(section=self.section, position__lt=self.position)
 
     def get_prev_question(self, answers=None, in_section=False):
