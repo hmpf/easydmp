@@ -298,7 +298,7 @@ class NewQuestionView(AbstractQuestionView):
         neighboring_questions = Question.objects.filter(section=section)
         kwargs['questions_in_section'] = neighboring_questions
         num_questions = neighboring_questions.count()
-        num_questions_so_far = len(question.get_all_prev_questions())
+        num_questions_so_far = len(question.get_all_preceding_questions())
         kwargs['progress'] = progress(num_questions_so_far, num_questions)
         kwargs['referrer'] = self.referer  # Not a typo! From the http header
         kwargs['section_progress'] = get_section_progress(self.object, section)

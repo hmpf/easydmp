@@ -729,18 +729,18 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
             prev_section = prev_section.get_prev_section()
         return None
 
-    def get_all_next_questions(self):
+    def get_all_following_questions(self):
         return Question.objects.filter(section=self.section, position__gt=self.position)
 
     def get_potential_next_questions(self):
-        all_next_questions = self.get_all_next_questions()
-        if not all_next_questions.exists():
+        all_following_questions = self.get_all_following_questions()
+        if not all_following_questions.exists():
             return set()
         if not self.node:
-            return set([('->', all_next_questions[0])])
+            return set([('->', all_following_questions[0])])
         edges = self.node.next_nodes.all()
         if not edges:
-            return set([('=>', all_next_questions[0])])
+            return set([('=>', all_following_questions[0])])
         next_questions = []
         for edge in edges:
             edge_payload = getattr(edge, 'payload', None)
@@ -753,19 +753,19 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
         return next_questions
 
     def get_next_question(self, answers=None, in_section=False):
-        next_questions = self.get_all_next_questions()
-        if not next_questions.exists():
+        following_questions = self.get_all_following_questions()
+        if not following_questions.exists():
             return self.get_first_question_in_next_section()
 
         if not self.node:
-            return next_questions[0]
+            return following_questions[0]
 
         if self.node.end and not in_section:
             # Break out of section because fsa.end == True
             return self.get_first_question_in_next_section()
 
         if not self.node.next_nodes.exists():
-            return next_questions[0]
+            return following_questions[0]
 
         data = self.map_answers_to_nodes(answers)
         next_node = self.node.get_next_node(data)
@@ -781,19 +781,19 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
 
         return None
 
-    def get_all_prev_questions(self):
+    def get_all_preceding_questions(self):
         return Question.objects.filter(section=self.section, position__lt=self.position)
 
     def get_prev_question(self, answers=None, in_section=False):
-        prev_questions = self.get_all_prev_questions()
-        if not prev_questions.exists():
+        preceding_questions = self.get_all_preceding_questions()
+        if not preceding_questions.exists():
             prev_question = self.get_last_question_in_prev_section()
             if prev_question and not in_section:
                 return prev_question
             return None
 
         if not self.node or self.node.start:
-            return list(prev_questions)[-1]
+            return list(preceding_questions)[-1]
 
         data = self.map_answers_to_nodes(answers)
         prev_node = self.node.get_prev_node(data)
@@ -803,10 +803,10 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
             except Question.DoesNotExist:
                 raise TemplateDesignError('Error in template design: prev node ({}) is not hooked up to a question'.format(prev_node))
 
-        return list(prev_questions)[-1]
+        return list(preceding_questions)[-1]
 
     def is_last_in_section(self):
-        if not self.get_all_next_questions().exists():
+        if not self.get_all_following_questions().exists():
             return True
         if self.node:
             if self.node.end:
