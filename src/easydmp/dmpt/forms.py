@@ -139,10 +139,7 @@ class BooleanForm(AbstractNodeForm):
     json_type = 'boolean'
 
     def _add_choice_field(self):
-        choices = (
-            (True, 'Yes'),
-            (False, 'No'),
-        )
+        choices = self.question.get_choices()
         self.fields['choice'] = forms.ChoiceField(
             label=self.label,
             help_text=self.help_text,
@@ -178,16 +175,11 @@ class ChoiceForm(AbstractNodeForm):
     json_type = 'string'
 
     def _add_choice_field(self):
-        choices = self.question.canned_answers.values_list('choice', 'canned_text')
-        fixed_choices = []
-        for (k, v) in choices:
-            if not v:
-                v = k
-            fixed_choices.append((k, v))
+        choices = self.question.get_choices()
         self.fields['choice'] = forms.ChoiceField(
             label=self.label,
             help_text=self.help_text,
-            choices=fixed_choices,
+            choices=choices,
             widget=forms.RadioSelect,
         )
 
@@ -196,7 +188,7 @@ class MultipleChoiceOneTextForm(AbstractNodeForm):
     json_type = 'array'
 
     def _add_choice_field(self):
-        choices = self.question.canned_answers.values_list('choice', 'choice')
+        choices = self.question.get_choices()
         self.fields['choice'] = forms.MultipleChoiceField(
             label=self.label,
             help_text=self.help_text,
@@ -299,12 +291,7 @@ class ExternalChoiceForm(AbstractNodeForm):
 
     def _add_choice_field(self):
         question = self.question.get_instance()
-        if question.eestore.sources.exists():
-            sources = question.eestore.sources.all()
-        else:
-            sources = question.eestore.eestore_type.sources.all()
-        qs = EEStoreCache.objects.filter(source__in=sources)
-        choices = qs.values_list('eestore_pid', 'name')
+        choices = question.get_choices()
         self.fields['choice'] = forms.ChoiceField(
             label=self.label,
             help_text=self.help_text,
@@ -318,12 +305,7 @@ class ExternalChoiceNotListedForm(AbstractNodeForm):
 
     def _add_choice_field(self):
         question = self.question.get_instance()
-        if question.eestore.sources.exists():
-            sources = question.eestore.sources.all()
-        else:
-            sources = question.eestore.eestore_type.sources.all()
-        qs = EEStoreCache.objects.filter(source__in=sources)
-        choices = qs.values_list('eestore_pid', 'name')
+        choices = question.get_choices()
         self.fields['choice'] = ChoiceNotListedField(
             label=self.label,
             help_text=self.help_text,
@@ -347,12 +329,7 @@ class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
 
     def _add_choice_field(self):
         question = self.question.get_instance()
-        if question.eestore.sources.exists():
-            sources = question.eestore.sources.all()
-        else:
-            sources = question.eestore.eestore_type.sources.all()
-        qs = EEStoreCache.objects.filter(source__in=sources)
-        choices = qs.values_list('eestore_pid', 'name')
+        choices = question.get_choices()
         self.fields['choice'] = forms.MultipleChoiceField(
             label=self.label,
             help_text=self.help_text,
@@ -371,12 +348,7 @@ class ExternalMultipleChoiceNotListedOneTextForm(AbstractNodeForm):
 
     def _add_choice_field(self):
         question = self.question.get_instance()
-        if question.eestore.sources.exists():
-            sources = question.eestore.sources.all()
-        else:
-            sources = question.eestore.eestore_type.sources.all()
-        qs = EEStoreCache.objects.filter(source__in=sources)
-        choices = qs.values_list('eestore_pid', 'name')
+        choices = question.get_choices()
         self.fields['choice'] = MultipleChoiceNotListedField(
             label=self.label,
             help_text=self.help_text,

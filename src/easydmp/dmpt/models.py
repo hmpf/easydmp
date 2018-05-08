@@ -23,6 +23,7 @@ from flow.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_f
 
 from .errors import TemplateDesignError
 from .utils import *
+from easydmp.eestore.models import EEStoreCache
 from easydmp.utils import pprint_list
 
 """
@@ -565,6 +566,13 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
         self.__class__ = cls
         return self
 
+    def get_choices(self):
+        return NotImplemented
+
+    def get_choices_keys(self):
+        choices = self.get_choices()
+        return [item[0] for item in choices]
+
     def _serialize_condition(self, _):
         """Convert an answer into a lookup key, if applicable
 
@@ -800,6 +808,13 @@ class BooleanQuestion(Question):
     def pprint(self, value):
         return 'Yes' if value['choice'] else 'No'
 
+    def get_choices(self):
+        choices = (
+            (True, 'Yes'),
+            (False, 'No'),
+        )
+        return choices
+
 
 class ChoiceQuestion(Question):
     "A branch-capable question answerable with one of a small set of choices"
@@ -822,6 +837,15 @@ class ChoiceQuestion(Question):
         Return answer unchanged
         """
         return answer
+
+    def get_choices(self):
+        choices = self.canned_answers.values_list('choice', 'canned_text')
+        fixed_choices = []
+        for (k, v) in choices:
+            if not v:
+                v = k
+            fixed_choices.append((k, v))
+        return tuple(fixed_choices)
 
 
 class MultipleChoiceOneTextQuestion(Question):
@@ -855,6 +879,10 @@ class MultipleChoiceOneTextQuestion(Question):
 
     def pprint(self, value):
         return pprint_list(value['choice'])
+
+    def get_choices(self):
+        choices = tuple(self.canned_answers.values_list('choice', 'choice'))
+        return choices
 
 
 class DateRangeQuestion(NoCheckMixin, Question):
@@ -926,6 +954,15 @@ class EEStoreMixin:
 
     def pprint_html(self, value):
         return self.get_canned_answer(value['choice'], frame=False)
+
+    def get_choices(self):
+        if self.eestore.sources.exists():
+            sources = self.eestore.sources.all()
+        else:
+            sources = self.eestore.eestore_type.sources.all()
+        qs = EEStoreCache.objects.filter(source__in=sources)
+        choices = qs.values_list('eestore_pid', 'name')
+        return choices
 
 
 class ExternalChoiceQuestion(EEStoreMixin, Question):
