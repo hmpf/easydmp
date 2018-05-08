@@ -420,7 +420,7 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
             if question.pk == self.get_first_question().pk:
                 dot.edge(s_start_id, q_id, **s_kwargs)
             dot.node(q_id, **q_kwargs)
-            next_questions = question.get_potential_next_questions()
+            next_questions = question.get_potential_next_questions_with_edge()
             if next_questions:
                 for choice, next_question in next_questions:
                     if next_question:
@@ -671,7 +671,7 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
         "Return a qs of all questions in the same section with higher pos"
         return Question.objects.filter(section=self.section, position__gt=self.position)
 
-    def get_potential_next_questions(self):
+    def get_potential_next_questions_with_edge(self):
         """Return a set of potential next questions
 
         Format: a set of tuples (type, question) where ``type`` is a string:
@@ -698,6 +698,11 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
             next_questions.append((condition, node_payload))
         next_questions = set(next_questions)
         return next_questions
+
+    def get_potential_next_questions(self):
+        "Return a set of potential next questions"
+        next_questions = self.get_potential_next_questions_with_edge()
+        return set(v for c, v in next_questions)
 
     def get_next_question(self, answers=None, in_section=False):
         following_questions = self.get_all_following_questions()
