@@ -737,14 +737,31 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
         "Return a qs of all questions in the same section with lower pos"
         return Question.objects.filter(section=self.section, position__lt=self.position)
 
-    def get_prev_question(self, answers=None, in_section=False):
+    def get_potential_prev_questions(self):
         preceding_questions = self.get_all_preceding_questions()
         if not preceding_questions.exists():
-            prev_question = self.get_last_question_in_prev_section()
-            if prev_question and not in_section:
-                return prev_question
+            return ()
+
+        prev_pos_question = list(preceding_questions)[-1]
+        if prev_pos_question.obligatory:
+            return (prev_pos_question,)
+        all_prev_oblig_questions = preceding_questions.filter(obligatory=True)
+        if not all_prev_oblig_questions.exists():
+            return ()
+        prev_oblig_question = list(all_prev_oblig_questions)[-1]
+        return preceding_questions.filter(position__gte=prev_oblig_question.position)
+
+    def get_prev_question(self, answers=None, in_section=False):
+        preceding_questions = self.get_potential_prev_questions()
+        if not preceding_questions:
+            if not in_section:
+                return self.get_last_question_in_prev_section()
             return None
 
+        if len(preceding_questions) == 1:
+            return list(preceding_questions)[0]
+
+        # Walk forward from previous obligatory question
         if not self.node or self.node.start:
             return list(preceding_questions)[-1]
 
