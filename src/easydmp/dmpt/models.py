@@ -54,6 +54,34 @@ INPUT_TYPES = (
 )
 
 
+def dfs_paths(graph, start):
+    """Find all paths in  DAG graph, return a generator of lists
+
+    Input: adjacency list in a dict:
+
+    {
+        node1: set([node1, node2, node3]),
+        node2: set([node2, node3]),
+        node3: set(),
+    }
+    """
+    stack = [(start, [start])]
+    visited = set()
+    while stack:
+        # loop detection
+        if start in visited:
+            error = 'Graph is not a DAG, there\'s a loop for node "{}"'
+            raise TypeError(error.format(start))
+        (vertex, path) = stack.pop()
+        if not graph.get(vertex, None):
+            yield path
+        for next in graph[vertex] - set(path):
+            if not next:
+                yield path + [next]
+            else:
+                stack.append((next, path + [next]))
+
+
 class Template(DeletionMixin, RenumberMixin, models.Model):
     title = models.CharField(max_length=255)
     abbreviation = models.CharField(max_length=8, blank=True)
@@ -354,6 +382,41 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
             obj = obj.super_section
         return obj
 
+    def find_validity_of_questions(self, data):
+        assert data, 'No data, cannot validate'
+        questions = self.questions.all()
+        valids = []
+        invalids = []
+        for question in questions:
+            question = question.get_instance()
+            try:
+                valid = question.validate_data(data)
+            except AttributeError:
+                valid = False
+            if valid:
+                valids.append(question)
+            else:
+                invalids.append(question)
+        return (valids, invalids)
+
+    def set_validity_of_questions(self, plan, valids, invalids):
+        plan.set_questions_as_valid(*valids)
+        plan.set_questions_as_invalid(*invalids)
+
+    def validate_data(self, data):
+        if not data:
+            return False
+        if not self.questions.exists():
+            return True
+        valids, invalids = self.find_validity_of_questions(data)
+        if not invalids:
+            return True
+        valid_pks = set(q.pk for q in valids)
+        for path in self.find_all_paths():
+            if valid_pks == set(path):
+                return True
+        return False
+
     def find_minimal_path(self, data=None):
         minimal_qs = self.questions.filter(obligatory=True).order_by('position')
         if not data:
@@ -362,6 +425,18 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
         answered_qs = self.questions.filter(pk__in=answered_pks)
         qs = minimal_qs | answered_qs
         return list(qs.distinct().order_by('position'))
+
+    def find_all_paths(self):
+        qs = self.questions.all()
+        adjacent = {}
+        for q in qs:
+            adjacent[q.pk] = set(i.pk if i else None for i in q.get_potential_next_questions())
+        paths = []
+        for path in dfs_paths(adjacent, self.first_question.pk):
+            if not path[-1]:
+                path = path[:-1]
+            paths.append(path)
+        return paths
 
     # graphing code
     def find_path(self, data):
@@ -462,6 +537,12 @@ class SimpleFramingTextMixin:
 
         choice = str(choice)
         return self.frame_canned_answer(choice, frame)
+
+    def validate_choice(self, data):
+        choice = data.get('choice', None)
+        if choice:
+            return True
+        return False
 
 
 class Question(DeletionMixin, RenumberMixin, models.Model):
@@ -572,6 +653,14 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
     def get_choices_keys(self):
         choices = self.get_choices()
         return [item[0] for item in choices]
+
+    def validate_data(self, data):
+        if not data:
+            return False
+        choice = data.get(str(self.pk), None)
+        if choice is None:
+            return False
+        return self.get_instance().validate_choice(choice)
 
     def _serialize_condition(self, _):
         """Convert an answer into a lookup key, if applicable
@@ -837,6 +926,14 @@ class BooleanQuestion(Question):
         )
         return choices
 
+    def validate_choice(self, data):
+        choice = data.get('choice', None)
+        if choice is None:
+            return False
+        if choice in self.get_choices_keys():
+            return True
+        return False
+
 
 class ChoiceQuestion(Question):
     "A branch-capable question answerable with one of a small set of choices"
@@ -868,6 +965,15 @@ class ChoiceQuestion(Question):
                 v = k
             fixed_choices.append((k, v))
         return tuple(fixed_choices)
+
+    def validate_choice(self, data):
+        choice = data.get('choice', None)
+        if not choice:
+            return False
+        choices = self.get_choices_keys()
+        if choice in choices:
+            return True
+        return False
 
 
 class MultipleChoiceOneTextQuestion(Question):
@@ -906,6 +1012,15 @@ class MultipleChoiceOneTextQuestion(Question):
         choices = tuple(self.canned_answers.values_list('choice', 'choice'))
         return choices
 
+    def validate_choice(self, data):
+        choice = set(data.get('choice', []))
+        if not choice:
+            return False
+        choices = set(self.get_choices_keys())
+        if choice <= choices:
+            return True
+        return False
+
 
 class DateRangeQuestion(NoCheckMixin, Question):
     "A non-branch-capable question answerable with a daterange"
@@ -934,6 +1049,14 @@ class DateRangeQuestion(NoCheckMixin, Question):
 
     def pprint(self, value):
         return self.framing_text.format(**value['choice'])
+
+    def validate_choice(self, data):
+        choice = data.get('choice', {})
+        if not choice:
+            return False
+        if choice.get('start', False) and choice.get('end', False):
+            return True
+        return False
 
 
 class ReasonQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
@@ -1012,6 +1135,15 @@ class ExternalChoiceQuestion(EEStoreMixin, Question):
         answer = answers[0]
         return self.frame_canned_answer(answer.name, frame)
 
+    def validate_choice(self, data):
+        choice = data.get('choice', {})
+        if not choice:
+            return False
+        choices = self.get_choices_keys()
+        if choice in choices:
+            return True
+        return False
+
 
 class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
     """A branch-capable question answerable with a single choice
@@ -1076,6 +1208,17 @@ class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
         condition = str(choice.get('not-listed', False))
         return condition
 
+    def validate_choice(self, data):
+        answer = data.get('choice', {})
+        if not answer:
+            return False
+        choice = answer.get('choices', '')
+        not_listed = answer.get('not-listed', False)
+        choices = self.get_choices_keys()
+        if choice in choices or not_listed:
+            return True
+        return False
+
 
 class ExternalMultipleChoiceOneTextQuestion(EEStoreMixin, Question):
     """A non-branch-capable question answerable with multiple choices
@@ -1119,6 +1262,15 @@ class ExternalMultipleChoiceOneTextQuestion(EEStoreMixin, Question):
             canned_answer = '{} and {}'.format(', '.join(out[:-1]), out[-1])
         canned_answer = mark_safe(canned_answer)
         return self.frame_canned_answer(canned_answer, frame)
+
+    def validate_choice(self, data):
+        choice = data.get('choice', [])
+        if not choice:
+            return False
+        choices = set(self.get_choices_keys())
+        if choices.issuperset(choice):
+            return True
+        return False
 
 
 class ExternalMultipleChoiceNotListedOneTextQuestion(EEStoreMixin, Question):
@@ -1195,6 +1347,22 @@ class ExternalMultipleChoiceNotListedOneTextQuestion(EEStoreMixin, Question):
         condition = str(choice.get('not-listed', False))
         return condition
 
+    def validate_choice(self, data):
+        answer = data.get('choice', {})
+        if not answer:
+            return False
+        try:
+            choice = set(answer.get('choices', []))
+        except AttributeError:
+            errormsg = 'Choice is in wrong format: pk {}, input "{}", choice {}'
+            LOG.error(errormsg.format(self.pk, self.input_type, answer))
+            return False
+        not_listed = answer.get('not-listed', False)
+        choices = set(self.get_choices_keys())
+        if choice <= choices or not_listed:
+            return True
+        return False
+
 
 class NamedURLQuestion(NoCheckMixin, Question):
     """A non-branch-capable question answerable with an url
@@ -1225,6 +1393,14 @@ class NamedURLQuestion(NoCheckMixin, Question):
 
     def pprint_html(self, value):
         return self.get_canned_answer(value['choice'], frame=False)
+
+    def validate_choice(self, data):
+        choice = data.get('choice', {})
+        if not choice:
+            return False
+        if choice.get('url', False):
+            return True
+        return False
 
 
 class MultiNamedURLOneTextQuestion(NoCheckMixin, Question):
@@ -1260,6 +1436,17 @@ class MultiNamedURLOneTextQuestion(NoCheckMixin, Question):
     def pprint_html(self, value):
         choices = value['choice']
         return self.get_canned_answer(choices, frame=False)
+
+    def validate_choice(self, data):
+        choices = data.get('choice', [])
+        if not choices:
+            return False
+        urls = []
+        for choice in choices:
+            url = choice.get('url', None)
+            if url:
+                return True
+        return False
 
 
 class MultiDMPTypedReasonOneTextQuestion(NoCheckMixin, Question):
@@ -1300,6 +1487,18 @@ class MultiDMPTypedReasonOneTextQuestion(NoCheckMixin, Question):
     def pprint_html(self, value):
         choices = value['choice']
         return self.get_canned_answer(choices)
+
+    def validate_choice(self, data):
+        choices = data.get('choice', [])
+        if not choices:
+            return False
+        triples = []
+        for choice in choices:
+            type_ = choice.get('type', None)
+            reason = choice.get('reason', None)
+            if type_ and reason:
+                return True
+        return False
 
 
 INPUT_TYPE_MAP = {

@@ -107,31 +107,55 @@ class Plan(models.Model):
 
     def set_sections_as_valid(self, *sections):
         for section in sections:
-            sv = SectionValidity(self, section, True)
-            sv.save()
+            defaults = {'plan': self, 'valid': True, 'section': section}
+            _ = SectionValidity.objects.update_or_create(
+                plan=self,
+                section=section,
+                defaults=defaults
+            )
 
     def set_sections_as_invalid(self, *sections):
         for section in sections:
-            sv = SectionValidity(self, section, False)
-            sv.save()
+            defaults = {'plan': self, 'valid': False, 'section': section}
+            _ = SectionValidity.objects.update_or_create(
+                plan=self,
+                section=section,
+                defaults=defaults
+            )
 
     def set_questions_as_valid(self, *questions):
         for question in questions:
-            qv = QuestionValidity(self, question, True)
-            qv.save()
+            defaults = {'plan': self, 'valid': True, 'question': question}
+            _ = QuestionValidity.objects.update_or_create(
+                plan=self,
+                question=question,
+                defaults=defaults
+            )
 
     def set_questions_as_invalid(self, *questions):
         for question in questions:
-            qv = QuestionValidity(self, question, False)
-            qv.save()
+            defaults = {'plan': self, 'valid': False, 'question': question}
+            _ = QuestionValidity.objects.update_or_create(
+                plan=self,
+                question=question,
+                defaults=defaults
+            )
 
     def save(self, question=None, **kwargs):
         super().save(**kwargs)
         if question is not None:
+            # set visited
             self.visited_sections.add(question.section)
             topmost = question.section.get_topmost_section()
             if topmost:
                 self.visited_sections.add(topmost)
+            # set validated
+            self.set_questions_as_valid(question)
+            section = question.section
+            if section.validate_data(self.data):
+                self.set_sections_as_valid(section)
+            else:
+                self.set_sections_as_invalid(section)
         if not self.editor_group:
             self.create_editor_group()
             self.set_adder_as_editor()
