@@ -349,15 +349,15 @@ class NewQuestionView(AbstractQuestionView):
 
     def form_valid(self, form, notesform):
         notes = notesform.cleaned_data.get('notes', '')
-        state_switch = form.serialize()
-        state_switch['notes'] = notes
+        choice = form.serialize()
+        choice['notes'] = notes
         question_pk = self.get_question_pk()
         # save change
         current_data = self.object.data
-        current_data[question_pk] = state_switch
+        current_data[question_pk] = choice
         self.object.data = current_data
         previous_data = self.object.previous_data
-        previous_data[question_pk] = state_switch
+        previous_data[question_pk] = choice
         self.object.previous_data = previous_data
         self.object.save(question=self.get_question())
         # remove invalidated states
