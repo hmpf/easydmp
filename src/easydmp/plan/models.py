@@ -24,6 +24,26 @@ class PlanQuerySet(models.QuerySet):
             purge_answer(plan, question_pk)
 
 
+class SectionValidity(models.Model):
+    plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='+')
+    section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='+')
+    valid = models.BooleanField()
+    last_validated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('plan', 'section')
+
+
+class QuestionValidity(models.Model):
+    plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='+')
+    question = models.ForeignKey('dmpt.Question', models.CASCADE, related_name='+')
+    valid = models.BooleanField()
+    last_validated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('plan', 'question')
+
+
 class Plan(models.Model):
     title = models.CharField(
         max_length=255,
@@ -62,6 +82,8 @@ class Plan(models.Model):
                                      blank=True, null=True,
                                      on_delete=models.SET_NULL)
     editor_group = models.ForeignKey('auth.Group', related_name='+', blank=True, null=True)
+    section_validity = models.ManyToManyField('dmpt.Section', through=SectionValidity)
+    question_validity = models.ManyToManyField('dmpt.Question', through=QuestionValidity)
 
     objects = PlanQuerySet.as_manager()
 
@@ -82,6 +104,26 @@ class Plan(models.Model):
 
     def set_adder_as_editor(self):
         self.add_user_to_editor_group(self.added_by)
+
+    def set_sections_as_valid(self, *sections):
+        for section in sections:
+            sv = SectionValidity(self, section, True)
+            sv.save()
+
+    def set_sections_as_invalid(self, *sections):
+        for section in sections:
+            sv = SectionValidity(self, section, False)
+            sv.save()
+
+    def set_questions_as_valid(self, *questions):
+        for question in questions:
+            qv = QuestionValidity(self, question, True)
+            qv.save()
+
+    def set_questions_as_invalid(self, *questions):
+        for question in questions:
+            qv = QuestionValidity(self, question, False)
+            qv.save()
 
     def save(self, question=None, **kwargs):
         super().save(**kwargs)
