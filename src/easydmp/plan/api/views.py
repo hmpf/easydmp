@@ -21,7 +21,7 @@ class PlanFilter(FilterSet):
         }
 
 
-class PlanSerializer(serializers.HyperlinkedModelSerializer):
+class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.HyperlinkedIdentityField(
         view_name='plan-detail',
         lookup_field='pk',
@@ -32,6 +32,24 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
         many=False,
         read_only=True,
     )
+
+    class Meta:
+        model = Plan
+        fields = [
+            'id',
+            'uuid',
+            'url',
+            'title',
+            'abbreviation',
+            'version',
+            'template',
+            'added',
+            'modified',
+            'locked',
+            'published',
+        ]
+
+class HeavyPlanSerializer(LightPlanSerializer):
     data = JSONField(binary=False)
     previous_data = JSONField(binary=False)
     added_by = serializers.HyperlinkedRelatedField(
@@ -41,6 +59,18 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
         read_only=True,
     )
     modified_by = serializers.HyperlinkedRelatedField(
+        view_name='user-detail',
+        lookup_field='pk',
+        many=False,
+        read_only=True,
+    )
+    locked_by = serializers.HyperlinkedRelatedField(
+        view_name='user-detail',
+        lookup_field='pk',
+        many=False,
+        read_only=True,
+    )
+    published_by = serializers.HyperlinkedRelatedField(
         view_name='user-detail',
         lookup_field='pk',
         many=False,
@@ -74,5 +104,9 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
 
 class PlanViewSet(ReadOnlyModelViewSet):
     queryset = Plan.objects.exclude(published=None)
-    serializer_class = PlanSerializer
     filter_class = PlanFilter
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return HeavyPlanSerializer
+        return LightPlanSerializer
