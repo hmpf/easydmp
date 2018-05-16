@@ -3,6 +3,9 @@ from copy import deepcopy
 from functools import lru_cache
 from textwrap import fill
 from uuid import uuid4
+import logging
+
+LOG = logging.getLogger(__name__)
 
 import graphviz as gv
 
@@ -207,6 +210,54 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
                 }
             }
         return summary
+
+    def list_unknown_questions(self, plan):
+        "List out all question pks of a plan that are unknown in the template"
+        assert self == plan.template, "Mrong template for plan"
+        question_pks = self.questions.values_list('pk', flat=True)
+        data_pks = set(int(k) for k in plan.data)
+        return data_pks.difference(question_pks)
+
+    def validate_plan(self, plan, recalculate=True):
+        wrong_pks = [str(pk) for pk in self.list_unknown_questions(plan)]
+        if wrong_pks:
+            error = 'The plan {} contains nonsense data: template has no questions for: {}'
+            planstr = '{} ({}), template {} ({})'.format(plan, plan.pk, self, self.pk)
+            LOG.error(error.format(planstr, ' '.join(wrong_pks)))
+            return False
+        if not plan.data:
+            error = 'The plan {} ({}) has no data: invalid'
+            LOG.error(error.format(plan, plan.pk))
+            return False
+        if recalculate:
+            for section in self.sections.all():
+                valids, invalids = section.find_validity_of_questions(plan.data)
+                section.set_validity_of_questions(plan, valids, invalids)
+            valids, invalids = self.find_validity_of_sections(plan.data)
+            self.set_validity_of_sections(plan, valids, invalids)
+        if plan.section_validity.filter(valid=True).count() == plan.template.sections.count():
+            return True
+        return False
+
+    def find_validity_of_sections(self, data):
+        valid_sections = []
+        invalid_sections = []
+        for section in self.sections.all():
+            if section.validate_data(data):
+                valid_sections.append(section)
+            else:
+                invalid_sections.append(section)
+        return (valid_sections, invalid_sections)
+
+    def set_validity_of_sections(self, plan, valids, invalids):
+        plan.set_sections_as_valid(*valids)
+        plan.set_sections_as_invalid(*invalids)
+
+    def validate_data(self, data):
+        if not data:
+            return False
+        _, invalid_sections = self.find_validity_of_sections(data)
+        return False if invalid_sections else True
 
 
 class Section(DeletionMixin, RenumberMixin, models.Model):
