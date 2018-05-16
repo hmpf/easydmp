@@ -25,7 +25,7 @@ class PlanQuerySet(models.QuerySet):
 
 
 class SectionValidity(models.Model):
-    plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='+')
+    plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='section_validity')
     section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='+')
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
@@ -35,7 +35,7 @@ class SectionValidity(models.Model):
 
 
 class QuestionValidity(models.Model):
-    plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='+')
+    plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='question_validity')
     question = models.ForeignKey('dmpt.Question', models.CASCADE, related_name='+')
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
@@ -82,8 +82,6 @@ class Plan(models.Model):
                                      blank=True, null=True,
                                      on_delete=models.SET_NULL)
     editor_group = models.ForeignKey('auth.Group', related_name='+', blank=True, null=True)
-    section_validity = models.ManyToManyField('dmpt.Section', through=SectionValidity)
-    question_validity = models.ManyToManyField('dmpt.Question', through=QuestionValidity)
 
     objects = PlanQuerySet.as_manager()
 
