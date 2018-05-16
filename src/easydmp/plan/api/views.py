@@ -7,6 +7,32 @@ from django_filters.rest_framework.filterset import FilterSet
 from easydmp.auth.api.views import UserSerializer
 
 from easydmp.plan.models import Plan
+from easydmp.plan.models import SectionValidity
+from easydmp.plan.models import QuestionValidity
+
+
+class LightSectionValiditySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SectionValidity
+        fields = [
+            'id',
+            'section',
+            'valid',
+            'last_validated',
+        ]
+
+
+class LightQuestionValiditySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = QuestionValidity
+        fields = [
+            'id',
+            'question',
+            'valid',
+            'last_validated',
+        ]
 
 
 class PlanFilter(FilterSet):
@@ -49,6 +75,7 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
             'published',
         ]
 
+
 class HeavyPlanSerializer(LightPlanSerializer):
     data = JSONField(binary=False)
     previous_data = JSONField(binary=False)
@@ -76,6 +103,8 @@ class HeavyPlanSerializer(LightPlanSerializer):
         many=False,
         read_only=True,
     )
+    section_validity = LightSectionValiditySerializer(many=True, read_only=True)
+    question_validity = LightQuestionValiditySerializer(many=True, read_only=True)
 
     class Meta:
         model = Plan
@@ -87,6 +116,8 @@ class HeavyPlanSerializer(LightPlanSerializer):
             'abbreviation',
             'version',
             'template',
+            'section_validity',
+            'question_validity',
             'data',
             'previous_data',
             'generated_html',
