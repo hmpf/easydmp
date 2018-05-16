@@ -25,7 +25,7 @@
                  <ul class="dropdown-menu" aria-labelledby="actionsMenu">
                      <li><a href="{% url 'update_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-edit.png' %}"/>Rename</a></li>
                      <li><a href="{% url 'invitation_plan_editor_create' plan=object.id %}"><img src="{% static 'usit/icons/icon-people.png' %}"/>Invite coworkers</a></li>
-                     {% if not object.published %}
+                     {% if object.valid and not object.published %}
                      <li><a href="{% url 'publish_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-publish.png' %}"/>Publish</a></li>
                      {% endif %}
                      <li><a href="{% url 'plan_delete' plan=object.id %}"><img src="{% static 'usit/icons/icon-delete.png' %}"/>Delete</a></li>

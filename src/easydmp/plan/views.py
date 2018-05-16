@@ -197,6 +197,10 @@ class PublishPlanView(LoginRequiredMixin, UpdateView):
     model = Plan
     pk_url_kwarg = 'plan'
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(valid=True)
+
     def get_success_url(self):
         return reverse('plan_detail', kwargs={'plan': self.object.pk})
 

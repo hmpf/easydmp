@@ -212,13 +212,14 @@ class Plan(models.Model):
         return render_to_string(GENERATED_HTML_TEMPLATE, context)
 
     def publish(self, user, timestamp=None):
-        timestamp = timestamp if timestamp else tznow()
-        if not self.locked:
-            self.lock(user, timestamp, True)
-        self.generated_html = self.generate_html()
-        self.published = timestamp
-        self.published_by = user
-        self.save()
+        if self.valid:
+            timestamp = timestamp if timestamp else tznow()
+            if not self.locked:
+                self.lock(user, timestamp, True)
+            self.generated_html = self.generate_html()
+            self.published = timestamp
+            self.published_by = user
+            self.save()
 
 
 class PlanComment(models.Model):
