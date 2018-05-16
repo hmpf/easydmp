@@ -69,8 +69,10 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
             'abbreviation',
             'version',
             'template',
+            'valid',
             'added',
             'modified',
+            'last_validated',
             'locked',
             'published',
         ]

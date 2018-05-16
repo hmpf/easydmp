@@ -59,6 +59,8 @@ class Plan(models.Model):
     version = models.PositiveIntegerField(default=1)
     uuid = models.UUIDField(default=uuid4, editable=False)
     template = models.ForeignKey('dmpt.Template', related_name='plans')
+    valid = models.NullBooleanField()
+    last_validated = models.DateTimeField(blank=True, null=True)
     data = JSONField(default={})
     previous_data = JSONField(default={})
     visited_sections = models.ManyToManyField('dmpt.Section', related_name='+', blank=True)
@@ -139,6 +141,12 @@ class Plan(models.Model):
                 defaults=defaults
             )
 
+    def validate(self):
+        valid = self.template.validate_plan(self)
+        self.valid = valid
+        self.last_validated = tznow()
+        self.save()
+
     def save(self, question=None, **kwargs):
         super().save(**kwargs)
         if question is not None:
@@ -148,12 +156,7 @@ class Plan(models.Model):
             if topmost:
                 self.visited_sections.add(topmost)
             # set validated
-            self.set_questions_as_valid(question)
-            section = question.section
-            if section.validate_data(self.data):
-                self.set_sections_as_valid(section)
-            else:
-                self.set_sections_as_invalid(section)
+            self.validate()
         if not self.editor_group:
             self.create_editor_group()
             self.set_adder_as_editor()
