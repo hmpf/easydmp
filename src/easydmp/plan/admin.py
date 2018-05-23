@@ -33,8 +33,25 @@ class PublishedFilter(FakeBooleanFilter):
 class PlanAdmin(admin.ModelAdmin):
     list_display = ['title', 'template', 'added_by', 'added']
     list_filter = ['template', LockedFilter, PublishedFilter]
-    readonly_fields = ['added', 'added_by', 'uuid', 'locked', 'locked_by', 'published', 'published_by']
+    search_fields = ['title', 'abbreviation', 'added_by__email', 'added_by__username',]
+    readonly_fields = ['added', 'added_by', 'uuid', 'locked', 'locked_by', 'published', 'published_by', 'generated_html']
     actions = ['lock', 'publish']
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'abbreviation', 'version', 'template',),
+        }),
+        ('Debug', {
+            'fields': ('data', 'previous_data', 'visited_sections',),
+        }),
+        ('Metadata', {
+            'classes': ('collapse',),
+            'fields': ('uuid', ('added', 'added_by'), ('locked', 'locked_by'),),
+        }),
+        ('Post-published metadata', {
+            'classes': ('collapse',),
+            'fields': ('doi', ('published', 'published_by'), 'generated_html',),
+        }),
+    )
 
     def lock(self, request, queryset):
         for q in queryset.filter(locked__isnull=True):
