@@ -103,7 +103,6 @@ class HeavyPlanSerializer(LightPlanSerializer):
 
 
 class PlanViewSet(ReadOnlyModelViewSet):
-    queryset = Plan.objects.exclude(published=None)
     filter_class = PlanFilter
     serializer_class = HeavyPlanSerializer
 
@@ -112,3 +111,13 @@ class PlanViewSet(ReadOnlyModelViewSet):
 #         if self.action == 'retrieve':
 #             return HeavyPlanSerializer
 #         return LightPlanSerializer
+
+    def get_queryset(self):
+        qs = Plan.objects.exclude(published=None)
+        if self.request.user.is_authenticated():
+            user_groups = self.request.user.groups.all()
+            qs = qs | Plan.objects.filter(
+                published=None,
+                editor_group__in=user_groups,
+            )
+        return qs
