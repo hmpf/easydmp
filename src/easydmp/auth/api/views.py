@@ -23,6 +23,7 @@ class ObfuscatedUserSerializer(serializers.HyperlinkedModelSerializer):
         fields = [
             'id',
             'url',
+            'username',
             'obfuscated_username',
             'truncated_email',
         ]
@@ -54,8 +55,9 @@ class UserSerializer(ObfuscatedUserSerializer):
 
 class UserViewSet(ReadOnlyModelViewSet):
     queryset = User.objects.all()
+    serializer_class = UserSerializer
 
-    def get_serializer_class(self):
-        if self.request.user.is_authenticated():
-            return UserSerializer
-        return ObfuscatedUserSerializer
+#     def get_serializer_class(self):
+#         if self.request.user.is_authenticated():
+#             return UserSerializer
+#         return ObfuscatedUserSerializer

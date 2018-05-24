@@ -105,8 +105,10 @@ class HeavyPlanSerializer(LightPlanSerializer):
 class PlanViewSet(ReadOnlyModelViewSet):
     queryset = Plan.objects.exclude(published=None)
     filter_class = PlanFilter
+    serializer_class = HeavyPlanSerializer
 
-    def get_serializer_class(self):
-        if self.action == 'retrieve':
-            return HeavyPlanSerializer
-        return LightPlanSerializer
+# 
+#     def get_serializer_class(self):
+#         if self.action == 'retrieve':
+#             return HeavyPlanSerializer
+#         return LightPlanSerializer
