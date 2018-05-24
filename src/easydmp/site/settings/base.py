@@ -160,6 +160,10 @@ AUTH_USER_MODEL = 'easydmp_auth.User'
 LOGIN_URL = 'login-selector'
 LOGIN_REDIRECT_URL = '/plan/'
 
+# Other
+
+X_FRAME_OPTIONS = 'ALLOW-FROM https://bibsys.no/'
+
 # REST API
 
 REST_FRAMEWORK = {
