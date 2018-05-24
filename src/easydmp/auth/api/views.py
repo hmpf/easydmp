@@ -10,7 +10,7 @@ def truncate_email(email):
     return '{}@{}'.format(userpart, domain)
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
+class ObfuscatedUserSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.HyperlinkedIdentityField(
         view_name='user-detail',
         lookup_field='pk'
@@ -38,6 +38,24 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         return truncate_email(obj.email)
 
 
+class UserSerializer(ObfuscatedUserSerializer):
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'url',
+            'username',
+            'obfuscated_username',
+            'email',
+            'truncated_email',
+        ]
+
+
 class UserViewSet(ReadOnlyModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+
+    def get_serializer_class(self):
+        if self.request.user.is_authenticated():
+            return UserSerializer
+        return ObfuscatedUserSerializer
