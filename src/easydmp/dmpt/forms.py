@@ -71,7 +71,7 @@ class AbstractNodeMixin():
 
     def __init__(self, **kwargs):
         self.has_prevquestion = kwargs.pop('has_prevquestion', False)
-        self.question = kwargs.pop('question')
+        self.question = kwargs.pop('question').get_instance()
         self.question_pk = self.question.pk
         label = self.question.label
         self.label = ' '.join((label, self.question.question))
@@ -290,8 +290,7 @@ class ExternalChoiceForm(AbstractNodeForm):
     json_type = 'string'
 
     def _add_choice_field(self):
-        question = self.question.get_instance()
-        choices = question.get_choices()
+        choices = self.question.get_choices()
         self.fields['choice'] = forms.ChoiceField(
             label=self.label,
             help_text=self.help_text,
@@ -304,8 +303,7 @@ class ExternalChoiceNotListedForm(AbstractNodeForm):
     json_type = 'object'
 
     def _add_choice_field(self):
-        question = self.question.get_instance()
-        choices = question.get_choices()
+        choices = self.question.get_choices()
         self.fields['choice'] = ChoiceNotListedField(
             label=self.label,
             help_text=self.help_text,
@@ -328,8 +326,7 @@ class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
     json_type = 'array'
 
     def _add_choice_field(self):
-        question = self.question.get_instance()
-        choices = question.get_choices()
+        choices = self.question.get_choices()
         self.fields['choice'] = forms.MultipleChoiceField(
             label=self.label,
             help_text=self.help_text,
@@ -347,8 +344,7 @@ class ExternalMultipleChoiceNotListedOneTextForm(AbstractNodeForm):
     json_type = 'object'
 
     def _add_choice_field(self):
-        question = self.question.get_instance()
-        choices = question.get_choices()
+        choices = self.question.get_choices()
         self.fields['choice'] = MultipleChoiceNotListedField(
             label=self.label,
             help_text=self.help_text,

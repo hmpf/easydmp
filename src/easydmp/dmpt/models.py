@@ -567,7 +567,7 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
         return self
 
     def get_choices(self):
-        return NotImplemented
+        raise NotImplementedError
 
     def get_choices_keys(self):
         choices = self.get_choices()
@@ -578,7 +578,7 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
 
         This is only applicable if `branching_possible` is True.
         """
-        return NotImplemented
+        raise NotImplementedError
 
     def generate_canned_text(self, data):
         answer = deepcopy(data.get(str(self.pk), {}))  # Very explicitly work on a copy
