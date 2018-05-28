@@ -34,7 +34,9 @@ class PlanAdmin(admin.ModelAdmin):
     list_display = ['title', 'template', 'added_by', 'added']
     list_filter = ['template', LockedFilter, PublishedFilter]
     search_fields = ['title', 'abbreviation', 'added_by__email', 'added_by__username',]
-    readonly_fields = ['added', 'added_by', 'uuid', 'locked', 'locked_by', 'published', 'published_by', 'generated_html']
+    readonly_fields = ['added', 'added_by', 'uuid', 'locked', 'locked_by',
+                       'cloned_from', 'cloned_when',
+                       'published', 'published_by', 'generated_html']
     actions = ['lock', 'publish']
     fieldsets = (
         (None, {
@@ -45,7 +47,7 @@ class PlanAdmin(admin.ModelAdmin):
         }),
         ('Metadata', {
             'classes': ('collapse',),
-            'fields': ('uuid', ('added', 'added_by'), ('locked', 'locked_by'),),
+            'fields': ('uuid', ('added', 'added_by'), ('locked', 'locked_by'), ('cloned_from', 'cloned_when'),),
         }),
         ('Post-published metadata', {
             'classes': ('collapse',),

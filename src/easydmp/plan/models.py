@@ -1,3 +1,4 @@
+from copy import deepcopy
 from uuid import uuid4
 
 from django.conf import settings
@@ -9,6 +10,8 @@ from jsonfield import JSONField
 
 # With postgres 9.4+, use this instead
 # from django.contrib.postgres.fields import JSONField
+
+from flow.modelmixins import ClonableModel
 
 from .utils import purge_answer
 
@@ -24,27 +27,42 @@ class PlanQuerySet(models.QuerySet):
             purge_answer(plan, question_pk)
 
 
-class SectionValidity(models.Model):
+class SectionValidity(ClonableModel):
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='section_validity')
     section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='+')
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
 
+    def clone(self, plan):
+        new = self.__class__(plan=plan, section=self.section, valid=self.valid,
+                             last_validated=self.last_validated)
+        new.set_cloned_from(self)
+        new.save()
+        return new
+
     class Meta:
         unique_together = ('plan', 'section')
 
 
-class QuestionValidity(models.Model):
+class QuestionValidity(ClonableModel):
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='question_validity')
     question = models.ForeignKey('dmpt.Question', models.CASCADE, related_name='+')
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
 
+    def clone(self, plan):
+        new = self.__class__(plan=plan, question=self.question,
+                             valid=self.valid,
+                             last_validated=self.last_validated)
+        new.set_cloned_from(self)
+        new.save()
+        return new
+
     class Meta:
         unique_together = ('plan', 'question')
 
 
-class Plan(models.Model):
+class Plan(ClonableModel):
     title = models.CharField(
         max_length=255,
         help_text='''This title will be used as the title of the generated
@@ -147,6 +165,19 @@ class Plan(models.Model):
         self.last_validated = tznow()
         self.save()
 
+    def copy_validations_from(self, oldplan):
+        for sv in oldplan.section_validity.all():
+            sv.clone(self)
+        for qv in oldplan.question_validity.all():
+            qv.clone(self)
+
+    def copy_editors_from(self, oldplan):
+        if not self.editor_group:
+            self.create_editor_group()
+            editors = set(oldplan.editor_group.user_set.all())
+            for editor in editors:
+                self.add_user_to_editor_group(editor)
+
     def save(self, question=None, **kwargs):
         super().save(**kwargs)
         if question is not None:
@@ -172,13 +203,24 @@ class Plan(models.Model):
             modified_by=user,
         )
         new.save()
+        new.copy_validations_from(self)
         if keep_editors:
             editors = set(self.editor_group.user_set.all())
             for editor in editors:
                 new.add_user_to_editor_group(editor)
         return new
 
-    def create_new_version(self):
+    def clone(self):
+        new = deepcopy(self)
+        new.pk = None
+        new.id = None
+        new.set_cloned_from(self)
+        new.save()
+        new.copy_validations_from(self)
+        new.copy_editors_from(self)
+        return new
+
+    def create_new_version(self)
         self.id = None
         self.version += self.version
         super().save(force_insert=True)
