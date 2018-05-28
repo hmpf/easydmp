@@ -23,6 +23,7 @@ class EEStoreSourceAdmin(admin.ModelAdmin):
 class EEStoreCacheAdmin(admin.ModelAdmin):
     list_display = ['name', 'source', 'last_fetched']
     list_filter = ['eestore_type', 'source']
+    search_fields = ['name']
 
 
 @admin.register(EEStoreMount)
