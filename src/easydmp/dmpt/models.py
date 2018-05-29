@@ -1241,6 +1241,8 @@ class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
             canned_answer = super().get_canned_answer('not-listed', **kwargs)
             if canned_answer and canned_answer != 'not-listed':
                 notlisted_string = canned_answer
+            else:
+                notlisted_string = 'Not found in the list'
 
         out = list(filter(None, (answer, notlisted_string)))
         if out:
