@@ -191,6 +191,46 @@ class SaveAsPlanView(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
+class ValidatePlanView(LoginRequiredMixin, UpdateView):
+    template_name = 'easydmp/plan/plan_confirm_validate.html'
+    form_class = ConfirmForm
+    model = Plan
+    pk_url_kwarg = 'plan'
+
+    def get_queryset(self):
+        qs = super().get_queryset().filter(valid=False)
+        return qs
+
+    def get_success_url(self):
+        return reverse('plan_detail', kwargs={'plan': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.validate()
+        return HttpResponseRedirect(success_url)
+
+
+class LockPlanView(LoginRequiredMixin, UpdateView):
+    template_name = 'easydmp/plan/plan_confirm_lock.html'
+    form_class = ConfirmForm
+    model = Plan
+    pk_url_kwarg = 'plan'
+
+    def get_queryset(self):
+        qs = super().get_queryset().filter(locked__isnull=True)
+        return qs
+
+    def get_success_url(self):
+        return reverse('plan_detail', kwargs={'plan': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.lock(request.user)
+        return HttpResponseRedirect(success_url)
+
+
 class PublishPlanView(LoginRequiredMixin, UpdateView):
     template_name = 'easydmp/plan/plan_confirm_publish.html'
     form_class = ConfirmForm
@@ -198,8 +238,8 @@ class PublishPlanView(LoginRequiredMixin, UpdateView):
     pk_url_kwarg = 'plan'
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        return qs.filter(valid=True)
+        qs = super().get_queryset().filter(valid=True)
+        return qs
 
     def get_success_url(self):
         return reverse('plan_detail', kwargs={'plan': self.object.pk})
@@ -208,6 +248,26 @@ class PublishPlanView(LoginRequiredMixin, UpdateView):
         self.object = self.get_object()
         success_url = self.get_success_url()
         self.object.publish(request.user)
+        return HttpResponseRedirect(success_url)
+
+
+class CreateNewVersionPlanView(LoginRequiredMixin, UpdateView):
+    template_name = 'easydmp/plan/plan_confirm_createnewversion.html'
+    form_class = ConfirmForm
+    model = Plan
+    pk_url_kwarg = 'plan'
+
+    def get_queryset(self):
+        qs = super().get_queryset().filter(locked__isnull=False)
+        return qs
+
+    def get_success_url(self):
+        return reverse('plan_detail', kwargs={'plan': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.create_new_version(request.user)
         return HttpResponseRedirect(success_url)
 
 

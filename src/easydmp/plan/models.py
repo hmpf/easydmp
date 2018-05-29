@@ -220,14 +220,34 @@ class Plan(ClonableModel):
         new.copy_editors_from(self)
         return new
 
-    def create_new_version(self)
-        self.id = None
-        self.version += self.version
-        super().save(force_insert=True)
-        editors = self.editor_group.user_set.all()
-        self.create_editor_group()
-        for editor in editors:
-            self.add_user_to_editor_group(editor)
+    def unset_status_metadata(self):
+        self.added_by = None
+        self.added = None
+        self.locked_by = None
+        self.locked = None
+        self.modified_by =None
+        self.modified = None
+        self.published_by = None
+        self.published = None
+
+    def create_new_version(self, user, timestamp=None, wait_to_save=False):
+        timestamp = timestamp if timestamp else tznow()
+        new = self.clone()
+        new.unset_status_metadata()
+        new.added_by = user
+        new.added = timestamp
+        new.modified_by = user
+        new.modified = timestamp
+        new.version += self.version
+        if not wait_to_save:
+            new.save()
+        return new
+
+    def unlock(self, user, timestamp=None, wait_to_save=False):
+        timestamp = timestamp if timestamp else tznow()
+        new = self.create_new_version(user, timestamp, wait_to_save)
+        self = new
+        return new
 
     def lock(self, user, timestamp=None, wait_to_save=False):
         timestamp = timestamp if timestamp else tznow()
