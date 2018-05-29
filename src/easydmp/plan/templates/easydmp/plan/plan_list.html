@@ -15,7 +15,7 @@
         <tbody>
           {% for object in object_list %}
           <tr>
-            <td><a href="{% url 'plan_detail' plan=object.id %}">{{ object.title|capfirst }}</a></td>
+              <td><a href="{% url 'plan_detail' plan=object.id %}">{{ object.title|capfirst }} v{{ object.version }}{% if object.valid %} 🗹{% endif %}</a></td>
             <td>{{ object.template }}</a></td>
             <td>
                <div class="dropdown">
