@@ -37,6 +37,12 @@ except ValueError:
     # Broken env-variable, default to safety
     DEBUG = False
 
+_admins = getenv('ADMINS', '')
+if _admins:
+    ADMINS = []
+    for a in _admins.split(','):
+        ADMINS.append(('', a))
+
 INSTALLED_APPS += [
     'social_django',
     'easydmp.theme',
