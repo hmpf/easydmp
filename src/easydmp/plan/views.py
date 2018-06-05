@@ -90,8 +90,7 @@ class AbstractPlanViewMixin:
         qs = self.existing_with_same_title()
         if not qs:
             return None
-        groups = user.groups.all()
-        qs = qs.filter(editor_group__in=groups)
+        qs = qs.filter(accesses__user=user)
         if not qs:
             return None
         return qs
@@ -186,15 +185,14 @@ class SaveAsPlanView(LoginRequiredMixin, UpdateView):
     form_class = SaveAsPlanForm
 
     def get_queryset(self):
-        qs = super().get_queryset().select_related('editor_group')
-        user_groups = self.request.user.groups.all()
-        return qs.filter(editor_group__in=user_groups)
+        qs = super().get_queryset()
+        return qs.filter(accesses__user=self.request.user)
 
     def form_valid(self, form):
         title = form.cleaned_data['title']
         abbreviation = form.cleaned_data.get('abbreviation', '')
-        keep_editors = form.cleaned_data.get('keep_editors', True)
-        self.object.save_as(title, self.request.user, abbreviation, keep_editors)
+        keep_users = form.cleaned_data.get('keep_users', True)
+        self.object.save_as(title, self.request.user, abbreviation, keep_users)
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -530,8 +528,7 @@ class PlanListView(LoginRequiredMixin, ListView):
     template_name = 'easydmp/plan/plan_list.html'
 
     def get_queryset(self):
-        groups = self.request.user.groups.all()
-        return self.model.objects.filter(editor_group__in=groups).order_by('-added')
+        return self.model.objects.filter(accesses__user=self.request.user).order_by('-added')
 
 
 class PlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailView):

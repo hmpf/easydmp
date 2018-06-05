@@ -8,13 +8,15 @@ from easydmp.dmpt.models import Template
 
 from .models import Plan
 from .models import PlanComment
+from .models import PlanAccess
 
 
 class CheckExistingTitleMixin:
 
     def get_existing_titles(self, template, user, version=None):
-        groups = user.groups.all()
-        qs = Plan.objects.filter(template=template, editor_group__in=groups)
+        qs = Plan.objects.filter(template=template)
+        pas = PlanAccess.objects.filter(user=user)
+        qs = qs.filter(accesses__in=pas)
         if version is not None:
             qs = qs.filter(version=version)
         return qs
@@ -89,7 +91,7 @@ class UpdatePlanForm(CheckExistingTitleMixin, forms.ModelForm):
 
 class SaveAsPlanForm(CheckExistingTitleMixin, forms.ModelForm):
     CHOICES = ((True, 'Yes'), (False, 'No'))
-    keep_editors = forms.ChoiceField(
+    keep_users = forms.ChoiceField(
         choices=CHOICES,
         help_text='If "Yes", copy over all editors from the original plan',
         widget=forms.RadioSelect(choices=CHOICES),

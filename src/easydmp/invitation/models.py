@@ -98,7 +98,7 @@ class PlanEditorInvitation(AbstractEmailInvitation):
 
     def accept_invitation(self, user):
         super().accept_invitation(user)
-        self.plan.add_user_to_editor_group(user)
+        self.plan.add_user_to_editors(user)
 
     def get_context_data(self, **context):
         data = super().get_context_data(**context)

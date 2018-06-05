@@ -2,6 +2,7 @@ from copy import deepcopy
 from uuid import uuid4
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.forms import model_to_dict
 from django.template.loader import render_to_string
@@ -17,6 +18,7 @@ from flow.modelmixins import ClonableModel
 from easydmp.dmpt.utils import DeletionMixin
 
 from .utils import purge_answer
+from .utils import get_editors_for_plan
 
 
 GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
@@ -114,17 +116,28 @@ class Plan(DeletionMixin, ClonableModel):
     def get_first_question(self):
         return self.template.first_question
 
-    def create_editor_group(self):
-        from django.contrib.auth.models import Group
-        group, _ = Group.objects.get_or_create(name='plan-editors-{}'.format(self.pk))
-        self.editor_group = group
-        self.save()
+    def get_viewers(self):
+        User = get_user_model()
+        pas = self.accesses.exclude(may_edit=True)
+        qs = User.objects.filter(plan_accesses__in=pas)
+        return qs
 
-    def add_user_to_editor_group(self, user):
-        user.groups.add(self.editor_group)
+    get_editors = get_editors_for_plan
+
+    def add_user_to_viewers(self, user):
+        ua, _ = PlanAccess.objects.update_or_create(
+            user=user,
+            plan=self,
+            defaults={'may_edit': False})
+
+    def add_user_to_editors(self, user):
+        ua, _ = PlanAccess.objects.update_or_create(
+            user=user,
+            plan=self,
+            defaults={'may_edit': True})
 
     def set_adder_as_editor(self):
-        self.add_user_to_editor_group(self.added_by)
+        self.add_user_to_editors(self.added_by)
 
     def set_sections_as_valid(self, *sections):
         for section in sections:
@@ -174,12 +187,9 @@ class Plan(DeletionMixin, ClonableModel):
         for qv in oldplan.question_validity.all():
             qv.clone(self)
 
-    def copy_editors_from(self, oldplan):
-        if not self.editor_group:
-            self.create_editor_group()
-            editors = set(oldplan.editor_group.user_set.all())
-            for editor in editors:
-                self.add_user_to_editor_group(editor)
+    def copy_users_from(self, oldplan):
+        for pa in oldplan.accesses.all():
+            pa.clone(self)
 
     def save(self, question=None, **kwargs):
         super().save(**kwargs)
@@ -191,11 +201,9 @@ class Plan(DeletionMixin, ClonableModel):
                 self.visited_sections.add(topmost)
             # set validated
             self.validate()
-        if not self.editor_group:
-            self.create_editor_group()
-            self.set_adder_as_editor()
+        self.set_adder_as_editor()
 
-    def save_as(self, title, user, abbreviation='', keep_editors=True, **kwargs):
+    def save_as(self, title, user, abbreviation='', keep_users=True, **kwargs):
         new = self.__class__(
             title=title,
             abbreviation=abbreviation,
@@ -207,10 +215,10 @@ class Plan(DeletionMixin, ClonableModel):
         )
         new.save()
         new.copy_validations_from(self)
-        if keep_editors:
-            editors = set(self.editor_group.user_set.all())
+        if keep_users:
+            editors = set(self.get_editors())
             for editor in editors:
-                new.add_user_to_editor_group(editor)
+                new.add_user_to_editors(editor)
         return new
 
     def clone(self):
@@ -220,7 +228,7 @@ class Plan(DeletionMixin, ClonableModel):
         new.set_cloned_from(self)
         new.save()
         new.copy_validations_from(self)
-        new.copy_editors_from(self)
+        new.copy_users_from(self)
         return new
 
     def unset_status_metadata(self):

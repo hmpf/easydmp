@@ -897,7 +897,7 @@ tr .dropdown .btn-default .caret {
 }
 
 /* save as new / duplicate page */
-#div_id_keep_editors .radio{
+#div_id_keep_users .radio{
     padding: .5em 1.5em;
 }
 /* media queries */
