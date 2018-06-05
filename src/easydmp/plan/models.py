@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.db import models
+from django.forms import model_to_dict
 from django.template.loader import render_to_string
 from django.utils.timezone import now as tznow
 
@@ -297,6 +298,21 @@ class Plan(DeletionMixin, ClonableModel):
             self.published = timestamp
             self.published_by = user
             self.save()
+
+
+class PlanAccess(ClonableModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, related_name='plan_accesses')
+    plan = models.ForeignKey(Plan, models.CASCADE, related_name='accesses')
+
+    may_edit = models.NullBooleanField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ('user', 'plan')
+
+    def clone(self, plan):
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'plan'])
+        new = self.__class__.objects.create(plan=plan, **self_dict)
+        return new
 
 
 class PlanComment(models.Model):
