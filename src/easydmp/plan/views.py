@@ -137,6 +137,8 @@ class NewPlanView(AbstractPlanViewMixin, LoginRequiredMixin, CreateView):
 
 
 class UpdatePlanView(AbstractPlanViewMixin, LoginRequiredMixin, UpdateView):
+    "Update metadata about a plan"
+
     template_name = 'easydmp/plan/updateplan_form.html'
     model = Plan
     pk_url_kwarg = 'plan'
@@ -162,13 +164,15 @@ class UpdatePlanView(AbstractPlanViewMixin, LoginRequiredMixin, UpdateView):
 
 
 class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):
+    "Delete an unpublished Plan"
+
     model = Plan
     template_name = 'easydmp/plan/plan_confirm_delete.html'
     success_url = reverse_lazy('plan_list')
     pk_url_kwarg = 'plan'
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset().filter(published__isnull=True)
         return qs.filter(added_by=self.request.user)
 
     def delete(self, request, *args, **kwargs):
@@ -178,6 +182,8 @@ class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):
 
 
 class SaveAsPlanView(LoginRequiredMixin, UpdateView):
+    "Save a copy of an existing plan as a new plan"
+
     model = Plan
     template_name = 'easydmp/plan/plan_confirm_save_as.html'
     success_url = reverse_lazy('plan_list')
@@ -197,6 +203,8 @@ class SaveAsPlanView(LoginRequiredMixin, UpdateView):
 
 
 class ValidatePlanView(LoginRequiredMixin, UpdateView):
+    "Validate an entire plan"
+
     template_name = 'easydmp/plan/plan_confirm_validate.html'
     form_class = ConfirmForm
     model = Plan
@@ -217,6 +225,8 @@ class ValidatePlanView(LoginRequiredMixin, UpdateView):
 
 
 class LockPlanView(LoginRequiredMixin, UpdateView):
+    "Lock a plan to make it read only"
+
     template_name = 'easydmp/plan/plan_confirm_lock.html'
     form_class = ConfirmForm
     model = Plan
@@ -237,6 +247,11 @@ class LockPlanView(LoginRequiredMixin, UpdateView):
 
 
 class PublishPlanView(LoginRequiredMixin, UpdateView):
+    """Publish a plan
+
+    This makes it read only and undeletable.
+    """
+
     template_name = 'easydmp/plan/plan_confirm_publish.html'
     form_class = ConfirmForm
     model = Plan
@@ -257,6 +272,12 @@ class PublishPlanView(LoginRequiredMixin, UpdateView):
 
 
 class CreateNewVersionPlanView(LoginRequiredMixin, UpdateView):
+    """Create a new version of a plan
+
+    This reopens a read only or published plan, incrementng the version number.
+
+    """
+
     template_name = 'easydmp/plan/plan_confirm_createnewversion.html'
     form_class = ConfirmForm
     model = Plan
@@ -337,6 +358,7 @@ class AbstractQuestionView(LoginRequiredMixin, AbstractQuestionMixin, UpdateView
 
 
 class NewQuestionView(AbstractQuestionView):
+    "Answer a Question"
 
     def preload(self, **kwargs):
         super().preload(**kwargs)
@@ -492,6 +514,7 @@ class NewQuestionView(AbstractQuestionView):
 
 
 class FirstQuestionView(LoginRequiredMixin, RedirectView):
+    "Go to the first Question of a Plan"
 
     def get_redirect_url(self, *args, **kwargs):
         plan_pk = self.kwargs.get('plan')
@@ -505,6 +528,8 @@ class FirstQuestionView(LoginRequiredMixin, RedirectView):
 
 
 class AddCommentView(LoginRequiredMixin, AbstractQuestionMixin, CreateView):
+    "Coment on a plan"
+
     model = PlanComment
     form_class = PlanCommentForm
 
@@ -524,6 +549,8 @@ class AddCommentView(LoginRequiredMixin, AbstractQuestionMixin, CreateView):
 
 
 class PlanListView(LoginRequiredMixin, ListView):
+    "List all plans for a user"
+
     model = Plan
     template_name = 'easydmp/plan/plan_list.html'
 
@@ -579,7 +606,12 @@ class GeneratedPlanPDFView(AbstractGeneratedPlanView):
     content_type = 'text/plain'
 
 
-class SectionDetailView(DetailView):
+class SectionDetailView(LoginRequiredMixin, DetailView):
+    """Show a section
+
+    Mostly relevant for sections without questions.
+    """
+
     model = Section
     pk_url_kwarg = 'section'
     template_name = 'easydmp/plan/section_detail.html'
