@@ -137,6 +137,16 @@ class Plan(DeletionMixin, ClonableModel):
     def __str__(self):
         return self.title
 
+    def may_edit(self, user):
+        if self.accesses.filter(user=user, may_edit=True):
+            return True
+        return False
+
+    def may_view(self, user):
+        if self.accesses.filter(user=user):
+            return True
+        return False
+
     def get_first_question(self):
         return self.template.first_question
 

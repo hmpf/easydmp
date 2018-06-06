@@ -15,6 +15,7 @@
             </button>
             <div class="collapse" id="collapseExample">
             <ul class="plan-actions">
+              {% if request.user|may_edit_plan:object %}
               <li><a href="{% url 'update_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-edit.png' %}"/>Rename</a></li>
               <li><a href="{% url 'invitation_plan_editor_create' plan=object.id %}"><img src="{% static 'usit/icons/icon-people.png' %}"/>Invite coworkers</a></li>
               {% if not object.published %}
@@ -28,6 +29,7 @@
               {% endif %}
               <li><a href="{% url 'plan_delete' plan=object.id %}"><img src="{% static 'usit/icons/icon-delete.png' %}"/>Delete</a></li>
               <li><a href="{% url 'plan_saveas' plan=object.id %}"><img src="{% static 'usit/icons/icon-duplicate.png' %}"/>Duplicate</a></li>
+              {% endif %}
               <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'usit/icons/icon-export.png' %}"/>Export</a></li>
               <!-- print
                   <li><a href="https://easydmp.paas2.uninett.no/plan/155/delete/"><img src="./EasyDMP_files/icons/icon-print.png' %}"/>Print</a></li>
@@ -62,7 +64,7 @@
                             {{ value.notes }}
                         </div>
                         {% endif %}
-                        {% if not object.locked %}
+                        {% if request.user|may_edit_plan:object and not object.locked %}
                     <p class="actions"><a href="{% url 'new_question' plan=object.id question=question_pk %}">Edit</a></p>
                         {% endif %}
                     </dd>
@@ -89,8 +91,10 @@
         {% endfor %}
         </ul>
 
+        {% if request.user|may_edit_plan:object %}
         <p><a href="{% url 'invitation_plan_editor_create' plan=object.pk %}">Invite editors to this plan</a></p>
         <p><a href="{% url 'invitation_plan_editor_list' plan=object.pk %}">Show invitations</a></p>
+        {% endif %}
     </div>
   </div>
 {% endblock content %}
