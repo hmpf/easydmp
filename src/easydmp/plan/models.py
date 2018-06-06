@@ -31,6 +31,30 @@ class PlanQuerySet(models.QuerySet):
         for plan in qs:
             purge_answer(plan, question_pk)
 
+    def locked(self):
+        return self.filter(locked__isnull=False)
+
+    def unlocked(self):
+        return self.filter(locked__isnull=True)
+
+    def published(self):
+        return self.filter(published__isnull=False)
+
+    def unpublished(self):
+        return self.filter(published__isnull=True)
+
+    def valid(self):
+        return self.filter(valid=True)
+
+    def invalid(self):
+        return self.exclude(valid=True)
+
+    def editable(self, user):
+        return self.filter(accesses__user=user, accesses__may_edit=True)
+
+    def viewable(self, user):
+        return self.filter(accesses__user=user)
+
 
 class SectionValidity(ClonableModel):
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='section_validity')

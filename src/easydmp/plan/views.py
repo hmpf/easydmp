@@ -69,6 +69,12 @@ class DeleteFormMixin(FormMixin):
     form_class = DeleteForm
 
 
+class PlanAccessViewMixin(LoginRequiredMixin):
+
+    def get_queryset(self):
+        return super().get_queryset().viewable(self.request.user)
+
+
 class AbstractPlanViewMixin:
 
     def get_success_url(self):
@@ -98,7 +104,7 @@ class AbstractPlanViewMixin:
         return qs
 
 
-class NewPlanView(AbstractPlanViewMixin, LoginRequiredMixin, CreateView):
+class NewPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
     """Create a new empty plan from the given template
 
     Chceks that the same adder do not have a plan of the same name already.
@@ -138,7 +144,7 @@ class NewPlanView(AbstractPlanViewMixin, LoginRequiredMixin, CreateView):
         return HttpResponseServerError()
 
 
-class UpdatePlanView(AbstractPlanViewMixin, LoginRequiredMixin, UpdateView):
+class UpdatePlanView(PlanAccessViewMixin, AbstractPlanViewMixin, UpdateView):
     "Update metadata about a plan"
 
     template_name = 'easydmp/plan/updateplan_form.html'
@@ -165,7 +171,7 @@ class UpdatePlanView(AbstractPlanViewMixin, LoginRequiredMixin, UpdateView):
         return HttpResponseServerError()
 
 
-class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):
+class DeletePlanView(PlanAccessViewMixin, DeleteFormMixin, DeleteView):
     "Delete an unpublished Plan"
 
     model = Plan
@@ -174,7 +180,7 @@ class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):
     pk_url_kwarg = 'plan'
 
     def get_queryset(self):
-        qs = super().get_queryset().filter(published__isnull=True)
+        qs = super().get_queryset().unpublished()
         return qs.filter(added_by=self.request.user)
 
     def delete(self, request, *args, **kwargs):
@@ -183,7 +189,7 @@ class DeletePlanView(LoginRequiredMixin, DeleteFormMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-class SaveAsPlanView(LoginRequiredMixin, UpdateView):
+class SaveAsPlanView(PlanAccessViewMixin, UpdateView):
     "Save a copy of an existing plan as a new plan"
 
     model = Plan
@@ -194,7 +200,7 @@ class SaveAsPlanView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.filter(accesses__user=self.request.user)
+        return qs
 
     def form_valid(self, form):
         title = form.cleaned_data['title']
@@ -204,7 +210,7 @@ class SaveAsPlanView(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class ValidatePlanView(LoginRequiredMixin, UpdateView):
+class ValidatePlanView(PlanAccessViewMixin, UpdateView):
     "Validate an entire plan"
 
     template_name = 'easydmp/plan/plan_confirm_validate.html'
@@ -213,7 +219,7 @@ class ValidatePlanView(LoginRequiredMixin, UpdateView):
     pk_url_kwarg = 'plan'
 
     def get_queryset(self):
-        qs = super().get_queryset().filter(valid=False)
+        qs = super().get_queryset().invalid()
         return qs
 
     def get_success_url(self):
@@ -226,7 +232,7 @@ class ValidatePlanView(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
-class LockPlanView(LoginRequiredMixin, UpdateView):
+class LockPlanView(PlanAccessViewMixin, UpdateView):
     "Lock a plan to make it read only"
 
     template_name = 'easydmp/plan/plan_confirm_lock.html'
@@ -235,7 +241,7 @@ class LockPlanView(LoginRequiredMixin, UpdateView):
     pk_url_kwarg = 'plan'
 
     def get_queryset(self):
-        qs = super().get_queryset().filter(locked__isnull=True)
+        qs = super().get_queryset().unlocked()
         return qs
 
     def get_success_url(self):
@@ -248,7 +254,7 @@ class LockPlanView(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
-class PublishPlanView(LoginRequiredMixin, UpdateView):
+class PublishPlanView(PlanAccessViewMixin, UpdateView):
     """Publish a plan
 
     This makes it read only and undeletable.
@@ -260,7 +266,7 @@ class PublishPlanView(LoginRequiredMixin, UpdateView):
     pk_url_kwarg = 'plan'
 
     def get_queryset(self):
-        qs = super().get_queryset().filter(valid=True)
+        qs = super().get_queryset().valid()
         return qs
 
     def get_success_url(self):
@@ -273,7 +279,7 @@ class PublishPlanView(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
-class CreateNewVersionPlanView(LoginRequiredMixin, UpdateView):
+class CreateNewVersionPlanView(PlanAccessViewMixin, UpdateView):
     """Create a new version of a plan
 
     This reopens a read only or published plan, incrementng the version number.
@@ -286,7 +292,7 @@ class CreateNewVersionPlanView(LoginRequiredMixin, UpdateView):
     pk_url_kwarg = 'plan'
 
     def get_queryset(self):
-        qs = super().get_queryset().filter(locked__isnull=False)
+        qs = super().get_queryset().locked()
         return qs
 
     def get_success_url(self):
@@ -299,7 +305,7 @@ class CreateNewVersionPlanView(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
-class AbstractQuestionMixin:
+class AbstractQuestionMixin(PlanAccessViewMixin):
 
     def preload(self, **kwargs):
         """Store frequently used values as early as possible
@@ -343,7 +349,8 @@ class AbstractQuestionMixin:
         return self.plan_pk
 
     def _get_queryset(self):
-        return self.model.objects.filter(pk=self.get_plan_pk())
+        qs = super().get_queryset().editable(self.request.user)
+        return qs.filter(pk=self.get_plan_pk())
 
     def get_plan(self):
         return self.plan
@@ -352,7 +359,7 @@ class AbstractQuestionMixin:
         return self.template
 
 
-class AbstractQuestionView(LoginRequiredMixin, AbstractQuestionMixin, UpdateView):
+class AbstractQuestionView(AbstractQuestionMixin, UpdateView):
     model = Plan
     template_name = 'easydmp/plan/state_form.html'
     pk_url_kwarg = 'plan'
@@ -515,7 +522,7 @@ class NewQuestionView(AbstractQuestionView):
             self.get_context_data(form=form, notesform=notesform))
 
 
-class FirstQuestionView(LoginRequiredMixin, RedirectView):
+class FirstQuestionView(PlanAccessViewMixin, RedirectView):
     "Go to the first Question of a Plan"
 
     def get_redirect_url(self, *args, **kwargs):
@@ -529,7 +536,7 @@ class FirstQuestionView(LoginRequiredMixin, RedirectView):
         return url
 
 
-class AddCommentView(LoginRequiredMixin, AbstractQuestionMixin, CreateView):
+class AddCommentView(AbstractQuestionMixin, CreateView):
     "Coment on a plan"
 
     model = PlanComment
@@ -550,14 +557,15 @@ class AddCommentView(LoginRequiredMixin, AbstractQuestionMixin, CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class PlanListView(LoginRequiredMixin, ListView):
+class PlanListView(PlanAccessViewMixin, ListView):
     "List all plans for a user"
 
     model = Plan
     template_name = 'easydmp/plan/plan_list.html'
 
     def get_queryset(self):
-        return self.model.objects.filter(accesses__user=self.request.user).order_by('-added')
+        qs = super().get_queryset()
+        return qs.order_by('-added')
 
 
 class PlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailView):
@@ -622,7 +630,7 @@ class SectionDetailView(LoginRequiredMixin, DetailView):
         plan_id = kwargs['plan']
         try:
             plan = Plan.objects.get(id=plan_id)
-        except Section.DoesNotExist:
+        except Plan.DoesNotExist:
             raise Http404
         return plan
 
