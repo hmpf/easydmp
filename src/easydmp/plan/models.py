@@ -13,6 +13,8 @@ from jsonfield import JSONField
 
 from flow.modelmixins import ClonableModel
 
+from easydmp.dmpt.utils import DeletionMixin
+
 from .utils import purge_answer
 
 
@@ -62,7 +64,7 @@ class QuestionValidity(ClonableModel):
         unique_together = ('plan', 'question')
 
 
-class Plan(ClonableModel):
+class Plan(DeletionMixin, ClonableModel):
     title = models.CharField(
         max_length=255,
         help_text='''This title will be used as the title of the generated
