@@ -6,8 +6,8 @@ from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect, Http404, HttpResponseServerError
 from django.shortcuts import render, redirect
+from django.views.generic.edit import FormMixin
 from django.views.generic import (
-    FormView,
     CreateView,
     UpdateView,
     DetailView,
@@ -63,7 +63,9 @@ def get_section_progress(plan, current_section=None):
     return section_struct
 
 
-class DeleteFormMixin(FormView):
+class DeleteFormMixin(FormMixin):
+    # FormMixin needed in order to use a proper form in the
+    # confirmation step. A DeleteView just needs a POST.
     form_class = DeleteForm
 
 
