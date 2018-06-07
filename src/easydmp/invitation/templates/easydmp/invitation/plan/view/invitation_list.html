@@ -1,20 +1,17 @@
-{% extends "easydmp/invitation/plan/base.html" %}
-{% load crispy_forms_tags %}
+{% extends "easydmp/invitation/plan/view/base.html" %}
 
 {% block content %}
 <div class="row">
   <div class="col-lg-12">
     <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-      <h1>Invite editors for {{ object.title|capfirst }}</h1>
+      <h1>Invitations for {{ object.title|capfirst }}</h1>
     </div>
   </div>
 </div>
 
 <div class="row uninett-color-white uninett-whole-row">
   <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-    {% include "easydmp/invitation/plan/_invitation_list.html" %}
-    <br />
-    {% crispy form %}
+    {% include "easydmp/invitation/plan/view/_invitation_list.html" %}
   </div>
 </div>
 {% endblock content %}

@@ -1,0 +1,24 @@
+{% extends "easydmp/invitation/plan/edit/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-12">
+    <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
+      <h1>Accept invitation to edit {{ object.plan.title|capfirst }}</h1>
+    </div>
+  </div>
+</div>
+
+<div class="row uninett-color-white uninett-whole-row">
+  <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+      <p>You are registered as {{ request.user }}{% if request.user.email_address %}, email address {{ request.user.email_address }}{% endif %}.
+      If this is not the id you wish to use to edit this plan: log out, log in again and visit <a href=".">this specific page</a> once more.</p>
+      </p>
+      <form action="." method="POST">
+          {% csrf_token %}
+          <input type="submit" value="I hereby accept the invitation to edit {{ object.plan.title|capfirst }}" class="btn btn-primary" />
+      </form>
+  </div>
+</div>
+{% endblock content %}

@@ -1,5 +1,5 @@
 <div class="invitation-list">
-{% if object.planeditorinvitation_set.exists %}
+{% if plan_invitations.exists %}
 <table>
 <tr>
     <th>Invited</th>
@@ -9,7 +9,7 @@
     <th>Accepted</th>
     <th>Actions</th>
 </tr>
-{% for invitation in object.planeditorinvitation_set.all %}
+{% for invitation in plan_invitations.all %}
 <tr>
     <td>{{ invitation.email_address }}</td>
     <td>{{ invitation.invited_by }}</td>
@@ -18,8 +18,8 @@
     <td>{{ invitation.used|default:'Not yet' }}</td>
     <td>
         {% if not invitation.used %}
-        <a href="{% url 'invitation_plan_editor_resend' uuid=invitation.uuid %}">Resend</a>
-        <a href="{% url 'invitation_plan_editor_revoke' uuid=invitation.uuid %}">Revoke</a>
+        <a href="{% url 'invitation_plan_viewer_resend' uuid=invitation.uuid %}">Resend</a>
+        <a href="{% url 'invitation_plan_viewer_revoke' uuid=invitation.uuid %}">Revoke</a>
         {% endif %}
     </td>
 </tr>

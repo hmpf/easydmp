@@ -1,7 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
-from django.views.generic.edit import FormMixin
 from django.views.generic import FormView
 from django.views.generic import DetailView
 from django.views.generic import UpdateView
@@ -11,15 +10,19 @@ from django.views.generic.detail import SingleObjectMixin
 from easydmp.plan.models import Plan
 
 from .models import PlanEditorInvitation
+from .models import PlanViewerInvitation
 from .forms import EmailAddressForm
 
 
-class CreatePlanEditorInvitationView(LoginRequiredMixin, SingleObjectMixin, FormView):
-    """Invite user via email address to edit specific plan"""
-    template_name = 'easydmp/invitation/plan/invitation_form.html'
+class AbstractCreatePlanInvitationView(LoginRequiredMixin, SingleObjectMixin, FormView):
     model = Plan
     pk_url_kwarg = 'plan'
     form_class = EmailAddressForm
+
+    def get_queryset(self):
+        # Only editors may invite to a plan
+        qs = super().get_queryset().editable(self.request.user)
+        return qs
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -35,17 +38,15 @@ class CreatePlanEditorInvitationView(LoginRequiredMixin, SingleObjectMixin, Form
             return self.form_invalid(form)
 
     def get_success_url(self):
-        kwargs = {
-            'plan': self.object.pk,
-        }
-        return reverse('invitation_plan_editor_list', kwargs=kwargs)
+        return reverse(self.success_url_name, kwargs=self.get_url_kwargs())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'].helper.form_action = reverse(
-            'invitation_plan_editor_create',
-            kwargs={'plan': self.object.pk}
+            self.self_url_name,
+            kwargs=self.get_url_kwargs()
         )
+        context['plan_invitations'] = self.get_invitations()
         return context
 
     def form_valid(self, form):
@@ -53,22 +54,59 @@ class CreatePlanEditorInvitationView(LoginRequiredMixin, SingleObjectMixin, Form
         plan = self.get_object()
         sent = 0
         for address in form.cleaned_data['email_addresses']:
-            invitation = PlanEditorInvitation(plan=plan, invited_by=invited_by,
-                                              email_address=address)
+            invitation = self.invitation_class(
+                plan=plan,
+                invited_by=invited_by,
+                email_address=address,
+            )
             invitation.save()
             sent += invitation.send_invitation(request=self.request)
         return HttpResponseRedirect(self.get_success_url())
 
+    def get_url_kwargs(self):
+        return {
+            'plan': self.object.pk,
+        }
 
-class ResendPlanEditorInvitationView(LoginRequiredMixin, UpdateView):
+    def get_invitations(self):
+        manager = self.invitation_class.objects
+        qs = manager.filter(type=self.invitation_class.invitation_type)
+        return qs.filter(plan=self.object)
+
+
+class CreatePlanEditorInvitationView(AbstractCreatePlanInvitationView):
     """Invite user via email address to edit specific plan"""
-    model = PlanEditorInvitation
+    template_name = 'easydmp/invitation/plan/edit/invitation_form.html'
+    self_url_name = 'invitation_plan_editor_create'
+    success_url_name = 'invitation_plan_editor_list'
+    invitation_class = PlanEditorInvitation
+
+
+class CreatePlanViewerInvitationView(AbstractCreatePlanInvitationView):
+    """Invite user via email address to view specific plan"""
+    template_name = 'easydmp/invitation/plan/view/invitation_form.html'
+    self_url_name = 'invitation_plan_viewer_create'
+    success_url_name = 'invitation_plan_viewer_list'
+    invitation_class = PlanViewerInvitation
+
+
+class AbstractPlanInvitationView(LoginRequiredMixin):
     fields = []
-    template_name = 'easydmp/invitation/plan/resend_editor_form.html'
     pk_url_kwarg = 'uuid'
 
+    def get_invitations(Self):
+        return self.model.objects.filter(type=self.model.invitation_type)
+
     def get_success_url(self):
-        return reverse('invitation_plan_editor_list', kwargs={'plan': self.object.plan.pk})
+        return reverse(self.success_url_name, kwargs=self.get_url_kwargs())
+
+    def get_url_kwargs(self):
+        return {
+            'plan': self.object.plan.pk,
+        }
+
+
+class AbstractResendPlanInvitationView(AbstractPlanInvitationView, UpdateView):
 
     def form_valid(self, form):
         self.object = self.get_object()
@@ -76,15 +114,22 @@ class ResendPlanEditorInvitationView(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class AcceptPlanEditorInvitationView(LoginRequiredMixin, UpdateView):
-    "Accept an invitation to edit a specific plan"
+class ResendPlanEditorInvitationView(AbstractResendPlanInvitationView):
+    """Invite user via email address to edit specific plan"""
     model = PlanEditorInvitation
-    fields = []
-    pk_url_kwarg = 'uuid'
-    template_name = 'easydmp/invitation/plan/accept_editor_form.html'
+    template_name = 'easydmp/invitation/plan/edit/resend_form.html'
+    success_url_name = 'invitation_plan_editor_list'
 
-    def get_success_url(self):
-        return reverse('plan_detail', kwargs={'plan': self.object.plan.pk})
+
+class ResendPlanViewerInvitationView(AbstractResendPlanInvitationView):
+    """Invite user via email address to view specific plan"""
+    model = PlanViewerInvitation
+    template_name = 'easydmp/invitation/plan/view/resend_form.html'
+    success_url_name = 'invitation_plan_viewer_list'
+
+
+class AbstractAcceptPlanInvitationView(AbstractPlanInvitationView, UpdateView):
+    success_url_name = 'plan_detail'
 
     def form_valid(self, form):
         self.object = self.get_object()
@@ -92,33 +137,63 @@ class AcceptPlanEditorInvitationView(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class ListPlanEditorInvitationView(LoginRequiredMixin, DetailView):
-    "List all invitations for a specific plan"
-    model = Plan
-    pk_url_kwarg = 'plan'
-    template_name = 'easydmp/invitation/plan/invitation_list.html'
-
-    def get_editor_invitations(self):
-        return PlanEditorInvitation.objects.filter(plan=self.object)
-
-    def get_context_data(self, **kwargs):
-        data = {}
-        data.update(**super().get_context_data(**kwargs))
-        data['plan_editor_invitations'] = self.get_editor_invitations()
-        return data
-
-
-class RevokePlanEditorInvitationView(LoginRequiredMixin, DeleteView):
-    "Delete a not-accepted invitation"
+class AcceptPlanEditorInvitationView(AbstractAcceptPlanInvitationView):
+    "Accept an invitation to edit a specific plan"
     model = PlanEditorInvitation
-    pk_url_kwarg = 'uuid'
-    template_name = 'easydmp/invitation/plan/invitation_confirm_delete.html'
+    template_name = 'easydmp/invitation/plan/edit/accept_form.html'
 
-    def get_success_url(self):
-        return reverse('invitation_plan_editor_list', kwargs={'plan': self.object.plan.pk})
+
+class AcceptPlanViewerInvitationView(AbstractAcceptPlanInvitationView):
+    "Accept an invitation to view a specific plan"
+    model = PlanViewerInvitation
+    template_name = 'easydmp/invitation/plan/view/accept_form.html'
+
+
+class AbstractRevokePlanInvitationView(AbstractPlanInvitationView, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
         success_url = self.get_success_url()
         self.object.revoke_invitation()
         return HttpResponseRedirect(success_url)
+
+
+class RevokePlanEditorInvitationView(AbstractRevokePlanInvitationView):
+    "Delete a not-accepted invitation"
+    model = PlanEditorInvitation
+    template_name = 'easydmp/invitation/plan/edit/invitation_confirm_delete.html'
+    success_url_name = 'invitation_plan_editor_list'
+
+
+class RevokePlanViewerInvitationView(AbstractRevokePlanInvitationView):
+    "Delete a not-accepted invitation"
+    model = PlanViewerInvitation
+    template_name = 'easydmp/invitation/plan/view/invitation_confirm_delete.html'
+    success_url_name = 'invitation_plan_viewer_list'
+
+
+class AbstractListPlanInvitationView(LoginRequiredMixin, DetailView):
+    model = Plan
+    pk_url_kwarg = 'plan'
+
+    def get_invitations(self):
+        qs = self.invitation_class.objects.filter(plan=self.object)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        data = {}
+        data.update(**super().get_context_data(**kwargs))
+        data['plan_invitations'] = self.get_invitations()
+        return data
+
+
+class ListPlanEditorInvitationView(AbstractListPlanInvitationView):
+    "List all editor invitations for a specific plan"
+    template_name = 'easydmp/invitation/plan/edit/invitation_list.html'
+    invitation_class = PlanEditorInvitation
+
+
+class ListPlanViewerInvitationView(AbstractListPlanInvitationView):
+    "List all viewer invitations for a specific plan"
+    template_name = 'easydmp/invitation/plan/view/invitation_list.html'
+    invitation_class = PlanViewerInvitation

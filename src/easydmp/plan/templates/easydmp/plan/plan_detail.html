@@ -15,25 +15,7 @@
             </button>
             <div class="collapse" id="collapseExample">
             <ul class="plan-actions">
-              {% if request.user|may_edit_plan:object %}
-              <li><a href="{% url 'update_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-edit.png' %}"/>Rename</a></li>
-              <li><a href="{% url 'invitation_plan_editor_create' plan=object.id %}"><img src="{% static 'usit/icons/icon-people.png' %}"/>Invite coworkers</a></li>
-              {% if not object.published %}
-              {% if object.valid  %}
-              <li><a href="{% url 'publish_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-publish.png' %}"/>Publish (read only)</a></li>
-              {% else %}
-              <li><a href="{% url 'validate_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-publish.png' %}"/>Check</a></li>
-              {% endif %}
-              {% else %}
-              <li><a href="{% url 'unlock_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-publish.png' %}"/>New version</a></li>
-              {% endif %}
-              <li><a href="{% url 'plan_delete' plan=object.id %}"><img src="{% static 'usit/icons/icon-delete.png' %}"/>Delete</a></li>
-              <li><a href="{% url 'plan_saveas' plan=object.id %}"><img src="{% static 'usit/icons/icon-duplicate.png' %}"/>Duplicate</a></li>
-              {% endif %}
-              <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'usit/icons/icon-export.png' %}"/>Export</a></li>
-              <!-- print
-                  <li><a href="https://easydmp.paas2.uninett.no/plan/155/delete/"><img src="./EasyDMP_files/icons/icon-print.png' %}"/>Print</a></li>
-              -->
+              {% include "easydmp/plan/_plan_actions_dropdown.html" %}
             </ul>
             </div>
           </div>
@@ -85,6 +67,7 @@
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
         <h2>Editors</h2>
+        <p><b>Editors</b> may edit, validate, publish or create a new version of a plan. They may also invite others to edit or view a plan.</p>
         <ul>
         {% for user in object.get_editors.all %}
         <li>{{ user }}
@@ -94,6 +77,24 @@
         {% if request.user|may_edit_plan:object %}
         <p><a href="{% url 'invitation_plan_editor_create' plan=object.pk %}">Invite editors to this plan</a></p>
         <p><a href="{% url 'invitation_plan_editor_list' plan=object.pk %}">Show invitations</a></p>
+        {% endif %}
+    </div>
+  </div>
+
+  <!-- Viewers Box -->
+  <div class="row uninett-color-white uninett-whole-row">
+    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+        <h2>Viewers</h2>
+        <p><b>Viewers</b> may view a plan.</p>
+        <ul>
+        {% for user in object.get_viewers.all %}
+        <li>{{ user }}
+        {% endfor %}
+        </ul>
+
+        {% if request.user|may_edit_plan:object %}
+        <p><a href="{% url 'invitation_plan_viewer_create' plan=object.pk %}">Invite viewers to this plan</a></p>
+        <p><a href="{% url 'invitation_plan_viewer_list' plan=object.pk %}">Show invitations</a></p>
         {% endif %}
     </div>
   </div>
