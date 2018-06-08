@@ -131,7 +131,7 @@ class PlanInvitation(AbstractEmailInvitation):
         view = 'View'
 
     plan = models.ForeignKey('plan.Plan')
-    type = models.CharField(choices=InvitationType.choices(), max_length=4)
+    type = models.CharField(choices=InvitationType.choices(), max_length=4, default='view')
 
     objects = PlanInvitationManager()
 
