@@ -130,7 +130,6 @@ class Plan(DeletionMixin, ClonableModel):
                                      related_name='published_plans',
                                      blank=True, null=True,
                                      on_delete=models.SET_NULL)
-    editor_group = models.ForeignKey('auth.Group', related_name='+', blank=True, null=True)
 
     objects = PlanQuerySet.as_manager()
 
