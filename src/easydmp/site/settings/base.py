@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'easydmp.plan',
     'easydmp.invitation',
     'easydmp.eestore',
+    'easydmp.eventlog',
 ]
 
 SITE_ID = 1 # For flatpages
