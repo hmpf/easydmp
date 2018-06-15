@@ -29,15 +29,15 @@
                 <span class="caret"></span>
                 </button>
                 <div class="content-wrap collapse" aria-expanded="false" style="height: 0px;">
-                {% if sectiondata.section.introductory_text %}
-                <div class="section_introduction">{{ sectiondata.section.introductory_text }}</div>
-                {% endif %}
-                {% if sectiondata.section.comment %}
-                <div class="section_comment"><td colspan="3">{{ sectiondata.section.comment }}</div>
-                {% endif %}
-                {% if sectiondata.data %}
-                {% for question_pk, value in sectiondata.data.items %}
-                <dl class="questionrow">
+                  {% if sectiondata.section.introductory_text %}
+                  <div class="section_introduction">{{ sectiondata.section.introductory_text }}</div>
+                  {% endif %}
+                  {% if sectiondata.section.comment %}
+                  <div class="section_comment"><td colspan="3">{{ sectiondata.section.comment }}</div>
+                  {% endif %}
+                  {% if sectiondata.data %}
+                  {% for question_pk, value in sectiondata.data.items %}
+                  <dl class="questionrow">
                     <dt class="question">{{ value.question }}</dt>
                     <dd class="answer">{{ value.answer|default_if_none:"" }}
                         {% if value.notes %}<br />
@@ -50,12 +50,12 @@
                     <p class="actions"><a href="{% url 'new_question' plan=object.id question=question_pk %}">Edit</a></p>
                         {% endif %}
                     </dd>
-                </dl>
-                {% endfor %}
+                  </dl>
+                  {% endfor %}
+                  {% endif %}
                 </div>
-                {% endif %}
-                </div>
-                {% endfor %}
+            </div>
+            {% endfor %}
         </div>
         {% else %}
         <p>No questions answered. <a href="{% url 'first_question' plan=object.id %}">Start here</a>.</p>
