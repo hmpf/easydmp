@@ -228,7 +228,9 @@ class Plan(DeletionMixin, ClonableModel):
         for pa in oldplan.accesses.all():
             pa.clone(self)
 
-    def save(self, question=None, **kwargs):
+    def save(self, user=None, question=None, **kwargs):
+        if user:
+            self.modified_by = user
         super().save(**kwargs)
         if question is not None:
             # set visited
