@@ -111,6 +111,11 @@ class NewPlanView(AbstractPlanViewMixin, LoginRequiredMixin, CreateView):
         }
         return reverse('new_question', kwargs=kwargs)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.data = {}

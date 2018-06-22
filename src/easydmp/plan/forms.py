@@ -31,15 +31,20 @@ class CheckExistingTitleMixin:
 
 
 class NewPlanForm(CheckExistingTitleMixin, forms.ModelForm):
-    template_type = forms.ModelChoiceField(queryset=Template.objects.exclude(published=None))
 
     class Meta:
         model = Plan
         fields = ['title', 'abbreviation']
 
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
+    def __init__(self, user=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = user
+        qs = Template.objects.exclude(published=None)
+        if self.user and self.user.is_superuser:
+            qs = Template.objects.all()
+        self.qs = qs
+        if self.qs.count() > 1:
+            self.fields['template_type'] = forms.ModelChoiceField(queryset=qs)
 
         # crispy forms
         self.helper = FormHelper()
@@ -50,8 +55,10 @@ class NewPlanForm(CheckExistingTitleMixin, forms.ModelForm):
 
     def clean(self):
         super().clean()
+        if self.qs.count() == 1:
+            self.cleaned_data['template_type'] = self.qs.get()
+        template = self.cleaned_data['template_type']
         if self.user:
-            template = self.cleaned_data['template_type']
             title = self.cleaned_data['title']
             self.is_valid_title(title, self.user, template)
 
