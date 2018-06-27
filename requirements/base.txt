@@ -13,3 +13,4 @@ psycopg2>=2.4.0
 djangorestframework-filters>=0.10.0
 django-extensions==2.0.7
 social-auth-app-django>=1.2
+djangorestframework-jwt>=1.11.0

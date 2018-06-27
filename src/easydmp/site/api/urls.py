@@ -1,6 +1,9 @@
 from django.conf.urls import url, include
 
 from rest_framework import routers
+from rest_framework_jwt.views import obtain_jwt_token
+from rest_framework_jwt.views import refresh_jwt_token
+from rest_framework_jwt.views import verify_jwt_token
 
 from easydmp.plan.api import router as plan_router
 from easydmp.auth.api import router as auth_router
@@ -22,6 +25,9 @@ router.register_router(flow_router)
 #assert False, router.urls
 
 urlpatterns = [
+    url(r'jwt/authenticate/$', obtain_jwt_token),
+    url(r'jwt/refresh/$', refresh_jwt_token),
+    url(r'jwt/verify/$', verify_jwt_token),
     url(r'auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^', include(router.urls)),
 ]
