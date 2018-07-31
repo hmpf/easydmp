@@ -137,11 +137,15 @@ class Plan(DeletionMixin, ClonableModel):
         return self.title
 
     def may_edit(self, user):
+        if not user.is_authenticated:
+            return False
         if self.accesses.filter(user=user, may_edit=True):
             return True
         return False
 
     def may_view(self, user):
+        if not user.is_authenticated:
+            return False
         if self.accesses.filter(user=user):
             return True
         return False
