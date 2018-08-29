@@ -39,9 +39,9 @@
         {% if output.items %}
         <div class="dmpsummary">
             {% for section_title, sectiondata in output.items %}
-            <div class="section section_depth_{{ sectiondata.section.depth }} " id="{{ sectiondata.section.full_title|slugify }}">
+            <div class="section section_depth_{{ sectiondata.section.depth }} " id="section-{{ sectiondata.section.pk }}">
                 <h3 class="section_title"><a href="{% url 'section_detail' section=sectiondata.section.pk plan=object.id %}">{{ sectiondata.section.full_title }}{% if sectiondata.section.valid %} 🗹{% endif %}</a></h3>
-                <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#{{ sectiondata.section.full_title|slugify }} .content-wrap" aria-expanded="false" aria-controls="collapseExample">
+                <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#section-{{ sectiondata.section.pk }} .content-wrap" aria-expanded="false" aria-controls="collapseExample">
                 <span class="caret"></span>
                 </button>
                 <div class="content-wrap collapse" aria-expanded="false" style="height: 0px;">
