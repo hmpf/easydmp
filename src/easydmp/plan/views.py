@@ -278,14 +278,31 @@ class CreateNewVersionPlanView(LoginRequiredMixin, UpdateView):
 
 class AbstractQuestionMixin:
 
+    def preload(self, **kwargs):
+        """Store frequently used values as early as possible
+
+        Prevents multiple database-queries to fetch known data.
+        """
+        self.plan_pk = self.kwargs.get('plan')
+        self.plan = Plan.objects.get(id=self.plan_pk)
+        self.template = self.plan.template
+        self.queryset = self._get_queryset()
+
+    def dispatch(self, request, *args, **kwargs):
+        self.preload(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
     def get_question_pk(self):
-        question_pk = self.kwargs.get('question')
-        return question_pk
+        return self.question_pk
 
     def get_question(self):
-        question_pk = self.get_question_pk()
+        return self.question
+
+    def _get_question(self):
+        question_pk = self.question_pk
+        # Ensure that the template does contain the question
         try:
-            sections = Section.objects.filter(template=self.get_template())
+            sections = Section.objects.filter(template=self.template)
             question = Question.objects.get(pk=question_pk, section__in=sections)
         except Question.DoesNotExist as e:
             raise ValueError("Unknown question id: {}".format(question_pk))
@@ -293,18 +310,16 @@ class AbstractQuestionMixin:
         return question
 
     def get_plan_pk(self):
-        return self.kwargs.get('plan')
+        return self.plan_pk
 
-    def get_queryset(self):
+    def _get_queryset(self):
         return self.model.objects.filter(pk=self.get_plan_pk())
 
     def get_plan(self):
-        plan_id = self.get_plan_pk()
-        return Plan.objects.get(id=plan_id)
+        return self.plan
 
     def get_template(self):
-        plan = self.get_plan()
-        return plan.template
+        return self.template
 
 
 class AbstractQuestionView(LoginRequiredMixin, AbstractQuestionMixin, UpdateView):
@@ -316,20 +331,26 @@ class AbstractQuestionView(LoginRequiredMixin, AbstractQuestionMixin, UpdateView
 
 class NewQuestionView(AbstractQuestionView):
 
+    def preload(self, **kwargs):
+        super().preload(**kwargs)
+
+        self.question_pk = self.kwargs.get('question')
+        self.question = self._get_question()
+        self.section = self.question.section
+
     def set_referer(self, request):
         self.referer = request.META.get('HTTP_REFERER', None)
 
     def get_initial(self):
         current_data = self.object.data or {}
         previous_data = self.object.previous_data or {}
-        question_pk = str(self.get_question().pk)
-        initial = current_data.get(question_pk, {})
+        initial = current_data.get(self.question_pk, {})
         if not initial:
-            initial = previous_data.get(question_pk, {})
+            initial = previous_data.get(self.question_pk, {})
         return initial
 
     def get_success_url(self):
-        question = self.get_question()
+        question = self.question
         current_data = self.object.data
         kwargs = {'plan': self.object.pk}
 
@@ -351,9 +372,9 @@ class NewQuestionView(AbstractQuestionView):
         return reverse('new_question', kwargs=kwargs)
 
     def get_context_data(self, **kwargs):
-        template = self.get_template()
-        question = self.get_question()
-        section = question.section
+        template = self.template
+        question = self.question
+        section = self.section
         path = section.find_path(self.object.data)
         kwargs['path'] = path
         kwargs['question'] = question
@@ -375,13 +396,13 @@ class NewQuestionView(AbstractQuestionView):
 
     def get_notesform(self, **_):
         form_kwargs = self.get_form_kwargs()
-        question = self.get_question()
+        question = self.question
         form = NotesForm(**form_kwargs)
         return form
 
     def get_form(self, **_):
         form_kwargs = self.get_form_kwargs()
-        question = self.get_question()
+        question = self.question
         generate_kwargs = {
             'has_prevquestion': has_prevquestion(question, self.object.data),
         }
@@ -420,7 +441,7 @@ class NewQuestionView(AbstractQuestionView):
         notes = notesform.cleaned_data.get('notes', '')
         choice = form.serialize()
         choice['notes'] = notes
-        question_pk = self.get_question_pk()
+        question_pk = self.question_pk
         # save change
         current_data = self.object.data
         current_data[question_pk] = choice
@@ -428,7 +449,7 @@ class NewQuestionView(AbstractQuestionView):
         previous_data = self.object.previous_data
         previous_data[question_pk] = choice
         self.object.previous_data = previous_data
-        self.object.save(question=self.get_question())
+        self.object.save(question=self.question)
         # remove invalidated states
 #         paths_from = self.get_template().find_paths_from(question_pk)
 #         invalidated_states = set(chain(*paths_from))
