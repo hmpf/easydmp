@@ -375,7 +375,7 @@ class NewQuestionView(AbstractQuestionView):
         template = self.template
         question = self.question
         section = self.section
-        path = section.find_path(self.object.data)
+        path = section.questions.order_by('position')
         kwargs['path'] = path
         kwargs['question'] = question
         kwargs['question_pk'] = question.pk
