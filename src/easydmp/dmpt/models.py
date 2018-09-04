@@ -178,10 +178,9 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
             })
         return texts
 
-    def get_summary(self, data):
+    def get_summary(self, data, valid_section_ids=()):
         summary = OrderedDict()
         data = deepcopy(data)  # 1/2 Make absolutely sure we're working on a copy
-        valids, _ = self.find_validity_of_sections(data)
         for section in self.sections.order_by('position'):
             section_summary = OrderedDict()
             for question in section.find_minimal_path(data):
@@ -199,7 +198,7 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
             summary[section.full_title()] = {
                 'data': section_summary,
                 'section': {
-                    'valid': True if section in valids else False,
+                    'valid': True if section.id in valid_section_ids else False,
                     'depth': section.section_depth,
                     'label': section.label,
                     'title': section.title,

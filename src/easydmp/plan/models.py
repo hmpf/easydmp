@@ -262,7 +262,12 @@ class Plan(DeletionMixin, ClonableModel):
     def get_summary(self, data=None):
         if not data:
             data = self.data.copy()
-        return self.template.get_summary(data)
+        valid_sections = (SectionValidity.objects
+                  .filter(valid=True, plan=self)
+        )
+        valid_ids = valid_sections.values_list('section__pk', flat=True)
+        summary = self.template.get_summary(data, valid_ids)
+        return summary
 
     def get_canned_text(self, data=None):
         if not data:

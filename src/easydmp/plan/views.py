@@ -24,6 +24,8 @@ from flow.models import FSA
 
 from .models import Plan
 from .models import PlanComment
+from .models import QuestionValidity
+from .models import SectionValidity
 from .forms import NewPlanForm
 from .forms import UpdatePlanForm
 from .forms import SaveAsPlanForm
@@ -284,7 +286,11 @@ class AbstractQuestionMixin:
         Prevents multiple database-queries to fetch known data.
         """
         self.plan_pk = self.kwargs.get('plan')
-        self.plan = Plan.objects.get(id=self.plan_pk)
+        self.plan = (Plan.objects
+            .select_related('template')
+            .prefetch_related('template__sections')
+            .get(id=self.plan_pk)
+        )
         self.template = self.plan.template
         self.queryset = self._get_queryset()
 
@@ -302,8 +308,11 @@ class AbstractQuestionMixin:
         question_pk = self.question_pk
         # Ensure that the template does contain the question
         try:
-            sections = Section.objects.filter(template=self.template)
-            question = Question.objects.get(pk=question_pk, section__in=sections)
+            sections = self.template.sections.all()
+            question = (Question.objects
+                .select_related('section')
+                .get(pk=question_pk, section__in=sections)
+            )
         except Question.DoesNotExist as e:
             raise ValueError("Unknown question id: {}".format(question_pk))
         question = question.get_instance()
@@ -337,6 +346,16 @@ class NewQuestionView(AbstractQuestionView):
         self.question_pk = self.kwargs.get('question')
         self.question = self._get_question()
         self.section = self.question.section
+        self.questionvalidity, _ = QuestionValidity.objects.get_or_create(
+            plan=self.plan,
+            question=self.question,
+            defaults={'valid': False}
+        )
+        self.sectionvalidity, _ = SectionValidity.objects.get_or_create(
+            plan=self.plan,
+            section=self.section,
+            defaults={'valid': False}
+        )
 
     def set_referer(self, request):
         self.referer = request.META.get('HTTP_REFERER', None)
@@ -437,28 +456,39 @@ class NewQuestionView(AbstractQuestionView):
         else:
             return self.form_invalid(form, notesform)
 
+    def get_current_choice(self):
+        return self.object.data.get(self.question_pk, {})
+
     def form_valid(self, form, notesform):
         notes = notesform.cleaned_data.get('notes', '')
         choice = form.serialize()
         choice['notes'] = notes
-        question_pk = self.question_pk
-        # save change
-        current_data = self.object.data
-        current_data[question_pk] = choice
-        self.object.data = current_data
-        previous_data = self.object.previous_data
-        previous_data[question_pk] = choice
-        self.object.previous_data = previous_data
-        self.object.save(question=self.question)
-        # remove invalidated states
-#         paths_from = self.get_template().find_paths_from(question_pk)
-#         invalidated_states = set(chain(*paths_from))
-#         invalidated_states.discard(None)
-#         invalidated_states.discard(question_pk)
-#         self.delete_statedata(*invalidated_states)
+        current_choice = self.get_current_choice()
+        # Only save when necessary
+        if current_choice != choice:
+            # save change
+            self.object.data[self.question_pk] = choice
+            self.object.previous_data[self.question_pk] = choice
+            self.object.save(question=self.question)
+            self.questionvalidity.valid = True
+            self.questionvalidity.save()
+            if not self.sectionvalidity.valid and self.section.validate_data(self.object.data):
+                self.sectionvalidity.valid = True
+                self.sectionvalidity.save()
+            # remove invalidated states
+    #         paths_from = self.get_template().find_paths_from(question_pk)
+    #         invalidated_states = set(chain(*paths_from))
+    #         invalidated_states.discard(None)
+    #         invalidated_states.discard(question_pk)
+    #         self.delete_statedata(*invalidated_states)
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, notesform):
+        if self.questionvalidity.valid:
+            self.questionvalidity.valid = False
+            self.questionvalidity.save()
+            self.sectionvalidity.valid = False
+            self.sectionvalidity.save()
         return self.render_to_response(
             self.get_context_data(form=form, notesform=notesform))
 
