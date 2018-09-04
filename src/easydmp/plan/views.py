@@ -504,7 +504,23 @@ class PlanListView(LoginRequiredMixin, ListView):
         return self.model.objects.filter(editor_group__in=groups).order_by('-added')
 
 
-class AbstractPlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailView):
+class PlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailView):
+    "Show an overview of a plan"
+    model = Plan
+    pk_url_kwarg = 'plan'
+    template_name = 'easydmp/plan/plan_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = {
+            'output': self.object.get_summary(),
+            'plan': self.object,
+            'template': self.object.template,
+        }
+        context.update(**kwargs)
+        return super().get_context_data(**context)
+
+
+class AbstractGeneratedPlanView(AbstractQuestionMixin, DetailView):
     model = Plan
     pk_url_kwarg = 'plan'
 
@@ -514,20 +530,24 @@ class AbstractPlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailVi
         return super().get_context_data(**context)
 
 
-class PlanDetailView(AbstractPlanDetailView):
-    template_name = 'easydmp/plan/plan_detail.html'
+class GeneratedPlanHTMLView(AbstractGeneratedPlanView):
+    "Generate canned HTML of a plan"
 
-
-class GeneratedPlanHTMLView(AbstractPlanDetailView):
     template_name = 'easydmp/plan/generated_plan.html'
 
 
-class GeneratedPlanPlainTextView(AbstractPlanDetailView):
+# XXX: Remove
+class GeneratedPlanPlainTextView(AbstractGeneratedPlanView):
+    "Generate canned plaintext of a Plan"
+
     template_name = 'easydmp/plan/generated_plan.txt'
     content_type = 'text/plain; charset=UTF-8'
 
 
-class GeneratedPlanPDFView(AbstractPlanDetailView):
+# XXX: Remove
+class GeneratedPlanPDFView(AbstractGeneratedPlanView):
+    "Generate canned PDF of a plan"
+
     template_name = 'easydmp/plan/generated_plan.pdf'
     content_type = 'text/plain'
 

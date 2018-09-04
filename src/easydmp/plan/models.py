@@ -259,14 +259,22 @@ class Plan(DeletionMixin, ClonableModel):
         if not wait_to_save:
             self.save()
 
+    def get_summary(self, data=None):
+        if not data:
+            data = self.data.copy()
+        return self.template.get_summary(data)
+
+    def get_canned_text(self, data=None):
+        if not data:
+            data = self.data.copy()
+        return self.template.generate_canned_text(data)
+
     def get_context_for_generated_text(self):
         data = self.data.copy()
-        output = self.template.get_summary(data)
-        text = self.template.generate_canned_text(data)
         return {
             'data': data,
-            'output': output,
-            'text': text,
+            'output': self.get_summary(data),
+            'text': self.get_canned_text(data),
             'plan': self,
             'template': self.template,
         }
