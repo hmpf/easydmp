@@ -32,6 +32,18 @@ class CheckExistingTitleMixin:
             raise ValidationError(error.format(title, template))
 
 
+class PlanAccessForm(forms.ModelForm):
+    CHOICES = (
+        ('view', 'view'),
+        ('view and edit', 'view and edit'),
+    )
+    access = forms.ChoiceField(choices=CHOICES, required=True)
+
+    class Meta:
+        model = PlanAccess
+        fields = ()
+
+
 class NewPlanForm(CheckExistingTitleMixin, forms.ModelForm):
 
     class Meta:

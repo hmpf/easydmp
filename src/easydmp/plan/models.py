@@ -359,6 +359,10 @@ class PlanAccess(ClonableModel):
         new = self.__class__.objects.create(plan=plan, **self_dict)
         return new
 
+    @property
+    def access(self):
+        return 'view and edit' if self.may_edit else 'view'
+
 
 class PlanComment(models.Model):
     plan = models.ForeignKey(Plan, related_name='comments')

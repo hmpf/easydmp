@@ -78,7 +78,7 @@ class CreatePlanEditorInvitationView(AbstractCreatePlanInvitationView):
     """Invite user via email address to edit specific plan"""
     template_name = 'easydmp/invitation/plan/edit/invitation_form.html'
     self_url_name = 'invitation_plan_editor_create'
-    success_url_name = 'invitation_plan_editor_list'
+    success_url_name = 'share_plan'
     invitation_class = PlanEditorInvitation
 
 
@@ -86,7 +86,7 @@ class CreatePlanViewerInvitationView(AbstractCreatePlanInvitationView):
     """Invite user via email address to view specific plan"""
     template_name = 'easydmp/invitation/plan/view/invitation_form.html'
     self_url_name = 'invitation_plan_viewer_create'
-    success_url_name = 'invitation_plan_viewer_list'
+    success_url_name = 'share_plan'
     invitation_class = PlanViewerInvitation
 
 
@@ -118,14 +118,14 @@ class ResendPlanEditorInvitationView(AbstractResendPlanInvitationView):
     """Invite user via email address to edit specific plan"""
     model = PlanEditorInvitation
     template_name = 'easydmp/invitation/plan/edit/resend_form.html'
-    success_url_name = 'invitation_plan_editor_list'
+    success_url_name = 'share_plan'
 
 
 class ResendPlanViewerInvitationView(AbstractResendPlanInvitationView):
     """Invite user via email address to view specific plan"""
     model = PlanViewerInvitation
     template_name = 'easydmp/invitation/plan/view/resend_form.html'
-    success_url_name = 'invitation_plan_viewer_list'
+    success_url_name = 'share_plan'
 
 
 class AbstractAcceptPlanInvitationView(AbstractPlanInvitationView, UpdateView):
@@ -162,14 +162,14 @@ class RevokePlanEditorInvitationView(AbstractRevokePlanInvitationView):
     "Delete a not-accepted invitation"
     model = PlanEditorInvitation
     template_name = 'easydmp/invitation/plan/edit/invitation_confirm_delete.html'
-    success_url_name = 'invitation_plan_editor_list'
+    success_url_name = 'share_plan'
 
 
 class RevokePlanViewerInvitationView(AbstractRevokePlanInvitationView):
     "Delete a not-accepted invitation"
     model = PlanViewerInvitation
     template_name = 'easydmp/invitation/plan/view/invitation_confirm_delete.html'
-    success_url_name = 'invitation_plan_viewer_list'
+    success_url_name = 'share_plan'
 
 
 class AbstractListPlanInvitationView(LoginRequiredMixin, DetailView):

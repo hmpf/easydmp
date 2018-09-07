@@ -2,6 +2,7 @@ from itertools import chain
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect, Http404, HttpResponseServerError
@@ -20,9 +21,11 @@ from django.utils.html import mark_safe
 from easydmp.utils import pprint_list, utc_epoch
 from easydmp.dmpt.forms import make_form, TemplateForm, DeleteForm, NotesForm
 from easydmp.dmpt.models import Template, Question, Section
+from easydmp.invitation.models import PlanInvitation
 from flow.models import FSA
 
 from .models import Plan
+from .models import PlanAccess
 from .models import PlanComment
 from .models import QuestionValidity
 from .models import SectionValidity
@@ -31,6 +34,7 @@ from .forms import UpdatePlanForm
 from .forms import SaveAsPlanForm
 from .forms import PlanCommentForm
 from .forms import ConfirmForm
+from .forms import PlanAccessForm
 
 
 def progress(so_far, all):
@@ -67,6 +71,115 @@ class DeleteFormMixin(FormMixin):
     # FormMixin needed in order to use a proper form in the
     # confirmation step. A DeleteView just needs a POST.
     form_class = DeleteForm
+
+
+# -- sharing plans
+
+
+class PlanAccessView(UserPassesTestMixin, ListView):
+    "View and change who has access to what"
+    template_name = 'easydmp/plan/planaccess_list.html'
+    model = PlanAccess
+
+    def dispatch(self, request, *args, **kwargs):
+        self.plan = self.get_plan()
+        self.invitations = self.get_invitations()
+        self.queryset = self.get_queryset()
+        return super().dispatch(request, *args, **kwargs)
+
+    def test_func(self):
+        if self.queryset.filter(user=self.request.user):
+            return True
+        return False
+
+    def get_plan(self):
+        plan_id = self.kwargs['plan']
+        return Plan.objects.get(pk=plan_id)
+
+    def get_queryset(self):
+        return self.model.objects.filter(plan=self.plan)
+
+    def get_invitations(self):
+        usernames = self.get_queryset().values_list('user__username', flat=True)
+        return PlanInvitation.objects.filter(
+            plan=self.plan,
+            used__isnull=True,
+        ).exclude(
+            email_address__in=usernames
+        ).valid_only()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['invitations'] = self.invitations
+        context['plan'] = self.plan
+        accesses = []
+        for access in self.get_queryset():
+            form = PlanAccessForm(initial={'access': access.access})
+            access.form = form
+            accesses.append(access)
+        context['accesses'] = accesses
+        return context
+
+    def get_success_url(self):
+        return reverse('share_plan', kwargs={'plan': self.plan.pk})
+
+
+class UpdatePlanAccessView(UserPassesTestMixin, UpdateView):
+    model = PlanAccess
+    form_class = PlanAccessForm
+    pk_url_kwarg = 'access'
+
+    def test_func(self):
+        if self.get_object():
+            return True
+        return False
+
+    def get_queryset(self):
+        user_accesses = self.request.user.plan_accesses.filter(may_edit=True)
+        plan_pks = user_accesses.values_list('plan__pk', flat=True)
+        qs = self.model.objects.filter(plan__pk__in=plan_pks)
+        return qs
+
+    def form_valid(self, form):
+        access = form.cleaned_data['access']
+        may_edit = False
+        if access == 'view and edit':
+            may_edit = True
+        if may_edit != self.object.may_edit:
+            self.object.may_edit = may_edit
+            self.object.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse('share_plan', kwargs={'plan': self.object.plan.pk})
+
+
+class DeletePlanAccessView(UserPassesTestMixin, DeleteFormMixin, DeleteView):
+    "Delete a PlanAccess, leading to a person leaving a plan"
+
+    model = PlanAccess
+    template_name = 'easydmp/plan/planaccess_confirm_delete.html'
+    success_url = reverse_lazy('plan_list')
+    pk_url_kwarg = 'access'
+
+    def test_func(self):
+        if self.get_object():
+            return True
+        return False
+
+    def get_queryset(self):
+        return self.request.user.plan_accesses.all()
+
+    def delete(self, request, *args, **kwargs):
+        if 'cancel' in request.POST:
+            return HttpResponseRedirect(self.get_success_url())
+        return super().delete(request, *args, **kwargs)
+
+
+# -- plans
 
 
 class PlanAccessViewMixin(LoginRequiredMixin):
@@ -568,7 +681,7 @@ class PlanListView(PlanAccessViewMixin, ListView):
         return qs.order_by('-added')
 
 
-class PlanDetailView(LoginRequiredMixin, AbstractQuestionMixin, DetailView):
+class PlanDetailView(AbstractQuestionMixin, DetailView):
     "Show an overview of a plan"
     model = Plan
     pk_url_kwarg = 'plan'

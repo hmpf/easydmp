@@ -1,8 +1,7 @@
 {% load static %}
               {% if request.user|may_edit_plan:object %}
               <li><a href="{% url 'update_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-edit.png' %}"/>Rename</a></li>
-              <li><a href="{% url 'invitation_plan_editor_create' plan=object.id %}"><img src="{% static 'usit/icons/icon-people.png' %}"/>Invite editors</a></li>
-              <li><a href="{% url 'invitation_plan_viewer_create' plan=object.id %}"><img src="{% static 'usit/icons/icon-people.png' %}"/>Invite viewers</a></li>
+              <li><a href="{% url 'share_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-people.png' %}"/>People</a></li>
               {% if not object.published %}
               {% if object.valid  %}
               <li><a href="{% url 'publish_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-publish.png' %}"/>Publish (read only)</a></li>

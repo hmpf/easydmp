@@ -7,6 +7,7 @@ from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db import transaction
+from django.db.models  import Q
 from django.template.loader import render_to_string
 from django.utils.timezone import now as utcnow
 
@@ -19,6 +20,14 @@ class ChoiceEnum(Enum):
     @classmethod
     def choices(cls):
         return tuple((i.name, i.value) for i in cls)
+
+
+class InvitationQuerySet(models.QuerySet):
+
+    def valid_only(self, now=None):
+        now = now if now else utcnow()
+        newer_than = now - timedelta(days=30)
+        return self.filter(Q(sent__gte=newer_than) | Q(created__gte=newer_than))
 
 
 class AbstractEmailInvitation(models.Model):
@@ -101,7 +110,7 @@ class AbstractEmailInvitation(models.Model):
         return sent
 
 
-class PlanInvitationQuerySet(models.QuerySet):
+class PlanInvitationQuerySet(InvitationQuerySet):
 
     def invitations_to_edit(self):
         invitation_type = PlanEditorInvitation.invitation_type
@@ -130,6 +139,11 @@ class PlanInvitation(AbstractEmailInvitation):
         edit = 'Edit'
         view = 'View'
 
+    VERBOSE_INVITATION_TYPES = {
+        InvitationType.edit.name: 'view and edit',
+        InvitationType.view.name: 'view',
+    }
+
     plan = models.ForeignKey('plan.Plan')
     type = models.CharField(choices=InvitationType.choices(), max_length=4, default='view')
 
@@ -143,6 +157,10 @@ class PlanInvitation(AbstractEmailInvitation):
         data['plan'] = self.plan
         data['invitation_type'] = self.type
         return data
+
+    @property
+    def verbose_invitation_type(self):
+        return self.VERBOSE_INVITATION_TYPES[self.type]
 
 
 class PlanEditorInvitationManager(PlanInvitationManager):
