@@ -19,7 +19,7 @@ from django.views.generic import (
 from django.utils.html import mark_safe
 
 from easydmp.utils import pprint_list, utc_epoch
-from easydmp.dmpt.forms import make_form, TemplateForm, DeleteForm, NotesForm
+from easydmp.dmpt.forms import make_form, TemplateForm, NotesForm
 from easydmp.dmpt.models import Template, Question, Section
 from easydmp.invitation.models import PlanInvitation
 from flow.models import FSA
@@ -29,6 +29,7 @@ from .models import PlanAccess
 from .models import PlanComment
 from .models import QuestionValidity
 from .models import SectionValidity
+from .forms import DeleteForm
 from .forms import NewPlanForm
 from .forms import UpdatePlanForm
 from .forms import SaveAsPlanForm

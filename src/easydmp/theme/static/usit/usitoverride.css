@@ -891,8 +891,8 @@ tr .dropdown .btn-default .caret {
   margin-bottom: 1.5em;
 }
 
-/* delete page */
-#id-plan #submit-id-submit {
+/* delete conformation dialog */
+#id-delete #submit-id-submit {
   margin-right: 1em;
 }
 
