@@ -1,0 +1,21 @@
+{% extends "easydmp/plan/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+  <div class="row uninett-color-white uninett-whole-row">
+    <div class="col-lg-12 uninett-color-white">
+      <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
+<h1>Removing your own edit access to "{{ object.plan.title|capfirst }} {{ object.plan.added|date:"Y-m-t H:i:s" }}"</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="row uninett-color-white uninett-whole-row">
+    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+        <p>You are about to change your own access to editing this plan. If you
+        set yourself to "view", you cannot undo it by yourself. You would no
+        longer be able to edit any answers in the plan, and you won't be able
+        change the access of anyone else.</p> 
+
+        {% crispy form %}
+</div></div>
+{% endblock content %}

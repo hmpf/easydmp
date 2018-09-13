@@ -50,6 +50,21 @@ class DeleteForm(forms.Form):
         self.helper.add_input(Submit('cancel', 'No'))
 
 
+class ConfirmForm(forms.Form):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('instance')
+        super().__init__(*args, **kwargs)
+
+        # crispy forms
+        self.helper = FormHelper()
+        self.helper.form_id = 'id-plan-publish'
+        self.helper.form_class = 'blueForms'
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Yes'))
+        self.helper.add_input(Submit('cancel', 'No'))
+
+
 class PlanAccessForm(forms.ModelForm):
     CHOICES = (
         ('view', 'view'),
@@ -60,6 +75,13 @@ class PlanAccessForm(forms.ModelForm):
     class Meta:
         model = PlanAccess
         fields = ()
+
+
+class ConfirmOwnPlanAccessChangeForm(ConfirmForm, PlanAccessForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['access'].label = "Change access to"
 
 
 class NewPlanForm(CheckExistingTitleMixin, forms.ModelForm):
@@ -153,18 +175,3 @@ class PlanCommentForm(forms.ModelForm):
     class Meta:
         model = PlanComment
         fields = ['comment']
-
-
-class ConfirmForm(forms.Form):
-
-    def __init__(self, *args, **kwargs):
-        kwargs.pop('instance')
-        super().__init__(*args, **kwargs)
-
-        # crispy forms
-        self.helper = FormHelper()
-        self.helper.form_id = 'id-plan-publish'
-        self.helper.form_class = 'blueForms'
-        self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Yes'))
-        self.helper.add_input(Submit('cancel', 'No'))

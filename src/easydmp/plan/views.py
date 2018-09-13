@@ -36,6 +36,7 @@ from .forms import SaveAsPlanForm
 from .forms import PlanCommentForm
 from .forms import ConfirmForm
 from .forms import PlanAccessForm
+from .forms import ConfirmOwnPlanAccessChangeForm
 
 
 def progress(so_far, all):
@@ -129,6 +130,14 @@ class UpdatePlanAccessView(UserPassesTestMixin, UpdateView):
     model = PlanAccess
     form_class = PlanAccessForm
     pk_url_kwarg = 'access'
+    template_name = 'easydmp/plan/planaccess_confirm_update.html'
+    changing_self = None
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.request.user == self.object.user:
+            self.changing_self = True
+        return super().dispatch(request, *args, **kwargs)
 
     def test_func(self):
         if self.get_object():
@@ -140,6 +149,19 @@ class UpdatePlanAccessView(UserPassesTestMixin, UpdateView):
         plan_pks = user_accesses.values_list('plan__pk', flat=True)
         qs = self.model.objects.filter(plan__pk__in=plan_pks)
         return qs
+
+    def get_form_class(self):
+        if self.changing_self:
+            return ConfirmOwnPlanAccessChangeForm
+        return self.form_class
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if 'cancel' in self.request.POST or not form.is_valid():
+            return self.form_invalid(form)
+        if self.changing_self and 'submit' not in self.request.POST:
+                return self.get(request, *args, **kwargs)
+        return self.form_valid(form)
 
     def form_valid(self, form):
         access = form.cleaned_data['access']
