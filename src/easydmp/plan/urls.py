@@ -18,6 +18,9 @@ from .views import (
     GeneratedPlanPlainTextView,
     GeneratedPlanHTMLView,
     GeneratedPlanPDFView,
+    PlanAccessView,
+    UpdatePlanAccessView,
+    DeletePlanAccessView,
 )
 
 
@@ -31,6 +34,11 @@ QUESTION_PAGEROOT_RE = r'^%s/%s/' % (PLAN_RE, QUESTION_RE)
 urlpatterns = [
     url(r'^$', PlanListView.as_view(), name='plan_list'),
     url(r'^new/$', NewPlanView.as_view(), name='new_plan'),
+
+    url(r'access/(?P<access>\d+)/update/$', UpdatePlanAccessView.as_view(), name='update_planaccess'),
+    url(r'access/(?P<access>\d+)/delete/$', DeletePlanAccessView.as_view(), name='leave_plan'),
+    url(PLAN_PAGEROOT_RE + 'share/$', PlanAccessView.as_view(), name='share_plan'),
+
     url(PLAN_PAGEROOT_RE + 'update/$', UpdatePlanView.as_view(), name='update_plan'),
     url(PLAN_PAGEROOT_RE + 'check/$', ValidatePlanView.as_view(), name='validate_plan'),
     url(PLAN_PAGEROOT_RE + 'lock/$', LockPlanView.as_view(), name='lock_plan'),

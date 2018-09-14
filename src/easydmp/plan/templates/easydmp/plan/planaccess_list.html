@@ -1,0 +1,64 @@
+{% extends "easydmp/plan/base.html" %}
+{% load static %}
+{% block content %}
+  <div class="row uninett-color-white uninett-whole-row">
+    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+        <div class="top-wrap">
+            <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
+                <h1>People with access to "{{ plan }}{% if plan.version != 1%} v{{ plan.version }}{% endif %}"</h1>
+            </div>
+            {% comment %}
+            <div id="create_new_plan">
+                <h2><a href="{% url 'new_plan' %}">+ Create new</a></h2>
+            </div>
+            {% endcomment %}
+        </div>
+        <table width="100%">
+        <tbody>
+          {% for access in accesses %}
+          <tr>
+            <td>{{ access.user.username }}</td>
+            <td>
+            {% if request.user|may_edit_plan:plan %}
+                <form method="post" action="{% url 'update_planaccess' access=access.pk  %}">
+                    {% csrf_token %}
+                    {{ access.form.access }}
+                </form>
+            {% else %}
+                {{ access.access }}
+            {% endif %}
+            </td>
+            <td>
+            {% if request.user == access.user %}
+            <a href="{% url 'leave_plan' access=access.pk %}">Leave plan</a>
+            {% endif %}</td>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        </table>
+    </div>
+  </div>
+
+  <div class="row uninett-color-white uninett-whole-row">
+    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+        <div class="top-wrap">
+            <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
+                <h1>Standing invitations</h1>
+            </div>
+        </div>
+        {% include "easydmp/plan/_invitation_list.html" %}
+        <p><a href="{% url 'invitation_plan_viewer_create' plan=plan.pk %}">Invite people to view to this plan</a></p>
+        <p><a href="{% url 'invitation_plan_editor_create' plan=plan.pk %}">Invite people to edit to this plan</a></p>
+    </div>
+  </div>
+{% endblock content %}
+{% block postload %}
+    <script>
+        $(function() {
+            $('select').change(function() {
+                this.form.submit();
+            });
+        });
+    </script>
+{% endblock %}

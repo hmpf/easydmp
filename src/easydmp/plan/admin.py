@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import Plan, PlanComment
+from .models import PlanAccess
 
 
 class FakeBooleanFilter(admin.SimpleListFilter):
@@ -74,3 +75,10 @@ class PlanCommentAdmin(admin.ModelAdmin):
     list_filter = ['plan']
     search_fields = ['plan__title', 'added_by__email', 'added_by__username',
                      'question__question', 'question__label']
+
+
+@admin.register(PlanAccess)
+class PlanAccessAdmin(admin.ModelAdmin):
+    list_display = ['user', 'plan', 'may_edit']
+    list_filter = ['may_edit']
+    search_fields = ['plan__title', 'plan__abbreviation', 'user__username']

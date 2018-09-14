@@ -8,13 +8,18 @@ from easydmp.dmpt.models import Template
 
 from .models import Plan
 from .models import PlanComment
+from .models import PlanAccess
+
+
+FORM_CLASS = 'blueForms'
 
 
 class CheckExistingTitleMixin:
 
     def get_existing_titles(self, template, user, version=None):
-        groups = user.groups.all()
-        qs = Plan.objects.filter(template=template, editor_group__in=groups)
+        qs = Plan.objects.filter(template=template)
+        pas = PlanAccess.objects.filter(user=user)
+        qs = qs.filter(accesses__in=pas)
         if version is not None:
             qs = qs.filter(version=version)
         return qs
@@ -28,6 +33,55 @@ class CheckExistingTitleMixin:
         if qs_count:
             error = 'You already have edit access to plans named {} for the template {}, please rename the plan'
             raise ValidationError(error.format(title, template))
+
+
+class DeleteForm(forms.Form):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('instance', None)
+        super().__init__(*args, **kwargs)
+
+        # crispy forms
+        self.helper = FormHelper()
+        self.helper.form_id = 'id-delete'
+        self.helper.form_class = FORM_CLASS
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Yes'))
+        self.helper.add_input(Submit('cancel', 'No'))
+
+
+class ConfirmForm(forms.Form):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('instance')
+        super().__init__(*args, **kwargs)
+
+        # crispy forms
+        self.helper = FormHelper()
+        self.helper.form_id = 'id-plan-publish'
+        self.helper.form_class = 'blueForms'
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Yes'))
+        self.helper.add_input(Submit('cancel', 'No'))
+
+
+class PlanAccessForm(forms.ModelForm):
+    CHOICES = (
+        ('view', 'view'),
+        ('view and edit', 'view and edit'),
+    )
+    access = forms.ChoiceField(choices=CHOICES, required=True)
+
+    class Meta:
+        model = PlanAccess
+        fields = ()
+
+
+class ConfirmOwnPlanAccessChangeForm(ConfirmForm, PlanAccessForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['access'].label = "Change access to"
 
 
 class NewPlanForm(CheckExistingTitleMixin, forms.ModelForm):
@@ -89,7 +143,7 @@ class UpdatePlanForm(CheckExistingTitleMixin, forms.ModelForm):
 
 class SaveAsPlanForm(CheckExistingTitleMixin, forms.ModelForm):
     CHOICES = ((True, 'Yes'), (False, 'No'))
-    keep_editors = forms.ChoiceField(
+    keep_users = forms.ChoiceField(
         choices=CHOICES,
         help_text='If "Yes", copy over all editors from the original plan',
         widget=forms.RadioSelect(choices=CHOICES),
@@ -121,18 +175,3 @@ class PlanCommentForm(forms.ModelForm):
     class Meta:
         model = PlanComment
         fields = ['comment']
-
-
-class ConfirmForm(forms.Form):
-
-    def __init__(self, *args, **kwargs):
-        kwargs.pop('instance')
-        super().__init__(*args, **kwargs)
-
-        # crispy forms
-        self.helper = FormHelper()
-        self.helper.form_id = 'id-plan-publish'
-        self.helper.form_class = 'blueForms'
-        self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Yes'))
-        self.helper.add_input(Submit('cancel', 'No'))

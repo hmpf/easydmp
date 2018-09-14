@@ -891,13 +891,13 @@ tr .dropdown .btn-default .caret {
   margin-bottom: 1.5em;
 }
 
-/* delete page */
-#id-plan #submit-id-submit {
+/* delete conformation dialog */
+#id-delete #submit-id-submit {
   margin-right: 1em;
 }
 
 /* save as new / duplicate page */
-#div_id_keep_editors .radio{
+#div_id_keep_users .radio{
     padding: .5em 1.5em;
 }
 /* media queries */

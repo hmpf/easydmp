@@ -1,0 +1,27 @@
+<div class="invitation-list">
+{% if invitations.exists %}
+<table>
+<tr>
+    <th>Invited</th>
+    <th>By</th>
+    <th>Sent</th>
+    <th>Actions</th>
+</tr>
+{% for invitation in invitations.all %}
+<tr>
+    <td>{{ invitation.email_address }}</td>
+    <td>{{ invitation.invited_by }}</td>
+    <td>{{ invitation.sent|default:'Not sent' }}</td>
+    <td>
+        {% if not invitation.used %}
+        <a href="{% url 'invitation_plan_editor_resend' uuid=invitation.uuid %}">Resend</a>
+        <a href="{% url 'invitation_plan_editor_revoke' uuid=invitation.uuid %}">Revoke</a>
+        {% endif %}
+    </td>
+</tr>
+{% endfor %}
+</table>
+{% else %}
+<p>No invitations are currently active for plan &quot;<a href="{% url 'plan_detail' plan=plan.pk %}">{{ plan }}</a>&quot;.</p>
+{% endif %}
+</div>

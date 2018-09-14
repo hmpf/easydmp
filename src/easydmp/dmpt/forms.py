@@ -40,20 +40,6 @@ class TemplateForm(forms.ModelForm):
         self.helper.add_input(Submit('submit', 'Next'))
 
 
-class DeleteForm(forms.Form):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # crispy forms
-        self.helper = FormHelper()
-        self.helper.form_id = 'id-plan'
-        self.helper.form_class = FORM_CLASS
-        self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Yes'))
-        self.helper.add_input(Submit('cancel', 'No'))
-
-
 class NotesForm(forms.Form):
     notes = forms.CharField(
         label='More information',

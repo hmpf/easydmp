@@ -1,4 +1,4 @@
-{% extends "easydmp/invitation/plan/base.html" %}
+{% extends "easydmp/invitation/plan/view/base.html" %}
 {% load crispy_forms_tags %}
 
 {% block content %}
@@ -12,7 +12,7 @@
 
 <div class="row uninett-color-white uninett-whole-row">
   <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-    <p>Revoke invitation sent to {{ object.email_address }} to edit {{ object.plan.title|capfirst }}</p>
+    <p>Revoke invitation sent to {{ object.email_address }} to view {{ object.plan.title|capfirst }}</p>
       <form action="." method="POST">
           {% csrf_token %}
           <input type="submit" value="Revoke" class="btn btn-primary" />

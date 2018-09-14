@@ -23,23 +23,7 @@
                    <span class="caret"></span>
                  </button>
                  <ul class="dropdown-menu" aria-labelledby="actionsMenu">
-                     <li><a href="{% url 'update_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-edit.png' %}"/>Rename</a></li>
-                     <li><a href="{% url 'invitation_plan_editor_create' plan=object.id %}"><img src="{% static 'usit/icons/icon-people.png' %}"/>Invite coworkers</a></li>
-                     {% if not object.published %}
-                     {% if object.valid  %}
-                     <li><a href="{% url 'publish_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-publish.png' %}"/>Publish</a></li>
-                     {% else %}
-                     <li><a href="{% url 'validate_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-publish.png' %}"/>Check</a></li>
-                     {% endif %}
-                     {% else %}
-                     <li><a href="{% url 'unlock_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-publish.png' %}"/>New version</a></li>
-                     {% endif %}
-                     <li><a href="{% url 'plan_delete' plan=object.id %}"><img src="{% static 'usit/icons/icon-delete.png' %}"/>Delete</a></li>
-                     <li><a href="{% url 'plan_saveas' plan=object.id %}"><img src="{% static 'usit/icons/icon-duplicate.png' %}"/>Duplicate</a></li>
-                     <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'usit/icons/icon-export.png' %}"/>Export</a></li>
-                     <!--
-                     <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'usit/icons/icon-print.png' %}"/>Print</a></li>
-                     -->
+                     {% include "easydmp/plan/_plan_actions_dropdown.html" %}
                  </ul>
                </div>
             </td>

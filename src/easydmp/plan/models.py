@@ -2,7 +2,9 @@ from copy import deepcopy
 from uuid import uuid4
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import models
+from django.forms import model_to_dict
 from django.template.loader import render_to_string
 from django.utils.timezone import now as tznow
 
@@ -16,6 +18,7 @@ from flow.modelmixins import ClonableModel
 from easydmp.dmpt.utils import DeletionMixin
 
 from .utils import purge_answer
+from .utils import get_editors_for_plan
 
 
 GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
@@ -27,6 +30,30 @@ class PlanQuerySet(models.QuerySet):
         qs = self.all()
         for plan in qs:
             purge_answer(plan, question_pk)
+
+    def locked(self):
+        return self.filter(locked__isnull=False)
+
+    def unlocked(self):
+        return self.filter(locked__isnull=True)
+
+    def published(self):
+        return self.filter(published__isnull=False)
+
+    def unpublished(self):
+        return self.filter(published__isnull=True)
+
+    def valid(self):
+        return self.filter(valid=True)
+
+    def invalid(self):
+        return self.exclude(valid=True)
+
+    def editable(self, user):
+        return self.filter(accesses__user=user, accesses__may_edit=True)
+
+    def viewable(self, user):
+        return self.filter(accesses__user=user)
 
 
 class SectionValidity(ClonableModel):
@@ -103,27 +130,51 @@ class Plan(DeletionMixin, ClonableModel):
                                      related_name='published_plans',
                                      blank=True, null=True,
                                      on_delete=models.SET_NULL)
-    editor_group = models.ForeignKey('auth.Group', related_name='+', blank=True, null=True)
 
     objects = PlanQuerySet.as_manager()
 
     def __str__(self):
         return self.title
 
+    def may_edit(self, user):
+        if not user.is_authenticated:
+            return False
+        if self.accesses.filter(user=user, may_edit=True):
+            return True
+        return False
+
+    def may_view(self, user):
+        if not user.is_authenticated:
+            return False
+        if self.accesses.filter(user=user):
+            return True
+        return False
+
     def get_first_question(self):
         return self.template.first_question
 
-    def create_editor_group(self):
-        from django.contrib.auth.models import Group
-        group, _ = Group.objects.get_or_create(name='plan-editors-{}'.format(self.pk))
-        self.editor_group = group
-        self.save()
+    def get_viewers(self):
+        User = get_user_model()
+        pas = self.accesses.exclude(may_edit=True)
+        qs = User.objects.filter(plan_accesses__in=pas)
+        return qs
 
-    def add_user_to_editor_group(self, user):
-        user.groups.add(self.editor_group)
+    get_editors = get_editors_for_plan
+
+    def add_user_to_viewers(self, user):
+        ua, _ = PlanAccess.objects.update_or_create(
+            user=user,
+            plan=self,
+            defaults={'may_edit': False})
+
+    def add_user_to_editors(self, user):
+        ua, _ = PlanAccess.objects.update_or_create(
+            user=user,
+            plan=self,
+            defaults={'may_edit': True})
 
     def set_adder_as_editor(self):
-        self.add_user_to_editor_group(self.added_by)
+        self.add_user_to_editors(self.added_by)
 
     def set_sections_as_valid(self, *sections):
         for section in sections:
@@ -173,12 +224,9 @@ class Plan(DeletionMixin, ClonableModel):
         for qv in oldplan.question_validity.all():
             qv.clone(self)
 
-    def copy_editors_from(self, oldplan):
-        if not self.editor_group:
-            self.create_editor_group()
-            editors = set(oldplan.editor_group.user_set.all())
-            for editor in editors:
-                self.add_user_to_editor_group(editor)
+    def copy_users_from(self, oldplan):
+        for pa in oldplan.accesses.all():
+            pa.clone(self)
 
     def save(self, question=None, **kwargs):
         super().save(**kwargs)
@@ -190,11 +238,9 @@ class Plan(DeletionMixin, ClonableModel):
                 self.visited_sections.add(topmost)
             # set validated
             self.validate()
-        if not self.editor_group:
-            self.create_editor_group()
-            self.set_adder_as_editor()
+        self.set_adder_as_editor()
 
-    def save_as(self, title, user, abbreviation='', keep_editors=True, **kwargs):
+    def save_as(self, title, user, abbreviation='', keep_users=True, **kwargs):
         new = self.__class__(
             title=title,
             abbreviation=abbreviation,
@@ -206,10 +252,10 @@ class Plan(DeletionMixin, ClonableModel):
         )
         new.save()
         new.copy_validations_from(self)
-        if keep_editors:
-            editors = set(self.editor_group.user_set.all())
+        if keep_users:
+            editors = set(self.get_editors())
             for editor in editors:
-                new.add_user_to_editor_group(editor)
+                new.add_user_to_editors(editor)
         return new
 
     def clone(self):
@@ -219,7 +265,7 @@ class Plan(DeletionMixin, ClonableModel):
         new.set_cloned_from(self)
         new.save()
         new.copy_validations_from(self)
-        new.copy_editors_from(self)
+        new.copy_users_from(self)
         return new
 
     def unset_status_metadata(self):
@@ -297,6 +343,25 @@ class Plan(DeletionMixin, ClonableModel):
             self.published = timestamp
             self.published_by = user
             self.save()
+
+
+class PlanAccess(ClonableModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, related_name='plan_accesses')
+    plan = models.ForeignKey(Plan, models.CASCADE, related_name='accesses')
+
+    may_edit = models.NullBooleanField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ('user', 'plan')
+
+    def clone(self, plan):
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'plan'])
+        new = self.__class__.objects.create(plan=plan, **self_dict)
+        return new
+
+    @property
+    def access(self):
+        return 'view and edit' if self.may_edit else 'view'
 
 
 class PlanComment(models.Model):
