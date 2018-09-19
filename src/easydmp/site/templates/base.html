@@ -70,6 +70,9 @@
         <ul class="nav navbar-nav">
           {% if request.user.is_authenticated %}
           <li><a href="{% url 'plan_list' %}">Your plans</a></li>
+          {% if plan %}
+          <li><a href="{% url 'plan_detail' plan=plan.pk %}">Current plan</a></li>
+          {% endif %}
           <li><a href="{% url 'new_plan' %}">Create a new plan</a></li>
           <li><a href="/about/">About</a></li>
           <li><a href="mailto:support@easydmp.sigma2.no">Support</a></li>
