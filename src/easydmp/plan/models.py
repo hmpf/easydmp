@@ -15,6 +15,7 @@ from jsonfield import JSONField
 
 from flow.modelmixins import ClonableModel
 
+from easydmp.dmpt.forms import make_form
 from easydmp.dmpt.utils import DeletionMixin
 
 from .utils import purge_answer
@@ -22,6 +23,59 @@ from .utils import get_editors_for_plan
 
 
 GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
+
+
+class Answer():
+    "Helper-class combining a Question and a Plan"
+
+    def __init__(self, question, plan):
+        self.question = question
+        self.plan = plan
+        self.question_id = question.pk
+        self.has_notes = question.has_notes
+        self.section = question.section
+        self.question_validity = self.get_question_validity()
+        self.section_validity = self.get_section_validity()
+        self.current_choice = plan.data.get(question.pk, {})
+
+    def get_question_validity(self):
+        qv, _ = QuestionValidity.objects.get_or_create(
+            plan=self.plan,
+            question=self.question,
+            defaults={'valid': False}
+        )
+        return qv
+
+    def get_section_validity(self):
+        sv, _ = SectionValidity.objects.get_or_create(
+            plan=self.plan,
+            section=self.section,
+            defaults={'valid': False}
+        )
+        return sv
+
+    def get_form(self, **form_kwargs):
+        form = make_form(self.question, **form_kwargs)
+        return form
+
+    def save_choice(self, choice, saved_by):
+        if self.current_choice != choice:
+            self.plan.modified_by = saved_by
+            self.plan.previous_data[self.question_id] = self.current_choice
+            self.plan.data[self.question_id] = choice
+            self.plan.save(question=self.question)
+            self.question_validity.valid = True
+            self.question_validity.save()
+            if not self.section_validity.valid and self.section.validate_data(self.plan.data):
+                self.section_validity.valid = True
+                self.section_validity.save()
+
+    def set_invalid(self):
+        if self.question_validity.valid:
+            self.question_validity.valid = False
+            self.question_validity.save()
+            self.section_validity.valid = False
+            self.section_validity.save()
 
 
 class PlanQuerySet(models.QuerySet):

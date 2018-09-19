@@ -23,6 +23,7 @@ from easydmp.dmpt.models import Template, Question, Section
 from easydmp.invitation.models import PlanInvitation
 from flow.models import FSA
 
+from .models import Answer
 from .models import Plan
 from .models import PlanAccess
 from .models import PlanComment
@@ -508,17 +509,8 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
 
         self.question_pk = self.kwargs.get('question')
         self.question = self._get_question()
+        self.answer = Answer(self.question, self.plan)
         self.section = self.question.section
-        self.questionvalidity, _ = QuestionValidity.objects.get_or_create(
-            plan=self.plan,
-            question=self.question,
-            defaults={'valid': False}
-        )
-        self.sectionvalidity, _ = SectionValidity.objects.get_or_create(
-            plan=self.plan,
-            section=self.section,
-            defaults={'valid': False}
-        )
 
     def set_referer(self, request):
         self.referer = request.META.get('HTTP_REFERER', None)
@@ -619,39 +611,15 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
         else:
             return self.form_invalid(form, notesform)
 
-    def get_current_choice(self):
-        return self.object.data.get(self.question_pk, {})
-
     def form_valid(self, form, notesform):
         notes = notesform.cleaned_data.get('notes', '')
         choice = form.serialize()
         choice['notes'] = notes
-        current_choice = self.get_current_choice()
-        # Only save when necessary
-        if current_choice != choice:
-            # save change
-            self.object.data[self.question_pk] = choice
-            self.object.previous_data[self.question_pk] = choice
-            self.object.save(question=self.question)
-            self.questionvalidity.valid = True
-            self.questionvalidity.save()
-            if not self.sectionvalidity.valid and self.section.validate_data(self.object.data):
-                self.sectionvalidity.valid = True
-                self.sectionvalidity.save()
-            # remove invalidated states
-    #         paths_from = self.get_template().find_paths_from(question_pk)
-    #         invalidated_states = set(chain(*paths_from))
-    #         invalidated_states.discard(None)
-    #         invalidated_states.discard(question_pk)
-    #         self.delete_statedata(*invalidated_states)
+        self.answer.save_choice(choice, self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, notesform):
-        if self.questionvalidity.valid:
-            self.questionvalidity.valid = False
-            self.questionvalidity.save()
-            self.sectionvalidity.valid = False
-            self.sectionvalidity.save()
+        self.answer.set_invalid()
         return self.render_to_response(
             self.get_context_data(form=form, notesform=notesform))
 
