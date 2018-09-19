@@ -327,6 +327,7 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
     comment = models.TextField(blank=True)
     super_section = models.ForeignKey('self', null=True, blank=True, related_name='subsections')
     section_depth = models.PositiveSmallIntegerField(default=1)
+    branching = models.NullBooleanField(null=True, blank=True)
 
     class Meta:
         unique_together = (

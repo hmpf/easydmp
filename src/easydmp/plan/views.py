@@ -448,10 +448,16 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
     pk_url_kwarg = 'plan'
 
     def dispatch(self, request, *args, **kwargs):
+        error_message_404 = "This Section cannot be edited in one go"
         self.section_pk = kwargs['section']
-        self.section = Section.objects.prefetch_related('questions').get(pk=self.section_pk)
-        self.prev_section = self.section.get_prev_section()
-        self.next_section = self.section.get_next_section()
+        try:
+            self.section = (
+                Section.objects
+                    .prefetch_related('questions')
+                    .get(branching=False, pk=self.section_pk)
+            )
+        except Section.DoesNotExist:
+            raise Http404(error_message_404)
         self.questions = (
             self.section.questions
             .filter(obligatory=True)
@@ -459,7 +465,9 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
         )
         if self.section.questions.count() != self.questions.count():
             # Not a linear section
-            raise Http404
+            raise Http404(error_message_404)
+        self.prev_section = self.section.get_prev_section()
+        self.next_section = self.section.get_next_section()
         self.modified_by = request.user
         self.plan_pk = kwargs[self.pk_url_kwarg]
         self.plan = self.get_object()
