@@ -708,6 +708,8 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
     framing_text = models.TextField(blank=True)
     comment = models.TextField(blank=True, null=True)
     obligatory = models.BooleanField(default=True)
+    optional = models.BooleanField(default=False)
+    optional_canned_text = models.TextField(blank=True)
     node = models.OneToOneField('flow.Node', related_name='payload',
                                 blank=True, null=True,
                                 on_delete=models.SET_NULL)
