@@ -1,0 +1,36 @@
+<!-- start: easydmp/plan/_answer_form.html -->
+<div class="answer{% if form.choice.errors or form.non_field_errors %} errors{% endif %}">
+  <div class="question-label">
+      <label class="control-label requiredField">{{ form.label }}<span class="asteriskField">*</span></label>
+  </div>
+  <p class="help_text question-help">{{ form.help_text|safe }}</p>
+  <p class="question-comment" style="">{{ form.question.comment }}</p>
+
+  <div class="form-body">
+    {{ form.non_field_errors }}
+    {% if form.forms %}
+    {% include "widgets/formset.html" %}
+    {% else %}
+    <div class="control-group">
+        {{ form.choice }}
+        {% if form.choice.errors %}
+        <div class="errors">
+        {{ form.choice.errors }}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if answer.has_notes %}
+    <div id="div_{{ notesform.notes.id_for_label }}" class="control-group notes">
+        <label for="{{ notesform.notes.id_for_label }}" class="control-label">{{ notesform.notes.label }}</label>
+        <div class="controls">
+            <div class="help_text">{{ notesform.notes.help_text|safe }}</div>
+            {{ notesform.notes }}
+            {{ notesform.non_field_errors }}
+        </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+<!-- end: easydmp/plan/_answer_form.html -->

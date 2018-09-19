@@ -1,4 +1,5 @@
 from itertools import chain
+from copy import deepcopy
 
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -441,6 +442,112 @@ class CreateNewVersionPlanView(PlanAccessViewMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
+class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
+    template_name = 'easydmp/plan/plan_section_update.html'
+    model = Plan
+    pk_url_kwarg = 'plan'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.section_pk = kwargs['section']
+        self.section = Section.objects.prefetch_related('questions').get(pk=self.section_pk)
+        self.prev_section = self.section.get_prev_section()
+        self.next_section = self.section.get_next_section()
+        self.questions = (
+            self.section.questions
+            .filter(obligatory=True)
+            .order_by('position')
+        )
+        if self.section.questions.count() != self.questions.count():
+            # Not a linear section
+            raise Http404
+        self.modified_by = request.user
+        self.plan_pk = kwargs[self.pk_url_kwarg]
+        self.plan = self.get_object()
+        self.object = self.plan
+        self.answers = [Answer(question, self.plan) for question in self.questions]
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        if self.next_section:
+            return reverse(
+                'answer_linear_section',
+                kwargs={'plan': self.plan_pk, 'section': self.next_section.pk}
+            )
+        return reverse('plan_detail', kwargs={'plan': self.plan_pk})
+
+    def get(self, *args, **kwargs):
+        forms = self.get_forms()
+        return self.render_to_response(self.get_context_data(forms=forms))
+
+    def post(self, *args, **kwargs):
+        forms = self.get_forms()
+        if all([question['form'].is_valid() for question in forms]):
+            return self.forms_valid(forms)
+        else:
+            return self.forms_invalid(forms)
+
+    def forms_valid(self, forms):
+        prev_data = deepcopy(self.plan.data)
+        for question in forms:
+            form = question['form']
+            notesform = question['notesform']
+            notesform.is_valid()
+            notes = notesform.cleaned_data.get('notes', '')
+            choice = form.serialize()
+            choice['notes'] = notes
+            answer = question['answer']
+            if answer.current_choice != choice:
+                qid = str(answer.question_id)
+                self.plan.previous_data[qid] = answer.current_choice
+                self.plan.data[qid] = choice
+        if prev_data != self.plan.data:
+            self.plan.modified_by = self.request.user
+            self.plan.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def forms_invalid(self, forms):
+        return self.render_to_response(self.get_context_data(forms=forms))
+
+    def get_form_kwargs(self):
+        kwargs = {}
+        if self.request.method in ('POST', 'PUT'):
+            kwargs['data'] = self.request.POST
+        return kwargs
+
+    def get_initial_for_answer(self, answer):
+        choice = self.plan.data.get(str(answer.question_id), {})
+        return choice
+
+    def get_forms(self):
+        form_kwargs = self.get_form_kwargs()
+        form_kwargs.pop('prefix', None)
+        forms = []
+        for answer in self.answers:
+            prefix = 'q{}'.format(answer.question_id)
+            initial = self.get_initial_for_answer(answer)
+            form = answer.get_form(initial=initial, **form_kwargs)
+            notesform = NotesForm(initial=initial, prefix=prefix, **form_kwargs)
+            forms.append({
+                'form': form,
+                'notesform': notesform,
+                'answer': answer,
+            })
+        return forms
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context.update(**super().get_context_data(**kwargs))
+        context['section'] = self.section
+        context['prev_section'] = self.prev_section
+        context['next_section'] = self.next_section
+        context['section_progress'] = get_section_progress(self.plan, self.section)
+        context['forms'] = self.get_forms()
+        return context
+
+    def put(self, *args, **kwargs):
+        return self.post(*args, **kwargs)
+
+
 class AbstractQuestionMixin(PlanAccessViewMixin):
 
     def preload(self, **kwargs):
@@ -569,7 +676,8 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
         return super().get_context_data(**kwargs)
 
     def get_notesform(self, **_):
-        form_kwargs = self.get_form_kwargs()
+        form_kwargs = self.get_form_kwargs().copy()
+        form_kwargs['prefix'] = 'q{}'.format(self.question.pk)
         question = self.question
         form = NotesForm(**form_kwargs)
         return form
