@@ -214,13 +214,6 @@ class PlanAccessViewMixin:
 
 class AbstractPlanViewMixin:
 
-    def get_success_url(self):
-        kwargs = {
-            'plan': self.object.pk,
-            'question': self.object.get_first_question().pk,
-        }
-        return reverse('new_question', kwargs=kwargs)
-
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
@@ -251,11 +244,15 @@ class NewPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
     form_class = NewPlanForm
 
     def get_success_url(self):
-        kwargs = {
-            'plan': self.object.pk,
-            'question': self.object.get_first_question().pk,
-        }
-        return reverse('new_question', kwargs=kwargs)
+        kwargs = {'plan': self.object.pk}
+        first_question = self.object.get_first_question()
+        if first_question.section.branching:
+            kwargs['question'] = first_question.pk
+            success_urlname = 'new_question'
+        else:
+            kwargs['section'] = first_question.section.pk
+            success_urlname = 'answer_linear_section'
+        return reverse(success_urlname, kwargs=kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()

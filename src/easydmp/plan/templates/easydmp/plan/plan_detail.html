@@ -29,6 +29,9 @@
                 <span class="caret"></span>
                 </button>
                 <div class="content-wrap collapse" aria-expanded="false" style="height: 0px;">
+                  {% if not sectiondata.section.branching %}
+                  <a href="{% url 'answer_linear_section' section=sectiondata.section.pk plan=object.id %}">Edit all</a>
+                  {% endif %}
                   {% if sectiondata.section.introductory_text %}
                   <div class="section_introduction">{{ sectiondata.section.introductory_text }}</div>
                   {% endif %}
