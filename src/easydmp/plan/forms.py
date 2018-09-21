@@ -90,12 +90,10 @@ class NewPlanForm(CheckExistingTitleMixin, forms.ModelForm):
         model = Plan
         fields = ['title', 'abbreviation']
 
-    def __init__(self, user=None, *args, **kwargs):
+    def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
-        qs = Template.objects.exclude(published=None)
-        if self.user and self.user.is_superuser:
-            qs = Template.objects.all()
+        qs = Template.objects.has_access(user)
         self.qs = qs
         if self.qs.count() > 1:
             self.fields['template_type'] = forms.ModelChoiceField(queryset=qs)
