@@ -1,14 +1,32 @@
 {% extends "easydmp/plan/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-  <div class="row uninett-whole-row uninett-color-white">
-    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded">
+  <div class="row uninett-whole-row">
+    <div class="col-lg-12 uninett-color-white uninett-padded">
       <div id="editplan_header" class="top-wrap">
-        <div class="jumbotron"><h1>{{ object.title|capfirst }}</h1></div>
+        <div>
+          <h1>{{ object.title|capfirst }} {{ object.added|date:"Y-m-t H:i:s" }}</h1>
+          <h2>{% if section %}{{ section }}{% else %}Untitled section{% endif %}</h2>
+        </div>
         <div class="btn-group">
           <div class="wrap"><span class='caret'></span><a class="summary-link" href="{% url 'plan_detail' plan=object.pk %}">Go to plan summary</a></div>
         </div>
-        <div class="col-lg-12 savetxt">Your answers are saved every time you press "prev" or "next"</div>
+        <div class="col-lg-12 savetxt">Your answers are saved every time you press "Save"</div>
+      </div>
+
+      {% if section_progress|length > 1 %}
+      <div class="uninett-whole-row progressbar progressbar-small">
+      <ul>
+        {% for section in section_progress %}
+        <li {% if section.status %}class="{{ section.status }}"{% endif %}>
+          <div class="progressbar2"></div>
+          <span class="withfadein"><a href="{% url 'section_detail' plan=object.id section=section.pk %}">{{ section.label }}</a></span>
+          <p>{{ section.title }}</p>
+        </li>
+        {% endfor %}
+      </ul>
+      </div>
+      {% endif %}
     </div>
 
     {% if section_progress|length > 1 %}

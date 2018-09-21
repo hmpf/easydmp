@@ -41,7 +41,7 @@
                   {% if sectiondata.data %}
                   {% for question_pk, value in sectiondata.data.items %}
                   <dl class="questionrow">
-                    <dt class="question">{{ value.question }}</dt>
+                    <dt class="question">{{ value.question }}{% if not value.question.optional %}<span class="asteriskField">*</span>{% endif %}</dt>
                     <dd class="answer">{{ value.answer|default_if_none:"" }}
                         {% if value.notes %}<br />
                         <div class="notes">
