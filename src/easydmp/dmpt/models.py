@@ -10,6 +10,7 @@ LOG = logging.getLogger(__name__)
 import graphviz as gv
 
 from django.apps import apps
+from django.conf import settings
 from django.contrib.admin.utils import NestedObjects
 from django.db import models
 from django.db import router
@@ -85,12 +86,24 @@ def dfs_paths(graph, start):
                 stack.append((next, path + [next]))
 
 
+class TemplateQuerySet(models.QuerySet):
+
+    def has_access(self, user):
+        if user.is_superuser:
+            return self.all()
+        published = Q(published__isnull=False)
+        direct_access = Q(accesses__user=user)
+        return self.filter(published | direct_access).distinct()
+
+
 class Template(DeletionMixin, RenumberMixin, models.Model):
     title = models.CharField(max_length=255)
     abbreviation = models.CharField(max_length=8, blank=True)
     version = models.PositiveIntegerField(default=1)
     created = models.DateTimeField(auto_now_add=True)
     published = models.DateTimeField(blank=True, null=True)
+
+    objects = TemplateQuerySet.as_manager()
 
     class Meta:
         unique_together = ('version', 'title')
@@ -259,6 +272,15 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
             return False
         _, invalid_sections = self.find_validity_of_sections(data)
         return False if invalid_sections else True
+
+
+class TemplateAccess(models.Model):
+    "Provide read-only access to unpublished templates"
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, related_name='template_accesses')
+    template = models.ForeignKey(Template, models.CASCADE, related_name='accesses')
+
+    class Meta:
+        unique_together = ('user', 'template')
 
 
 class Section(DeletionMixin, RenumberMixin, models.Model):

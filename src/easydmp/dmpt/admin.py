@@ -3,13 +3,22 @@ from django.contrib import admin
 
 from easydmp.eestore.models import EEStoreMount
 
-from .models import Template, Section, Question, CannedAnswer
+from .models import Template
+from .models import TemplateAccess
+from .models import Section
+from .models import Question
+from .models import CannedAnswer
+
+
+class TemplateAccessInline(admin.StackedInline):
+    model = TemplateAccess
 
 
 @admin.register(Template)
 class TemplateAdmin(admin.ModelAdmin):
     list_display = ('id', 'title')
     list_display_links = ('title', 'id')
+    inlines = [TemplateAccessInline]
 
 
 @admin.register(Section)
