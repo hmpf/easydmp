@@ -3,7 +3,7 @@ import os
 import sys
 
 if __name__ == "__main__":
-    sys.path.append('./src')
+    sys.path.append(os.path.abspath('./src'))
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "easydmp.site.settings.dev")
     try:
         from django.core.management import execute_from_command_line

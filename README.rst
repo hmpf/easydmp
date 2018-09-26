@@ -35,7 +35,7 @@ Prerequisites
 - python >= 3.5
 - pip
 - virtualenv/wrapper (optional)
-- some sql databse supported by Django
+- some sql database supported by Django
 
 As for the database, it can run on sqlite. It's better to run it on PostgreSQL.
 It does not depend on any postgres features newer than version 9.3.
@@ -108,6 +108,17 @@ If you need to change any settings from the default, put a file
 ``devsettings.py`` with the changes somewhere on the python path, and set the
 environment-variable ``DJANGO_SETTINGS_MODULE`` to the dotted path of the
 devsettings-file.
+
+Using docker-compose
+--------------------
+
+The docker-compose file runs its own database. After the first `docker-compose
+build` and `docker-compose up`, fill the database with the default development
+fixture like so:
+
+1. Enter the django container: ``docker exec -ti django_server bash``
+2. Load the fixture: ``python manage.py loaddata devfixtures.json``
+
 
 When using virtualenv(wrapper)
 ------------------------------

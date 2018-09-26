@@ -1,14 +1,4 @@
-import os
-
-import dj_database_url
-
 from .base import *
-
-def getenv(name, default=None):
-    value = os.getenv(name, default)
-    if isinstance(value, str):
-        env = value.strip()
-    return value
 
 STATIC_ROOT = 'staticfiles'
 # Changeable settings
@@ -19,11 +9,7 @@ EMAIL_PORT = getenv('EMAIL_PORT', 25)
 SECRET_KEY = getenv('SECRET_KEY', None)
 assert SECRET_KEY, 'Env "SECRET_KEY" not set'
 
-DATABASE_URL = getenv('DMP_DATABASE_URL', None)
-if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL),
-    }
+assert DATABASES.get('default', None), '"DATABASES" must be set'
 
 try:
     DEBUG
@@ -87,9 +73,6 @@ logging.config.dictConfig(LOGGING)
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
 # Other settings
-
-EASYDMP_INVITATION_FROM_ADDRESS = getenv('EASYDMP_INVITATION_FROM_ADDRESS', None)
-assert EASYDMP_INVITATION_FROM_ADDRESS, 'Env "EASYDMP_INVITATION_FROM_ADDRESS" not set'
 
 SOCIAL_AUTH_DATAPORTEN_EMAIL_KEY = getenv('SOCIAL_AUTH_DATAPORTEN_EMAIL_KEY')
 SOCIAL_AUTH_DATAPORTEN_EMAIL_SECRET = getenv('SOCIAL_AUTH_DATAPORTEN_EMAIL_SECRET')
