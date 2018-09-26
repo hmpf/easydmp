@@ -14,15 +14,22 @@ import os
 updir = os.path.dirname
 pathjoin = os.path.join
 
+import dj_database_url
+
+
+def getenv(name, default=None):
+    value = os.getenv(name, default)
+    if isinstance(value, str):
+        env = value.strip()
+    return value
+
+SECRET_KEY = getenv('SECRET_KEY', None)
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 SETTINGS_DIR = updir(os.path.abspath(__file__))
 SITE_DIR = updir(SETTINGS_DIR)
 BASE_DIR = updir(updir(updir(SITE_DIR)))
 
-# For production, you probably want to change all variables that use BASE_DIR
-
-
-# Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 ALLOWED_HOSTS = []
@@ -102,12 +109,18 @@ ALLOWED_HOSTS = [
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+DATABASE_URL = getenv('DMP_DATABASE_URL', None)
+if DATABASE_URL is not None:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL),
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
 
 
 # Password validation
@@ -182,3 +195,8 @@ SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'email']
 SOCIAL_AUTH_USERNAME_IS_FULL_EMAIL = True
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/plan/'
 SOCIAL_AUTH_NEW_USER_REDIRECT_URL = SOCIAL_AUTH_LOGIN_REDIRECT_URL
+
+# EasyDmp specific
+
+EASYDMP_INVITATION_FROM_ADDRESS = getenv('EASYDMP_INVITATION_FROM_ADDRESS', None)
+assert EASYDMP_INVITATION_FROM_ADDRESS, 'Env "EASYDMP_INVITATION_FROM_ADDRESS" not set'
