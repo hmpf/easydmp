@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres
+  django:
+    container_name: django_server
+    build:
+      context: .
+      dockerfile: Dockerfile-dev
+    command: bash /code/compose-dev-run.sh
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      - DMP_DATABASE_URL=postgresql://postgres@postgres:5432/postgres
+      - DEBUG
+      - EASYDMP_INVITATION_FROM_ADDRESS
+      - SECRET_KEY=3254vhgfbv857gr867bghjbgykujhgyiu
+      - DJANGO_SETTINGS_MODULE=easydmp.site.settings.dev

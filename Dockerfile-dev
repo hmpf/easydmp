@@ -1,0 +1,18 @@
+FROM python:3.5
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH /code/src
+
+RUN apt-get update && apt-get upgrade -y && apt-get autoremove && \
+    apt-get autoclean && apt-get install -y \
+        python3-psycopg2 \
+        postgresql-client
+
+RUN mkdir /code
+WORKDIR /code
+
+RUN pip install --upgrade pip setuptools wheel gunicorn
+ADD requirements /code/requirements
+RUN pip install -r requirements/dev.txt
+
+RUN ls /code/
