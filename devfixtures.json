@@ -1,49 +1,67 @@
 [
 {
-  "model": "easydmp_auth.user",
-  "pk": 1,
+  "model": "auth.group",
   "fields": {
-    "password": "pbkdf2_sha256$36000$TRLdE6wCify0$yHZLnFkZ/tXVcxFFP7KxUUaIMufeb9BlYqkJMxJlMIA=",
-    "last_login": "2018-09-26T08:49:04Z",
-    "is_superuser": true,
-    "username": "superuser",
-    "first_name": "",
-    "last_name": "",
-    "email": "",
-    "is_staff": true,
-    "is_active": true,
-    "date_joined": "2018-09-25T11:03:27Z",
-    "groups": [],
-    "user_permissions": []
-  }
-},
-{
-  "model": "easydmp_auth.user",
-  "pk": 2,
-  "fields": {
-    "password": "pbkdf2_sha256$36000$mF4NcaDTuSaR$0oAU2nHU3J5xkz6az5zralQywV5zIBYnnKJpauo6uqY=",
-    "last_login": null,
-    "is_superuser": false,
-    "username": "ordinaryuser",
-    "first_name": "",
-    "last_name": "",
-    "email": "",
-    "is_staff": false,
-    "is_active": true,
-    "date_joined": "2018-09-26T10:19:05.564Z",
-    "groups": [],
-    "user_permissions": []
+    "name": "Template Designer",
+    "permissions": [
+      [
+        "add_template",
+        "dmpt",
+        "template"
+      ]
+    ]
   }
 },
 {
   "model": "dmpt.template",
   "pk": 1,
   "fields": {
-    "title": "Linear Example",
+    "title": "Multiple named linear sections example",
     "abbreviation": "",
     "version": 1,
     "created": "2018-09-26T08:49:52.392Z",
     "published": null
+  }
+},
+{
+  "model": "dmpt.template",
+  "pk": 2,
+  "fields": {
+    "title": "Single unnamed linear section example",
+    "abbreviation": "",
+    "version": 1,
+    "created": "2018-09-27T09:08:13.677Z",
+    "published": null
+  }
+},
+{
+  "model": "dmpt.templategroupobjectpermission",
+  "pk": 1,
+  "fields": {
+    "permission": [
+      "use_template",
+      "dmpt",
+      "template"
+    ],
+    "group": [
+      "Template Designer"
+    ],
+    "content_object": 2
+  }
+},
+{
+  "model": "dmpt.templategroupobjectpermission",
+  "pk": 2,
+  "fields": {
+    "permission": [
+      "use_template",
+      "dmpt",
+      "template"
+    ],
+    "group": [
+      "Template Designer"
+    ],
+    "content_object": 1
   }
 },
 {
@@ -98,6 +116,20 @@
     "position": 4,
     "introductory_text": "This is the introductory text to the last section",
     "comment": "This section also has a comment.",
+    "super_section": null,
+    "section_depth": 1
+  }
+},
+{
+  "model": "dmpt.section",
+  "pk": 5,
+  "fields": {
+    "template": 2,
+    "label": "",
+    "title": "",
+    "position": 1,
+    "introductory_text": "This is the only and unnamed section of this template.",
+    "comment": "",
     "super_section": null,
     "section_depth": 1
   }
@@ -323,6 +355,22 @@
     "framing_text": "",
     "comment": "",
     "obligatory": true,
+    "node": null
+  }
+},
+{
+  "model": "dmpt.question",
+  "pk": 15,
+  "fields": {
+    "input_type": "reason",
+    "section": 5,
+    "position": 1,
+    "label": "",
+    "question": "Plese write something:",
+    "help_text": "",
+    "framing_text": "",
+    "comment": "",
+    "obligatory": null,
     "node": null
   }
 },
@@ -63445,6 +63493,76 @@
     "question": 14,
     "eestore_type": "taxonomy",
     "sources": []
+  }
+},
+{
+  "model": "easydmp_auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$36000$TRLdE6wCify0$yHZLnFkZ/tXVcxFFP7KxUUaIMufeb9BlYqkJMxJlMIA=",
+    "last_login": "2018-09-27T10:16:49.122Z",
+    "is_superuser": true,
+    "username": "superuser",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2018-09-25T11:03:27Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "easydmp_auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$36000$4hFqf6fzkttQ$h2KAphwMBTfz08Y/JAZWhhjQiEGTzkaf3bRZObT6Qw0=",
+    "last_login": "2018-09-27T09:11:59.517Z",
+    "is_superuser": false,
+    "username": "ordinaryuser",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2018-09-26T10:19:05.564Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "easydmp_auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$36000$QMJsCaRXv0qD$vRtD3t9KkxSmhp25el9zhun/JNgsHKThXfA6kM+W6M4=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "templatedesigner",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2018-09-27T09:14:00Z",
+    "groups": [
+      [
+        "Template Designer"
+      ]
+    ],
+    "user_permissions": []
+  }
+},
+{
+  "model": "dmpt.templateuserobjectpermission",
+  "pk": 1,
+  "fields": {
+    "permission": [
+      "use_template",
+      "dmpt",
+      "template"
+    ],
+    "user": [
+      "ordinaryuser"
+    ],
+    "content_object": 2
   }
 }
 ]

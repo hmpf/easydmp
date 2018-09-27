@@ -8,6 +8,9 @@ import logging
 LOG = logging.getLogger(__name__)
 
 import graphviz as gv
+from guardian.models import UserObjectPermissionBase
+from guardian.models import GroupObjectPermissionBase
+from guardian.shortcuts import get_objects_for_user
 
 from django.apps import apps
 from django.conf import settings
@@ -15,7 +18,6 @@ from django.contrib.admin.utils import NestedObjects
 from django.db import models
 from django.db import router
 from django.db import transaction
-from django.db.models import Q
 from django.forms import model_to_dict
 from django.template import engines, Context
 from django.utils.encoding import force_text
@@ -91,9 +93,9 @@ class TemplateQuerySet(models.QuerySet):
     def has_access(self, user):
         if user.is_superuser:
             return self.all()
-        published = Q(published__isnull=False)
-        direct_access = Q(accesses__user=user)
-        return self.filter(published | direct_access).distinct()
+        guardian_access = get_objects_for_user(user, 'dmpt.use_template')
+        qs = self.filter(published__isnull=False) | guardian_access
+        return qs.distinct()
 
 
 class Template(DeletionMixin, RenumberMixin, models.Model):
@@ -107,6 +109,10 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
 
     class Meta:
         unique_together = ('version', 'title')
+        permissions = (
+            ('use_template', 'Can use template'),
+        )
+
 
     def __str__(self):
         if self.abbreviation:
@@ -281,6 +287,14 @@ class TemplateAccess(models.Model):
 
     class Meta:
         unique_together = ('user', 'template')
+
+
+class TemplateUserObjectPermission(UserObjectPermissionBase):
+    content_object = models.ForeignKey(Template, on_delete=models.CASCADE)
+
+
+class TemplateGroupObjectPermission(GroupObjectPermissionBase):
+    content_object = models.ForeignKey(Template, on_delete=models.CASCADE)
 
 
 class Section(DeletionMixin, RenumberMixin, models.Model):

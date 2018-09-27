@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django_select2',
     'django_filters',
     'rest_framework_filters',
+    'guardian',
 
     'easydmp.auth.apps.EasyDMPAuthConfig',
     'flow',
@@ -173,6 +174,14 @@ AUTH_USER_MODEL = 'easydmp_auth.User'
 
 LOGIN_URL = 'login-selector'
 LOGIN_REDIRECT_URL = '/plan/'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.RemoteUserBackend',
+    'django.contrib.auth.backends.ModelBackend',
+    'guardian.backends.ObjectPermissionBackend',
+]
+
+ANONYMOUS_USER_NAME = None  # Turn off guardian's AnonymousUser
 
 # Other
 
