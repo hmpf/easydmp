@@ -2,3 +2,4 @@
 -r ./base.txt
 pydot
 django-debug-toolbar==1.9.1
+ipython
