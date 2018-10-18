@@ -3,19 +3,28 @@ CHANGELOG
 =========
 
 This project adheres to `Semantic Versioning
-<https://semver.org/spec/v2.0.0.html>`_) as of v0.10. Prior to v0.10,
-named tags per feature, named tag plus date per feature or commit
-hashes were used.
+<https://semver.org/spec/v2.0.0.html>`_) as of v0.10. Prior to
+v0.10, named tags per feature, named tag plus date per feature or
+commit hashes were used.
 
 Unreleased
 ----------
 
-* Optional/non-required questions. These are, if obligatory, always seen but
-  need not be answered.
+* Optional/non-required questions. These are, if obligatory,
+  always seen but need not be answered.
 * Multiple questions on a single page, for sections without branches.
 * Logging of events.
 * Comments for plans.
+
+0.12
+----
+
+2018-10-18
+
+* Backend-support for logging of events
 * Usage of JWT for access to non-public parts of the API.
+* Switch from homebrew auth system for templates to django-guardian.
+  Eventually switch to use django-guardian wherever convenient.
 * Start of changelog.
 
 v0.11.1
@@ -51,10 +60,11 @@ v0.11.1
 2018, early September
 ---------------------
 
-* Easy and not so easy speed optimizations. It used to take up
-  to 10 seconds to go to the next question. Now it takes less than
+* Easy and not so easy speed optimizations. It used to take up to
+  10 seconds to go to the next question. Now it takes less than
   1 second.
-* Quality if life changes to allow for easier on-boarding of new developers.
+* Quality if life changes to allow for easier on-boarding of new
+  developers.
 
 2018, first half
 ----------------
@@ -66,10 +76,12 @@ v0.11.1
 2017-09-08
 ----------
 
-* The big rename. Officially forked off from sigma-dmp, and the code was
-  cleaned up and moved to a publically visible git repository.
-* Large deployment changes. All deployment-specific code was moved to
-  a separate repository to facilitate multiple deployment options.
+* The big rename. Officially forked off from sigma-dmp, and the
+  code was cleaned up and moved to a publically visible git
+  repository.
+* Large deployment changes. All deployment-specific code was moved
+  to a separate repository to facilitate multiple deployment
+  options.
 
 2017, second half
 -----------------
