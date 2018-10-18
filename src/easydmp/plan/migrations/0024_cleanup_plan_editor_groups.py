@@ -9,7 +9,7 @@ from django.db import migrations
 
 def remove_plan_editors(apps, schema_editor):
     Group = apps.get_model('auth', 'Group')
-    Group.objects.filter(name__startswith='plan-editor-').delete()
+    Group.objects.filter(name__startswith='plan-editors-').delete()
     # There might be hundreds of these groups, reset the sequence
     sequence_sql = connection.ops.sequence_reset_sql(no_style(), [Group])
     with connection.cursor() as cursor:
