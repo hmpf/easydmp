@@ -36,10 +36,8 @@ INSTALLED_APPS += [
 
 AUTHENTICATION_BACKENDS = [
     'dataporten.social.DataportenEmailOAuth2',
-    'b2access.B2AccessOAuth2',
-    'django.contrib.auth.backends.RemoteUserBackend',
-    'django.contrib.auth.backends.ModelBackend',
-]
+    'b2access.B2AccessOAuth2'
+] + AUTHENTICATION_BACKENDS
 
 LOGGING_CONFIG = None
 LOGGING = {
