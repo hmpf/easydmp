@@ -45,10 +45,12 @@ class CannedData(object):
         self.canned_question = {
             'section': self.section,
             'question': 's',
+            'obligatory': True,
         }
         self.canned_data = {
             'section': self.section,
             'template': self.template,
+            'obligatory': True,
         }
 
 
@@ -68,35 +70,35 @@ class TestQuestionGetCannedAnswerMethods(CannedData, test.TestCase):
     def test_bool_one_text_get_canned_answer(self):
         q = BooleanQuestion.objects.create(**self.canned_question)
         expected = 'ABC 123'
-        t_TRUE = CannedAnswer.objects.create(
+        t_Yes = CannedAnswer.objects.create(
             question=q,
             canned_text=expected,
         )
-        result_TRUE = q.get_canned_answer(True)
+        result_TRUE = q.get_canned_answer('Yes')
         self.assertEqual(result_TRUE, expected)
-        result_whatever = q.get_canned_answer(False)
+        result_whatever = q.get_canned_answer('No')
         self.assertEqual(result_whatever, expected)
 
     def test_bool_get_canned_answer(self):
         q = BooleanQuestion.objects.create(**self.canned_question)
-        t_TRUE_expected = 'ABC 123'
-        t_TRUE = CannedAnswer.objects.create(
+        t_Yes_expected = 'ABC 123'
+        t_Yes = CannedAnswer.objects.create(
             question=q,
             choice='Yes',
-            canned_text=t_TRUE_expected,
+            canned_text=t_Yes_expected,
         )
-        t_FALSE_expected = 'DEF 456'
-        t_FALSE = CannedAnswer.objects.create(
+        t_No_expected = 'DEF 456'
+        t_No = CannedAnswer.objects.create(
             question=q,
             choice='No',
-            canned_text=t_FALSE_expected,
+            canned_text=t_No_expected,
         )
-        self.assertEqual(set((t_TRUE, t_FALSE)), set(q.canned_answers.all()))
-        result_TRUE = q.get_canned_answer(True)
-        self.assertEqual(result_TRUE, t_TRUE_expected)
-        result_FALSE = q.get_canned_answer(False)
-        self.assertEqual(result_FALSE, t_FALSE_expected)
-        self.assertNotEqual(result_TRUE, result_FALSE)
+        self.assertEqual(set((t_Yes, t_No)), set(q.canned_answers.all()))
+        result_Yes = q.get_canned_answer('Yes')
+        self.assertEqual(result_Yes, t_Yes_expected)
+        result_No = q.get_canned_answer('No')
+        self.assertEqual(result_No, t_No_expected)
+        self.assertNotEqual(result_Yes, result_No)
 
     def test_choice_get_canned_answer(self):
         q = ChoiceQuestion.objects.create(**self.canned_question)

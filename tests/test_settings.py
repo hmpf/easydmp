@@ -1,8 +1,11 @@
 from __future__ import unicode_literals
 
-from django.test.runner import DiscoverRunner
+import os
 
+os.environ['EASYDMP_INVITATION_FROM_ADDRESS'] = 'foo@example.com'
 from easydmp.site.settings import base as base_settings
+
+MIDDLEWARE = base_settings.MIDDLEWARE
 
 AUTH_USER_MODEL = base_settings.AUTH_USER_MODEL
 
@@ -15,9 +18,13 @@ INSTALLED_APPS = base_settings.INSTALLED_APPS + [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'db.sqlite3',
+        'NAME': ':memory:',
     }
 }
+
+TEMPLATES = base_settings.TEMPLATES
+
+ROOT_URLCONF = 'easydmp.site.urls'
 
 # 3rd party
 
