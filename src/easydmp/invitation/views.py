@@ -1,4 +1,3 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.views.generic import FormView
@@ -14,7 +13,7 @@ from .models import PlanViewerInvitation
 from .forms import EmailAddressForm
 
 
-class AbstractCreatePlanInvitationView(LoginRequiredMixin, SingleObjectMixin, FormView):
+class AbstractCreatePlanInvitationView(SingleObjectMixin, FormView):
     model = Plan
     pk_url_kwarg = 'plan'
     form_class = EmailAddressForm
@@ -90,7 +89,7 @@ class CreatePlanViewerInvitationView(AbstractCreatePlanInvitationView):
     invitation_class = PlanViewerInvitation
 
 
-class AbstractPlanInvitationView(LoginRequiredMixin):
+class AbstractPlanInvitationView:
     fields = []
     pk_url_kwarg = 'uuid'
 
@@ -130,6 +129,7 @@ class ResendPlanViewerInvitationView(AbstractResendPlanInvitationView):
 
 class AbstractAcceptPlanInvitationView(AbstractPlanInvitationView, UpdateView):
     success_url_name = 'plan_detail'
+    login_required = False
 
     def form_valid(self, form):
         self.object = self.get_object()
@@ -172,7 +172,7 @@ class RevokePlanViewerInvitationView(AbstractRevokePlanInvitationView):
     success_url_name = 'share_plan'
 
 
-class AbstractListPlanInvitationView(LoginRequiredMixin, DetailView):
+class AbstractListPlanInvitationView(DetailView):
     model = Plan
     pk_url_kwarg = 'plan'
 

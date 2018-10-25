@@ -73,6 +73,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'easydmp.auth.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.contrib.flatpages.middleware.FlatpageFallbackMiddleware',
@@ -216,6 +217,8 @@ SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/plan/'
 SOCIAL_AUTH_NEW_USER_REDIRECT_URL = SOCIAL_AUTH_LOGIN_REDIRECT_URL
 
 # EasyDmp specific
+
+PUBLIC_URLS = ('/api/', '/psa/')
 
 EASYDMP_INVITATION_FROM_ADDRESS = getenv('EASYDMP_INVITATION_FROM_ADDRESS', None)
 assert EASYDMP_INVITATION_FROM_ADDRESS, 'Env "EASYDMP_INVITATION_FROM_ADDRESS" not set'

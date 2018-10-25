@@ -12,6 +12,7 @@ __all__ = [
 
 class Homepage(TemplateView):
     template_name = 'index.html'
+    login_required = False
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated():
@@ -19,8 +20,10 @@ class Homepage(TemplateView):
         return super().get(request, *args, **kwargs)
 
 
+
 class LoginView(TemplateView):
     template_name = 'login.html'
+    login_required = False
 
     def get_context_data(self, **kwargs):
         providers = [

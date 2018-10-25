@@ -1,7 +1,6 @@
 from itertools import chain
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import IntegrityError
@@ -205,7 +204,7 @@ class DeletePlanAccessView(UserPassesTestMixin, DeleteFormMixin, DeleteView):
 # -- plans
 
 
-class PlanAccessViewMixin(LoginRequiredMixin):
+class PlanAccessViewMixin:
 
     def get_queryset(self):
         return super().get_queryset().viewable(self.request.user)
@@ -720,9 +719,17 @@ class PlanDetailView(AbstractQuestionMixin, DetailView):
         return super().get_context_data(**context)
 
 
-class AbstractGeneratedPlanView(AbstractQuestionMixin, DetailView):
+class AbstractGeneratedPlanView(DetailView):
     model = Plan
     pk_url_kwarg = 'plan'
+    login_required = False
+
+    def get_queryset(self):
+        "Show published plans to the public, otherwise only viewable"
+        qs = self.model.objects.exclude(published=None)
+        if self.request.user.is_authenticated():
+            qs = qs | self.model.objects.viewable(self.request.user)
+        return qs.distinct()
 
     def get_context_data(self, **kwargs):
         context = self.object.get_context_for_generated_text()
@@ -752,7 +759,7 @@ class GeneratedPlanPDFView(AbstractGeneratedPlanView):
     content_type = 'text/plain'
 
 
-class SectionDetailView(LoginRequiredMixin, DetailView):
+class SectionDetailView(DetailView):
     """Show a section
 
     Mostly relevant for sections without questions.
