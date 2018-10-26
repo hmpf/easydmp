@@ -16,6 +16,14 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+0.12.1
+------
+
+* Bugfix: Users were not redirected to the login page when
+  accessing a plan anonymously but got a 500 server error instead.
+* Bugfix: Not all the necessary authentication backends were in use.
+* Other small fixes.
+
 0.12
 ----
 
