@@ -24,6 +24,8 @@ DATABASES = {
 
 TEMPLATES = base_settings.TEMPLATES
 
+LOGIN_URL = base_settings.LOGIN_URL
+
 ROOT_URLCONF = 'easydmp.site.urls'
 
 # 3rd party
