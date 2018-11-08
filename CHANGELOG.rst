@@ -19,6 +19,7 @@ Next
 ----
 
 * Yet another bugfix to multiple questions on a single page
+* Bugfix to template deletion
 
 0.13.3
 ------

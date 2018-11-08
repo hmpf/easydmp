@@ -39,12 +39,12 @@ def print_url(urldict):
 class DeletionMixin:
     """Extend django's model deletion functionality"""
 
-    def collect(self, using=None, **kwargs):
+    def collect(self, **kwargs):
         """Collect objects related to self
 
         Designed to be extended. Get the collector for self with super()::
 
-            collector = super().collect(using=using, **kwargs)
+            collector = super().collect(**kwargs)
 
         Add a queryset with::
 
@@ -56,7 +56,7 @@ class DeletionMixin:
 
         Finally, return the collector.
         """
-        using = using or router.db_for_write(self.__class__, instance=self)
+        using = getattr(kwargs, 'using', router.db_for_write(self.__class__, instance=self))
         assert self._get_pk_val() is not None, (
             "%s object can't be deleted because its %s attribute is set to None." %
             (self._meta.object_name, self._meta.pk.attname)

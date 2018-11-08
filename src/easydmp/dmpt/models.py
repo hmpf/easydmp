@@ -119,8 +119,8 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
             return self.abbreviation
         return self.title
 
-    def collect(self, using='default', **kwargs):
-        collector = super().collect(using=using, **kwargs)
+    def collect(self, **kwargs):
+        collector = super().collect(**kwargs)
         if self.questions.exists():
             Edge = apps.get_model('flow', 'Edge')
             nodes = [q.node for q in self.questions.all() if q.node]
@@ -389,8 +389,8 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
                 new_ca.edge = edge_mapping[ca.edge]
                 new_ca.save()
 
-    def collect(self, using='default', **kwargs):
-        collector = super().collect(using=using, **kwargs)
+    def collect(self, **kwargs):
+        collector = super().collect(**kwargs)
         if self.questions.exists():
             Edge = apps.get_model('flow', 'Edge')
             nodes = [q.node for q in self.questions.all() if q.node]
@@ -689,8 +689,8 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
             return '{} {}'.format(self.label, self.question)
         return self.question
 
-    def collect(self, using='default', **kwargs):
-        collector = super().collect(using=using, **kwargs)
+    def collect(self, **kwargs):
+        collector = super().collect(**kwargs)
         if self.node:
             edges = set(self.node.next_nodes.all() | self.node.prev_nodes.all())
             collector.collect(tuple(edges))
@@ -1633,8 +1633,8 @@ class CannedAnswer(DeletionMixin, models.Model):
     def __str__(self):
         return '{}: "{}" {}'.format(self.question.question, self.choice, self.canned_text)
 
-    def collect(self, using='default', **kwargs):
-        collector = super().collect(self, using=using, **kwargs)
+    def collect(self, **kwargs):
+        collector = super().collect(**kwargs)
         if self.edge:
             collector.collect([self.edge])
         return collector
