@@ -97,6 +97,23 @@ class SectionAdmin(ObjectPermissionModelAdmin):
     decrement_position.short_description = 'Decrement position by 1'
 
 
+class QuestionFilter(admin.SimpleListFilter):
+    title = 'question'
+    parameter_name = 'question'
+
+    def lookups(self, request, model_admin):
+        questions = get_questions_for_user(request.user)
+        lookups = []
+        for question in questions:
+            lookups.append((question.pk, str(question)))
+        return lookups
+
+    def queryset(self, request, queryset):
+        if self.value():
+            queryset = queryset.filter(question__id=self.value())
+        return queryset
+
+
 @admin.register(CannedAnswer)
 class CannedAnswerAdmin(ObjectPermissionModelAdmin):
     list_display = (
@@ -111,7 +128,7 @@ class CannedAnswerAdmin(ObjectPermissionModelAdmin):
         'create_edge',
         'update_edge',
     ]
-    list_filter = ('question',)
+    list_filter = (QuestionFilter,)
     _model_slug = 'canned_answer'
 
     def get_readonly_fields(self, request, obj=None):
@@ -170,7 +187,13 @@ class EEStoreTypeFilter(admin.SimpleListFilter):
     parameter_name = 'eestore'
 
     def lookups(self, request, model_admin):
-        types = EEStoreMount.objects.values_list('eestore_type__name', flat=True).distinct()
+        questions = get_questions_for_user(request.user)
+        types = (
+            EEStoreMount.objects
+                 .filter(question__in=questions)
+                 .values_list('eestore_type__name', flat=True)
+                 .distinct()
+        )
         return tuple(zip(*(types, types)))
 
     def queryset(self, request, queryset):
@@ -179,12 +202,29 @@ class EEStoreTypeFilter(admin.SimpleListFilter):
         return queryset
 
 
+class TemplateFilter(admin.SimpleListFilter):
+    title = 'template'
+    parameter_name = 'template'
+
+    def lookups(self, request, model_admin):
+        templates = get_templates_for_user(request.user)
+        lookups = []
+        for template in templates:
+            lookups.append((template.pk, str(template)))
+        return lookups
+
+    def queryset(self, request, queryset):
+        if self.value():
+            queryset = queryset.filter(template__id=self.value())
+        return queryset
+
+
 class SectionFilter(admin.SimpleListFilter):
-    title = 'Section'
+    title = 'section'
     parameter_name = 'section'
 
     def lookups(self, request, model_admin):
-        sections = Section.objects.all()
+        sections = get_sections_for_user(request.user)
         template_id = request.GET.get('section__template__id__exact', None)
         if template_id:
             sections = sections.filter(template_id=template_id)
@@ -221,7 +261,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     ]
     list_filter = [
         'obligatory',
-        'section__template',
+        TemplateFilter,
         SectionFilter,
         EEStoreTypeFilter,
     ]
