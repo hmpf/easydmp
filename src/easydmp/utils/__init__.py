@@ -20,3 +20,14 @@ def utc_epoch(utc_datetime=None):
     if not utc_datetime:
         utc_datetime = utcnow()
     return utc_datetime.timestamp()
+
+
+def get_model_name(model):
+    return model._meta.model_name
+
+
+def generate_default_permission_strings(model_name):
+    perms = []
+    for perm in ('add', 'change', 'delete'):
+        perms.append('{}_{}'.format(perm, model_name))
+    return perms

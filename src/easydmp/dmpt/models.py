@@ -97,6 +97,13 @@ class TemplateQuerySet(models.QuerySet):
         qs = self.filter(published__isnull=False) | guardian_access
         return qs.distinct()
 
+    def has_change_access(self, user):
+        return get_objects_for_user(
+            user,
+            'dmpt.change_template',
+            with_superuser=True,
+        )
+
 
 class Template(DeletionMixin, RenumberMixin, models.Model):
     title = models.CharField(max_length=255)

@@ -2,23 +2,59 @@
 from django.contrib import admin
 
 from guardian.admin import GuardedModelAdmin
+from guardian.shortcuts import assign_perm
+from guardian.shortcuts import get_objects_for_user
 
 from easydmp.eestore.models import EEStoreMount
+from easydmp.utils.admin import ObjectPermissionModelAdmin
+from easydmp.utils.admin import SetPermissionsMixin
+from easydmp.utils import get_model_name
 
 from .models import Template
 from .models import Section
 from .models import Question
 from .models import CannedAnswer
 
+"""
+The admin is simplified for non-superusers. Branching sections are disallowed,
+hence all questions are obligatory.
+"""
+
+
+def get_templates_for_user(user):
+    templates = get_objects_for_user(
+        user,
+        'dmpt.change_template',
+        accept_global_perms=False,
+    )
+    return templates
+
+
+def get_sections_for_user(user):
+    templates = get_templates_for_user(user)
+    return Section.objects.filter(template__in=templates)
+
+
+def get_questions_for_user(user):
+    sections = get_sections_for_user(user)
+    return Question.objects.filter(section__in=sections)
+
+
+def get_canned_answers_for_user(user):
+    questions = get_questions_for_user(user)
+    return CannedAnswer.objects.filter(question__in=questions)
+
 
 @admin.register(Template)
-class TemplateAdmin(GuardedModelAdmin):
+class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
     list_display = ('id', 'title')
     list_display_links = ('title', 'id')
+    set_permissions = ['use_template']
+    has_object_permissions = True
 
 
 @admin.register(Section)
-class SectionAdmin(admin.ModelAdmin):
+class SectionAdmin(ObjectPermissionModelAdmin):
     list_display = (
         'template',
         'position',
@@ -33,6 +69,20 @@ class SectionAdmin(admin.ModelAdmin):
         'increment_position',
         'decrement_position',
     ]
+    _model_slug = 'section'
+
+    def get_limited_queryset(self, request):
+        return get_sections_for_user(request.user)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'template' and not request.user.is_superuser:
+            templates = get_templates_for_user(request.user)
+            kwargs["queryset"] = templates
+        if db_field.name == 'super_section':
+            kwargs["queryset"] = self.get_queryset(request)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    # actions
 
     def increment_position(self, request, queryset):
         for q in queryset.order_by('-position'):
@@ -48,7 +98,7 @@ class SectionAdmin(admin.ModelAdmin):
 
 
 @admin.register(CannedAnswer)
-class CannedAnswerAdmin(admin.ModelAdmin):
+class CannedAnswerAdmin(ObjectPermissionModelAdmin):
     list_display = (
         'question',
         'choice',
@@ -62,6 +112,23 @@ class CannedAnswerAdmin(admin.ModelAdmin):
         'update_edge',
     ]
     list_filter = ('question',)
+    _model_slug = 'canned_answer'
+
+    def get_readonly_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return ()
+        return ('edge',)
+
+    def get_limited_queryset(self, request):
+        return get_canned_answers_for_user(request.user)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'question' and not request.user.is_superuser:
+            question = get_questions_for_user(request.user)
+            kwargs["queryset"] = question
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    # actions
 
     def create_edge(self, request, queryset):
         for q in queryset.all():
@@ -77,6 +144,8 @@ class CannedAnswerAdmin(admin.ModelAdmin):
                 q.create_edge()
     update_edge.short_description = 'Update edge'
 
+    # display fields
+
     def has_edge(self, obj):
         return True if obj.edge else False
     has_edge.short_description = 'Edge'
@@ -85,6 +154,11 @@ class CannedAnswerAdmin(admin.ModelAdmin):
 
 class CannedAnswerInline(admin.StackedInline):
     model = CannedAnswer
+
+    def get_readonly_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return ()
+        return ('edge',)
 
 
 class EEStoreMountInline(admin.StackedInline):
@@ -126,7 +200,7 @@ class SectionFilter(admin.SimpleListFilter):
 
 
 @admin.register(Question)
-class QuestionAdmin(admin.ModelAdmin):
+class QuestionAdmin(ObjectPermissionModelAdmin):
     list_display = (
         'position',
         'id',
@@ -156,6 +230,23 @@ class QuestionAdmin(admin.ModelAdmin):
         EEStoreMountInline,
     ]
     save_on_top = True
+    _model_slug = 'question'
+
+    def get_readonly_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return ()
+        return ('node', 'obligatory')
+
+    def get_queryset(self, request):
+        return get_questions_for_user(request.user)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'section' and not request.user.is_superuser:
+            sections = get_sections_for_user(request.user)
+            kwargs["queryset"] = sections
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    # display fields
 
     def has_node(self, obj):
         return True if obj.node else False
@@ -166,6 +257,8 @@ class QuestionAdmin(admin.ModelAdmin):
         return obj.eestore.eestore_type if obj.eestore else ''
     get_mount.short_description = 'EEStore'
     get_mount.admin_order_field = 'eestore'
+
+    # actions
 
     def create_node(self, request, queryset):
         for q in queryset.all():
