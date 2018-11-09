@@ -669,7 +669,7 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
     help_text = models.TextField(blank=True)
     framing_text = models.TextField(blank=True)
     comment = models.TextField(blank=True, null=True)
-    obligatory = models.NullBooleanField(blank=True, null=True)
+    obligatory = models.NullBooleanField(blank=True, null=True, default=True)
     node = models.OneToOneField('flow.Node', related_name='payload',
                                 blank=True, null=True,
                                 on_delete=models.SET_NULL)
