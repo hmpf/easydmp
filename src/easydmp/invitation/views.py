@@ -129,7 +129,6 @@ class ResendPlanViewerInvitationView(AbstractResendPlanInvitationView):
 
 class AbstractAcceptPlanInvitationView(AbstractPlanInvitationView, UpdateView):
     success_url_name = 'plan_detail'
-    login_required = False
 
     def form_valid(self, form):
         self.object = self.get_object()
