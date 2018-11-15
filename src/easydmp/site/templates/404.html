@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+        <div class="row uninett-color-white uninett-whole-row">
+             <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+                <h1>Page not found</h1>
+                <p>The page <b>{{ request_path }}</p> was not found.
+            </div>
+        </div>
+{% endblock content %}
