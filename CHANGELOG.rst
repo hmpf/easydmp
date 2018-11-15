@@ -16,6 +16,18 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+0.12.3
+------
+
+* Bugfixes: relating to the viewer role after 0.12.1
+* Bugfixes: relating to what pages should be public after 0.12.1
+* Added a themed 400 Not Found page.
+
+0.12.2
+------
+
+* Add links to EUDAT's T0S and Privacy Policy in the footer.
+
 0.12.1
 ------
 
