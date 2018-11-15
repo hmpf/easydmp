@@ -454,7 +454,6 @@ class AbstractQuestionMixin(PlanAccessViewMixin):
             .get(id=self.plan_pk)
         )
         self.template = self.plan.template
-        self.queryset = self._get_queryset()
 
     def dispatch(self, request, *args, **kwargs):
         self.preload(**kwargs)
@@ -483,10 +482,6 @@ class AbstractQuestionMixin(PlanAccessViewMixin):
     def get_plan_pk(self):
         return self.plan_pk
 
-    def _get_queryset(self):
-        qs = super().get_queryset().editable(self.request.user)
-        return qs.filter(pk=self.get_plan_pk())
-
     def get_plan(self):
         return self.plan
 
@@ -494,18 +489,22 @@ class AbstractQuestionMixin(PlanAccessViewMixin):
         return self.template
 
 
-class AbstractQuestionView(AbstractQuestionMixin, UpdateView):
+class NewQuestionView(AbstractQuestionMixin, UpdateView):
+    "Answer a Question"
+
     model = Plan
     template_name = 'easydmp/plan/state_form.html'
     pk_url_kwarg = 'plan'
     fields = ('plan_name', 'data')
 
-
-class NewQuestionView(AbstractQuestionView):
-    "Answer a Question"
+    def get_queryset(self):
+        qs = super().get_queryset().editable(self.request.user)
+        return qs.filter(pk=self.get_plan_pk())
 
     def preload(self, **kwargs):
         super().preload(**kwargs)
+
+        self.queryset = self.get_queryset()
 
         self.question_pk = self.kwargs.get('question')
         self.question = self._get_question()
@@ -770,92 +769,109 @@ class SectionDetailView(DetailView):
     template_name = 'easydmp/plan/section_detail.html'
 
     def get_plan(self, *args, **kwargs):
+        user = self.request.user
         plan_id = kwargs['plan']
         try:
-            plan = Plan.objects.get(id=plan_id)
+            plan = Plan.objects.viewable(user).get(id=plan_id)
         except Plan.DoesNotExist:
             raise Http404
         return plan
 
-    def check_plan(self, plan, section):
+    @staticmethod
+    def check_plan(plan, section):
         if plan.template != section.template:
             return False
         return True
 
     def get_section(self, *args, **kwargs):
         section_id = kwargs['section']
-        plan = self.get_plan(*args, **kwargs)
         try:
             section = Section.objects.get(id=section_id)
         except Section.DoesNotExist:
             raise Http404
-        if not self.check_plan(plan, section):
+        if not self.check_plan(self.plan, section):
             raise Http404
         return section
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
-        plan = self.get_plan(**self.kwargs)
-        correct_plan = self.check_plan(plan, obj)
+        correct_plan = self.check_plan(self.plan, obj)
         if correct_plan:
             return obj
         raise Http404
 
     def dispatch(self, *args, **kwargs):
+        self.plan = self.get_plan(**self.kwargs)
+        self.editable = self.plan.may_edit(self.request.user)
         section = self.get_section(**self.kwargs)
-        plan = self.get_plan(**self.kwargs)
 
         # Set visited empty section
-        plan.visited_sections.add(section)
+        self.plan.visited_sections.add(section)
         topmost = section.get_topmost_section()
         if topmost:
-            plan.visited_sections.add(topmost)
+            self.plan.visited_sections.add(topmost)
+
+        question = section.get_first_question()
+        if not question:
+            # Show page for empty section
+            return super().dispatch(*args, **kwargs)
 
         # Redirect to first question if any
-        question = section.get_first_question()
-        if question:
-            return redirect('new_question', question=question.pk, plan=plan.pk)
+        if self.editable:
+            return redirect(
+                'new_question',
+                question=question.pk,
+                plan=self.plan.pk
+            )
 
-        # Show page for empty section
-        return super().dispatch(*args, **kwargs)
+        return redirect('plan_detail', kwargs={'plan': self.plan.pk})
 
     def next(self):
         "Generate link to next page"
-        plan = self.get_plan(**self.kwargs)
+        plan_pk = self.plan.pk
         next_section = self.object.get_next_section()
         if next_section is not None:
-            question = next_section.get_first_question()
-            if question:
-                return reverse('new_question', kwargs={'question': question.pk,
-                                                   'plan': plan.pk })
-            return reverse('section_detail', kwargs={'plan': plan.pk,
-                                                     'section':
-                                                     next_section.pk})
-        return reverse('plan_detail', kwargs={'plan': plan.pk})
+            if self.editable:
+                question = next_section.get_first_question()
+                # Has questions
+                if question:
+                    return reverse(
+                        'new_question',
+                        kwargs={'question': question.pk, 'plan': plan_pk }
+                    )
+                # Empty section
+                return reverse(
+                    'section_detail',
+                    kwargs={'plan': plan_pk, 'section': next_section.pk}
+                )
+        return reverse('plan_detail', kwargs={'plan': plan_pk})
 
     def prev(self):
         "Generate link to previous page"
-        plan = self.get_plan(**self.kwargs)
+        plan_pk = self.plan.pk
         prev_section = self.object.get_prev_section()
         if prev_section is not None:
-            question = prev_section.get_first_question()
-            if question:
-                return reverse('new_question', kwargs={'question': question.pk,
-                                                   'plan': plan.pk })
-            return reverse('section_detail', kwargs={'plan': plan.pk,
-                                                     'section':
-                                                     prev_section.pk})
-        return reverse('plan_detail', kwargs={'plan': plan.pk})
+            if self.editable:
+                question = prev_section.get_first_question()
+                # Has questions
+                if question:
+                    return reverse(
+                        'new_question',
+                        kwargs={'question': question.pk, 'plan': plan_pk }
+                    )
+                # Empty section
+                return reverse(
+                    'section_detail',
+                    kwargs={'plan': plan_pk, 'section': prev_section.pk}
+                )
+        return reverse('plan_detail', kwargs={'plan': plan_pk})
 
     def get_context_data(self, **kwargs):
-        plan = self.get_plan(**self.kwargs)
-        next = self.object.get_next_section()
-        prev = self.object.get_prev_section()
         context = {
-            'plan': plan,
+            'plan': self.plan,
             'next': self.next(),
             'prev': self.prev(),
-            'section_progress': get_section_progress(plan, self.object),
+            'section_progress': get_section_progress(self.plan, self.object),
         }
         context.update(**kwargs)
         return super().get_context_data(**context)
