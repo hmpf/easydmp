@@ -11,3 +11,5 @@ build
 dist
 staticfiles
 _build
+eudat-template
+collected_static_files
