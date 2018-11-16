@@ -38,7 +38,7 @@ a {
   float: right;
 }
 .navbar-default .navbar-nav > li > a {
-  font-family: 'colfaxMedium', Arial, sans-serif;
+  font-family: Arial, sans-serif;
   /*color: #005c9e;*/
   color: #ffffff;
   font-weight: 600;
@@ -131,7 +131,7 @@ a {
   margin-bottom: 0px;
   color: #000000 !important;
   font-weight: bold;
-  font-family:'colfaxBold', Arial, sans-serif;
+  font-family: Arial, sans-serif;
 }
 .jumbotron-small h1 {
   font-size: 28px !important;
@@ -202,7 +202,7 @@ dd, .section_introduction p, .notes {
   margin-bottom: 0px;
   color: #337ab7;
   font-weight: bold;
-  font-family: 'colfaxBold', Arial, sans-serif;
+  font-family: Arial, sans-serif;
 }
 #summary_header .btn-default {
   margin-top: -40px;
@@ -335,7 +335,7 @@ p.actions{
   margin-bottom: 0px;
   color: #337ab7 !important;
   font-weight: bold;
-  font-family: 'colfaxBold', Arial, sans-serif;
+  font-family: Arial, sans-serif;
 }
 #editplan_header .btn-group {
   width: 100%;
@@ -358,7 +358,7 @@ p.actions{
   color: #337db1;
   display: inline-block;
   float: right;
-  font-family: 'colfaxBold', Arial, sans-serif;
+  font-family: Arial, sans-serif;
   background: transparent;
   border: none;
   font-weight: bold;
@@ -479,7 +479,7 @@ p.actions{
   cursor: pointer;
   opacity: 0.5;
   float: left;
-  font-family: 'colfaxBold', Arial, sans-serif;
+  font-family: Arial, sans-serif;
 }
 
 .progressbar ul li:hover p{
@@ -553,7 +553,7 @@ p.actions{
       font-size: 19px !important;
 }
 .question-label .control-label {
-  font-family: 'colfaxBold', Arial, sans-serif;
+  font-family: Arial, sans-serif;
 }
 .row  .section-information .btn-default {
   border-radius: 0%;
@@ -624,7 +624,7 @@ textarea {
   font-size: 1em;
   margin-bottom: 0px;
   font-weight: bold;
-  font-family: 'colfaxBold', Arial, sans-serif;
+  font-family: Arial, sans-serif;
 }
 #create_new_plan h2 a {
   line-height: 28px;
@@ -659,7 +659,7 @@ textarea {
 .dmptable tr td:nth-child(1) {
   width: 38% !important;
   font-weight: bold;
-  font-family:'colfaxBold', Arial, sans-serif;
+  font-family: Arial, sans-serif;
 }
 .dmptable tr td:nth-child(3) {
   float: right !important;
@@ -879,7 +879,7 @@ tr .dropdown .btn-default .caret {
 }
 .actiondd td {
   font-weight: normal !important;
-  font-family:'colfaxRegular', Arial, sans-serif !important;
+  font-family: Arial, sans-serif !important;
 }
 .dmptable tr td .dropdown button {
   float: right;
