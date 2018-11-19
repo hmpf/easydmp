@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from copy import deepcopy
 from datetime import date
 
 from django import forms
@@ -56,6 +57,7 @@ class NotesForm(forms.Form):
 class AbstractNodeMixin():
 
     def __init__(self, **kwargs):
+        kwargs = deepcopy(kwargs)  # Avoid changing the original kwargs
         self.has_prevquestion = kwargs.pop('has_prevquestion', False)
         self.question = kwargs.pop('question').get_instance()
         self.question_pk = self.question.pk
@@ -63,10 +65,10 @@ class AbstractNodeMixin():
         self.label = ' '.join((label, self.question.question))
         self.help_text = getattr(self.question, 'help_text', '')
         kwargs.pop('instance', None)
-        initial = self.deserialize(kwargs.get('initial', {}))
-        kwargs['initial'] = initial
-        kwargs['prefix'] = str(self.question_pk)
-        super().__init__(**kwargs)
+        initial = self.deserialize(kwargs.pop('initial', {}))
+        kwargs.pop('prefix', None)
+        prefix = 'q{}'.format(self.question_pk)
+        super().__init__(initial=initial, prefix=prefix, **kwargs)
 
     def serialize_form(self):
         dict_form = OrderedDict(question_pk=self.question_pk)

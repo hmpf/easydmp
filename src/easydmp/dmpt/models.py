@@ -327,6 +327,7 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
     comment = models.TextField(blank=True)
     super_section = models.ForeignKey('self', null=True, blank=True, related_name='subsections')
     section_depth = models.PositiveSmallIntegerField(default=1)
+    branching = models.BooleanField(default=False)
 
     class Meta:
         unique_together = (
@@ -669,7 +670,7 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
     help_text = models.TextField(blank=True)
     framing_text = models.TextField(blank=True)
     comment = models.TextField(blank=True, null=True)
-    obligatory = models.NullBooleanField(blank=True, null=True)
+    obligatory = models.BooleanField(default=True)
     node = models.OneToOneField('flow.Node', related_name='payload',
                                 blank=True, null=True,
                                 on_delete=models.SET_NULL)

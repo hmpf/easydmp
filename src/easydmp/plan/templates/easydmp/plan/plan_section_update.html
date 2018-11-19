@@ -1,0 +1,37 @@
+{% extends "easydmp/plan/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+  <div class="row uninett-whole-row">
+    <div class="col-lg-12 uninett-color-white uninett-padded">
+      <div class="jumbotron">
+          <h1>{{ object.title|capfirst }} {{ object.added|date:"Y-m-t H:i:s" }}</h1>
+          <h2>{% if section %}{{ section }}{% else %}Untitled section{% endif %}</h2>
+      </div>
+    </div>
+  </div>
+
+<form method="post">
+{% csrf_token %}
+{% for question in forms %}
+  {% with form=question.form notesform=question.notesform answer=question.answer %}
+  <div class="row uninett-color-white uninett-whole-row">
+    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+      {% include "easydmp/plan/_answer_form.html"%}
+    </div>
+  </div>
+  {% endwith %}
+{% endfor %}
+
+  <div class="row uninett-color-white uninett-whole-row">
+    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+      {% if prev_section %}
+      <a href="{% url 'answer_linear_section' plan=plan.pk section=prev_section.pk %}">Prev</a>
+      {% endif %}
+      <input type="submit" value="Save" />
+      {% if next_section %}
+      <a href="{% url 'answer_linear_section' plan=plan.pk section=next_section.pk %}">Next</a>
+      {% endif %}
+    </div>
+  </div>
+</form>
+{% endblock content %}
