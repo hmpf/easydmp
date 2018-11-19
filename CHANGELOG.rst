@@ -12,9 +12,13 @@ Unreleased
 
 * Optional/non-required questions. These are, if obligatory,
   always seen but need not be answered.
-* Multiple questions on a single page, for sections without branches.
 * Logging of events.
 * Comments for plans.
+
+0.13.0
+------
+
+* Multiple questions on a single page, for sections without branches.
 
 0.12.3
 ------
