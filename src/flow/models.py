@@ -11,6 +11,7 @@ from django.db.models import Q
 import graphviz as gv
 
 from .errors import FSANoStartnodeError
+from .errors import FSANoDataError
 from .graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
 from .modelmixins import ClonableModel
 
@@ -65,6 +66,8 @@ class Node(ClonableModel):
         return new
 
     def get_next_node_many(self, next_nodes, data):
+        if not data:
+            raise FSANoDataError
         depends = self.depends if self.depends else self
         condition = data[str(depends.slug)]
         for edge in next_nodes:
@@ -74,6 +77,8 @@ class Node(ClonableModel):
         return None
 
     def get_next_node(self, nodes):
+        if not nodes:
+            raise FSANoDataError
         edges = self.next_nodes.all()
         next_nodes = set([edge.next_node for edge in edges])
         if len(next_nodes) == 1:  # simple node
@@ -85,6 +90,8 @@ class Node(ClonableModel):
         return None
 
     def get_prev_node_many(self, prev_nodes, data):
+        if not data:
+            raise FSANoDataError
         for edge in prev_nodes:
             prev_node = edge.prev_node
             prev_node_slug = prev_node.slug
@@ -94,6 +101,8 @@ class Node(ClonableModel):
         return None
 
     def get_prev_node(self, nodes):
+        if not nodes:
+            raise FSANoDataError
         edges = self.prev_nodes.all()
         prev_nodes = set([edge.prev_node for edge in edges])
         if len(prev_nodes) == 1:  # simple node
