@@ -729,6 +729,7 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
         choice = form.serialize()
         choice['notes'] = notes
         self.answer.save_choice(choice, self.request.user)
+        self.object = self.get_object()  # Refresh
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, notesform):
