@@ -14,10 +14,12 @@ EESTORE_API_ROOT = 'https://eestore.paas2.uninett.no/api'
 
 class EEStoreType(models.Model):
     name = models.CharField(max_length=64, primary_key=True)
+    endpoint = models.URLField(blank=True)
 
     class Meta:
         db_table = 'easydmp_eestore_type'
         verbose_name = 'EEStore type'
+        unique_together = ('name', 'endpoint')
 
     def __str__(self):
         return self.name
@@ -37,12 +39,14 @@ class EEStoreSource(models.Model):
         related_name='sources',
     )
     name = models.CharField(max_length=64)
+    endpoint = models.URLField(blank=True)
 
     objects = EEStoreSourceQuerySet.as_manager()
 
     class Meta:
         db_table = 'easydmp_eestore_source'
         verbose_name = 'EEStore source'
+        unique_together = ('eestore_type', 'name')
 
     def __str__(self):
         return '{}:{}'.format(self.eestore_type.name, self.name)
