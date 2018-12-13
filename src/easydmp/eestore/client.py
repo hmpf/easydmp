@@ -4,6 +4,7 @@ import sys
 
 import requests
 
+
 class ClientException(Exception):
     pass
 
@@ -20,40 +21,68 @@ def rawget(endpoint, verbose=False, debug=False, **params):
 class EEStoreServer:
 
     def __init__(self, endpoint_api_root):
+        "Uses the source-type endpoint to fetch source endpoints"
         self.api_root = endpoint_api_root
-        self.endpoints = self.get_endpoints()
-        print('Endpoints', self.endpoints)
+        self.sourcetypes = self.fetch_sourcetypes()
+        self._repotypes = set(self.sourcetypes.keys())
 
-    def get_endpoints(self):
-        r = rawget(self.api_root)
-        data = r.json()
-        endpoints = data['data']
-        return endpoints
+    @classmethod
+    def get_json(cls, endpoint):
+        r = rawget(endpoint)
+        return r.json()
 
-    def get_repo_endpoint(self, repotype):
-        print('Repotype', repotype)
-        endpoint = self.endpoints.get(repotype, None)
-        print('Endpoints', self.endpoints, endpoint)
-        if not repotype in self.endpoints:
-            assert False, 'WUT'
-        if endpoint is None:
+    def _check_repotype(self, repotype):
+        if not repotype in self._repotypes:
+            raise ClientException('Repotype "{}" not known'.format(repotype))
+
+    def fetch_sources(self, item):
+        endpoint = item['relationships']['sources']['links']['related']
+        data = self.get_json(endpoint)
+        sources = {}
+        for source in data['data']:
+            if source['type'] != 'Source':
+                continue
+            name = source['attributes']['name']
+            endpoint = source['attributes']['endpoint']
+            sources[name] = endpoint
+        return sources
+
+    def fetch_sourcetypes(self):
+        data = self.get_json(self.api_root)
+        sourcetypes = {}
+        for item in data['data']:
+            name = item['attributes']['name']
+            sourcetypes[name] = {
+                'endpoint': item['attributes']['endpoint'],
+                'sources': self.fetch_sources(item),
+            }
+        return sourcetypes
+
+    def get_sourcetype_endpoint(self, repotype):
+        self._check_repotype(repotype)
+        repo = self.sourcetypes.get(repotype, None)
+        if repo is None:
             raise ClientException('Repo "{}" is not supported by the eestore at "{}"'.format(repotype, self.api_root))
-        return endpoint
+        return repo['endpoint']
 
+    @property
     def available_repos(self):
-        return self.endpoints.keys()
+        return self._repotypes
 
     def get_repo(self, repotype):
+        self._check_repotype(repotype)
         return EEStoreRepo(self, repotype)
 
 
 class EEStoreRepo:
 
-    def __init__(self, server, repotype):
+    def __init__(self, server, repotype, verbose=False):
         self.repotype = repotype
         self.server = server
-        self.endpoint = self.server.get_repo_endpoint(repotype)
-        print(self.endpoint)
+        self.endpoint = self.server.get_sourcetype_endpoint(repotype)
+        self.verbose = verbose
+        if verbose:
+            print(self.endpoint)
 
     @staticmethod
     def get_pagination_status(data):
@@ -64,6 +93,7 @@ class EEStoreRepo:
         return data['links']
 
     def get_list_page(self, link=None, verbose=False, debug=False, **params):
+        verbose = verbose or self.verbose
         if not link:
             link = self.endpoint
         r = rawget(link, verbose=verbose, debug=debug, **params)
@@ -78,6 +108,7 @@ class EEStoreRepo:
         return data['data'], page_status, links
 
     def get_list(self, source=None, search=None, verbose=False, debug=False):
+        verbose = verbose or self.verbose
         params = {}
         if source:
             params['source'] = source
@@ -89,7 +120,9 @@ class EEStoreRepo:
             print('Kwargs, first page:', params)
         repo_list, page_status, links = self.get_list_page(link=None, verbose=verbose, debug=debug, **params)
         if page_status['count'] == 0:
-            raise ClientException('None found in {}'.format(self.repotype))
+            if verbose:
+                print('None found for {}'.format(self.repotype))
+            yield from ()
         if page_status['pages'] == 1:
             if verbose:
                 print('Single page')
