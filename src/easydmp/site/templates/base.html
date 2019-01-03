@@ -49,6 +49,7 @@
     {% block extrahead %}{% endblock %}
 </head>
 <body>
+  <header role="banner">
   <div class="navbar navbar-default navbar-fixed-top" role="navigation">
     {% if messages %}
     <div class="container messages">
@@ -65,6 +66,8 @@
             <img src="/static/usit/logo.svg" alt="EasyDMP temporary logo" width="240">
         </a>
       </div>
+
+      <nav role="navigation">
       <div class="navbar-collapse collapse">
         <ul class="nav navbar-nav">
           {% if request.user.is_authenticated %}
@@ -91,16 +94,23 @@
 
         </ul>
       </div>
+      </nav>
+
     </div>
     <div class="container demo">
       <p>Note! This is a beta version</p>
     </div>
   </div>
+  </header>
+
   <div class="container">
+  <main role="main">
 {% block content %}
 {% endblock %}
 
-    <footer>
+  </main>
+
+  <footer role="contentinfo">
     <div class="row uninett-whole-row">
         <p>
         <a href="https://eudat.eu/"><img src="{% static 'eudat/logo.png' %}" alt="EUDAT logo" width="150px"></a>
@@ -112,8 +122,9 @@
         <a href="https://www.eudat.eu/privacy-policy-summary">Privacy policy</a>
         </p>
     </div>
-    </footer>
+  </footer>
   </div>
+
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
