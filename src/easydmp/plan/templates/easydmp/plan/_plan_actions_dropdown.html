@@ -1,20 +1,20 @@
 {% load static %}
               {% if request.user|may_edit_plan:object %}
-              <li><a href="{% url 'update_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-edit.png' %}"/>Rename</a></li>
-              <li><a href="{% url 'share_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-people.png' %}"/>People</a></li>
+              <li><a href="{% url 'update_plan' plan=object.id %}"><img src="{% static 'icons/icon-edit.png' %}"/>Rename</a></li>
+              <li><a href="{% url 'share_plan' plan=object.id %}"><img src="{% static 'icons/icon-people.png' %}"/>People</a></li>
               {% if not object.published %}
               {% if object.valid  %}
-              <li><a href="{% url 'publish_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-publish.png' %}"/>Publish (read only)</a></li>
+              <li><a href="{% url 'publish_plan' plan=object.id %}"><img src="{% static 'icons/icon-publish.png' %}"/>Publish (read only)</a></li>
               {% else %}
-              <li><a href="{% url 'validate_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-publish.png' %}"/>Check</a></li>
+              <li><a href="{% url 'validate_plan' plan=object.id %}"><img src="{% static 'icons/icon-publish.png' %}"/>Check</a></li>
               {% endif %}
               {% else %}
-              <li><a href="{% url 'unlock_plan' plan=object.id %}"><img src="{% static 'usit/icons/icon-publish.png' %}"/>New version</a></li>
+              <li><a href="{% url 'unlock_plan' plan=object.id %}"><img src="{% static 'icons/icon-publish.png' %}"/>New version</a></li>
               {% endif %}
-              <li><a href="{% url 'plan_delete' plan=object.id %}"><img src="{% static 'usit/icons/icon-delete.png' %}"/>Delete</a></li>
-              <li><a href="{% url 'plan_saveas' plan=object.id %}"><img src="{% static 'usit/icons/icon-duplicate.png' %}"/>Duplicate</a></li>
+              <li><a href="{% url 'plan_delete' plan=object.id %}"><img src="{% static 'icons/icon-delete.png' %}"/>Delete</a></li>
+              <li><a href="{% url 'plan_saveas' plan=object.id %}"><img src="{% static 'icons/icon-duplicate.png' %}"/>Duplicate</a></li>
               {% endif %}
-              <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'usit/icons/icon-export.png' %}"/>Export</a></li>
+              <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'icons/icon-export.png' %}"/>Export</a></li>
               <!--
-              <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'usit/icons/icon-print.png' %}"/>Print</a></li>
+              <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'icons/icon-print.png' %}"/>Print</a></li>
               -->
