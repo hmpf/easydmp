@@ -15,6 +15,16 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+0.13.2
+------
+
+* Show current plan in header when known
+
+0.13.1
+------
+
+* Bugfixes to 0.13.0
+
 0.13.0
 ------
 
