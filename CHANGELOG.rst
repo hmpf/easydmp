@@ -15,6 +15,12 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+0.13.3
+------
+
+* Make a start on simplifying the CSS and the HTML structure
+* Add a customized 500 error page
+
 0.13.2
 ------
 
