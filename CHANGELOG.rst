@@ -20,6 +20,7 @@ Next
 
 * Yet another bugfix to multiple questions on a single page
 * Bugfix to template deletion
+* Fix ordering of canned answers
 
 0.13.3
 ------

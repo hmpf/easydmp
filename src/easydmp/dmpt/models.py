@@ -709,7 +709,7 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
 
     def renumber_positions(self):
         """Renumber canned answer positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
-        cas = self.canned_answers.order_by('position')
+        cas = self.canned_answers.order_by('position', 'pk')
         if cas.count() > 1:
             self._renumber_positions(cas)
 
@@ -1047,7 +1047,7 @@ class ChoiceQuestion(Question):
         return answer
 
     def get_choices(self):
-        choices = self.canned_answers.values_list('choice', 'canned_text')
+        choices = self.canned_answers.order().values_list('choice', 'canned_text')
         fixed_choices = []
         for (k, v) in choices:
             if not v:
@@ -1098,7 +1098,7 @@ class MultipleChoiceOneTextQuestion(Question):
         return pprint_list(value['choice'])
 
     def get_choices(self):
-        choices = tuple(self.canned_answers.values_list('choice', 'choice'))
+        choices = tuple(self.canned_answers.order().values_list('choice', 'choice'))
         return choices
 
     def validate_choice(self, data):
@@ -1609,6 +1609,11 @@ INPUT_TYPE_MAP = {
 }
 
 
+class CannedAnswerQuerySet(models.QuerySet):
+    def order(self):
+        return self.order_by('question', 'position', 'pk')
+
+
 class CannedAnswer(DeletionMixin, models.Model):
     "Defines the possible answers for a branch-capable question"
     question = models.ForeignKey(Question, related_name='canned_answers')
@@ -1624,6 +1629,14 @@ class CannedAnswer(DeletionMixin, models.Model):
     comment = models.TextField(blank=True, null=True)
     edge = models.OneToOneField('flow.Edge', related_name='payload', blank=True,
                            null=True, on_delete=models.SET_NULL)
+
+    objects = CannedAnswerQuerySet.as_manager()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['question', 'position'], name='dmpt_preferred_ca_ordering_idx'),
+            models.Index(fields=['question', 'position', 'id'], name='dmpt_fallback_ca_ordering_idx'),
+        ]
 
     @property
     def label(self):

@@ -668,7 +668,7 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
         kwargs['notesform'] = kwargs.get('notesform', self.get_notesform())
         kwargs['commentform'] = kwargs.get('commentform', self.get_commentform())
         kwargs['label'] = question.label
-        kwargs['answers'] = question.canned_answers.values()
+        kwargs['answers'] = question.canned_answers.order().values()
         kwargs['framing_text'] = question.framing_text
         kwargs['section'] = section
         neighboring_questions = Question.objects.filter(section=section)
