@@ -29,14 +29,14 @@ class Answer():
     "Helper-class combining a Question and a Plan"
 
     def __init__(self, question, plan):
-        self.question = question
+        self.question = question.get_instance()
         self.plan = plan
-        self.question_id = question.pk
-        self.has_notes = question.has_notes
-        self.section = question.section
+        self.question_id = self.question.pk
+        self.has_notes = self.question.has_notes
+        self.section = self.question.section
         self.question_validity = self.get_question_validity()
         self.section_validity = self.get_section_validity()
-        self.current_choice = plan.data.get(question.pk, {})
+        self.current_choice = plan.data.get(self.question.pk, {})
 
     def get_question_validity(self):
         qv, _ = QuestionValidity.objects.get_or_create(

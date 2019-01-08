@@ -15,6 +15,11 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+Next
+----
+
+* Yet another bugfix to multiple questions on a single page
+
 0.13.3
 ------
 
