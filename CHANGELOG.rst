@@ -21,6 +21,7 @@ Next
 * Yet another bugfix to multiple questions on a single page
 * Bugfix to template deletion
 * Fix ordering of canned answers
+* Fix Sigma2-logo (remote url was 404)
 
 0.13.3
 ------
