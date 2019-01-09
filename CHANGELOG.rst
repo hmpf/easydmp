@@ -15,8 +15,8 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
-Next
-----
+0.13.4
+------
 
 * Yet another bugfix to multiple questions on a single page
 * Bugfix to template deletion
