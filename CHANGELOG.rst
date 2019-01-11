@@ -15,6 +15,16 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+0.14.0
+------
+
+* New feature: allow selected users to create templates. If a user
+  is in the group "Template Designer", and is_staff is True, that
+  user gains access to a stripped down Django admin to create and
+  edit their own templates. They can use their own unfinished
+  templates for making plans as well.
+* Remove the separate CannedAnswer entry from the admin
+
 0.13.4
 ------
 
