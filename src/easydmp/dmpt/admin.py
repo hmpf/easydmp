@@ -114,61 +114,6 @@ class QuestionFilter(admin.SimpleListFilter):
         return queryset
 
 
-@admin.register(CannedAnswer)
-class CannedAnswerAdmin(ObjectPermissionModelAdmin):
-    list_display = (
-        'question',
-        'choice',
-        'position',
-        'id',
-        'has_edge',
-    )
-    list_display_links = ('id', 'question')
-    actions = [
-        'create_edge',
-        'update_edge',
-    ]
-    list_filter = (QuestionFilter,)
-    _model_slug = 'canned_answer'
-
-    def get_readonly_fields(self, request, obj=None):
-        if request.user.is_superuser:
-            return ()
-        return ('edge',)
-
-    def get_limited_queryset(self, request):
-        return get_canned_answers_for_user(request.user)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'question' and not request.user.is_superuser:
-            question = get_questions_for_user(request.user)
-            kwargs["queryset"] = question
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    # actions
-
-    def create_edge(self, request, queryset):
-        for q in queryset.all():
-            if not q.edge:
-                q.create_edge()
-    create_edge.short_description = 'Create edge'
-
-    def update_edge(self, request, queryset):
-        for q in queryset.all():
-            if q.edge:
-                q.update_edge()
-            else:
-                q.create_edge()
-    update_edge.short_description = 'Update edge'
-
-    # display fields
-
-    def has_edge(self, obj):
-        return True if obj.edge else False
-    has_edge.short_description = 'Edge'
-    has_edge.boolean = True
-
-
 class CannedAnswerInline(admin.StackedInline):
     model = CannedAnswer
 
