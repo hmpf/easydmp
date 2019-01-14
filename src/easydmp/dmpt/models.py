@@ -108,6 +108,8 @@ class TemplateQuerySet(models.QuerySet):
 class Template(DeletionMixin, RenumberMixin, models.Model):
     title = models.CharField(max_length=255)
     abbreviation = models.CharField(max_length=8, blank=True)
+    description = models.TextField(blank=True)
+    domain_specific = models.BooleanField(default=False)
     version = models.PositiveIntegerField(default=1)
     created = models.DateTimeField(auto_now_add=True)
     published = models.DateTimeField(blank=True, null=True)

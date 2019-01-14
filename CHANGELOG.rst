@@ -24,7 +24,10 @@ Next
   (single question per page).
 * Sundry bugfixes
 * Use python 3.7 and nonbinary psycopg2 in the Docker image
+* Add some template metadata
 
+  * Differ between generic and domain specific templates
+  * Store a description for each template
 
 0.14.5
 ------
