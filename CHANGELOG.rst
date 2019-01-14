@@ -15,6 +15,11 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+0.14.2
+------
+
+* Lock down more versions of (sub-)dependencies
+
 0.14.1
 ------
 
