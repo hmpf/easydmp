@@ -15,6 +15,11 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+0.14.1
+------
+
+* Bugfix, failing filter-lookup in admin
+
 0.14.0
 ------
 
