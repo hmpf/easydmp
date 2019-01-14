@@ -160,7 +160,7 @@ class TemplateFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value():
-            queryset = queryset.filter(template__id=self.value())
+            queryset = queryset.filter(section__template__id=self.value())
         return queryset
 
 
