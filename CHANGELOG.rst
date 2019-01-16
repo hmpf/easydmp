@@ -15,8 +15,8 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
-Next
-----
+0.14.3
+------
 
 * Better solution to the solution in 0.14.2
 * Upgrade many dependencies
