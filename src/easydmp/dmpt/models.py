@@ -534,47 +534,6 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
             paths.append(path)
         return paths
 
-    # graphing code
-    def find_path(self, data):
-        if not data:
-            return []
-        if not self.questions.exists():
-            # No path in this section
-            return []
-        all_in_section = set(self.questions.all())
-        path = []
-        next = self.first_question
-        while next and all_in_section:
-            path.append(next)
-            all_in_section.discard(next)
-            if next.is_last_in_section():
-                break
-            try:
-                next = next.get_next_question(data, in_section=True)
-            except TemplateDesignError:
-                # section end, probably
-                break
-            except KeyError:
-                # template likely has changed
-                break
-        return path
-
-    @staticmethod
-    def generate_forwards_path(path):
-        """Turn [1, 2, 3] into {1: 2, 2: 3, 3: None}"""
-        forwards_path = {}
-        if path:
-            for i, pk in enumerate(path[:-1]):
-                forwards_path[pk] = path[i+1]
-            forwards_path[path[-1]] = None
-        return forwards_path
-
-    @staticmethod
-    def generate_backwards_path(path):
-        """Turn [1, 2, 3] into {1: None, 2: 1, 3: 2}"""
-        path = reversed(path)
-        return self.generate_forwards_path(path)
-
     def generate_dotsource(self):
         global gv
         dot = gv.Digraph()
