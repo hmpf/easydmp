@@ -624,15 +624,15 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         return list(qs.distinct().order_by('position'))
 
     def find_all_paths(self):
-        qs = self.questions.all()
-        adjacent = {}
-        for q in qs:
-            adjacent[q.pk] = set(i.pk if i else None for i in q.get_potential_next_questions())
+        tm = self.generate_transition_map()
+        graph = {}
+        for transition in tm.transitions:
+            graph.setdefault(transition.current, set()).add(transition.next)
         paths = []
-        for path in dfs_paths(adjacent, self.first_question.pk):
+        for path in dfs_paths(graph, self.first_question.pk):
             if not path[-1]:
                 path = path[:-1]
-            paths.append(path)
+            paths.append(tuple(path))
         return paths
 
     def generate_transition_map(self):
@@ -645,46 +645,87 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                 tm.add(t)
         return tm
 
-    def generate_dotsource(self):
+    def generate_dotsource(self, debug=False):
         global gv
         dot = gv.Digraph()
 
+        tm = self.generate_transition_map()
+        section_label = 'Section "{}"'.format(self)
+        if debug:
+            section_label += ' p{} #{}'.format(self.position, self.id)
+        dot.node('section', label=section_label, shape='plaintext')
         s_kwargs = {'shape': 'doublecircle'}
         s_start_id = 's-{}-start'.format(self.pk)
         dot.node(s_start_id, label='Start', **s_kwargs)
+        with dot.subgraph() as subdot:
+            subdot.attr(rank='same')
+            subdot.node('section')
+            subdot.node(s_start_id)
         s_end_id = 's-{}-end'.format(self.pk)
         dot.node(s_end_id, label='End', **s_kwargs)
-        for question in self.questions.order_by('position'):
+        for question in (
+                self.questions
+                    .select_related('node')
+                    .prefetch_related('canned_answers')
+                    .order_by('position')
+        ):
+            node = question.node
             q_kwargs = {}
-            q_kwargs['label'] = fill(str(question), 20)
+            q_label = '{}\n<{}>'.format(question, question.input_type)
+            if debug:
+                q_label = '"{}"\n<{}>\np{} #{}'.format(
+                    question,
+                    question.input_type,
+                    question.position,
+                    question.pk
+                )
+                if node:
+                    q_label += ' n{}'.format(node.pk)
+            q_kwargs['label'] = fill(q_label, 20)
             q_id = 'q{}'.format(question.pk)
             if question.pk == self.get_first_question().pk:
                 dot.edge(s_start_id, q_id, **s_kwargs)
             dot.node(q_id, **q_kwargs)
-            next_questions = question.get_potential_next_questions_with_edge()
+            next_questions = tm.transition_map.get(question.pk, None)
             if next_questions:
-                for choice, next_question in next_questions:
-                    if next_question:
-                        nq_id = 'q{}'.format(next_question.pk)
+                cas = question.canned_answers.all()
+                for choice in next_questions:
+                    category = next_questions[choice]['category']
+                    next = next_questions[choice]['next']
+                    if next:
+                        nq_id = 'q{}'.format(next)
                     else:
                         nq_id = s_end_id
-                    e_kwargs = {'label': fill(choice, 15)}
-                    dot.edge(q_id, nq_id, **e_kwargs)
+                    edge_label = category
+                    if debug:
+                        ca = None
+                        if cas and choice:
+                            try:
+                                ca = cas.get(choice=choice)
+                            except CannedAnswer.DoesNotExist:
+                                pass
+                        if ca:
+                            edge_label += ' p{} #{}'.format(ca.position, ca.pk)
+                            if ca.edge:
+                                edge_label += ' e{}'.format(ca.edge.pk)
+                    if choice:
+                        edge_label += ': "{}"'.format(choice)
+                    dot.edge(q_id, nq_id, label=fill(edge_label, 15))
             else:
                 dot.edge(q_id, s_end_id)
         return dot.source
 
-    def view_dotsource(self, format, dotsource=None):  # pragma: no cover
+    def view_dotsource(self, format, dotsource=None, debug=False):  # pragma: no cover
         if not dotsource:
-            dotsource = self.generate_dotsource()
+            dotsource = self.generate_dotsource(debug=debug)
         view_dotsource(format, dotsource, self.GRAPHVIZ_TMPDIR)
 
-    def render_dotsource_to_file(self, format, filename, root_directory='', sub_directory='', dotsource=None):
+    def render_dotsource_to_file(self, format, filename, root_directory='', sub_directory='', dotsource=None, debug=False):
         if not root_directory:
             root_directory = self.GRAPHVIZ_TMPDIR
         _prep_dotsource(root_directory)
         if not dotsource:
-            dotsource = self.generate_dotsource()
+            dotsource = self.generate_dotsource(debug=debug)
         return render_dotsource_to_file(format, filename, dotsource, root_directory, sub_directory, mode=0o755)
 
     def get_cached_dotsource_filename(self, format='pdf'):
@@ -977,34 +1018,6 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         "Return a qs of all questions in the same section with higher pos"
         return Question.objects.filter(section=self.section, position__gt=self.position)
 
-    def get_potential_next_questions_with_edge(self):
-        """Return a set of potential next questions
-
-        Format: a set of tuples (type, question) where ``type`` is a string:
-
-        "->": No node, question next in order by position
-        "=>": Node but no edges, question next in order by position
-        string: Edge condition or CannedAnswer legend
-        """
-        all_following_questions = self.get_all_following_questions()
-        if not all_following_questions.exists():
-            return set()
-        if not self.node:
-            return set([('->', all_following_questions[0])])
-        edges = self.node.next_nodes.all()
-        if not edges:
-            return set([('=>', all_following_questions[0])])
-        next_questions = []
-        for edge in edges:
-            edge_payload = getattr(edge, 'payload', None)
-            condition = edge.condition
-            if edge_payload:
-                condition = str(getattr(edge_payload, 'legend', condition))
-            node_payload = getattr(edge.next_node, 'payload', None)
-            next_questions.append((condition, node_payload))
-        next_questions = set(next_questions)
-        return next_questions
-
     def get_potential_next_questions_with_transitions(self):
         """Return a set of potential next questions
 
@@ -1048,8 +1061,8 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
 
     def get_potential_next_questions(self):
         "Return a set of potential next questions"
-        next_questions = self.get_potential_next_questions_with_edge()
-        return set(v for c, v in next_questions)
+        next_questions = self.get_potential_next_questions_with_transitions()
+        return set(v for _, _, v in next_questions if v)
 
     def get_next_question(self, answers=None, in_section=False):
         following_questions = self.get_all_following_questions()
