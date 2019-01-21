@@ -69,6 +69,10 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         'increment_position',
         'decrement_position',
     ]
+    search_fields = [
+        '=id',
+        'title',
+    ]
     _model_slug = 'section'
 
     def get_limited_queryset(self, request):
@@ -170,7 +174,7 @@ class SectionFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         sections = get_sections_for_user(request.user)
-        template_id = request.GET.get('section__template__id__exact', None)
+        template_id = request.GET.get('template', None)
         if template_id:
             sections = sections.filter(template_id=template_id)
         lookups = []
@@ -198,6 +202,11 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
         'get_mount',
     )
     list_display_links = ('position', 'id', 'question')
+    search_fields = [
+        '=id',
+        'question',
+        'section__title',
+    ]
     actions = [
         'create_node',
         'toggle_obligatory',
