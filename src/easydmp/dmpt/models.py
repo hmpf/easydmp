@@ -29,6 +29,7 @@ from django.utils.text import slugify
 from django.utils.timezone import now as tznow
 
 from .errors import TemplateDesignError
+from .flow import Transition, TransitionMap
 from .utils import DeletionMixin
 from .utils import RenumberMixin
 from .utils import print_url
@@ -634,6 +635,16 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             paths.append(path)
         return paths
 
+    def generate_transition_map(self):
+        tm = TransitionMap()
+        for question in self.questions.order_by('position'):
+            next_questions = question.get_potential_next_questions_with_transitions()
+            for category, choice, next_question in next_questions:
+                next = next_question.pk if next_question else None
+                t = Transition(category, question.pk, choice, next)
+                tm.add(t)
+        return tm
+
     def generate_dotsource(self):
         global gv
         dot = gv.Digraph()
@@ -991,6 +1002,47 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
                 condition = str(getattr(edge_payload, 'legend', condition))
             node_payload = getattr(edge.next_node, 'payload', None)
             next_questions.append((condition, node_payload))
+        next_questions = set(next_questions)
+        return next_questions
+
+    def get_potential_next_questions_with_transitions(self):
+        """Return a set of potential next questions
+
+        Format: a set of tuples (category, choice, question)
+
+        "category" is a string:
+
+        "position": No node, question next in order by position
+        "Node-edgeless": Node but no edges, question next in order by position
+        "CannedAnswer": choice is from a CannedAnswer
+        "Edge": choice is from an Edge
+        "last": There are no questions after this one
+
+        "choice" is a string or None:
+
+        string: from an Edge.condition or CannedAnswer.legend
+        None: unconditional choice
+
+        "question" is a Question, or None in the case of "last"
+        """
+        all_following_questions = self.get_all_following_questions()
+        if not all_following_questions.exists():
+            return set([('last', None, None)])
+        if not self.node:
+            return set([('position', None, all_following_questions[0])])
+        edges = self.node.next_nodes.all()
+        if not edges:
+            return set([('Node-edgeless', None, all_following_questions[0])])
+        next_questions = []
+        for edge in edges:
+            edge_payload = getattr(edge, 'payload', None)
+            condition = edge.condition
+            category = 'Edge'
+            if edge_payload:
+                category = 'CannedAnswer'
+                condition = str(getattr(edge_payload, 'choice', condition))
+            node_payload = getattr(edge.next_node, 'payload', None)
+            next_questions.append((category, condition, node_payload))
         next_questions = set(next_questions)
         return next_questions
 
