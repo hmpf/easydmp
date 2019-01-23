@@ -170,6 +170,58 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = pathjoin(BASE_DIR, 'collected_static_files')
 
+# Default logging
+# Init logging by "import logging.config; logging.config.dictConfig(LOGGING)"
+LOGLEVEL = getenv('LOGLEVEL', 'info').upper()
+LOGGING_CONFIG = None
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+        'select_filter': {
+            '()': 'easydmp.utils.log.SQLFilter',
+            'keywords': ['SELECT'],
+        },
+    },
+    'handlers': {
+        'null': {
+            'class': 'logging.NullHandler',
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+            'include_html': True,
+        },
+        'console': {
+            'level': LOGLEVEL,
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console', 'mail_admins'],
+            'level': 'INFO',
+        },
+        'easydmp': {
+            'handlers': ['console',],
+            'level': LOGLEVEL,
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'filters': ['select_filter'],
+            'level': LOGLEVEL,
+            'propagate': False,
+        },
+    },
+}
+
 # Auth
 
 AUTH_USER_MODEL = 'easydmp_auth.User'

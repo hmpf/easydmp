@@ -39,31 +39,6 @@ AUTHENTICATION_BACKENDS = [
     'b2access.B2AccessOAuth2'
 ] + AUTHENTICATION_BACKENDS
 
-LOGGING_CONFIG = None
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'null': {
-            'class': 'logging.NullHandler',
-        },
-        'mail_admins': {
-            'level': 'ERROR',
-            'class': 'django.utils.log.AdminEmailHandler',
-            'include_html': True,
-        },
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['console', 'mail_admins'],
-            'level': 'DEBUG',
-        },
-    },
-}
 import logging.config
 logging.config.dictConfig(LOGGING)
 

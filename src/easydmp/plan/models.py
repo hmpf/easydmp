@@ -1,3 +1,4 @@
+import logging
 from copy import deepcopy
 from uuid import uuid4
 
@@ -22,6 +23,7 @@ from .utils import purge_answer
 from .utils import get_editors_for_plan
 
 
+LOG = logging.getLogger(__name__)
 GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
 
 
@@ -59,19 +61,28 @@ class Answer():
         return form
 
     def save_choice(self, choice, saved_by):
+        LOG.debug('q%s/p%s: Answer: previous %s current %s',
+                  self.question_id, self.plan.pk, self.current_choice, choice)
         if self.current_choice != choice:
+            LOG.debug('q%s/p%s: saving changes',
+                      self.question_id, self.plan.pk)
             self.plan.modified_by = saved_by
             self.plan.previous_data[self.question_id] = self.current_choice
             self.plan.data[self.question_id] = choice
             self.plan.save(question=self.question)
+            LOG.debug('q%s/p%s: setting question valid',
+                      self.question_id, self.plan.pk)
             self.question_validity.valid = True
             self.question_validity.save()
             if not self.section_validity.valid and self.section.validate_data(self.plan.data):
+                LOG.debug('q%s/p%s: setting section valid',
+                          self.question_id, self.plan.pk)
                 self.section_validity.valid = True
                 self.section_validity.save()
 
     def set_invalid(self):
         if self.question_validity.valid:
+            LOG.debug('q%s/p%s: setting invalid', self.question_id, self.plan.pk)
             self.question_validity.valid = False
             self.question_validity.save()
             self.section_validity.valid = False

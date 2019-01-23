@@ -1,5 +1,6 @@
 from itertools import chain
 from copy import deepcopy
+import logging
 
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -38,6 +39,9 @@ from .forms import PlanCommentForm
 from .forms import ConfirmForm
 from .forms import PlanAccessForm
 from .forms import ConfirmOwnPlanAccessChangeForm
+
+
+LOG = logging.getLogger(__name__)
 
 
 def progress(so_far, all):
@@ -711,11 +715,13 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.set_referer(request)
+        LOG.debug('GET-ing q%s/p%s', self.question_pk, self.object.pk)
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.set_referer(request)
+        LOG.debug('POST-ing q%s/p%s', self.question_pk, self.object.pk)
         form = self.get_form()
         notesform = self.get_notesform()
         if form.is_valid() and notesform.is_valid():
@@ -725,14 +731,17 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
             return self.form_invalid(form, notesform)
 
     def form_valid(self, form, notesform):
+        LOG.debug('q%s/p%s: valid', self.question_pk, self.object.pk)
         notes = notesform.cleaned_data.get('notes', '')
         choice = form.serialize()
         choice['notes'] = notes
         self.answer.save_choice(choice, self.request.user)
+        LOG.debug('q%s/p%s: answer saved', self.question_pk, self.object.pk)
         self.object = self.get_object()  # Refresh
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, notesform):
+        LOG.debug('q%s/p%s: INvalid', self.question_pk, self.object.pk)
         self.answer.set_invalid()
         return self.render_to_response(
             self.get_context_data(form=form, notesform=notesform))
