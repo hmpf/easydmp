@@ -221,6 +221,7 @@ LOGGING = {
         },
     },
 }
+SERVER_EMAIL = getenv('SERVER_EMAIL', 'root@localhost')
 
 # Auth
 
