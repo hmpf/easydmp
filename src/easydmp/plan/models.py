@@ -277,8 +277,8 @@ class Plan(DeletionMixin, ClonableModel):
                 defaults=defaults
             )
 
-    def validate(self):
-        valid = self.template.validate_plan(self)
+    def validate(self, recalculate=False):
+        valid = self.template.validate_plan(self, recalculate)
         self.valid = valid
         self.last_validated = tznow()
         self.save()
@@ -293,7 +293,7 @@ class Plan(DeletionMixin, ClonableModel):
         for pa in oldplan.accesses.all():
             pa.clone(self)
 
-    def save(self, user=None, question=None, **kwargs):
+    def save(self, user=None, question=None, recalculate=False, **kwargs):
         if user:
             self.modified_by = user
         super().save(**kwargs)
@@ -304,7 +304,7 @@ class Plan(DeletionMixin, ClonableModel):
             if topmost:
                 self.visited_sections.add(topmost)
             # set validated
-            self.validate()
+            self.validate(recalculate)
         self.set_adder_as_editor()
 
     def save_as(self, title, user, abbreviation='', keep_users=True, **kwargs):
