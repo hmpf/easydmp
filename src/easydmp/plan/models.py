@@ -241,47 +241,40 @@ class Plan(DeletionMixin, ClonableModel):
     def set_adder_as_editor(self):
         self.add_user_to_editors(self.added_by)
 
+    def create_section_validities(self):
+        svs = []
+        for section in self.sections.all():
+            svs.append(SectionValidity(plan=self, section=section, valid=False))
+        SectionValidity.objects.bulk_create(svs)
+
     def set_sections_as_valid(self, *sections):
-        for section in sections:
-            defaults = {'plan': self, 'valid': True, 'section': section}
-            _ = SectionValidity.objects.update_or_create(
-                plan=self,
-                section=section,
-                defaults=defaults
-            )
+        qs = SectionValidity.objects.filter(plan=self, section_id__in=section_pks)
+        qs.update(valid=True)
 
     def set_sections_as_invalid(self, *sections):
-        for section in sections:
-            defaults = {'plan': self, 'valid': False, 'section': section}
-            _ = SectionValidity.objects.update_or_create(
-                plan=self,
-                section=section,
-                defaults=defaults
-            )
+        qs = SectionValidity.objects.filter(plan=self, section_id__in=section_pks)
+        qs.update(valid=False)
 
-    def set_questions_as_valid(self, *questions):
-        for question in questions:
-            defaults = {'plan': self, 'valid': True, 'question': question}
-            _ = QuestionValidity.objects.update_or_create(
-                plan=self,
-                question=question,
-                defaults=defaults
-            )
+    def create_question_validities(self):
+        qvs = []
+        for question in self.questions.all():
+            qvs.append(QuestionValidity(plan=self, question=question, valid=False))
+        QuestionValidity.objects.bulk_create(qvs)
 
-    def set_questions_as_invalid(self, *questions):
-        for question in questions:
-            defaults = {'plan': self, 'valid': False, 'question': question}
-            _ = QuestionValidity.objects.update_or_create(
-                plan=self,
-                question=question,
-                defaults=defaults
-            )
+    def set_questions_as_valid(self, *question_pks):
+        qs = QuestionValidity.objects.filter(plan=self, question_id__in=question_pks)
+        qs.update(valid=True)
 
-    def validate(self, recalculate=False):
+    def set_questions_as_invalid(self, *question_pks):
+        qs = QuestionValidity.objects.filter(plan=self, question_id__in=question_pks)
+        qs.update(valid=False)
+
+    def validate(self, recalculate=False, commit=True):
         valid = self.template.validate_plan(self, recalculate)
         self.valid = valid
         self.last_validated = tznow()
-        self.save()
+        if commit:
+            self.save()
 
     def copy_validations_from(self, oldplan):
         for sv in oldplan.section_validity.all():
@@ -296,16 +289,23 @@ class Plan(DeletionMixin, ClonableModel):
     def save(self, user=None, question=None, recalculate=False, **kwargs):
         if user:
             self.modified_by = user
-        super().save(**kwargs)
-        if question is not None:
-            # set visited
-            self.visited_sections.add(question.section)
-            topmost = question.section.get_topmost_section()
-            if topmost:
-                self.visited_sections.add(topmost)
-            # set validated
-            self.validate(recalculate)
-        self.set_adder_as_editor()
+        if not self.pk: # New, empty plan
+            super().save(**kwargs)
+            self.create_section_validities()
+            self.create_question_validities()
+            self.set_adder_as_editor()
+            LOG.info('Created plan "%s" (%i)', self, self.pk)
+        else:
+            if question is not None:
+                # set visited
+                self.visited_sections.add(question.section)
+                topmost = question.section.get_topmost_section()
+                if topmost:
+                    self.visited_sections.add(topmost)
+                # set validated
+                self.validate(recalculate, commit=False)
+            super().save(**kwargs)
+            LOG.info('Updated plan "%s" (%i)', self, self.pk)
 
     def save_as(self, title, user, abbreviation='', keep_users=True, **kwargs):
         new = self.__class__(

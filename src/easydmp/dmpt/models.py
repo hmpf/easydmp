@@ -267,13 +267,13 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
         return False
 
     def find_validity_of_sections(self, data):
-        valid_sections = []
-        invalid_sections = []
+        valid_sections = set()
+        invalid_sections = set()
         for section in self.sections.all():
             if section.validate_data(data):
-                valid_sections.append(section)
+                valid_sections.add(section.pk)
             else:
-                invalid_sections.append(section)
+                invalid_sections.add(section.pk)
         return (valid_sections, invalid_sections)
 
     def set_validity_of_sections(self, plan, valids, invalids):
@@ -481,8 +481,8 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
     def find_validity_of_questions(self, data):
         assert data, 'No data, cannot validate'
         questions = self.questions.all()
-        valids = []
-        invalids = []
+        valids = set()
+        invalids = set()
         for question in questions:
             question = question.get_instance()
             try:
@@ -490,9 +490,9 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
             except AttributeError:
                 valid = False
             if valid:
-                valids.append(question)
+                valids.add(question.pk)
             else:
-                invalids.append(question)
+                invalids.add(question.pk)
         return (valids, invalids)
 
     def set_validity_of_questions(self, plan, valids, invalids):
@@ -507,9 +507,8 @@ class Section(DeletionMixin, RenumberMixin, models.Model):
         valids, invalids = self.find_validity_of_questions(data)
         if not invalids:
             return True
-        valid_pks = set(q.pk for q in valids)
         for path in self.find_all_paths():
-            if valid_pks == set(path):
+            if valids == set(path):
                 return True
         return False
 
