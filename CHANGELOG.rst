@@ -15,8 +15,8 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
-Next
-----
+0.14.4
+------
 
 * Support Python 3.7
 * Remove some unused code
