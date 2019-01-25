@@ -1,37 +1,67 @@
 {% extends "easydmp/plan/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-  <div class="row uninett-whole-row">
-    <div class="col-lg-12 uninett-color-white uninett-padded">
-      <div class="jumbotron">
-          <h1>{{ object.title|capfirst }} {{ object.added|date:"Y-m-t H:i:s" }}</h1>
-          <h2>{% if section %}{{ section }}{% else %}Untitled section{% endif %}</h2>
+  <div class="row uninett-whole-row uninett-color-white">
+    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded">
+      <div id="editplan_header" class="top-wrap">
+        <div class="jumbotron"><h1>{{ object.title|capfirst }}</h1></div>
+        <div class="btn-group">
+          <div class="wrap"><span class='caret'></span><a class="summary-link" href="{% url 'plan_detail' plan=object.pk %}">Go to plan summary</a></div>
+        </div>
+        <div class="col-lg-12 savetxt">Your answers are saved every time you press "prev" or "next"</div>
+    </div>
+
+    {% if section_progress|length > 1 %}
+    <div class="row uninett-whole-row progressbar progressbar-small">
+    <ul>
+    {% for section in section_progress %}
+    <li {% if section.status %}class="{{ section.status }}"{% endif %}>
+          <div class="progressbar2"></div>
+          <span class="withfadein"><a href="{% url 'section_detail' plan=object.id section=section.pk %}">{{ section.label }}</a></span>
+          <p>{{ section.title }}</p>
+      </li>
+    {% endfor %}
+    </ul>
+    </div>
+    {% endif %}
+
+    <div class="section section-depth-{{ section.section_depth }}">
+      <h3>{{ section.full_title }}</h3>
+      {% if section.introductory_text or section.comment %}
+      <div class="actions dropdown section-information">
+        <button class="btn btn-default collapsed" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+          <span class="caret"></span>
+        </button>
+        <div class="collapse" id="collapseExample" aria-expanded="false" style="height: 0px">
+          <div class="section-info-wrap">
+            <div class="section-introduction">{{ section.introductory_text }}</div>
+            <div class="section-comment">{{ section.comment }}</div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-
-<form method="post">
-{% csrf_token %}
-{% for question in forms %}
-  {% with form=question.form notesform=question.notesform answer=question.answer %}
-  <div class="row uninett-color-white uninett-whole-row">
-    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-      {% include "easydmp/plan/_answer_form.html"%}
-    </div>
-  </div>
-  {% endwith %}
-{% endfor %}
-
-  <div class="row uninett-color-white uninett-whole-row">
-    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-      {% if prev_section %}
-      <a href="{% url 'answer_linear_section' plan=plan.pk section=prev_section.pk %}">Prev</a>
       {% endif %}
-      <input type="submit" value="Save" />
-      {% if next_section %}
-      <a href="{% url 'answer_linear_section' plan=plan.pk section=next_section.pk %}">Next</a>
-      {% endif %}
-    </div>
+
+    <form method="post">
+    {% csrf_token %}
+    {% for question in forms %}
+      {% with form=question.form notesform=question.notesform answer=question.answer %}
+      <div class="row uninett-color-white uninett-whole-row">
+        <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+          {% include "easydmp/plan/_answer_form.html"%}
+        </div>
+      </div>
+      {% endwith %}
+    {% endfor %}
+
+      <div class="form-actions">
+        {% if prev_section %}
+          <a class="btn btn-primary" href="{% url 'answer_linear_section' plan=plan.pk section=prev_section.pk %}">Prev</a>
+        {% endif %}
+        <input class="btn btn-primary" type="submit" value="Save" />
+        {% if next_section %}
+          <a class="btn btn-primary" href="{% url 'answer_linear_section' plan=plan.pk section=next_section.pk %}">Next</a>
+        {% endif %}
+      </div>
+    </form>
   </div>
-</form>
 {% endblock content %}
