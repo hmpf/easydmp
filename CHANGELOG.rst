@@ -15,6 +15,17 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+Next
+----
+
+* Support Python 3.7
+* Remove some unused code
+* Improve UX in template admin, add search
+* Always pull in debug toolbar
+* Log question saving to ease debugging
+* Make plan save lighter and speedier
+* Improve UI for multi question pages
+
 0.14.3
 ------
 
