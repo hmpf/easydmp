@@ -19,7 +19,7 @@ graphviz==0.10.1
 idna==2.8
 imagesize==1.1.0
 Jinja2==2.10
-jsonfield==2.0.2
+jsonfield2==3.0.2
 MarkupSafe==1.0
 oauthlib==3.0.0
 packaging==18.0
