@@ -244,7 +244,7 @@ class Plan(DeletionMixin, ClonableModel):
 
     def create_section_validities(self):
         svs = []
-        for section in self.sections.all():
+        for section in self.template.sections.all():
             svs.append(SectionValidity(plan=self, section=section, valid=False))
         SectionValidity.objects.bulk_create(svs)
 
@@ -258,8 +258,10 @@ class Plan(DeletionMixin, ClonableModel):
 
     def create_question_validities(self):
         qvs = []
-        for question in self.questions.all():
-            qvs.append(QuestionValidity(plan=self, question=question, valid=False))
+        sections = self.template.sections.all()
+        for section in sections:
+            for question in section.questions.all():
+                qvs.append(QuestionValidity(plan=self, question=question, valid=False))
         QuestionValidity.objects.bulk_create(qvs)
 
     def set_questions_as_valid(self, *question_pks):
