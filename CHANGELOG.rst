@@ -15,6 +15,23 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+0.14.5
+------
+
+* Switch to a newer JSONField implementation
+* Save validities in bulk, avoid multiple expensive UPSERTs
+* Fix Heisenbug that made saving questions work differently on
+  different instances:
+
+  * Use Python 3.7 due to ordered dicts
+  * Ensure all question keys stored in plans are strings, since
+    json converts ints to strings and, dependsing on
+    implementation, may allow duplicate keys.
+
+  Different JSON libraries treat duplicate keys differently.
+  Python's json picks the last key if there are duplicates, and
+  with python 3.7, the last key is always the newest key.
+
 0.14.4
 ------
 
