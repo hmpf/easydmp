@@ -370,7 +370,7 @@
     "help_text": "",
     "framing_text": "",
     "comment": "",
-    "obligatory": null,
+    "obligatory": false,
     "node": null
   }
 },
