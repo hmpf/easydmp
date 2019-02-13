@@ -19,6 +19,8 @@ from .views import (
     GeneratedPlanPlainTextView,
     GeneratedPlanHTMLView,
     GeneratedPlanPDFView,
+)
+from .views.access import (
     PlanAccessView,
     UpdatePlanAccessView,
     DeletePlanAccessView,

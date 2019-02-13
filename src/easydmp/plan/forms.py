@@ -11,9 +11,6 @@ from .models import PlanComment
 from .models import PlanAccess
 
 
-FORM_CLASS = 'blueForms'
-
-
 class CheckExistingTitleMixin:
 
     def get_existing_titles(self, template, user, version=None):
@@ -33,21 +30,6 @@ class CheckExistingTitleMixin:
         if qs_count:
             error = 'You already have edit access to plans named {} for the template {}, please rename the plan'
             raise ValidationError(error.format(title, template))
-
-
-class DeleteForm(forms.Form):
-
-    def __init__(self, *args, **kwargs):
-        kwargs.pop('instance', None)
-        super().__init__(*args, **kwargs)
-
-        # crispy forms
-        self.helper = FormHelper()
-        self.helper.form_id = 'id-delete'
-        self.helper.form_class = FORM_CLASS
-        self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Yes'))
-        self.helper.add_input(Submit('cancel', 'No'))
 
 
 class ConfirmForm(forms.Form):
