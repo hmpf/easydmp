@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
+from easydmp.common.forms import FORM_CLASS
+
 from .widgets import MultiEmailWidget
 
 
@@ -42,6 +44,6 @@ class EmailAddressForm(forms.Form):
 
         self.helper = FormHelper()
         self.helper.form_id = 'id-invite'
-        self.helper.form_class = 'blueForms'
+        self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Invite'))

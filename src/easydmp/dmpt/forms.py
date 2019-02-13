@@ -7,6 +7,7 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
+from easydmp.common.forms import FORM_CLASS
 from easydmp.eestore.models import EEStoreCache
 
 from .models import Template
@@ -18,9 +19,6 @@ from .fields import MultipleChoiceNotListedField
 from .fields import DMPTypedReasonField
 from .widgets import Select2Widget
 from .widgets import Select2MultipleWidget
-
-
-FORM_CLASS = 'blueForms'
 
 
 class TemplateForm(forms.ModelForm):

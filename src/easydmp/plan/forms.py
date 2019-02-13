@@ -4,6 +4,7 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
+from easydmp.common.forms import FORM_CLASS
 from easydmp.dmpt.models import Template
 
 from .models import Plan
@@ -41,7 +42,7 @@ class ConfirmForm(forms.Form):
         # crispy forms
         self.helper = FormHelper()
         self.helper.form_id = 'id-plan-publish'
-        self.helper.form_class = 'blueForms'
+        self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Yes'))
         self.helper.add_input(Submit('cancel', 'No'))
@@ -83,7 +84,7 @@ class NewPlanForm(CheckExistingTitleMixin, forms.ModelForm):
         # crispy forms
         self.helper = FormHelper()
         self.helper.form_id = 'id-plan-create'
-        self.helper.form_class = 'blueForms'
+        self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Next'))
 
@@ -110,7 +111,7 @@ class UpdatePlanForm(CheckExistingTitleMixin, forms.ModelForm):
         # crispy forms
         self.helper = FormHelper()
         self.helper.form_id = 'id-plan-update'
-        self.helper.form_class = 'blueForms'
+        self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Rename'))
 
@@ -140,7 +141,7 @@ class SaveAsPlanForm(CheckExistingTitleMixin, forms.ModelForm):
         # crispy forms
         self.helper = FormHelper()
         self.helper.form_id = 'id-plan-save-as'
-        self.helper.form_class = 'blueForms'
+        self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Save As'))
 
