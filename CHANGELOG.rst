@@ -15,6 +15,17 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+Next
+----
+
+* Document and update devfixtures.json
+* Fix bug that made next/page buttons on linear sections (multiple
+  questions per page) behave differently from branching sections
+  (single question per page).
+* Sundry bugfixes
+* Use python 3.7 and nonbinary psycopg2 in the Docker image
+
+
 0.14.5
 ------
 
