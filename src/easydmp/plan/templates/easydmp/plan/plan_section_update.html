@@ -55,11 +55,11 @@
 
       <div class="form-actions">
         {% if prev_section %}
-          <a class="btn btn-primary" href="{% url 'answer_linear_section' plan=plan.pk section=prev_section.pk %}">Prev</a>
+        <input class="btn btn-primary" name="prev" type="submit" value="Prev" />
         {% endif %}
-        <input class="btn btn-primary" type="submit" value="Save" />
+        <input class="btn btn-primary" name="save" type="submit" value="Save" />
         {% if next_section %}
-          <a class="btn btn-primary" href="{% url 'answer_linear_section' plan=plan.pk section=next_section.pk %}">Next</a>
+        <input class="btn btn-primary" name="next" type="submit" value="Next" />
         {% endif %}
       </div>
     </form>

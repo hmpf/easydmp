@@ -451,6 +451,7 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
     def dispatch(self, request, *args, **kwargs):
         error_message_404 = "This Section cannot be edited in one go"
         self.section_pk = kwargs['section']
+        # Check that the section is not branching
         try:
             self.section = (
                 Section.objects
@@ -464,6 +465,7 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
             .filter(obligatory=True)
             .order_by('position')
         )
+        # Check that all questions are obligatory
         if self.section.questions.count() != self.questions.count():
             # Not a linear section
             raise Http404(error_message_404)
@@ -477,10 +479,20 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        if self.next_section:
+        if 'save' in self.request.POST:
+            return reverse(
+                'answer_linear_section',
+                kwargs={'plan': self.plan_pk, 'section': self.section.pk}
+            )
+        if 'next' in self.request.POST and self.next_section:
             return reverse(
                 'answer_linear_section',
                 kwargs={'plan': self.plan_pk, 'section': self.next_section.pk}
+            )
+        if 'prev' in self.request.POST and self.prev_section:
+            return reverse(
+                'answer_linear_section',
+                kwargs={'plan': self.plan_pk, 'section': self.prev_section.pk}
             )
         return reverse('plan_detail', kwargs={'plan': self.plan_pk})
 
