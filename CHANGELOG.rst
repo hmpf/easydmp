@@ -15,6 +15,11 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+Next
+----
+
+* Add link to user guide in footer
+
 0.14.6
 ------
 
