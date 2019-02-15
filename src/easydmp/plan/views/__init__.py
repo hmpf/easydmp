@@ -15,11 +15,12 @@ from django.views.generic import (
 
 from easydmp.common.views.mixins import DeleteFormMixin
 from easydmp.dmpt.forms import make_form, NotesForm
-from easydmp.dmpt.models import Question, Section
+from easydmp.dmpt.models import Question, Section, Template
 
 from ..models import Answer
 from ..models import Plan
 from ..models import PlanComment
+from ..forms import StartPlanForm
 from ..forms import NewPlanForm
 from ..forms import UpdatePlanForm
 from ..forms import SaveAsPlanForm
@@ -63,6 +64,26 @@ def get_section_progress(plan, current_section=None):
 # -- plans
 
 
+class ChooseTemplateForNewPlanView(ListView):
+    """Choose a template before creating a new plan"""
+
+    http_method_names = ['get', 'head', 'options', 'trace']
+    template_name = 'easydmp/plan/template_list.html'
+    model = Template
+
+    def get(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        if qs.count() == 1:
+            template = qs.get()
+            return HttpResponseRedirect(
+                reverse('create_plan', kwargs={'template_id': template.id})
+            )
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return super().get_queryset().has_access(self.request.user)
+
+
 class PlanAccessViewMixin:
 
     def get_queryset(self):
@@ -89,6 +110,55 @@ class AbstractPlanViewMixin:
         if not qs:
             return None
         return qs
+
+
+class StartPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
+    """Create a new empty plan from the given template"""
+    model = Plan
+    template_name = 'easydmp/plan/plan_start_form.html'
+    form_class = StartPlanForm
+
+    def get_template(self):
+        try:
+            return Template.objects.get(id=self.kwargs.get('template_id'))
+        except Template.DoesNotExist:
+            raise 404
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['template'] = self.get_template()
+        return kwargs
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.data = {}
+        self.object.previous_data = {}
+        existing = self.find_existing()
+        if not existing:
+            self.object.save()
+            return HttpResponseRedirect(self.get_success_url())
+        if existing.count() == 1:
+            hop_to = existing[0]
+            # send message
+            return HttpResponseRedirect(reverse('plan_detail', kwargs={'plan': hop_to.pk}))
+        # multiple plans with same editor, template and title exists
+        return HttpResponseServerError()
+
+    def get_success_url(self):
+        kwargs = {'plan': self.object.pk}
+        first_question = self.object.get_first_question()
+        if first_question.section.branching:
+            kwargs['question'] = first_question.pk
+            success_urlname = 'new_question'
+        else:
+            kwargs['section'] = first_question.section.pk
+            success_urlname = 'answer_linear_section'
+        return reverse(success_urlname, kwargs=kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['template'] = self.get_template()
+        return context
 
 
 class NewPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):

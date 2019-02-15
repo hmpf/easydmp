@@ -1,0 +1,45 @@
+{% extends "easydmp/plan/base.html" %}
+{% block extrahead %}
+<link rel="stylesheet" href="//cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+{% endblock %}
+{% block content %}
+  <h1>Choose a template</h1>
+
+  <div class="template-choice">
+    <table id="templatetable" class="display" style="width:100%">
+      <thead>
+          <tr>
+              <th>Template</th>
+              <th>Description</th>
+              {% if request.user.is_superuser %}
+              <th>Published</th>
+              <th>Retired</th>
+              {% endif %}
+          </tr>
+      </thead>
+      <tbody>
+        {% for object in object_list %}
+        <tr>
+            <td><a class="btn btn-primary" href="{% url 'create_plan' template_id=object.id %}"><div>{{ object.title }}</div></a></td>
+            <td>{{ object.description }}
+                {% if object.more_info %}<a href="{{ object.more_info }}">More info</a>{% endif %}
+            </td>
+              {% if request.user.is_superuser %}
+              <th>{{ object.published|default:"No" }}</th>
+              <th>{{ object.retired|default:"No" }}</th>
+              {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock content %}
+
+{% block postload %}
+<script src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready( function () {
+    $('#templatetable').DataTable();
+});
+</script>
+{% endblock %}

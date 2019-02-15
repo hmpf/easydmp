@@ -1,6 +1,8 @@
 from django.conf.urls import url
 
 from .views import (
+    ChooseTemplateForNewPlanView,
+    StartPlanView,
     NewPlanView,
     UpdatePlanView,
     DeletePlanView,
@@ -36,6 +38,8 @@ QUESTION_PAGEROOT_RE = r'^%s/%s/' % (PLAN_RE, QUESTION_RE)
 
 urlpatterns = [
     url(r'^$', PlanListView.as_view(), name='plan_list'),
+    url(r'^start/$', ChooseTemplateForNewPlanView.as_view(), name='choose_template'),
+    url(r'^template/(?P<template_id>\d+)/$', StartPlanView.as_view(), name='create_plan'),
     url(r'^new/$', NewPlanView.as_view(), name='new_plan'),
 
     url(r'access/(?P<access>\d+)/update/$', UpdatePlanAccessView.as_view(), name='update_planaccess'),

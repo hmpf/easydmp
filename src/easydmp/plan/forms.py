@@ -67,6 +67,40 @@ class ConfirmOwnPlanAccessChangeForm(ConfirmForm, PlanAccessForm):
         self.fields['access'].label = "Change access to"
 
 
+class StartPlanForm(CheckExistingTitleMixin, forms.ModelForm):
+
+    class Meta:
+        model = Plan
+        fields = ['title', 'abbreviation']
+
+    def __init__(self, user, template, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.template = template
+        self.templates = Template.objects.has_access(user)
+
+        # crispy forms
+        self.helper = FormHelper()
+        self.helper.form_id = 'id-plan-create'
+        self.helper.form_class = FORM_CLASS
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Next'))
+
+    def clean(self):
+        super().clean()
+        title = self.cleaned_data['title']
+        self.is_valid_title(title, self.user, self.template)
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        obj.template = self.template
+        obj.added_by = self.user
+        obj.modified_by = self.user
+        if commit:
+            obj.save()
+        return obj
+
+
 class NewPlanForm(CheckExistingTitleMixin, forms.ModelForm):
 
     class Meta:

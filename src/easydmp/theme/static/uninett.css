@@ -9,6 +9,10 @@ body {
  background-image: url("/static/eudat/bg_page.png")
 }
 
+main {
+    background-color: white;
+}
+
 h1, h2, h3, h4, h5, h6 {
  font-family: Arial, sans-serif;
  font-weight: Normal;
@@ -1686,6 +1690,31 @@ tr .dropdown .btn-default .caret {
 .dmptable tr td .dropdown button {
   float: right;
   padding-right: 10px;
+}
+
+.template-boxes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-content: space-between;
+    align-items: stretch;
+}
+
+.template-box {
+    flex: initial;
+    padding: 1ex;
+    margin: 1ex;
+    border: 2px solid black;
+    width: 12em;
+    height: 12em;
+}
+
+.template-box .template-name {
+    font-size: 2rem;
+}
+
+.fallback {
+    border-style: none;
 }
 
 /* Create new plan page */
