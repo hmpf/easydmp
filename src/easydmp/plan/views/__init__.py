@@ -21,7 +21,6 @@ from ..models import Answer
 from ..models import Plan
 from ..models import PlanComment
 from ..forms import StartPlanForm
-from ..forms import NewPlanForm
 from ..forms import UpdatePlanForm
 from ..forms import SaveAsPlanForm
 from ..forms import PlanCommentForm
@@ -159,50 +158,6 @@ class StartPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['template'] = self.get_template()
         return context
-
-
-class NewPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
-    """Create a new empty plan from the given template
-
-    Chceks that the same adder do not have a plan of the same name already.
-    """
-    template_name = 'easydmp/plan/newplan_form.html'
-    model = Plan
-    form_class = NewPlanForm
-
-    def get_success_url(self):
-        kwargs = {'plan': self.object.pk}
-        first_question = self.object.get_first_question()
-        if first_question.section.branching:
-            kwargs['question'] = first_question.pk
-            success_urlname = 'new_question'
-        else:
-            kwargs['section'] = first_question.section.pk
-            success_urlname = 'answer_linear_section'
-        return reverse(success_urlname, kwargs=kwargs)
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
-        return kwargs
-
-    def form_valid(self, form):
-        self.object = form.save(commit=False)
-        self.object.data = {}
-        self.object.previous_data = {}
-        self.object.added_by = self.request.user
-        self.object.modified_by = self.request.user
-        self.object.template = form.cleaned_data['template_type']
-        existing = self.find_existing()
-        if not existing:
-            self.object.save()
-            return HttpResponseRedirect(self.get_success_url())
-        if existing.count() == 1:
-            hop_to = existing[0]
-            # send message
-            return HttpResponseRedirect(reverse('plan_detail', kwargs={'plan': hop_to.pk}))
-        # multiple plans with same editor, template and title exists
-        return HttpResponseServerError()
 
 
 class UpdatePlanView(PlanAccessViewMixin, AbstractPlanViewMixin, UpdateView):

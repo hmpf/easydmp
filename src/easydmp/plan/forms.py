@@ -101,37 +101,6 @@ class StartPlanForm(CheckExistingTitleMixin, forms.ModelForm):
         return obj
 
 
-class NewPlanForm(CheckExistingTitleMixin, forms.ModelForm):
-
-    class Meta:
-        model = Plan
-        fields = ['title', 'abbreviation']
-
-    def __init__(self, user, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.user = user
-        qs = Template.objects.has_access(user)
-        self.qs = qs
-        if self.qs.count() > 1:
-            self.fields['template_type'] = forms.ModelChoiceField(queryset=qs)
-
-        # crispy forms
-        self.helper = FormHelper()
-        self.helper.form_id = 'id-plan-create'
-        self.helper.form_class = FORM_CLASS
-        self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Next'))
-
-    def clean(self):
-        super().clean()
-        if self.qs.count() == 1:
-            self.cleaned_data['template_type'] = self.qs.get()
-        template = self.cleaned_data['template_type']
-        if self.user:
-            title = self.cleaned_data['title']
-            self.is_valid_title(title, self.user, template)
-
-
 class UpdatePlanForm(CheckExistingTitleMixin, forms.ModelForm):
 
     class Meta:

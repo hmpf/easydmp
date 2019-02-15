@@ -1,9 +1,9 @@
 from django.conf.urls import url
+from django.views.generic import RedirectView
 
 from .views import (
     ChooseTemplateForNewPlanView,
     StartPlanView,
-    NewPlanView,
     UpdatePlanView,
     DeletePlanView,
     SaveAsPlanView,
@@ -40,7 +40,7 @@ urlpatterns = [
     url(r'^$', PlanListView.as_view(), name='plan_list'),
     url(r'^start/$', ChooseTemplateForNewPlanView.as_view(), name='choose_template'),
     url(r'^template/(?P<template_id>\d+)/$', StartPlanView.as_view(), name='create_plan'),
-    url(r'^new/$', NewPlanView.as_view(), name='new_plan'),
+    url(r'^new/$', RedirectView.as_view(url='/plan/start/'), name='new_plan'),
 
     url(r'access/(?P<access>\d+)/update/$', UpdatePlanAccessView.as_view(), name='update_planaccess'),
     url(r'access/(?P<access>\d+)/delete/$', DeletePlanAccessView.as_view(), name='leave_plan'),
