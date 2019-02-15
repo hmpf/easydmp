@@ -9,6 +9,7 @@ from guardian.shortcuts import get_objects_for_user
 
 from easydmp.eestore.models import EEStoreMount
 from easydmp.lib.admin import PublishedFilter
+from easydmp.lib.admin import RetiredFilter
 from easydmp.utils.admin import ObjectPermissionModelAdmin
 from easydmp.utils.admin import SetPermissionsMixin
 from easydmp.utils import get_model_name
@@ -48,14 +49,52 @@ def get_canned_answers_for_user(user):
     return CannedAnswer.objects.filter(question__in=questions)
 
 
+class TemplateDescriptionFilter(admin.SimpleListFilter):
+    title = 'has description'
+    parameter_name = 'has_description'
+
+    def lookups(self, request, model_admin):
+        return (('yes', 'Yes'), ('no', 'No'))
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'yes':
+            queryset = queryset.exclude(description='')
+        elif value == 'no':
+            queryset = queryset.filter(description='')
+        return queryset
+
+
+class TemplateMoreInfoFilter(admin.SimpleListFilter):
+    title = 'has more info'
+    parameter_name = 'has_more_info'
+
+    def lookups(self, request, model_admin):
+        return (('yes', 'Yes'), ('no', 'No'))
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'yes':
+            queryset = queryset.exclude(more_info='')
+        elif value == 'no':
+            queryset = queryset.filter(more_info='')
+        return queryset
+
+
 @admin.register(Template)
 class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
-    list_display = ('id', 'version', 'title', 'is_published')
+    list_display = ('id', 'version', 'title', 'is_published', 'is_retired',)
     list_display_links = ('title', 'version', 'id')
     date_hierarchy = 'published'
     set_permissions = ['use_template']
     has_object_permissions = True
-    list_filter = [PublishedFilter]
+    list_filter = [
+        PublishedFilter,
+        RetiredFilter,
+        'domain_specific',
+        TemplateDescriptionFilter,
+        TemplateMoreInfoFilter,
+    ]
     actions = [
         'new_version',
     ]
@@ -68,6 +107,14 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
         return False
     is_published.short_description = 'Is published'
     is_published.boolean = True
+
+
+    def is_retired(self, obj):
+        if obj.retired:
+            return True
+        return False
+    is_retired.short_description = 'Is retired'
+    is_retired.boolean = True
 
 
     # actions

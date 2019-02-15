@@ -20,3 +20,8 @@ class FakeBooleanFilter(admin.SimpleListFilter):
 class PublishedFilter(FakeBooleanFilter):
     title = 'public'
     parameter_name = 'published'
+
+
+class RetiredFilter(FakeBooleanFilter):
+    title = 'retired'
+    parameter_name = 'retired'
