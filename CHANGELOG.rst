@@ -15,6 +15,11 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+Next
+----
+
+* Add docs about template design
+
 0.15.0
 ------
 

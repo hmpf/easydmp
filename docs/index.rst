@@ -20,6 +20,7 @@ See the :doc:`overview <overview>`.
 
    overview
    installation
+   templates
    development
 
 
