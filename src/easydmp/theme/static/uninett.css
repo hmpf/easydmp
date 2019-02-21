@@ -35,10 +35,6 @@ a:hover, a:focus {
  color: #252677;
 }
 
-b, strong {
- font-weight: normal;
-}
-
 i, em {
  font-style: italic;
  font-weight: normal;
