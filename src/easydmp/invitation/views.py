@@ -93,7 +93,7 @@ class AbstractPlanInvitationView:
     fields = []
     pk_url_kwarg = 'uuid'
 
-    def get_invitations(Self):
+    def get_invitations(self):
         return self.model.objects.filter(type=self.model.invitation_type)
 
     def get_success_url(self):
