@@ -11,7 +11,7 @@ class LoginRequiredMiddleware(MiddlewareMixin):
         self.login_url = force_text(settings.LOGIN_URL)
         self.get_response = get_response
 
-    def process_view(self, request, view_func, view_args, view_kwargs):
+    def process_view(self, request, view_func, _view_args, _view_kwargs):
         assert hasattr(request, 'user'), (
             "The LoginRequiredMiddleware requires authentication middleware "
             "to be installed. Edit your MIDDLEWARE%s setting to insert "

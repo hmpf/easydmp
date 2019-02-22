@@ -6,7 +6,7 @@ from .models import PlanAccess
 
 class FakeBooleanFilter(admin.SimpleListFilter):
 
-    def lookups(self, request, model_admin):
+    def lookups(self, request, _model_admin):
         return (
             ('yes', 'Yes'),
             ('no', 'No'),

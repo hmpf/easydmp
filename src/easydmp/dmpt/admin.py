@@ -105,7 +105,7 @@ class QuestionFilter(admin.SimpleListFilter):
     title = 'question'
     parameter_name = 'question'
 
-    def lookups(self, request, model_admin):
+    def lookups(self, request, _model_admin):
         questions = get_questions_for_user(request.user)
         lookups = []
         for question in questions:
@@ -135,7 +135,7 @@ class EEStoreTypeFilter(admin.SimpleListFilter):
     title = 'EEStore type'
     parameter_name = 'eestore'
 
-    def lookups(self, request, model_admin):
+    def lookups(self, request, _model_admin):
         questions = get_questions_for_user(request.user)
         types = (
             EEStoreMount.objects
@@ -155,7 +155,7 @@ class TemplateFilter(admin.SimpleListFilter):
     title = 'template'
     parameter_name = 'template'
 
-    def lookups(self, request, model_admin):
+    def lookups(self, request, _model_admin):
         templates = get_templates_for_user(request.user)
         lookups = []
         for template in templates:
@@ -172,7 +172,7 @@ class SectionFilter(admin.SimpleListFilter):
     title = 'section'
     parameter_name = 'section'
 
-    def lookups(self, request, model_admin):
+    def lookups(self, request, _model_admin):
         sections = get_sections_for_user(request.user)
         template_id = request.GET.get('template', None)
         if template_id:

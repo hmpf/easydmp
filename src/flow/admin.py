@@ -20,7 +20,7 @@ class PayloadListFilter(admin.SimpleListFilter):
     title = 'Payload'
     parameter_name = 'payload'
 
-    def lookups(self, request, model_admin):
+    def lookups(self, request, _model_admin):
         return (
             ('True', 'Yes'),
             ('False', 'No'),
@@ -38,7 +38,7 @@ class EmptyEdgeFilter(admin.SimpleListFilter):
     title = 'Empty'
     parameter_name = 'empty'
 
-    def lookups(self, request, model_admin):
+    def lookups(self, request, _model_admin):
         return (
             ('both', 'Both'),
             ('none', 'None'),
