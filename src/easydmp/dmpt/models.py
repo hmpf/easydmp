@@ -28,7 +28,11 @@ from django.utils.text import slugify
 from flow.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
 
 from .errors import TemplateDesignError
-from .utils import *
+from .utils import DeletionMixin
+from .utils import RenumberMixin
+from .utils import print_url
+from .utils import render_from_string
+
 from easydmp.eestore.models import EEStoreCache
 from easydmp.utils import pprint_list
 
