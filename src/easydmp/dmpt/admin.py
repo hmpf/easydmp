@@ -107,24 +107,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
     review_flow.short_description = 'Review flow'
 
 
-class QuestionFilter(admin.SimpleListFilter):
-    title = 'question'
-    parameter_name = 'question'
-
-    def lookups(self, request, _model_admin):
-        questions = get_questions_for_user(request.user)
-        lookups = []
-        for question in questions:
-            lookups.append((question.pk, str(question)))
-        return lookups
-
-    def queryset(self, request, queryset):
-        if self.value():
-            queryset = queryset.filter(question__id=self.value())
-        return queryset
-
-
-class CannedAnswerInline(admin.StackedInline):
+class QuestionCannedAnswerInline(admin.StackedInline):
     model = CannedAnswer
 
     def get_readonly_fields(self, request, obj=None):
@@ -133,11 +116,11 @@ class CannedAnswerInline(admin.StackedInline):
         return ('edge',)
 
 
-class EEStoreMountInline(admin.StackedInline):
+class QuestionEEStoreMountInline(admin.StackedInline):
     model = EEStoreMount
 
 
-class EEStoreTypeFilter(admin.SimpleListFilter):
+class QuestionEEStoreTypeFilter(admin.SimpleListFilter):
     title = 'EEStore type'
     parameter_name = 'eestore'
 
@@ -157,7 +140,7 @@ class EEStoreTypeFilter(admin.SimpleListFilter):
         return queryset
 
 
-class TemplateFilter(admin.SimpleListFilter):
+class QuestionTemplateFilter(admin.SimpleListFilter):
     title = 'template'
     parameter_name = 'template'
 
@@ -174,7 +157,7 @@ class TemplateFilter(admin.SimpleListFilter):
         return queryset
 
 
-class SectionFilter(admin.SimpleListFilter):
+class QuestionSectionFilter(admin.SimpleListFilter):
     title = 'section'
     parameter_name = 'section'
 
@@ -221,13 +204,13 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     ]
     list_filter = [
         'obligatory',
-        TemplateFilter,
-        SectionFilter,
-        EEStoreTypeFilter,
+        QuestionTemplateFilter,
+        QuestionSectionFilter,
+        QuestionEEStoreTypeFilter,
     ]
     inlines = [
-        CannedAnswerInline,
-        EEStoreMountInline,
+        QuestionCannedAnswerInline,
+        QuestionEEStoreMountInline,
     ]
     save_on_top = True
     _model_slug = 'question'
