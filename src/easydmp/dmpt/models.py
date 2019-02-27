@@ -122,7 +122,6 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
             ('use_template', 'Can use template'),
         )
 
-
     def __str__(self):
         if self.abbreviation:
             return self.abbreviation
@@ -787,10 +786,11 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
         data = {}
         questions = {str(q.pk): q for q in (Question.objects
                                             .select_related('node')
-                                            .filter(pk__in=answers.keys())) }
+                                            .filter(pk__in=answers.keys()))}
         for question_pk, answer in answers.items():
             q = questions[question_pk]
-            if not q.node: continue
+            if not q.node:
+                continue
             q = q.get_instance()
             condition = q.map_choice_to_condition(answer)
             data[str(q.node.slug)] = condition
@@ -928,12 +928,11 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
                 return True
 #             next_nodes = self.node.next_nodes.all()
 #             if next_nodes:
-# 
+#
 #                 return True
         return False
 
 #     def get_next_via_path
-
 
     def frame_canned_answer(self, answer, frame=True):
         result = answer
@@ -1252,7 +1251,6 @@ class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
             return mark_safe(' '.join(out))
         return mark_safe('')
 
-
     def map_choice_to_condition(self, answer):
         """Convert the `choice` in an answer to an Edge.condition
 
@@ -1302,7 +1300,7 @@ class ExternalMultipleChoiceOneTextQuestion(EEStoreMixin, Question):
 
         answers = self.get_entries(choice)
 
-        if not answers: # Prevent 500 if the EE cache is empty
+        if not answers:  # Prevent 500 if the EE cache is empty
             return ''
 
         out = []
