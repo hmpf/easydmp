@@ -6,6 +6,7 @@ from guardian.shortcuts import assign_perm
 from guardian.shortcuts import get_objects_for_user
 
 from easydmp.eestore.models import EEStoreMount
+from easydmp.lib.admin import PublishedFilter
 from easydmp.utils.admin import ObjectPermissionModelAdmin
 from easydmp.utils.admin import SetPermissionsMixin
 from easydmp.utils import get_model_name
@@ -47,10 +48,32 @@ def get_canned_answers_for_user(user):
 
 @admin.register(Template)
 class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
-    list_display = ('id', 'title')
-    list_display_links = ('title', 'id')
+    list_display = ('id', 'version', 'title', 'is_published')
+    list_display_links = ('title', 'version', 'id')
+    date_hierarchy = 'published'
     set_permissions = ['use_template']
     has_object_permissions = True
+    list_filter = [PublishedFilter]
+    actions = [
+        'new_version',
+    ]
+
+    # displays
+
+    def is_published(self, obj):
+        if obj.published:
+            return True
+        return False
+    is_published.short_description = 'Is published'
+    is_published.boolean = True
+
+
+    # actions
+
+    def new_version(self, request, queryset):
+        for q in queryset.all():
+            q.new_version()
+    new_version.short_description = 'Create new version'
 
 
 @admin.register(Section)

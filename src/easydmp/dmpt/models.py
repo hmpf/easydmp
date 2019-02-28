@@ -127,9 +127,12 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
         )
 
     def __str__(self):
+        title = self.title
         if self.abbreviation:
-            return self.abbreviation
-        return self.title
+            title = self.abbreviation
+        if self.version > 1:
+            title = '{} v{}'.format(title, self.version)
+        return title
 
     def collect(self, **kwargs):
         collector = super().collect(**kwargs)
@@ -145,6 +148,30 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
         return collector
 
     @transaction.atomic
+    def _clone(self, title, version):
+        """Clone the template and give it <title> and <version>
+
+        Also recursively clones all sections, questions, canned answers,
+        EEStore mounts, FSAs, nodes and edges."""
+        assert title and version, "Both title and version must be given"
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'title',
+                                                 'version', 'published'])
+        new = self.__class__.objects.create(
+            title=title,
+            version=version,
+            **self_dict
+        )
+        # clone sections, which clones questions, canned answers, fsas and eestore mounts
+        section_mapping = {}
+        for section in self.sections.all():
+            new_section = section.clone(new)
+            section_mapping[section] = new_section
+        for old_section, new_section in section_mapping.items():
+            if old_section.super_section:
+                new_section.super_section = section_mapping[old_section.super_section]
+                new_section.save()
+        return new
+
     def clone(self, title=None):
         """Clone the template and save it as <title>
 
@@ -156,19 +183,11 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
         EEStore mounts, FSAs, nodes and edges."""
         if not title:
             title = '{} ({})'.format(self.title, uuid4())
-        self_dict = model_to_dict(self, exclude=['id', 'pk', 'title',
-                                                 'version', 'published'])
-        new = self.__class__.objects.create(title=title, version=1, **self_dict)
-        # clone sections, which clones questions, canned answers, fsas and eestore mounts
-        section_mapping = {}
-        for section in self.sections.all():
-            new_section = section.clone(new)
-            section_mapping[section] = new_section
-        for old_section, new_section in section_mapping.items():
-            if old_section.super_section:
-                new_section.super_section = section_mapping[old_section.super_section]
-                new_section.save()
+        new = self._clone(title=title, version=1)
         return new
+
+    def new_version(self):
+        return self._clone(title=self.title, version=self.version+1)
 
     def renumber_positions(self):
         """Renumber section positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
