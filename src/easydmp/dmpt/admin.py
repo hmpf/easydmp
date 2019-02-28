@@ -66,6 +66,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
     list_display_links = ('template', 'section_depth', 'id', 'position')
     list_filter = ('template',)
     actions = [
+        'review_flow',
         'increment_position',
         'decrement_position',
     ]
@@ -99,6 +100,11 @@ class SectionAdmin(ObjectPermissionModelAdmin):
             q.position -= 1
             q.save()
     decrement_position.short_description = 'Decrement position by 1'
+
+    def review_flow(self, request, queryset):
+        for q in queryset.order_by('position'):
+            q.view_dotsource('pdf')
+    review_flow.short_description = 'Review flow'
 
 
 class QuestionFilter(admin.SimpleListFilter):

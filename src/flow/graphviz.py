@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+import tempfile
 from pathlib import PurePath, Path
 
 import graphviz as gv
@@ -26,7 +27,7 @@ def view_dotsource(format, dotsource, graphviz_tmpdir, cleanup=True):
         source=dotsource,
         format=format,
     )
-    graph.view(cleanup=cleanup)
+    graph.view(filename=tempfile.mktemp('.{}'.format(format)), cleanup=cleanup)
 
 
 def render_dotsource_to_file(format, filename, dotsource, graphviz_tmpdir, directory=''):
