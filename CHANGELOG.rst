@@ -19,6 +19,11 @@ Next
 ----
 
 * Add link to user guide in footer
+* Add docs on flow visualization
+* Various css fixes and typo fixes
+* Various cleanups, code style
+* New feature: viw flow for a section from the admin
+
 
 0.14.6
 ------
