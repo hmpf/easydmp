@@ -10,7 +10,7 @@ LOG = logging.getLogger(__name__)
 import graphviz as gv
 from guardian.models import UserObjectPermissionBase
 from guardian.models import GroupObjectPermissionBase
-from guardian.shortcuts import get_objects_for_user
+from guardian.shortcuts import get_objects_for_user, assign_perm
 
 from django.apps import apps
 from django.conf import settings
@@ -92,6 +92,51 @@ def dfs_paths(graph, start):
                 stack.append((next, path + [next]))
 
 
+def copy_user_permissions(orig, other):
+    """Copy user permissions from one instance to another of the same class
+
+    Objects must have a reverse relation to an explicit subclass of
+    ``UserObjectPermissionBase``, with the ``related_name`` of the
+    ``content_object``-field set to ``permissions_user``.
+
+    Returns the number of new permissions set.
+    """
+    assert isinstance(other, type(orig)), "Objects must share a class"
+    i = 0
+    for access in orig.permissions_user.all():
+        assign_perm(access.permission.codename, access.user, other)
+        i += 1
+    return i
+
+
+def copy_group_permissions(orig, other):
+    """Copy group permissions from one instance to another of the same class"
+
+    Objects must have a reverse relation to an explicit subclass of
+    ``GroupObjectPermissionBase``, with the ``related_name`` of the
+    ``content_object``-field set to ``permissions_group``.
+
+    Returns the number of new permissions set.
+    """
+    assert isinstance(other, type(orig)), "Objects must share a class"
+    i = 0
+    for access in orig.permissions_group.all():
+        assign_perm(access.permission.codename, access.group, other)
+        i += 1
+    return i
+
+
+def copy_permissions(orig, other):
+    """Copy all permissions from one instance to another of the same class
+
+    Returns the number of new permissions set.
+    """
+    assert isinstance(other, type(orig)), "Objects must share a class"
+    new_uperms =  copy_user_permissions(orig, other)
+    new_gperms = copy_group_permissions(orig, other)
+    return new_uperms + new_gperms
+
+
 class TemplateQuerySet(models.QuerySet):
 
     def has_access(self, user):
@@ -170,6 +215,7 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
             if old_section.super_section:
                 new_section.super_section = section_mapping[old_section.super_section]
                 new_section.save()
+        copy_permissions(self, new)
         return new
 
     def clone(self, title=None):
@@ -321,11 +367,13 @@ class TemplateAccess(models.Model):
 
 
 class TemplateUserObjectPermission(UserObjectPermissionBase):
-    content_object = models.ForeignKey(Template, on_delete=models.CASCADE)
+    content_object = models.ForeignKey(Template, on_delete=models.CASCADE,
+                                       related_name='permissions_user')
 
 
 class TemplateGroupObjectPermission(GroupObjectPermissionBase):
-    content_object = models.ForeignKey(Template, on_delete=models.CASCADE)
+    content_object = models.ForeignKey(Template, on_delete=models.CASCADE,
+                                       related_name='permissions_group')
 
 
 class Section(DeletionMixin, RenumberMixin, models.Model):
