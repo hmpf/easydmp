@@ -10,7 +10,7 @@ LOG = logging.getLogger(__name__)
 import graphviz as gv
 from guardian.models import UserObjectPermissionBase
 from guardian.models import GroupObjectPermissionBase
-from guardian.shortcuts import get_objects_for_user
+from guardian.shortcuts import get_objects_for_user, assign_perm
 
 from django.apps import apps
 from django.conf import settings
@@ -92,6 +92,51 @@ def dfs_paths(graph, start):
                 stack.append((next, path + [next]))
 
 
+def copy_user_permissions(orig, other):
+    """Copy user permissions from one instance to another of the same class
+
+    Objects must have a reverse relation to an explicit subclass of
+    ``UserObjectPermissionBase``, with the ``related_name`` of the
+    ``content_object``-field set to ``permissions_user``.
+
+    Returns the number of new permissions set.
+    """
+    assert isinstance(other, type(orig)), "Objects must share a class"
+    i = 0
+    for access in orig.permissions_user.all():
+        assign_perm(access.permission.codename, access.user, other)
+        i += 1
+    return i
+
+
+def copy_group_permissions(orig, other):
+    """Copy group permissions from one instance to another of the same class"
+
+    Objects must have a reverse relation to an explicit subclass of
+    ``GroupObjectPermissionBase``, with the ``related_name`` of the
+    ``content_object``-field set to ``permissions_group``.
+
+    Returns the number of new permissions set.
+    """
+    assert isinstance(other, type(orig)), "Objects must share a class"
+    i = 0
+    for access in orig.permissions_group.all():
+        assign_perm(access.permission.codename, access.group, other)
+        i += 1
+    return i
+
+
+def copy_permissions(orig, other):
+    """Copy all permissions from one instance to another of the same class
+
+    Returns the number of new permissions set.
+    """
+    assert isinstance(other, type(orig)), "Objects must share a class"
+    new_uperms =  copy_user_permissions(orig, other)
+    new_gperms = copy_group_permissions(orig, other)
+    return new_uperms + new_gperms
+
+
 class TemplateQuerySet(models.QuerySet):
 
     def has_access(self, user):
@@ -127,9 +172,12 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
         )
 
     def __str__(self):
+        title = self.title
         if self.abbreviation:
-            return self.abbreviation
-        return self.title
+            title = self.abbreviation
+        if self.version > 1:
+            title = '{} v{}'.format(title, self.version)
+        return title
 
     def collect(self, **kwargs):
         collector = super().collect(**kwargs)
@@ -145,6 +193,31 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
         return collector
 
     @transaction.atomic
+    def _clone(self, title, version):
+        """Clone the template and give it <title> and <version>
+
+        Also recursively clones all sections, questions, canned answers,
+        EEStore mounts, FSAs, nodes and edges."""
+        assert title and version, "Both title and version must be given"
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'title',
+                                                 'version', 'published'])
+        new = self.__class__.objects.create(
+            title=title,
+            version=version,
+            **self_dict
+        )
+        # clone sections, which clones questions, canned answers, fsas and eestore mounts
+        section_mapping = {}
+        for section in self.sections.all():
+            new_section = section.clone(new)
+            section_mapping[section] = new_section
+        for old_section, new_section in section_mapping.items():
+            if old_section.super_section:
+                new_section.super_section = section_mapping[old_section.super_section]
+                new_section.save()
+        copy_permissions(self, new)
+        return new
+
     def clone(self, title=None):
         """Clone the template and save it as <title>
 
@@ -156,19 +229,11 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
         EEStore mounts, FSAs, nodes and edges."""
         if not title:
             title = '{} ({})'.format(self.title, uuid4())
-        self_dict = model_to_dict(self, exclude=['id', 'pk', 'title',
-                                                 'version', 'published'])
-        new = self.__class__.objects.create(title=title, version=1, **self_dict)
-        # clone sections, which clones questions, canned answers, fsas and eestore mounts
-        section_mapping = {}
-        for section in self.sections.all():
-            new_section = section.clone(new)
-            section_mapping[section] = new_section
-        for old_section, new_section in section_mapping.items():
-            if old_section.super_section:
-                new_section.super_section = section_mapping[old_section.super_section]
-                new_section.save()
+        new = self._clone(title=title, version=1)
         return new
+
+    def new_version(self):
+        return self._clone(title=self.title, version=self.version+1)
 
     def renumber_positions(self):
         """Renumber section positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
@@ -302,11 +367,13 @@ class TemplateAccess(models.Model):
 
 
 class TemplateUserObjectPermission(UserObjectPermissionBase):
-    content_object = models.ForeignKey(Template, on_delete=models.CASCADE)
+    content_object = models.ForeignKey(Template, on_delete=models.CASCADE,
+                                       related_name='permissions_user')
 
 
 class TemplateGroupObjectPermission(GroupObjectPermissionBase):
-    content_object = models.ForeignKey(Template, on_delete=models.CASCADE)
+    content_object = models.ForeignKey(Template, on_delete=models.CASCADE,
+                                       related_name='permissions_group')
 
 
 class Section(DeletionMixin, RenumberMixin, models.Model):

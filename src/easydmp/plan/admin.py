@@ -1,33 +1,15 @@
 from django.contrib import admin
 
+from easydmp.lib.admin import FakeBooleanFilter
+from easydmp.lib.admin import PublishedFilter
+
 from .models import Plan, PlanComment
 from .models import PlanAccess
-
-
-class FakeBooleanFilter(admin.SimpleListFilter):
-
-    def lookups(self, request, _model_admin):
-        return (
-            ('yes', 'Yes'),
-            ('no', 'No'),
-        )
-
-    def queryset(self, request, queryset):
-        lookup = '{}__isnull'.format(self.parameter_name)
-        if self.value() == 'yes':
-            return queryset.filter(**{lookup: False})
-        if self.value() == 'no':
-            return queryset.filter(**{lookup: True})
 
 
 class LockedFilter(FakeBooleanFilter):
     title = 'Locked'
     parameter_name = 'locked'
-
-
-class PublishedFilter(FakeBooleanFilter):
-    title = 'Published'
-    parameter_name = 'published'
 
 
 @admin.register(Plan)
