@@ -15,8 +15,8 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
-Next
-----
+0.15.0
+------
 
 * Add link to user guide in footer
 * Add docs on flow visualization
