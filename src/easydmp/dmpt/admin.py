@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
+from django.urls import reverse
+from django.utils.html import format_html, mark_safe
 
 from guardian.admin import GuardedModelAdmin
 from guardian.shortcuts import assign_perm
@@ -85,6 +87,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         'id',
         'label',
         'title',
+        'graph_pdf',
     )
     list_display_links = ('template', 'section_depth', 'id', 'position')
     list_filter = ('template',)
@@ -108,6 +111,15 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         if db_field.name == 'super_section':
             kwargs["queryset"] = self.get_queryset(request)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    # display fields
+
+    def graph_pdf(self, obj):
+        pdf_url = reverse('v1:section-graph', kwargs={'pk': obj.pk})
+        html = '<a target="_blank" href="{}">PDF</a>'
+        return format_html(html, mark_safe(pdf_url))
+    graph_pdf.short_description = 'Graph'
+    graph_pdf.allow_tags = True
 
     # actions
 
