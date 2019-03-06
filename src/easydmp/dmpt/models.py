@@ -34,6 +34,7 @@ from .utils import print_url
 from .utils import render_from_string
 
 from easydmp.eestore.models import EEStoreCache
+from easydmp.lib.models import ModifiedTimestampModel
 from easydmp.utils import pprint_list
 
 """
@@ -376,7 +377,7 @@ class TemplateGroupObjectPermission(GroupObjectPermissionBase):
                                        related_name='permissions_group')
 
 
-class Section(DeletionMixin, RenumberMixin, models.Model):
+class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel):
     """A section of a :model:`dmpt.Template`.
 
     **Attributes**
