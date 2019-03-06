@@ -34,6 +34,7 @@ Prerequisites
 
 - python >= 3.5
 - pip
+- graphviz (if you want to be able to graph the flow of templates)
 - virtualenv/wrapper (optional)
 - some sql database supported by Django
 
@@ -194,6 +195,8 @@ production settings. Assure that the following holds:
 * ``DEBUG`` must be ``False``
 * Generate a new ``SECRET_KEY`` (a string of 50 random printable ASCII
   characters is the norm)
+* We recommend setting the environment variable ``MEDIA_ROOT`` to a path that
+  is servable by the web server and has a handful megabytes of free diskspace.
 
 Deploying to PaaSes
 -------------------
