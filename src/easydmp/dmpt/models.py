@@ -1,6 +1,8 @@
 from collections import OrderedDict
 from copy import deepcopy
 from functools import lru_cache
+import os
+from pathlib import Path
 from textwrap import fill
 from uuid import uuid4
 import logging
@@ -639,11 +641,47 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel):
             dotsource = self.generate_dotsource()
         view_dotsource(format, dotsource, self.GRAPHVIZ_TMPDIR)
 
-    def render_dotsource_to_file(self, format, filename, directory='', dotsource=None):
-        _prep_dotsource(self.GRAPHVIZ_TMPDIR)
+    def render_dotsource_to_file(self, format, filename, root_directory='', sub_directory='', dotsource=None):
+        if not root_directory:
+            root_directory = self.GRAPHVIZ_TMPDIR
+        _prep_dotsource(root_directory)
         if not dotsource:
             dotsource = self.generate_dotsource()
-        return render_dotsource_to_file(format, filename, dotsource, self.GRAPHVIZ_TMPDIR, directory)
+        return render_dotsource_to_file(format, filename, dotsource, root_directory, sub_directory, mode=0o755)
+
+    def get_cached_dotsource_filename(self, format='pdf'):
+        return 'section-{}.{}'.format(self.pk, format)
+
+    def get_cached_dotsource_urlpath(self, format='pdf'):
+        filename = self.get_cached_dotsource_filename(format)
+        return '{}cached/dmpt/{}'.format(settings.STATIC_URL, filename)
+
+    def refresh_cached_dotsource(self, format='pdf'):
+        assert format in ('pdf', 'svg', 'dot', 'png'), 'Unsupported format: {}'.format(format)
+        filename = self.get_cached_dotsource_filename(format)
+        subdirectory = 'cached/dmpt'
+        apppath = Path(__file__).parent.joinpath('static').resolve()
+        apppath = apppath.joinpath(subdirectory)
+        apppath.mkdir(mode=0o755, parents=True, exist_ok=True)
+        sitepath = Path(settings.STATIC_ROOT).resolve().joinpath(subdirectory)
+        sitepath.mkdir(mode=0o755, parents=True, exist_ok=True)
+        filepath = apppath.joinpath(filename)
+        try:
+            modified = os.path.getmtime(filepath)
+        except FileNotFoundError:
+            modified = 0.0
+        if modified < self.modified.timestamp():
+            if format == 'dot':
+                dotsource = self.generate_dotsource()
+                with open(filepath, 'w') as Dotfile:
+                    Dotfile.write(dotsource)
+            else:
+                self.render_dotsource_to_file(
+                    format,
+                    filename.rstrip('.'+format),
+                    root_directory=apppath,
+                )
+            sitepath.joinpath(filename).write_bytes(filepath.read_bytes())
 
 
 class NoCheckMixin:
