@@ -27,21 +27,6 @@
       </ul>
       </div>
       {% endif %}
-    </div>
-
-    {% if section_progress|length > 1 %}
-    <div class="row uninett-whole-row progressbar progressbar-small">
-    <ul>
-    {% for section in section_progress %}
-    <li {% if section.status %}class="{{ section.status }}"{% endif %}>
-          <div class="progressbar2"></div>
-          <span class="withfadein"><a href="{% url 'section_detail' plan=object.id section=section.pk %}">{{ section.label }}</a></span>
-          <p>{{ section.title }}</p>
-      </li>
-    {% endfor %}
-    </ul>
-    </div>
-    {% endif %}
 
     <div class="section section-depth-{{ section.section_depth }}">
       <h3>{{ section.full_title }}</h3>
