@@ -21,6 +21,7 @@ Next
 * Add docs about template design
 * New feature: optional questions, need not be answered if shown
 * Fixed some infelicities on the section update page
+* Reverted an admin feature that can't work in production as is (review graph)
 
 0.15.0
 ------
