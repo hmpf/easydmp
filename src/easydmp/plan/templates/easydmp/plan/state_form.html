@@ -12,17 +12,16 @@
   <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
 
     <div id="editplan_header" class="top-wrap">
-      <div class="jumbotron uninett-color-darkBlue uninett-pattern1"><h1>{{ object.title|capfirst }}</h1></div>
+      <div><h1>{{ object.title|capfirst }}</h1></div>
       <div class="btn-group">
-        <div class="wrap"><span class='caret'></span><a class="summary-link" href="{% url 'plan_detail' plan=object.pk %}">Go to plan summary</a>
-        </div>
+        <div class="wrap"><span class='caret'></span><a class="summary-link" href="{% url 'plan_detail' plan=object.pk %}">Go to plan summary</a></div>
       </div>
       <div class="col-lg-12 savetxt">Your answers are saved every time you press "prev" or "next"</div>
     </div>
 
   {% if section_progress|length > 1 %}
   <!-- start progress / status bar // USIT-code -->
-  <div class="row uninett-whole-row progressbar progressbar-small">
+  <div class="uninett-whole-row progressbar progressbar-small">
     <ul>
     {% for section in section_progress %}
     <li {% if section.status %}class="{{ section.status }}"{% endif %}>
@@ -68,7 +67,11 @@
       <form class="blueForms" id="id-{{ form.prefix }}" method="POST">
           {% csrf_token %}
           <div class="question-label">
+            {% if question.optional %}
+            <label class="control-label">{{ form.label }}</label>
+            {% else %}
             <label class="control-label requiredField">{{ form.label }}<span class="asteriskField">*</span></label>
+            {% endif %}
           </div>
           <p class="help_text question-help">{{ form.help_text|safe }}</p>
           <p class="question-comment" style="">{{ form.question.comment }}</p>

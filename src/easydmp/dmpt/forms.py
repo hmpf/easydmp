@@ -133,6 +133,7 @@ class BooleanForm(AbstractNodeForm):
             help_text=self.help_text,
             choices=choices,
             widget=forms.RadioSelect,
+            required=not self.question.optional,
         )
 
     def pprint(self):
@@ -169,6 +170,7 @@ class ChoiceForm(AbstractNodeForm):
             help_text=self.help_text,
             choices=choices,
             widget=forms.RadioSelect,
+            required=not self.question.optional,
         )
 
 
@@ -182,6 +184,7 @@ class MultipleChoiceOneTextForm(AbstractNodeForm):
             help_text=self.help_text,
             choices=choices,
             widget=forms.CheckboxSelectMultiple,
+            required=not self.question.optional,
         )
 
     def serialize_choice(self):
@@ -208,24 +211,30 @@ class DateRangeForm(AbstractNodeForm):
         self.fields['choice'] = DateRangeField(
             label=self.label,
             help_text=self.help_text,
+            required=not self.question.optional,
         )
 
     def serialize(self):
         if self.is_bound:
             data = self.cleaned_data['choice']
-            assert data, "Dateranges may not be empty"
-            start, end = data.lower, data.upper
-            return {
-                'choice':
-                    {
-                        'start': start.isoformat(),
-                        'end': end.isoformat(),
-                    },
-            }
+            if data and data.lower and data.upper:
+                start, end = data.lower, data.upper
+                return {
+                    'choice':
+                        {
+                            'start': start.isoformat(),
+                            'end': end.isoformat(),
+                        },
+                }
+            else:
+                if self.question.optional:
+                    return {}
+                else:
+                    raise ValueError("Dateranges may not be empty")
         return {}
 
     def pprint(self):
-        if self.is_valid():
+        if self.is_valid() and not self.question.optional:
             return '{}–{}'.format(self.serialize())
         return 'Not set'
 
@@ -255,6 +264,7 @@ class ReasonForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
             widget=forms.Textarea,
+            required=not self.question.optional,
         )
 
 
@@ -266,6 +276,7 @@ class PositiveIntegerForm(AbstractNodeForm):
             min_value=1,
             label=self.label,
             help_text=self.help_text,
+            required=not self.question.optional,
         )
 
     def serialize_choice(self):
@@ -284,6 +295,7 @@ class ExternalChoiceForm(AbstractNodeForm):
             help_text=self.help_text,
             choices=choices,
             widget=Select2Widget,
+            required=not self.question.optional,
         )
 
 
@@ -296,6 +308,7 @@ class ExternalChoiceNotListedForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
             choices=choices,
+            required=not self.question.optional,
         )
 
     def serialize_choice(self):
@@ -320,6 +333,7 @@ class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
             help_text=self.help_text,
             choices=choices,
             widget=Select2MultipleWidget,
+            required=not self.question.optional,
         )
 
     def serialize_choice(self):
@@ -337,6 +351,7 @@ class ExternalMultipleChoiceNotListedOneTextForm(AbstractNodeForm):
             label=self.label,
             help_text=self.help_text,
             choices=choices,
+            required=not self.question.optional,
         )
 
     def serialize_choice(self):
@@ -360,6 +375,7 @@ class NamedURLForm(AbstractNodeForm):
         self.fields['choice'] = NamedURLField(
             label=self.label,
             help_text=self.help_text,
+            required=not self.question.optional,
         )
 
     def serialize_choice(self):
@@ -519,4 +535,7 @@ def make_form(question, **kwargs):
     form_type = INPUT_TYPE_TO_FORMS.get(question.input_type, None)
     if form_type is None:
         assert False, 'Unknown input type: {}'.format(question.input_type)
+    form = form_type(**kwargs)
+    if not question.optional and isinstance(form, forms.BaseFormSet):
+        form.validate_min = True
     return form_type(**kwargs)
