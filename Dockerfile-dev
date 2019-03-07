@@ -24,6 +24,7 @@ ENV PYTHONPATH /code/src
 RUN mkdir /code
 WORKDIR /code
 
+COPY --from=build /usr/local/bin/ /usr/local/bin/
 COPY --from=build /usr/local/lib/python3.7/dist-packages/ /usr/local/lib/python3.7/dist-packages/
 COPY --from=build /usr/lib/python3/dist-packages/ /usr/lib/python3/dist-packages/
 
