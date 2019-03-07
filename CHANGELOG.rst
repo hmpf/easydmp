@@ -15,8 +15,8 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
-Next
-----
+0.16.1
+------
 
 * Removed duplicate in requirements (confuses pip)
 
