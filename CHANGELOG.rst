@@ -19,6 +19,8 @@ Next
 ----
 
 * Add docs about template design
+* New feature: optional questions, need not be answered if shown
+* Fixed some infelicities on the section update page
 
 0.15.0
 ------
