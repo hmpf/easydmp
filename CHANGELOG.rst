@@ -15,8 +15,8 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
-Next
-----
+0.16.0
+------
 
 * Add docs about template design
 * New feature: optional questions, need not be answered if shown
