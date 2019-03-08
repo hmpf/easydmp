@@ -51,6 +51,7 @@ class SectionSerializer(serializers.HyperlinkedModelSerializer):
             'position',
             'introductory_text',
             'comment',
+            'modified',
         ]
 
 

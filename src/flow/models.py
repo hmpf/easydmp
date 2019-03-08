@@ -12,7 +12,7 @@ import graphviz as gv
 
 from .errors import FSANoStartnodeError
 from .errors import FSANoDataError
-from .graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
+from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
 from .modelmixins import ClonableModel
 
 

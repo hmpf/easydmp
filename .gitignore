@@ -1,4 +1,5 @@
 *.egg-info
+*.pdf
 *.py?
 *.sw?
 *.sh
@@ -13,3 +14,6 @@ staticfiles
 _build
 eudat-template
 collected_static_files
+src/easydmp/dmpt/static/**/*.svg
+src/easydmp/dmpt/static/**/*.png
+src/**/*.dot

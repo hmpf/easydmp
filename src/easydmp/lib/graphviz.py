@@ -30,7 +30,7 @@ def view_dotsource(format, dotsource, graphviz_tmpdir, cleanup=True):
     graph.view(filename=tempfile.mktemp('.{}'.format(format)), cleanup=cleanup)
 
 
-def render_dotsource_to_file(format, filename, dotsource, graphviz_tmpdir, directory=''):
+def render_dotsource_to_file(format, filename, dotsource, root_directory, directory='', mode=0o750):
     """Generate and store a file of the fsa structure
 
     This will create a file at <filename> on the computer this software
@@ -38,8 +38,12 @@ def render_dotsource_to_file(format, filename, dotsource, graphviz_tmpdir, direc
 
     format: a format supported by graphviz
     filename: store the file locally at this location
-    doutsource: show dotsource, do not generate from this fsa"""
-    _prep_dotsource(graphviz_tmpdir)
+    doutsource: dotsource to render
+    root_directory: parent directory to generate files in. Never set by end user
+    directory: directory within parent directory o generate files in. May be set by user
+    mode: mode of directory. Default: 0o750
+    """
+    _prep_dotsource(root_directory)
     extension = '.' + format
     # remove directories, for great paranoia
     filename = PurePath(filename).name
@@ -49,11 +53,14 @@ def render_dotsource_to_file(format, filename, dotsource, graphviz_tmpdir, direc
     except AttributeError:
         assert False, (type(filename),)
     # Add subdir to default dir, if any
+    root_directory = Path(root_directory).resolve()
+    directory = root_directory.joinpath(directory).resolve()
+    # Ensure directory is inside root_directory
     try:
-        directory = Path(directory).relative_to(graphviz_tmpdir)
+        Path(directory).relative_to(root_directory)
     except ValueError:
-        directory = Path(graphviz_tmpdir)
-    directory.mkdir(mode=0o750, exist_ok=True, parents=True)
+        directory = root_directory
+    directory.mkdir(mode=mode, exist_ok=True, parents=True)
     graph = gv.Source(
         source=dotsource,
         format=format,
