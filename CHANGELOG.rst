@@ -15,8 +15,8 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
-Next
-----
+0.17.0
+------
 
 * New feature: cache generated section graphs and make them available from the
   admin and from an API endpoint.
