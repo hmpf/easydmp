@@ -15,6 +15,11 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+Next
+----
+
+* Fixed broken listing of plans in API for authenticated users
+
 0.17.0
 ------
 
