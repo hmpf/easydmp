@@ -76,17 +76,12 @@
           <li><a href="{% url 'plan_detail' plan=plan.pk %}">Current plan</a></li>
           {% endif %}
           <li><a href="{% url 'new_plan' %}">Create a new plan</a></li>
-          <li><a href="/about/">About</a></li>
-          <li><a href="mailto:support@easydmp.sigma2.no">Support</a></li>
           {% if request.user.is_staff %}
           <li><a href="{% url 'admin:index' %}">Admin</a></li>
           {% endif %}
-          <li>
-              <a href="{% url 'logout' %}"><button type="button" class="btn btn-default">Log out</button></a>
-          </li>
+          <li><span class="username"><span class="glyphicon glyphicon-user uninett-fontColor-red"></span> {{ request.user.username }}</span></li>
+          <li><a href="{% url 'logout' %}"><button type="button" class="btn btn-default">Log out</button></a></li>
           {% else %}
-          <li><a href="/about/">About</a></li>
-          <li><a href="mailto:support@easydmp.sigma2.no">Support</a></li>
           <li class="uninett-login">
               <a href="{% url 'login-selector' %}"><button type="button" class="btn btn-default uninett-login-btn"><span class="glyphicon glyphicon-user uninett-fontColor-red"></span>Log in</button></a>
           </li>
@@ -118,6 +113,10 @@
         <a href="https://www.sigma2.no/"><img src="{% static 'uninett/UNINETT_Sigma2_logo_H.png' %}" alt="Uninett logo" width="200px"></a>
         <span style="padding: 1em"> </span>
         <a href="https://www.sigma2.no/easydmp/how-to">User Guide</a>
+        <span style="padding: 1em"> </span>
+        <a href="/about/">About</a>
+        <span style="padding: 1em"> </span>
+        <a href="mailto:support@easydmp.sigma2.no">Support</a>
         <span style="padding: 1em"> </span>
         <a href="http://hdl.handle.net/11304/e43b2e3f-83c5-4e3f-b8b7-18d38d37a6cd">Terms of use</a>
         <span style="padding: 1em"> </span>
