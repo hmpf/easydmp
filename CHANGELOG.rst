@@ -10,8 +10,6 @@ commit hashes were used.
 Unreleased
 ----------
 
-* Optional/non-required questions. These are, if obligatory,
-  always seen but need not be answered.
 * Logging of events.
 * Comments for plans.
 
