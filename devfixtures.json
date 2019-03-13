@@ -73,6 +73,8 @@
  "fields": {
   "title": "Multiple named linear sections example",
   "abbreviation": "",
+  "description": "",
+  "domain_specific": false,
   "version": 1,
   "created": "2018-09-26T08:49:52.392Z",
   "published": null
@@ -84,6 +86,8 @@
  "fields": {
   "title": "Single unnamed linear section example",
   "abbreviation": "",
+  "description": "",
+  "domain_specific": false,
   "version": 1,
   "created": "2018-09-27T09:08:13.677Z",
   "published": null
@@ -138,6 +142,7 @@
  "model": "dmpt.section",
  "pk": 1,
  "fields": {
+  "modified": "2019-03-07T13:08:16.013Z",
   "template": 1,
   "label": "",
   "title": "First section",
@@ -153,6 +158,7 @@
  "model": "dmpt.section",
  "pk": 2,
  "fields": {
+  "modified": "2019-03-07T13:08:16.013Z",
   "template": 1,
   "label": "",
   "title": "Empty section",
@@ -168,6 +174,7 @@
  "model": "dmpt.section",
  "pk": 3,
  "fields": {
+  "modified": "2019-03-07T13:08:16.013Z",
   "template": 1,
   "label": "A label!",
   "title": "Second empty section",
@@ -183,6 +190,7 @@
  "model": "dmpt.section",
  "pk": 4,
  "fields": {
+  "modified": "2019-03-07T13:08:16.013Z",
   "template": 1,
   "label": "",
   "title": "Last section",
@@ -198,6 +206,7 @@
  "model": "dmpt.section",
  "pk": 5,
  "fields": {
+  "modified": "2019-03-07T13:08:16.013Z",
   "template": 2,
   "label": "",
   "title": "",
@@ -222,6 +231,8 @@
   "framing_text": "",
   "comment": "This is a comment. It is in addition to the help text. Each choice in the form have their own help texts for this question, check the html code, the div with class \"answers\".",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -238,6 +249,8 @@
   "framing_text": "The dates chosen are between {start} and {end}.",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -254,6 +267,8 @@
   "framing_text": "The main weapon of the Spanish Inquisition is {}.",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -270,6 +285,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -286,6 +303,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -302,6 +321,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -318,6 +339,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -334,6 +357,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -350,6 +375,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -366,6 +393,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -382,6 +411,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -398,6 +429,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -414,6 +447,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -430,6 +465,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
@@ -446,6 +483,8 @@
   "framing_text": "",
   "comment": "",
   "obligatory": true,
+  "optional": false,
+  "optional_canned_text": "",
   "node": null
  }
 },
