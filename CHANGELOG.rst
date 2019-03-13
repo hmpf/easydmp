@@ -13,10 +13,12 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
-Next
-----
+0.17.1
+------
 
 * Fixed broken listing of plans in API for authenticated users
+* Show username in header
+* Find users by date_joined in admin
 
 0.17.0
 ------
