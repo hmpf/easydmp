@@ -55,6 +55,7 @@ INPUT_TYPES = (
     'daterange',
     'multichoiceonetext',
     'reason',
+    'singlereason',
     'positiveinteger',
     'externalchoice',
     'extchoicenotlisted',
@@ -1240,6 +1241,18 @@ class ReasonQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
         super().save(*args, **kwargs)
 
 
+class SingleReasonQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
+    "A non-branch-capable question answerable with plaintext"
+    has_notes = False
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.input_type = 'singlereason'
+        super().save(*args, **kwargs)
+
+
 class PositiveIntegerQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
     "A non-branch-capable question answerable with a positive integer"
 
@@ -1677,6 +1690,7 @@ INPUT_TYPE_MAP = {
     'daterange': DateRangeQuestion,
     'multichoiceonetext': MultipleChoiceOneTextQuestion,
     'reason': ReasonQuestion,
+    'singlereason' : SingleReasonQuestion,
     'positiveinteger': PositiveIntegerQuestion,
     'externalchoice': ExternalChoiceQuestion,
     'extchoicenotlisted': ExternalChoiceNotListedQuestion,

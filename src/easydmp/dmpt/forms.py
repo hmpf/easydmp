@@ -268,6 +268,17 @@ class ReasonForm(AbstractNodeForm):
         )
 
 
+class SingleReasonForm(AbstractNodeForm):
+    json_type = 'string'
+
+    def _add_choice_field(self):
+        self.fields['choice'] = forms.CharField(
+            label=self.label,
+            help_text=self.help_text,
+            required=not self.question.optional,
+        )
+
+
 class PositiveIntegerForm(AbstractNodeForm):
     json_type = 'number'
 
@@ -517,6 +528,7 @@ INPUT_TYPE_TO_FORMS = {
     'multichoiceonetext': MultipleChoiceOneTextForm,
     'daterange': DateRangeForm,
     'reason': ReasonForm,
+    'singlereason' : SingleReasonForm,
     'positiveinteger': PositiveIntegerForm,
     'externalchoice': ExternalChoiceForm,
     'extchoicenotlisted': ExternalChoiceNotListedForm,
