@@ -179,6 +179,12 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
     retired = models.DateTimeField(
         blank=True, null=True,
         help_text='Date after which the template should no longer be used.',
+    origin_site = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        editable=False,
+        help_text='Which site (domain name) a template was originally created on'
     )
 
     objects = TemplateQuerySet.as_manager()

@@ -112,6 +112,12 @@ If you need to change any settings from the default, put a file
 environment-variable ``DJANGO_SETTINGS_MODULE`` to the dotted path of the
 devsettings-file.
 
+If you plan to export raw data from a server that doesn't have a proper
+externally reachable domain name (because it runs on localhost, for instance)
+to another server, we recommend you set the environment variable ORIGIN_SITE to
+a unique domain-name-like structure. It should not be the domain name of the
+server you want to export to.
+
 Using docker-compose
 --------------------
 
@@ -197,8 +203,13 @@ production settings. Assure that the following holds:
 * ``DEBUG`` must be ``False``
 * Generate a new ``SECRET_KEY`` (a string of 50 random printable ASCII
   characters is the norm)
-* We recommend setting the environment variable ``MEDIA_ROOT`` to a path that
+* We recommend setting the environment variable ``STATIC_ROOT`` to a path that
   is servable by the web server and has a handful megabytes of free diskspace.
+* If you serve the same data from several sites (domain names) we recommend you
+  explicitly set ``ORIGIN_SITE``. Either the same on all of them, or one per
+  site. If ``ORIGIN_SITE`` is not set, it will attempt to guess based on what
+  url the user used to access the site, failing that: the fully qualified
+  hostname, failing that: a hexdump of a randomly generated uuid.
 
 Deploying to PaaSes
 -------------------
