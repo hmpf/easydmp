@@ -16,6 +16,7 @@ Unreleased
 Next
 ----
 
+* Prevent Makefile from exiting with an error
 * Set a question-type specific css class on every question widget
 
 0.18.0
