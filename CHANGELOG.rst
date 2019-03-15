@@ -13,6 +13,13 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+Next
+----
+
+* New question type: ShortFreetext. A single line of text suitable for titles
+  and names
+* Fix for validations of plans not being saved when clicking "Check" in the UI
+
 0.17.1
 ------
 
