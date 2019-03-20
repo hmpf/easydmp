@@ -16,8 +16,9 @@ Unreleased
 Next
 ----
 
-* Prevent Makefile from exiting with an error
 * Set a question-type specific css class on every question widget
+* Prevent Makefile from exiting with an error
+* Added CONTRIBUTORS.txt and CONTRIBUTING.rst
 
 0.18.0
 ------
