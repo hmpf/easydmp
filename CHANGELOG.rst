@@ -13,6 +13,11 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
+Next
+----
+
+* Set a question-type specific css class on every question widget
+
 0.18.0
 ------
 

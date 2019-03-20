@@ -136,6 +136,7 @@ class BooleanForm(AbstractNodeForm):
             widget=forms.RadioSelect,
             required=not self.question.optional,
         )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
     def pprint(self):
         if self.is_valid():
@@ -173,6 +174,7 @@ class ChoiceForm(AbstractNodeForm):
             widget=forms.RadioSelect,
             required=not self.question.optional,
         )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
 
 class MultipleChoiceOneTextForm(AbstractNodeForm):
@@ -187,6 +189,7 @@ class MultipleChoiceOneTextForm(AbstractNodeForm):
             widget=forms.CheckboxSelectMultiple,
             required=not self.question.optional,
         )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
     def serialize_choice(self):
         attrs = super().serialize_choice()
@@ -214,6 +217,7 @@ class DateRangeForm(AbstractNodeForm):
             help_text=self.help_text,
             required=not self.question.optional,
         )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
     def serialize(self):
         if self.is_bound:
@@ -267,6 +271,7 @@ class ReasonForm(AbstractNodeForm):
             widget=forms.Textarea,
             required=not self.question.optional,
         )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
 
 class ShortFreetextForm(AbstractNodeForm):
@@ -283,9 +288,10 @@ class ShortFreetextForm(AbstractNodeForm):
             label=self.label,
             help_text=help_text,
             max_length=self.MAX_LENGTH,
-            widget=forms.TextInput(attrs={'class': self.input_class}),
+            widget=forms.TextInput,
             required=not self.question.optional,
         )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
 
 class PositiveIntegerForm(AbstractNodeForm):
@@ -298,6 +304,7 @@ class PositiveIntegerForm(AbstractNodeForm):
             help_text=self.help_text,
             required=not self.question.optional,
         )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
     def serialize_choice(self):
         attrs = super().serialize_choice()
@@ -317,6 +324,7 @@ class ExternalChoiceForm(AbstractNodeForm):
             widget=Select2Widget,
             required=not self.question.optional,
         )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
 
 class ExternalChoiceNotListedForm(AbstractNodeForm):
@@ -330,6 +338,7 @@ class ExternalChoiceNotListedForm(AbstractNodeForm):
             choices=choices,
             required=not self.question.optional,
         )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
     def serialize_choice(self):
         attrs = super().serialize_choice()
@@ -355,6 +364,7 @@ class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
             widget=Select2MultipleWidget,
             required=not self.question.optional,
         )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
     def serialize_choice(self):
         attrs = super().serialize_choice()
@@ -397,6 +407,7 @@ class NamedURLForm(AbstractNodeForm):
             help_text=self.help_text,
             required=not self.question.optional,
         )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
     def serialize_choice(self):
         attrs = super().serialize_choice()
@@ -457,6 +468,7 @@ class NamedURLFormSetForm(forms.Form):
     #
     # The formset has the node-magic
     choice = NamedURLField(label='') # Hide the label from crispy forms
+    choice.widget.attrs.update({'class': 'question-multinamedurlonetext'})
 
 
 class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
@@ -493,6 +505,7 @@ class DMPTypedReasonFormSetForm(forms.Form):
     #
     # The formset has the node-magic
     choice = DMPTypedReasonField(label='')
+    choice.widget.attrs.update({'class': 'question-multinamedurlonetext'})
 
 
 class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
