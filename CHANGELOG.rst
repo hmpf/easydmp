@@ -13,8 +13,8 @@ Unreleased
 * Logging of events.
 * Comments for plans.
 
-Next
-----
+0.18.0
+------
 
 * New question type: ShortFreetext. A single line of text suitable for titles
   and names
