@@ -61,6 +61,7 @@ class AbstractNodeMixin():
         self.has_prevquestion = kwargs.pop('has_prevquestion', False)
         self.question = kwargs.pop('question').get_instance()
         self.question_pk = self.question.pk
+        self.input_class = 'question-{}'.format(self.question.input_type)
         label = self.question.label
         self.label = ' '.join((label, self.question.question))
         self.help_text = getattr(self.question, 'help_text', '')
@@ -268,13 +269,21 @@ class ReasonForm(AbstractNodeForm):
         )
 
 
-class SingleReasonForm(AbstractNodeForm):
+class ShortFreetextForm(AbstractNodeForm):
     json_type = 'string'
+    MAX_LENGTH = 100
 
     def _add_choice_field(self):
+        help_text = '(This field has a hard limit of {} letters.)'.format(
+            self.MAX_LENGTH
+        )
+        if self.help_text:
+            help_text = '{} {}'.format(self.help_text.strip(), help_text)
         self.fields['choice'] = forms.CharField(
             label=self.label,
-            help_text=self.help_text,
+            help_text=help_text,
+            max_length=self.MAX_LENGTH,
+            widget=forms.TextInput(attrs={'class': self.input_class}),
             required=not self.question.optional,
         )
 
@@ -528,7 +537,7 @@ INPUT_TYPE_TO_FORMS = {
     'multichoiceonetext': MultipleChoiceOneTextForm,
     'daterange': DateRangeForm,
     'reason': ReasonForm,
-    'singlereason' : SingleReasonForm,
+    'shortfreetext' : ShortFreetextForm,
     'positiveinteger': PositiveIntegerForm,
     'externalchoice': ExternalChoiceForm,
     'extchoicenotlisted': ExternalChoiceNotListedForm,

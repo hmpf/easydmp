@@ -7,7 +7,7 @@
       <label class="control-label requiredField">{{ form.label }}<span class="asteriskField">*</span></label>
       {% endif %}
   </div>
-  <p class="help_text question-help">{{ form.help_text|safe }}</p>
+  <p class="help_text question-help">{{ form.choice.help_text|safe }}</p>
   <p class="question-comment" style="">{{ form.question.comment }}</p>
 
   <div class="form-body">

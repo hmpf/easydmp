@@ -248,11 +248,11 @@ class Plan(DeletionMixin, ClonableModel):
             svs.append(SectionValidity(plan=self, section=section, valid=False))
         SectionValidity.objects.bulk_create(svs)
 
-    def set_sections_as_valid(self, *sections):
+    def set_sections_as_valid(self, *section_pks):
         qs = SectionValidity.objects.filter(plan=self, section_id__in=section_pks)
         qs.update(valid=True)
 
-    def set_sections_as_invalid(self, *sections):
+    def set_sections_as_invalid(self, *section_pks):
         qs = SectionValidity.objects.filter(plan=self, section_id__in=section_pks)
         qs.update(valid=False)
 
