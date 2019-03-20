@@ -1328,6 +1328,10 @@ textarea {
   height: 150px;
 }
 
+.question-shortfreetext {
+  width: 100%;
+}
+
 .form-actions {
   position: relative;
   padding-top: 2em;
