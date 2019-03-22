@@ -123,7 +123,7 @@ class AbstractNodeForm(AbstractNodeMixin, forms.Form):
 
 
 class BooleanForm(AbstractNodeForm):
-    json_type = 'boolean'
+    json_type = 'string'
 
     def _add_choice_field(self):
         choices = self.question.get_choices()
@@ -141,23 +141,29 @@ class BooleanForm(AbstractNodeForm):
             return 'Yes' if self.cleaned_data['choice'] else 'No'
         return 'Not set'
 
+    def deserialize(self, initial):
+        attrs = initial.copy()
+        choice = initial.get('choice', {})
+        if choice is True or str(choice).lower() in ('yes', 'true'):
+            choice = 'Yes'
+        else:
+            choice = 'No'
+        attrs['choice'] = choice
+        return attrs
+
     def serialize(self):
         out = {
             'choice': None,
         }
         if self.is_valid():
             data = self.cleaned_data['choice']
-            if data == 'True':
-                out['choice'] = True
-            if data == 'False':
-                out['choice'] = False
+            data = data.lower()
+            if data in ('true', 'yes'):
+                out['choice'] = 'Yes'
+            elif data in ('false', 'no'):
+                out['choice'] = 'No'
             return out
         return {}
-
-    def serialize_choice(self):
-        attrs = super().serialize_choice()
-        attrs['type'] = 'boolean'
-        return attrs
 
 
 class ChoiceForm(AbstractNodeForm):

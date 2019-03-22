@@ -1122,12 +1122,14 @@ class BooleanQuestion(Question):
         return 'No'
 
     def pprint(self, value):
-        return 'Yes' if value['choice'] else 'No'
+        if value['choice'] and value['choice'].lower() in ('true', 'yes', 'on'):
+            return 'Yes'
+        return 'No'
 
     def get_choices(self):
         choices = (
-            (True, 'Yes'),
-            (False, 'No'),
+            ('Yes', 'Yes'),
+            ('No', 'No'),
         )
         return choices
 
