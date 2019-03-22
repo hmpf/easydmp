@@ -360,15 +360,6 @@ class Template(DeletionMixin, RenumberMixin, models.Model):
         return False if invalid_sections else True
 
 
-class TemplateAccess(models.Model):
-    "Provide read-only access to unpublished templates"
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, related_name='template_accesses')
-    template = models.ForeignKey(Template, models.CASCADE, related_name='accesses')
-
-    class Meta:
-        unique_together = ('user', 'template')
-
-
 class TemplateUserObjectPermission(UserObjectPermissionBase):
     content_object = models.ForeignKey(Template, on_delete=models.CASCADE,
                                        related_name='permissions_user')

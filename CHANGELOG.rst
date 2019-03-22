@@ -19,6 +19,8 @@ Next
 * Set a question-type specific css class on every question widget
 * Prevent Makefile from exiting with an error
 * Added CONTRIBUTORS.txt and CONTRIBUTING.rst
+* Remove the TemplateAccess model, which was replaced by django-guardian ages
+  ago.
 
 0.18.0
 ------
