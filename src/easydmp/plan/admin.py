@@ -21,6 +21,7 @@ class PlanAdmin(admin.ModelAdmin):
                        'cloned_from', 'cloned_when',
                        'published', 'published_by', 'generated_html']
     actions = ['lock', 'publish']
+    date_hierarchy = 'added'
     fieldsets = (
         (None, {
             'fields': ('title', 'abbreviation', 'version', 'template',),
