@@ -21,6 +21,7 @@ Next
 * Added CONTRIBUTORS.txt and CONTRIBUTING.rst
 * Remove the TemplateAccess model, which was replaced by django-guardian ages
   ago.
+* Truncate long section titles in section progress bar
 
 0.18.0
 ------
