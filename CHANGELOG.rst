@@ -22,6 +22,7 @@ Next
 * Remove the TemplateAccess model, which was replaced by django-guardian ages
   ago.
 * Truncate long section titles in section progress bar
+* Replace "Publish" plan with "Lock" plan
 
 0.18.0
 ------

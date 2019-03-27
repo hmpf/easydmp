@@ -1,0 +1,21 @@
+{% extends "easydmp/plan/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
+<h1>Lock  "{{ object.title|capfirst }} {{ object.added|date:"Y-m-t H:i:s" }}"</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="row uninett-color-white uninett-whole-row">
+    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+        <p>Locking a plan means setting it to read only. It will not be
+        editable anymore and you will have to create a new version to make it
+        editable again.</p>
+        <p>By clicking "Yes" below the plan will be locked.</p>
+        <p>Do you want to lock this plan now?</p>
+        {% crispy form %}
+</div></div>
+{% endblock content %}
