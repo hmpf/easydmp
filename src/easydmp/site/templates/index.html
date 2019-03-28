@@ -13,7 +13,7 @@
 		<p>You are logged in as "{{ request.user.username }}".</p>
 		<ul class="uninett-ul">
 			<li class="uninett-ul-li"><a href="{% url 'plan_list' %}">Existing plans</a></li>
-			<li class="uninett-ul-li"><a href="{% url 'new_plan' %}">Create a new plan</a></li>
+			<li class="uninett-ul-li"><a href="{% url 'choose_template' %}">Create a new plan</a></li>
 		</ul>
 		{% else %}
 		<p>You are not logged in.</p>

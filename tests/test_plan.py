@@ -11,7 +11,7 @@ from easydmp.plan.views import AbstractGeneratedPlanView
 
 
 URLS = {
-    'new_plan': {'public': False, 'kwargs': ()},
+    'choose_template': {'public': False, 'kwargs': ()},
 #     'plan_list': {'public': False, 'kwargs': ()},
 #     'update_planaccess': {'public': False, 'kwargs': ('access',)},
 #     'leave_plan': {'public': False, 'kwargs': ('access',)},

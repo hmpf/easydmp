@@ -67,19 +67,17 @@ class ConfirmOwnPlanAccessChangeForm(ConfirmForm, PlanAccessForm):
         self.fields['access'].label = "Change access to"
 
 
-class NewPlanForm(CheckExistingTitleMixin, forms.ModelForm):
+class StartPlanForm(CheckExistingTitleMixin, forms.ModelForm):
 
     class Meta:
         model = Plan
         fields = ['title', 'abbreviation']
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, user, template, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
-        qs = Template.objects.has_access(user)
-        self.qs = qs
-        if self.qs.count() > 1:
-            self.fields['template_type'] = forms.ModelChoiceField(queryset=qs)
+        self.template = template
+        self.templates = Template.objects.has_access(user)
 
         # crispy forms
         self.helper = FormHelper()
@@ -90,12 +88,17 @@ class NewPlanForm(CheckExistingTitleMixin, forms.ModelForm):
 
     def clean(self):
         super().clean()
-        if self.qs.count() == 1:
-            self.cleaned_data['template_type'] = self.qs.get()
-        template = self.cleaned_data['template_type']
-        if self.user:
-            title = self.cleaned_data['title']
-            self.is_valid_title(title, self.user, template)
+        title = self.cleaned_data['title']
+        self.is_valid_title(title, self.user, self.template)
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        obj.template = self.template
+        obj.added_by = self.user
+        obj.modified_by = self.user
+        if commit:
+            obj.save()
+        return obj
 
 
 class UpdatePlanForm(CheckExistingTitleMixin, forms.ModelForm):
