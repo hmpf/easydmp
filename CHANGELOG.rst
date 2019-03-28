@@ -23,6 +23,7 @@ Next
   ago.
 * Truncate long section titles in section progress bar
 * Replace "Publish" plan with "Lock" plan
+* Remove "Create new plan" from header in UI
 
 0.18.0
 ------

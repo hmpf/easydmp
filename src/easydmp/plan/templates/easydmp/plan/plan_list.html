@@ -3,14 +3,15 @@
 {% block content %}
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-        <div class="top-wrap">
-            <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-                <h1>Your plans</h1>
-            </div>
-            <div id="create_new_plan">
-                <h2><a href="{% url 'new_plan' %}">+ Create new</a></h2>
-            </div>
+      {% if object_list.exists %}
+      <div class="top-wrap">
+        <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
+          <h1>Your plans</h1>
         </div>
+        <div id="create_new_plan">
+          <h2><a href="{% url 'new_plan' %}">+ Create new plan</a></h2>
+        </div>
+      </div>
       <table class="dmptable" width="80%">
         <tbody>
           {% for object in object_list %}
@@ -32,6 +33,14 @@
           {% endfor %}
         </tbody>
       </table>
+      {% else %}
+      <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
+        <h1>Your plans</h1>
+        <p>You currently have no plans. After creating or being given access to
+        your first plan, it'll turn up here.</p>
+        <a class="btn btn-default" href="{% url 'new_plan' %}">Create your first plan</a>
+      </div>
+      {% endif %}
     </div>
   </div>
 {% endblock content %}
