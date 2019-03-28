@@ -22,8 +22,12 @@ Next
 * Remove the TemplateAccess model, which was replaced by django-guardian ages
   ago.
 * Truncate long section titles in section progress bar
-* Replace "Publish" plan with "Lock" plan
+* Major change: Replace "Publish" plan with "Lock" plan. A locked plan is not
+  accessible to the public, and can be unlocked to create a new version.
 * Remove "Create new plan" from header in UI
+* New feature: Add rudimentary support for setting CORS headers for API-access
+* Add "Help"-link to help-page in header
+* Replace the privacy policy with a locally hosted one
 
 0.18.0
 ------
