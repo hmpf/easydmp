@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework_filters',
     'guardian',
+    'corsheaders',
 
     'easydmp.auth.apps.EasyDMPAuthConfig',
     'flow',
@@ -68,6 +69,7 @@ SITE_ID = 1 # For flatpages
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -268,6 +270,11 @@ SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'email']
 SOCIAL_AUTH_USERNAME_IS_FULL_EMAIL = True
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/plan/'
 SOCIAL_AUTH_NEW_USER_REDIRECT_URL = SOCIAL_AUTH_LOGIN_REDIRECT_URL
+
+# CORS
+
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_URLS_REGEX = r'^/api/.*$'
 
 # EasyDmp specific
 
