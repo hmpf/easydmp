@@ -29,6 +29,7 @@ Next
 * Add "Help"-link to help-page in header
 * Replace the privacy policy with a locally hosted one
 * Add more metadata for templates
+* Choose template before craeting a plan, not during
 
 0.18.0
 ------
