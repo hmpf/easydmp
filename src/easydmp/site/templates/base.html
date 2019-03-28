@@ -75,6 +75,7 @@
           {% if plan %}
           <li><a href="{% url 'plan_detail' plan=plan.pk %}">Current plan</a></li>
           {% endif %}
+          <li><a href="/help/">Help</a></li>
           {% if request.user.is_staff %}
           <li><a href="{% url 'admin:index' %}">Admin</a></li>
           {% endif %}
