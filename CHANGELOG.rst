@@ -28,6 +28,7 @@ Next
 * New feature: Add rudimentary support for setting CORS headers for API-access
 * Add "Help"-link to help-page in header
 * Replace the privacy policy with a locally hosted one
+* Add more metadata for templates
 
 0.18.0
 ------

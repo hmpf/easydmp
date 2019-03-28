@@ -142,11 +142,14 @@ def copy_permissions(orig, other):
 
 class TemplateQuerySet(models.QuerySet):
 
+    def publicly_available(self):
+        return self.filter(published__isnull=False, retired__isnull=True)
+
     def has_access(self, user):
         if user.is_superuser:
             return self.all()
         guardian_access = get_objects_for_user(user, 'dmpt.use_template')
-        qs = self.filter(published__isnull=False) | guardian_access
+        qs = self.publicly_available() | guardian_access
         return qs.distinct()
 
     def has_change_access(self, user):
@@ -157,14 +160,22 @@ class TemplateQuerySet(models.QuerySet):
         )
 
 
-class Template(DeletionMixin, RenumberMixin, models.Model):
+class Template(ModifiedTimestampModel, DeletionMixin, RenumberMixin, models.Model):
     title = models.CharField(max_length=255)
     abbreviation = models.CharField(max_length=8, blank=True)
     description = models.TextField(blank=True)
+    more_info = models.URLField(blank=True)
     domain_specific = models.BooleanField(default=False)
     version = models.PositiveIntegerField(default=1)
     created = models.DateTimeField(auto_now_add=True)
-    published = models.DateTimeField(blank=True, null=True)
+    published = models.DateTimeField(
+        blank=True, null=True,
+        help_text='Date when the template is publically available, and set read-only.'
+    )
+    retired = models.DateTimeField(
+        blank=True, null=True,
+        help_text='Date after which the template should no longer be used.',
+    )
 
     objects = TemplateQuerySet.as_manager()
 
