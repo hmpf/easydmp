@@ -35,7 +35,13 @@ def _get_remote_obj(obj_ct, obj_id):
 def _serialize_gfk(obj):
     if not obj:
         return
-    ct, pk = _get_gfk(obj)
+    if isinstance(obj, dict):
+        ct = obj['ct']
+        pk = obj['pk']
+        value = obj['value']
+    else:
+        ct, pk = _get_gfk(obj)
+        value = str(obj)
     return {
         'ct': {'pk': ct.pk, 'name': str(ct)},
         'pk': pk,
