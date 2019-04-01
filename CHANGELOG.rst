@@ -12,8 +12,8 @@ Unreleased
 
 * Comments for plans.
 
-Next
-----
+0.19.0
+------
 
 * Set a question-type specific css class on every question widget
 * Prevent Makefile from exiting with an error
