@@ -10,7 +10,6 @@ commit hashes were used.
 Unreleased
 ----------
 
-* Logging of events.
 * Comments for plans.
 
 Next
@@ -29,7 +28,8 @@ Next
 * Add "Help"-link to help-page in header
 * Replace the privacy policy with a locally hosted one
 * Add more metadata for templates
-* Choose template before craeting a plan, not during
+* Choose template before creating a plan, not during
+* Logging of some events
 
 0.18.0
 ------
