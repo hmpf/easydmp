@@ -11,6 +11,7 @@
           <tr>
               <th>Template</th>
               <th>Description</th>
+              <th></th>
               {% if request.user.is_superuser %}
               <th>Published</th>
               <th>Retired</th>
@@ -20,10 +21,11 @@
       <tbody>
         {% for object in object_list %}
         <tr>
-            <td><a class="btn btn-primary" href="{% url 'create_plan' template_id=object.id %}"><div>{{ object.title }}</div></a></td>
+            <td><a href="{% url 'create_plan' template_id=object.id %}"><div>{{ object.title }}</div></a></td>
             <td>{{ object.description }}
                 {% if object.more_info %}<a href="{{ object.more_info }}">More info</a>{% endif %}
             </td>
+            <td><a class="btn btn-primary"href="{% url 'create_plan' template_id=object.id %}">Use</a></td>
               {% if request.user.is_superuser %}
               <th>{{ object.published|default:"No" }}</th>
               <th>{{ object.retired|default:"No" }}</th>
