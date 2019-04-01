@@ -16,15 +16,17 @@ from django.views.generic import (
 from easydmp.common.views.mixins import DeleteFormMixin
 from easydmp.dmpt.forms import make_form, NotesForm
 from easydmp.dmpt.models import Question, Section, Template
+from easydmp.eventlog.models import EventLog
+from easydmp.eventlog.utils import log_event
 
 from ..models import Answer
 from ..models import Plan
 from ..models import PlanComment
+from ..forms import ConfirmForm
+from ..forms import PlanCommentForm
+from ..forms import SaveAsPlanForm
 from ..forms import StartPlanForm
 from ..forms import UpdatePlanForm
-from ..forms import SaveAsPlanForm
-from ..forms import PlanCommentForm
-from ..forms import ConfirmForm
 
 
 LOG = logging.getLogger(__name__)
@@ -200,9 +202,14 @@ class DeletePlanView(PlanAccessViewMixin, DeleteFormMixin, DeleteView):
         return qs.filter(added_by=self.request.user)
 
     def delete(self, request, *args, **kwargs):
+        """Delete the plan and record who did it"""
         if 'cancel' in request.POST:
             return HttpResponseRedirect(self.get_success_url())
-        return super().delete(request, *args, **kwargs)
+        # cannot use super().delete because then we cannot pass in the user
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.delete(request.user)
+        return HttpResponseRedirect(success_url)
 
 
 class SaveAsPlanView(PlanAccessViewMixin, UpdateView):
@@ -244,7 +251,7 @@ class ValidatePlanView(PlanAccessViewMixin, UpdateView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         success_url = self.get_success_url()
-        self.object.validate(recalculate=True, commit=True)
+        self.object.validate(request.user, recalculate=True, commit=True)
         return HttpResponseRedirect(success_url)
 
 
@@ -354,6 +361,9 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
         self.plan = self.get_object()
         self.object = self.plan
         self.answers = [Answer(question, self.plan) for question in self.questions]
+        template = '{timestamp} {actor} accessed {action_object} of {target}'
+        log_event(request.user, 'access', target=self.plan,
+                  object=self.section, template=template)
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
@@ -374,12 +384,15 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
             )
         return reverse('plan_detail', kwargs={'plan': self.plan_pk})
 
-    def get(self, *args, **kwargs):
+    def get(self, _request, *args, **kwargs):
         forms = self.get_forms()
         return self.render_to_response(self.get_context_data(forms=forms))
 
-    def post(self, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         forms = self.get_forms()
+        template = '{timestamp} {actor} updated {action_object} of {target}'
+        log_event(request.user, 'update section', target=self.plan,
+                  object=self.section, template=template)
         if all([question['form'].is_valid() for question in forms]):
             return self.forms_valid(forms)
         else:
@@ -606,6 +619,9 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
         self.object = self.get_object()
         self.set_referer(request)
         LOG.debug('GET-ing q%s/p%s', self.question_pk, self.object.pk)
+        template = '{timestamp} {actor} accessed {action_object} of {target}'
+        log_event(request.user, 'access', target=self.object,
+                  object=self.question, template=template)
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -628,6 +644,9 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
         self.answer.save_choice(choice, self.request.user)
         LOG.debug('q%s/p%s: answer saved', self.question_pk, self.object.pk)
         self.object = self.get_object()  # Refresh
+        template = '{timestamp} {actor} updated {action_object} of {target}'
+        log_event(self.request.user, 'update', target=self.object,
+                  object=self.question, template=template)
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, notesform):
@@ -682,6 +701,12 @@ class PlanListView(PlanAccessViewMixin, ListView):
         qs = super().get_queryset()
         return qs.order_by('-added')
 
+    def get(self, request, *args, **kwargs):
+        next = super().get(request, *args, **kwargs)
+        template = '{timestamp} {actor} listed plans'
+        log_event(request.user, 'list plan', template=template)
+        return next
+
 
 class PlanDetailView(AbstractQuestionMixin, DetailView):
     "Show an overview of a plan"
@@ -697,6 +722,13 @@ class PlanDetailView(AbstractQuestionMixin, DetailView):
         }
         context.update(**kwargs)
         return super().get_context_data(**context)
+
+    def get(self, request, *args, **kwargs):
+        next = super().get(request, *args, **kwargs)
+        template = '{timestamp} {actor} accessed {target}'
+        log_event(request.user, 'access', target=self.object,
+                  template=template)
+        return next
 
 
 class AbstractGeneratedPlanView(DetailView):
@@ -715,6 +747,19 @@ class AbstractGeneratedPlanView(DetailView):
         context = self.object.get_context_for_generated_text()
         context.update(**kwargs)
         return super().get_context_data(**context)
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context.update(**kwargs)
+        context['logs'] = EventLog.objects.any(self.object)
+        return super().get_context_data(**context)
+
+    def get(self, request, *args, **kwargs):
+        next = super().get(request, *args, **kwargs)
+        template = '{timestamp} {actor} accessed generated version of {target}'
+        log_event(request.user, 'access generated plan', target=self.object,
+                  template=template)
+        return next
 
 
 class GeneratedPlanHTMLView(AbstractGeneratedPlanView):
@@ -781,7 +826,7 @@ class SectionDetailView(DetailView):
             return obj
         raise Http404
 
-    def dispatch(self, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         self.plan = self.get_plan(**self.kwargs)
         self.editable = self.plan.may_edit(self.request.user)
         section = self.get_section(**self.kwargs)
@@ -793,6 +838,9 @@ class SectionDetailView(DetailView):
             self.plan.visited_sections.add(topmost)
 
         question = section.get_first_question()
+        template = '{timestamp} {actor} accessed {action_object} of {target}'
+        log_event(request.user, 'access', target=self.plan,
+                  object=section, template=template)
         if not question:
             # Show page for empty section
             return super().dispatch(*args, **kwargs)

@@ -5,6 +5,7 @@ from uuid import uuid4
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db import transaction
 from django.forms import model_to_dict
 from django.template.loader import render_to_string
 from django.utils.timezone import now as tznow
@@ -18,6 +19,7 @@ from flow.modelmixins import ClonableModel
 
 from easydmp.dmpt.forms import make_form
 from easydmp.dmpt.utils import DeletionMixin
+from easydmp.eventlog.utils import log_event
 
 from .utils import purge_answer
 from .utils import get_editors_for_plan
@@ -202,6 +204,9 @@ class Plan(DeletionMixin, ClonableModel):
     def __str__(self):
         return self.title
 
+    def logprint(self):
+        return 'Plan #{}: {}'.format(self.pk, self.title)
+
     def may_edit(self, user):
         if not user.is_authenticated:
             return False
@@ -272,10 +277,15 @@ class Plan(DeletionMixin, ClonableModel):
         qs = QuestionValidity.objects.filter(plan=self, question_id__in=question_pks)
         qs.update(valid=False)
 
-    def validate(self, recalculate=False, commit=True):
+    def validate(self, user, recalculate=False, commit=True, timestamp=None):
+        timestamp = timestamp if timestamp else tznow()
         valid = self.template.validate_plan(self, recalculate)
         self.valid = valid
-        self.last_validated = tznow()
+        self.last_validated = timestamp
+        validity = {True: 'valid', False: 'invalid'}
+        template = '{timestamp} {actor} validated {target}: {extra[validity]}'
+        log_event(user, 'validate', target=self, timestamp=timestamp,
+                  extra={'validity': validity[valid]}, template=template)
         if commit:
             self.save()
 
@@ -298,7 +308,13 @@ class Plan(DeletionMixin, ClonableModel):
             self.create_question_validities()
             self.set_adder_as_editor()
             LOG.info('Created plan "%s" (%i)', self, self.pk)
+            template = '{timestamp} {actor} created {target}'
+            log_event(self.added_by, 'create', target=self,
+                      timestamp=self.added, template=template)
         else:
+            template = '{timestamp} {actor} saved {target}'
+            log_event(self.added_by, 'save', target=self,
+                      timestamp=self.modified, template=template)
             if question is not None:
                 # set visited
                 self.visited_sections.add(question.section)
@@ -310,6 +326,13 @@ class Plan(DeletionMixin, ClonableModel):
             super().save(**kwargs)
             LOG.info('Updated plan "%s" (%i)', self, self.pk)
 
+    @transaction.atomic
+    def delete(self, user, **kwargs):
+        template = '{timestamp} {actor} deleted {target}'
+        log_event(user, 'delete', target=self, template=template)
+        super().delete(**kwargs)
+
+    @transaction.atomic
     def save_as(self, title, user, abbreviation='', keep_users=True, **kwargs):
         new = self.__class__(
             title=title,
@@ -326,8 +349,12 @@ class Plan(DeletionMixin, ClonableModel):
             editors = set(self.get_editors())
             for editor in editors:
                 new.add_user_to_editors(editor)
+        template = '{timestamp} {actor} saved {action_object} as {target}'
+        log_event(user, 'save as', target=new, action_object=self,
+                  timestamp=new.added, template=template)
         return new
 
+    @transaction.atomic
     def clone(self):
         new = deepcopy(self)
         new.pk = None
@@ -343,11 +370,12 @@ class Plan(DeletionMixin, ClonableModel):
         self.added = None
         self.locked_by = None
         self.locked = None
-        self.modified_by =None
+        self.modified_by = None
         self.modified = None
         self.published_by = None
         self.published = None
 
+    @transaction.atomic
     def create_new_version(self, user, timestamp=None, wait_to_save=False):
         timestamp = timestamp if timestamp else tznow()
         new = self.clone()
@@ -359,19 +387,30 @@ class Plan(DeletionMixin, ClonableModel):
         new.version += self.version
         if not wait_to_save:
             new.save()
+        template = '{timestamp} {actor} created {target}, a new version of {action_object}'
+        log_event(user, 'create new version', target=new, action_object=self,
+                  timestamp=new.added, template=template)
         return new
 
+    @transaction.atomic
     def unlock(self, user, timestamp=None, wait_to_save=False):
         timestamp = timestamp if timestamp else tznow()
         new = self.create_new_version(user, timestamp, wait_to_save)
+        template = '{timestamp} {actor} unlocked {target} for editing'
+        log_event(user, 'unlock', target=self, timestamp=new.added,
+                  template=template)
         self = new
         return new
 
+    @transaction.atomic
     def lock(self, user, timestamp=None, wait_to_save=False):
         timestamp = timestamp if timestamp else tznow()
         self.locked = timestamp
         self.locked_by = user
         # save obj now, don't wait for some other method after this
+        template = '{timestamp} {actor} locked {target} for editing, making it read only'
+        log_event(user, 'lock', target=self, timestamp=timestamp,
+                  template=template)
         if not wait_to_save:
             self.save()
 
@@ -404,6 +443,7 @@ class Plan(DeletionMixin, ClonableModel):
         context = self.get_context_for_generated_text()
         return render_to_string(GENERATED_HTML_TEMPLATE, context)
 
+    @transaction.atomic
     def publish(self, user, timestamp=None):
         if self.valid:
             timestamp = timestamp if timestamp else tznow()
@@ -413,6 +453,9 @@ class Plan(DeletionMixin, ClonableModel):
             self.published = timestamp
             self.published_by = user
             self.save()
+            template = '{timestamp} {actor} published {target}'
+            log_event(user, 'publish', target=self, timestamp=timestamp,
+                      template=template)
 
 
 class PlanAccess(ClonableModel):

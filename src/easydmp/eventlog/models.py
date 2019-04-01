@@ -35,7 +35,13 @@ def _get_remote_obj(obj_ct, obj_id):
 def _serialize_gfk(obj):
     if not obj:
         return
-    ct, pk = _get_gfk(obj)
+    if isinstance(obj, dict):
+        ct = obj['ct']
+        pk = obj['pk']
+        value = obj['value']
+    else:
+        ct, pk = _get_gfk(obj)
+        value = str(obj)
     return {
         'ct': {'pk': ct.pk, 'name': str(ct)},
         'pk': pk,
@@ -135,6 +141,43 @@ class EventLogQuerySet(models.QuerySet):
         return qs.distinct()
 
 
+class EventLogManager(models.Manager):
+
+    def log_event(self, actor, verb, target=None, action_object=None,
+                  description_template='', timestamp=None, extra=None,
+                  using=None):
+        """Log event
+
+        `actor`, `target` and `action_object` are model instances. `actor`
+        is required.
+
+        `verb` is a short string, preferrably an infinitive. It should not
+        duplicate information about the model instances of `actor`, `target`
+        or `action_object`.
+
+        `description_template` is used to build a human-readble string from
+        the other arguments.
+
+         `timestamp` must be a datetime with timezone
+
+        `extra` must be JSON serializable, preferrably a dict. The info will
+        be added to the `data`-field, and may be looked up from the
+        `description_template`.
+        """
+        timestamp = timestamp if timestamp else tznow()
+        description = _format_description(locals(), description_template)
+        data = _serialize_event(locals())
+        return self.create(
+            actor=actor,
+            target=target,
+            action_object=action_object,
+            verb=verb,
+            description=description,
+            timestamp=timestamp,
+            data=data,
+        )
+
+
 class EventLog(models.Model):
     actor_content_type = models.ForeignKey(ContentType, related_name='actor',
                                            on_delete=models.DO_NOTHING,
@@ -161,17 +204,13 @@ class EventLog(models.Model):
     data = JSONField(default={})
     timestamp = models.DateTimeField(default=tznow, db_index=True)
 
-    objects = EventLogQuerySet.as_manager()
+    objects = EventLogManager.from_queryset(EventLogQuerySet)()
 
     class Meta:
         ordering = ('-timestamp',)
 
     def __str__(self):
         return self.description
-
-    def save(self, **kwargs):  # Noop, do not use
-        "Noop. Use add_event() instead"
-        pass
 
     def delete(self, **_):
         # Deletion not allowed
@@ -214,40 +253,3 @@ class EventLog(models.Model):
             obj_ct, obj_id = _get_gfk(action_object)
             self.action_object_content_type = obj_ct
             self.action_object_object_id = obj_id
-
-    @classmethod
-    def add_event(cls, actor, verb, target=None, action_object=None,
-                  description_template='', timestamp=None, extra=None,
-                  using=None):
-        """Add event
-
-        `actor`, `target` and `action_object` are model instances. `actor`
-        is required.
-
-        `verb` is a short string, preferrably an infinitive. It should not
-        duplicate information about the model instances of `actor`, `target`
-        or `action_object`.
-
-        `description_template` is used to build a human-readble string from
-        the other arguments.
-
-         `timestamp` must be a datetime with timezone
-
-        `extra` must be JSON serializable, preferrably a dict. The info will
-        be added to the `data`-field, and may be looked up from the
-        `description_template`.
-        """
-        timestamp = timestamp if timestamp else tznow()
-        description = _format_description(locals(), description_template)
-        data = _serialize_event(locals())
-        new = cls(
-            actor=actor,
-            target=target,
-            action_object=action_object,
-            verb=verb,
-            description=description,
-            timestamp=timestamp,
-            data=data,
-        )
-        return super().save(new, force_insert=True, force_update=False, using=using,
-                            update_fields=None)

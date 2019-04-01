@@ -59,7 +59,7 @@ class AbstractCreatePlanInvitationView(SingleObjectMixin, FormView):
                 email_address=address,
             )
             invitation.save()
-            sent += invitation.send_invitation(request=self.request)
+            sent += invitation.send_invitation(invited_by, request=self.request)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_url_kwargs(self):
@@ -109,7 +109,8 @@ class AbstractResendPlanInvitationView(AbstractPlanInvitationView, UpdateView):
 
     def form_valid(self, form):
         self.object = self.get_object()
-        self.object.send_invitation(request=self.request)
+        self.object.send_invitation(self.request.user, request=self.request,
+                                    resend=True)
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -153,7 +154,7 @@ class AbstractRevokePlanInvitationView(AbstractPlanInvitationView, DeleteView):
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
         success_url = self.get_success_url()
-        self.object.revoke_invitation()
+        self.object.revoke_invitation(request.user)
         return HttpResponseRedirect(success_url)
 
 

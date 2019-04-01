@@ -11,6 +11,8 @@ from django.db.models  import Q
 from django.template.loader import render_to_string
 from django.utils.timezone import now as utcnow
 
+from easydmp.eventlog.utils import log_event
+
 
 TTL = getattr(settings, 'EASYDMP_INVITATION_TTL', 30)
 FROM_EMAIL = getattr(settings, 'EASYDMP_INVITATION_FROM_ADDRESS')
@@ -61,13 +63,20 @@ class AbstractEmailInvitation(models.Model):
             return True
         return False
 
+    @transaction.atomic
     def accept_invitation(self, user):
         self.used = utcnow()
         self.save()
+        template = '{timestamp} {actor} accepted {target}'
+        log_event(user, 'accept', target=self, timestamp=self.used,
+                  template=template)
 
-    def revoke_invitation(self):
+    @transaction.atomic
+    def revoke_invitation(self, user):
         if not self.used:
             self.delete()
+            template = '{timestamp} {actor} revoked unused {target}'
+            log_event(user, 'revoke unused', target=self, template=template)
 
     def get_context_data(self, **context):
         data = {
@@ -80,7 +89,8 @@ class AbstractEmailInvitation(models.Model):
         data.update(**context)
         return data
 
-    def send_invitation(self, request=None, baseurl=None):
+    @transaction.atomic
+    def send_invitation(self, user, request=None, baseurl=None, resend=None):
         """Create and send an email with an invitation link
 
         Either `request` (a HttpRequest`) or a `baseurl` is needed to generate
@@ -107,6 +117,13 @@ class AbstractEmailInvitation(models.Model):
 
         self.sent = utcnow()
         self.save()
+        verb = 'send'
+        template = '{timestamp} {actor} sent {target}'
+        if resend:
+            verb = 'resend'
+            template = '{timestamp} {actor} resent {target}'
+        log_event(user, verb, target=self, timestamp=self.sent,
+                  template=template)
         return sent
 
 
@@ -151,6 +168,13 @@ class PlanInvitation(AbstractEmailInvitation):
 
     def __str__(self):
         return 'Plan {} Invitation: "{}" by "{}"'.format(self.type, self.plan, self.email_address)
+
+    def logprint(self):
+        return '{type}: {plan.title} #{plan.pk} to {invitee}'.format(
+            type=self.__class__.__name__,
+            plan=self.plan,
+            invitee=self.email_address
+        )
 
     def get_context_data(self, **context):
         data = super().get_context_data(**context)
