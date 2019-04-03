@@ -12,6 +12,11 @@ Unreleased
 
 * Comments for plans.
 
+Next
+----
+
+* Fix bug in validating optional questions
+
 0.19.0
 ------
 

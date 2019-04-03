@@ -365,6 +365,7 @@ class Template(ModifiedTimestampModel, DeletionMixin, RenumberMixin, models.Mode
         plan.set_sections_as_invalid(*invalids)
 
     def validate_data(self, data):
+        assert False, data
         if not data:
             return False
         _, invalid_sections = self.find_validity_of_sections(data)
@@ -829,7 +830,13 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
         choice = data.get(str(self.pk), None)
         if choice is None:
             return False
-        return self.get_instance().validate_choice(choice)
+        valid = self.get_instance().validate_choice(choice)
+        if valid:
+            return True
+        # Optional questions are valid if not filled out
+        if self.optional and not choice:
+            return True
+        return False
 
     def _serialize_condition(self, _):
         """Convert an answer into a lookup key, if applicable
