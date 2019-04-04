@@ -136,35 +136,6 @@ class BooleanForm(AbstractNodeForm):
         )
         self.fields['choice'].widget.attrs.update({'class': self.input_class})
 
-    def pprint(self):
-        if self.is_valid():
-            return 'Yes' if self.cleaned_data['choice'] else 'No'
-        return 'Not set'
-
-    def deserialize(self, initial):
-        attrs = initial.copy()
-        choice = initial.get('choice', {})
-        if choice is True or str(choice).lower() in ('yes', 'true'):
-            choice = 'Yes'
-        else:
-            choice = 'No'
-        attrs['choice'] = choice
-        return attrs
-
-    def serialize(self):
-        out = {
-            'choice': None,
-        }
-        if self.is_valid():
-            data = self.cleaned_data['choice']
-            data = data.lower()
-            if data in ('true', 'yes'):
-                out['choice'] = 'Yes'
-            elif data in ('false', 'no'):
-                out['choice'] = 'No'
-            return out
-        return {}
-
 
 class ChoiceForm(AbstractNodeForm):
     json_type = 'string'
