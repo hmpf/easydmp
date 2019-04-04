@@ -193,6 +193,12 @@ class Template(ModifiedTimestampModel, DeletionMixin, RenumberMixin, models.Mode
             title = '{} v{}'.format(title, self.version)
         return title
 
+    @property
+    def title_with_version(self):
+        if self.version > 1:
+            return '{} v{}'.format(self.title, self.version)
+        return self.title
+
     def collect(self, **kwargs):
         collector = super().collect(**kwargs)
         if self.questions.exists():

@@ -12,6 +12,11 @@ Unreleased
 
 * Comments for plans.
 
+Next
+----
+
+* Adjust the UI of the template chooser
+
 0.19.1
 ------
 

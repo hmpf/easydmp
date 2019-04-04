@@ -21,7 +21,7 @@
       <tbody>
         {% for object in object_list %}
         <tr>
-            <td><a href="{% url 'create_plan' template_id=object.id %}"><div>{{ object.title }}</div></a></td>
+            <td><a href="{% url 'create_plan' template_id=object.id %}"><div>{{ object.title_with_version }}</div></a></td>
             <td>{{ object.description }}
                 {% if object.more_info %}<a href="{{ object.more_info }}">More info</a>{% endif %}
             </td>
