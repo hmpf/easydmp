@@ -15,7 +15,8 @@ Unreleased
 Next
 ----
 
-* Adjust the UI of the template chooser
+* Show the version of templates, if there are multiple versions
+* Use ISO 8601-ish formatting for dates and times throughout
 
 0.19.1
 ------
