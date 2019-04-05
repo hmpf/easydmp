@@ -28,6 +28,8 @@ LOGIN_URL = base_settings.LOGIN_URL
 
 ROOT_URLCONF = 'easydmp.site.urls'
 
+STATIC_URL = '/static/'
+
 # 3rd party
 
 EASYDMP_INVITATION_FROM_ADDRESS = getattr(base_settings, 'EASYDMP_INVITATION_FROM_ADDRESS', 'foo@example.com')
