@@ -15,6 +15,7 @@ Unreleased
 0.19.4
 ------
 
+* Improve and document testing
 * Bugfix in SectionDetailView, affected H2020-plans
 
 0.19.3
