@@ -746,11 +746,6 @@ class AbstractGeneratedPlanView(DetailView):
     def get_context_data(self, **kwargs):
         context = self.object.get_context_for_generated_text()
         context.update(**kwargs)
-        return super().get_context_data(**context)
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        context.update(**kwargs)
         context['logs'] = EventLog.objects.any(self.object)
         return super().get_context_data(**context)
 
