@@ -838,7 +838,7 @@ class SectionDetailView(DetailView):
                   object=section, template=template)
         if not question:
             # Show page for empty section
-            return super().dispatch(*args, **kwargs)
+            return super().get(request, *args, **kwargs)
 
         # Redirect to first question if any
         if self.editable:
