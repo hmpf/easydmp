@@ -1,6 +1,9 @@
+from unittest import mock
+
+from django.http.response import Http404
 from django import test
-from django.utils.timezone import now as utcnow
 from django.urls import reverse
+from django.utils.timezone import now as utcnow
 
 from easydmp.dmpt.models import Template, Section, BooleanQuestion, CannedAnswer
 from easydmp.auth.models import User
@@ -88,6 +91,7 @@ class GeneratedViewTestCase(test.TestCase):
         self.template = create_template(True)
         self.user = User.objects.create(username='test user')
         self.user.set_password('password')
+        self.settings(STATIC_URL='/static/')
 
     def test_anon_access_generated_public(self):
         plan = Plan.objects.create(
@@ -99,7 +103,8 @@ class GeneratedViewTestCase(test.TestCase):
 
         c = test.Client()
         kwargs = {'plan': plan.pk}
-        response = c.get(reverse(self.urlname, kwargs=kwargs))
+        with mock.patch('easydmp.plan.views.log_event', return_value=None):
+            response = c.get(reverse(self.urlname, kwargs=kwargs))
         self.assertEqual(response.status_code, 200, '{} is not public'.format(self.urlname))
 
     def test_anon_access_generated_notpublic(self):
