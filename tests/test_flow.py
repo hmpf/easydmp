@@ -53,6 +53,9 @@ class CannedData(object):
 
 class TestNodeNextnodeMethods(CannedData, test.TestCase):
 
+    def setUp(self):
+        self.skipTest('Code to be removed')
+
     def test_no_nextstate(self):
         s = Node.objects.create(slug='s', **self.canned_data)
         result = s.get_next_node(None)
@@ -100,6 +103,9 @@ class TestNodeNextnodeMethods(CannedData, test.TestCase):
 
 
 class TestNodePrevNodeTestCase(CannedData, test.TestCase):
+
+    def setUp(self):
+        self.skipTest('Code to be removed')
 
     def test_single_prevnode(self):
         s1 = Node.objects.create(slug='s1', **self.canned_data, start=True)
@@ -153,6 +159,7 @@ class TestNodePrevNodeTestCase(CannedData, test.TestCase):
 class TestFSA(CannedData, test.TestCase):
 
     def setUp(self):
+        self.skipTest('Code to be removed')
         super(TestFSA, self).setUp()
         self.fsa.save()
 
