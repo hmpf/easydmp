@@ -414,7 +414,7 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
                 self.plan.data[qid] = choice
         if prev_data != self.plan.data:
             self.plan.modified_by = self.request.user
-            self.plan.save()
+            self.plan.save(user=self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
     def forms_invalid(self, forms):

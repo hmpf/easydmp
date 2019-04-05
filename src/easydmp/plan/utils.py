@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 
 
-def purge_answer(plan, question_pk):
+def purge_answer(plan, question_pk, purged_by=None):
     "Delete and return the answer for the specified plan and question id"
 
     data = plan.data
@@ -10,9 +10,10 @@ def purge_answer(plan, question_pk):
     prevdata.pop(question_pk, None)
     plan.data = data
     plan.previous_data = prevdata
-    plan.save()
+    if purged_by:
+        plan.modified_by = purged_by
+    plan.save(user=purged_by)
     return {'data': data, 'previous_data': prevdata}
-
 
 
 def convert_ee_to_eenotlisted(choice):
@@ -40,6 +41,7 @@ def get_editors_for_plan(plan):
     return qs
 
 
+# Deprecated. Remove after squashing plan migrations
 def create_plan_editor_group(plan):
     # Located here in order to be accessible from migrations
     from django.contrib.auth.models import Group

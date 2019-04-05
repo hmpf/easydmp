@@ -17,6 +17,7 @@ Next
 
 * Show the version of templates, if there are multiple versions
 * Use ISO 8601-ish formatting for dates and times throughout
+* Fix bug with logging in some cases of saving a plan
 
 0.19.1
 ------

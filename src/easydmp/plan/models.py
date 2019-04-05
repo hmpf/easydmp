@@ -72,7 +72,7 @@ class Answer():
             self.plan.modified_by = saved_by
             self.plan.previous_data[self.question_id] = self.current_choice
             self.plan.data[self.question_id] = choice
-            self.plan.save(question=self.question)
+            self.plan.save(user=saved_by, question=self.question)
             LOG.debug('q%s/p%s: setting question valid',
                       self.question_id, self.plan.pk)
             self.question_validity.valid = True
@@ -94,10 +94,10 @@ class Answer():
 
 class PlanQuerySet(models.QuerySet):
 
-    def purge_answer(self, question_pk):
+    def purge_answer(self, question_pk, purged_by=None):
         qs = self.all()
         for plan in qs:
-            purge_answer(plan, question_pk)
+            purge_answer(plan, question_pk, purged_by)
 
     def locked(self):
         return self.filter(locked__isnull=False)
@@ -282,11 +282,11 @@ class Plan(DeletionMixin, ClonableModel):
         valid = self.template.validate_plan(self, recalculate)
         self.valid = valid
         self.last_validated = timestamp
-        validity = {True: 'valid', False: 'invalid'}
-        template = '{timestamp} {actor} validated {target}: {extra[validity]}'
-        log_event(user, 'validate', target=self, timestamp=timestamp,
-                  extra={'validity': validity[valid]}, template=template)
         if commit:
+            validity = {True: 'valid', False: 'invalid'}
+            template = '{timestamp} {actor} validated {target}: {extra[validity]}'
+            log_event(user, 'validate', target=self, timestamp=timestamp,
+                      extra={'validity': validity[valid]}, template=template)
             self.save()
 
     def copy_validations_from(self, oldplan):
@@ -322,7 +322,7 @@ class Plan(DeletionMixin, ClonableModel):
                 if topmost:
                     self.visited_sections.add(topmost)
                 # set validated
-                self.validate(recalculate, commit=False)
+                self.validate(user, recalculate, commit=False)
             super().save(**kwargs)
             LOG.info('Updated plan "%s" (%i)', self, self.pk)
 
