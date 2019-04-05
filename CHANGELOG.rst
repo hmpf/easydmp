@@ -12,6 +12,11 @@ Unreleased
 
 * Comments for plans.
 
+0.19.3
+------
+
+* Fix bug with exports not rendering properly. Has been here since 0.19.0.
+
 0.19.2
 ------
 
