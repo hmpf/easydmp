@@ -12,6 +12,11 @@ Unreleased
 
 * Comments for plans.
 
+0.19.4
+------
+
+* Bugfix in SectionDetailView, affected H2020-plans
+
 0.19.3
 ------
 
