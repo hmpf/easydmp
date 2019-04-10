@@ -82,39 +82,3 @@ class AccessTestCase(test.TestCase):
                 self.assertEqual(response.status_code, 302, '{} did not redirect'.format(urlname))
                 location = response['location']
                 self.assertEqual(location.split('?')[0], '/login/', '{} did not redirect to login'.format(urlname))
-
-
-class GeneratedViewTestCase(test.TestCase):
-
-    def setUp(self):
-        self.urlname = 'generated_plan_html'
-        self.template = create_template(True)
-        self.user = User.objects.create(username='test user')
-        self.user.set_password('password')
-        self.settings(STATIC_URL='/static/')
-
-    def test_anon_access_generated_public(self):
-        plan = Plan.objects.create(
-            template=self.template, title='test plan',
-            added_by=self.user,
-            modified_by=self.user,
-            published=utcnow(),
-        )
-
-        c = test.Client()
-        kwargs = {'plan': plan.pk}
-        with mock.patch('easydmp.plan.views.log_event', return_value=None):
-            response = c.get(reverse(self.urlname, kwargs=kwargs))
-        self.assertEqual(response.status_code, 200, '{} is not public'.format(self.urlname))
-
-    def test_anon_access_generated_notpublic(self):
-        plan = Plan.objects.create(
-            template=self.template, title='test plan',
-            added_by=self.user,
-            modified_by=self.user,
-        )
-
-        c = test.Client()
-        kwargs = {'plan': plan.pk}
-        response = c.get(reverse(self.urlname, kwargs=kwargs))
-        self.assertEqual(response.status_code, 404, '{} should be hidden'.format(self.urlname))
