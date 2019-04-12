@@ -1,16 +1,12 @@
-from unittest import mock
-
-from django.http.response import Http404
 from django import test
 from django.urls import reverse
-from django.utils.timezone import now as utcnow
 
-from easydmp.dmpt.models import Template, Section, BooleanQuestion, CannedAnswer
-from easydmp.auth.models import User
-
-from easydmp.plan import views
+from easydmp.dmpt.models import Section, Question
 from easydmp.plan.models import Plan
-from easydmp.plan.views import AbstractGeneratedPlanView
+
+from tests.dmpt.factories import create_smallest_template
+from tests.plan.factories import PlanFactory
+from tests.auth.factories import UserFactory
 
 
 URLS = {
@@ -34,22 +30,12 @@ URLS = {
 }
 
 
-def create_template(published=None):
-    published = utcnow() if published else None
-    t = Template.objects.create(title='test template', published=published)
-    s = Section.objects.create(template=t, title='test section')
-    q = BooleanQuestion.objects.create(section=s, obligatory=True)
-    CannedAnswer.objects.create(question=q, choice='Yes')
-    CannedAnswer.objects.create(question=q, choice='No')
-    return t
-
-
 def make_kwargs(args):
     kwargs = {}
     if 'plan' in args:
         kwargs['plan'] = Plan.objects.get().pk
     if 'question' in args:
-        kwargs['question'] = BooleanQuestion.objects.get().pk
+        kwargs['question'] = Question.objects.get().pk
     if 'section' in args:
         kwargs['section'] = Section.objects.get().pk
     return kwargs
@@ -58,11 +44,10 @@ def make_kwargs(args):
 class AccessTestCase(test.TestCase):
 
     def setUp(self):
-        self.template = create_template(True)
-        self.user = User.objects.create(username='test user')
-        self.user.set_password('password')
-        self.plan = Plan.objects.create(
-            template=self.template, title='test plan',
+        self.template = create_smallest_template(True)
+        self.user = UserFactory()
+        self.plan = PlanFactory(
+            template=self.template,
             added_by=self.user,
             modified_by=self.user,
         )
