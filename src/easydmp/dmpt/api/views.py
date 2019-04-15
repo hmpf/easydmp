@@ -37,7 +37,7 @@ class SectionViewSet(ReadOnlyModelViewSet):
         if format not in supported_formats:
             format = 'pdf'
         section = self.get_object()
-        section.refresh_cached_dotsource(format)
+        section.refresh_cached_dotsource(format, debug=True)
         urlpath = section.get_cached_dotsource_urlpath(format)
         return HttpResponseRedirect(urlpath)
 

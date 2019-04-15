@@ -17,6 +17,7 @@ from easydmp.lib import get_model_name
 
 from .models import Template
 from .models import Section
+from .models import ExplicitBranch
 from .models import Question
 from .models import CannedAnswer
 
@@ -154,7 +155,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         'graph_pdf',
     )
     list_display_links = ('template', 'section_depth', 'id', 'position')
-    list_filter = ('template',)
+    list_filter = ('branching', 'template')
     actions = [
         'increment_position',
         'decrement_position',
@@ -213,13 +214,25 @@ class SectionAdmin(ObjectPermissionModelAdmin):
     decrement_position.short_description = 'Decrement position by 1'
 
 
-class QuestionCannedAnswerInline(admin.StackedInline):
-    model = CannedAnswer
+class QuestionExplicitBranchInline(admin.StackedInline):
+    model = ExplicitBranch
+    fk_name = "current_question"
 
     def get_readonly_fields(self, request, obj=None):
         if request.user.is_superuser:
             return ()
-        return ('edge',)
+        return [f.name for f in self.model._meta.fields]
+
+
+class QuestionCannedAnswerInline(admin.StackedInline):
+    model = CannedAnswer
+    raw_id_fields = ['transition', 'edge']
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = ('cloned_from', 'cloned_when')
+        if request.user.is_superuser:
+            return readonly
+        return readonly + ('edge',)
 
 
 class QuestionEEStoreMountInline(admin.StackedInline):
@@ -291,6 +304,7 @@ class QuestionSectionFilter(admin.SimpleListFilter):
 
 @admin.register(Question)
 class QuestionAdmin(ObjectPermissionModelAdmin):
+    raw_id_fields = ['node']
     list_display = (
         'position',
         'id',
@@ -302,6 +316,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
         'has_node',
         'get_mount',
     )
+    list_select_related = ['section']
     list_display_links = ('position', 'id', 'question')
     search_fields = [
         '=id',
@@ -323,6 +338,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     ]
     inlines = [
         QuestionCannedAnswerInline,
+        QuestionExplicitBranchInline,
         QuestionEEStoreMountInline,
     ]
     save_on_top = True
@@ -344,9 +360,10 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     _model_slug = 'question'
 
     def get_readonly_fields(self, request, obj=None):
+        readonly = ('cloned_from', 'cloned_when')
         if request.user.is_superuser:
-            return ()
-        return ('node', 'obligatory')
+            return readonly
+        return readonly + ('node', 'obligatory')
 
     def get_queryset(self, request):
         return get_questions_for_user(request.user)
@@ -394,3 +411,13 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
             q.position -= 1
             q.save()
     decrement_position.short_description = 'Decrement position by 1'
+
+
+@admin.register(ExplicitBranch)
+class ExplicitBranchAdmin(admin.ModelAdmin):
+    search_fields = ('current_question', 'next_question')
+    list_display = ('current_question', 'category', 'condition', 'next_question', 'id')
+
+    def get_model_perms(self, request):
+        """Hide the model from the list of models"""
+        return {}
