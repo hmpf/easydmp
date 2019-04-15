@@ -72,13 +72,26 @@ class AnswerHelper():
             self.plan.previous_data[self.question_id] = self.current_choice
             self.plan.data[self.question_id] = choice
             self.plan.save(user=saved_by, question=self.question)
-            LOG.debug('q%s/p%s: setting question valid',
+            self.set_valid()
+            if choice:
+                new_condition = choice.get('choice', None)
+                new_answer = self.question._serialize_condition(new_condition)
+                old_condition = self.current_choice.get('choice', None)
+                old_answer = None
+                if old_condition:
+                    old_answer = self.question._serialize_condition(old_condition)
+                return new_condition is not None and old_answer != new_answer
+        return False
+
+    def set_valid(self):
+        if not self.question_validity.valid:
+            LOG.debug('set_valid: q%s/p%s',
                       self.question_id, self.plan.pk)
             self.question_validity.valid = True
             self.question_validity.save()
             if not self.section_validity.valid and self.section.validate_data(self.plan.data):
-                LOG.debug('q%s/p%s: setting section valid',
-                          self.question_id, self.plan.pk)
+                LOG.debug('set_valid: q%s/p%s: section %',
+                          self.question_id, self.plan.pk, self.section.pk)
                 self.section_validity.valid = True
                 self.section_validity.save()
 
@@ -87,6 +100,8 @@ class AnswerHelper():
             LOG.debug('q%s/p%s: setting invalid', self.question_id, self.plan.pk)
             self.question_validity.valid = False
             self.question_validity.save()
+            LOG.debug('set_invalid: q%s/p%s: section %',
+                      self.question_id, self.plan.pk, self.section.pk)
             self.section_validity.valid = False
             self.section_validity.save()
 
@@ -311,6 +326,21 @@ class Plan(DeletionMixin, ClonableModel):
     def copy_users_from(self, oldplan):
         for pa in oldplan.accesses.all():
             pa.clone(self)
+
+    def quiet_save(self, **kwargs):
+        """Save without logging
+
+        This is for:
+        * Upgrades when the plan needs to be automatically modified.
+          Instead of event logging the plan being saved, log the upgrade itself.
+        * When it's necessary to save the same plan multiple times in a row
+          within a short time duration, for instance because the later
+          modifications depend on the plan already being saved.
+        """
+        if not self.pk:
+            # Not for first save
+            return
+        super().save(**kwargs)
 
     def save(self, user=None, question=None, recalculate=False, clone=False, **kwargs):
         if user:

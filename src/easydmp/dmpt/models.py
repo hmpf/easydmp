@@ -22,7 +22,7 @@ from django.utils.text import slugify
 from django.utils.timezone import now as tznow
 
 from .errors import TemplateDesignError
-from .flow import Transition, TransitionMap
+from .flow import Transition, TransitionMap, dfs_paths
 from .utils import DeletionMixin
 from .utils import RenumberMixin
 from .utils import print_url
@@ -72,34 +72,6 @@ def id_or_none(modelobj):
     return None
 
 
-def dfs_paths(graph, start):
-    """Find all paths in  DAG graph, return a generator of lists
-
-    Input: adjacency list in a dict:
-
-    {
-        node1: set([node1, node2, node3]),
-        node2: set([node2, node3]),
-        node3: set(),
-    }
-    """
-    stack = [(start, [start])]
-    visited = set()
-    while stack:
-        # loop detection
-        if start in visited:
-            error = 'Graph is not a DAG, there\'s a loop for node "{}"'
-            raise TypeError(error.format(start))
-        (vertex, path) = stack.pop()
-        if not graph.get(vertex, None):
-            yield path
-        for next in graph[vertex] - set(path):
-            if not next:
-                yield path + [next]
-            else:
-                stack.append((next, path + [next]))
-
-
 def copy_user_permissions(orig, other):
     """Copy user permissions from one instance to another of the same class
 
@@ -143,6 +115,15 @@ def copy_permissions(orig, other):
     new_uperms = copy_user_permissions(orig, other)
     new_gperms = copy_group_permissions(orig, other)
     return new_uperms + new_gperms
+
+
+def get_answered_questions(questions, answers):
+    result = []
+    for q in questions:
+        if str(q.pk) in answers:
+            result.append(q.pk)
+    LOG.debug('get_answered_questions: %s', result)
+    return Question.objects.filter(pk__in=result)
 
 
 class TemplateQuerySet(models.QuerySet):
@@ -293,11 +274,6 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         section = self.first_section
         return section.first_question
 
-    @property
-    def last_question(self):
-        section = self.last_section
-        return section.last_question
-
     # END: Template movement helpers
 
     def generate_canned_text(self, data):
@@ -339,7 +315,7 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
                     'section': section,
                     'full_title': section.full_title(),
                     'pk': section.pk,
-                    'first_question': section.get_first_question(),
+                    'first_question': section.first_question,
                     'introductory_text': mark_safe(section.introductory_text),
                     'comment': mark_safe(section.comment),
                 }
@@ -420,6 +396,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     the default position is 1. A specific title and a specific position can
     only be used once per template, this is checked when attempting to save.
     """
+    __LOG = logging.getLogger(__name__ + '.Section')
     GRAPHVIZ_TMPDIR = '/tmp/dmpt/'
     template = models.ForeignKey(Template, on_delete=models.CASCADE,
                                  related_name='sections')
@@ -484,8 +461,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             if not old.forward_transitions.exists():
                 continue
             for eb in old.forward_transitions.all():
-                next = question_mapping.get(eb.next_question, None)
-                new_eb = eb.clone(new, next)
+                next_question = question_mapping.get(eb.next_question, None)
+                new_eb = eb.clone(new, next_question)
                 eb_mapping[eb] = new_eb
             for ca in old.canned_answers.filter(transition__isnull=False):
                 ca_mapping[ca] = new.canned_answers.get(choice=ca.choice)
@@ -537,7 +514,10 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         return collector
 
     def renumber_positions(self):
-        """Renumber question positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
+        """Renumber question positions so that all are adajcent
+
+        Eg. (1, 2, 7, 12) becomes (1, 2, 3, 4).
+        """
         questions = self.questions.order_by('position')
         self._renumber_positions(questions)
 
@@ -548,54 +528,158 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     # after dot structure. There are also a lot more variables then necessary,
     # to better facilitate the use of pdb. "Improve" at your own peril!
 
-    def get_first_question(self):
+    def questions_between(self, start, end=None):
+        questions = self.questions.filter(position__gt=start.position)
+        if end:
+            questions = questions.filter(position__lt=end.position)
+        return questions
+
+    def is_answered(self, answers):
+        answer = answers.get(str(self.pk), None)
+        return bool(answer)
+
+    @property
+    def first_question(self):
+        """Get first question in *this* section
+
+        First questions are always obligatory and always safe to jump to.
+        """
         if self.questions.exists():
             return self.questions.order_by('position')[0]
         return None
 
     @property
-    def first_question(self):
-        first_question = self.get_first_question()
-        if first_question:
-            return first_question
-        # See if there is a next section in case this one has no questions
-        next_section = self.get_next_section()
-        if next_section:
-            return next_section.first_question
-        return None
+    def last_question(self):
+        """Get last question in *this* section
 
-    def get_last_question(self, in_section=False):
+        This method is here for completeness. It is usually better to use
+        `last_obligatory_question` since that must be visited in any case.
+        """
         if self.questions.exists():
             return self.questions.order_by('-position')[0]
         return None
 
     @property
-    def last_question(self):
-        last_question = self.get_last_question()
-        if last_question:
-            return last_question
-        # See if there is a prev section in case this one has no questions
-        prev_section = self.get_prev_section()
-        if prev_section:
-            return prev_section.last_question
+    def last_obligatory_question(self):
+        """Get last *obligatory* question in *this* section
+
+        This is a better question to jump backwards to than `last_question`
+        since that might be a non-obligatory question, which an end-user might
+        not ever visit due to branching.
+        """
+        qs = self.questions.filter(obligatory=True)
+        if qs.exists():
+            return qs.order_by('-position')[0]
         return None
 
     def get_all_next_sections(self):
-        return Section.objects.filter(template=self.template, position__gt=self.position)
+        return Section.objects.filter(template=self.template,
+                                      position__gt=self.position)
 
     def get_next_section(self):
+        """Get the next section after *this* one
+
+        This method is here for completeness. It is usually better to use
+        `get_next_nonempty_section` since that must be visited in any case.
+        """
         next_sections = self.get_all_next_sections().order_by('position')
         if next_sections.exists():
             return next_sections[0]
         return None
 
+    def get_next_nonempty_section(self):
+        """Get the next nonempty section after *this* one
+
+        This is a better section to jump to than `get_next_section` since it
+        always contains questions and must eventually be visited anyway.
+        """
+        next_sections = (self.get_all_next_sections()
+                         .filter(questions__isnull=False)
+                         .order_by('position'))
+        if next_sections.exists():
+            return next_sections[0]
+        return None
+
     def get_all_prev_sections(self):
-        return Section.objects.filter(template=self.template, position__lt=self.position)
+        return Section.objects.filter(template=self.template,
+                                      position__lt=self.position)
 
     def get_prev_section(self):
+        """Get the previpus section before *this* one
+
+        This method is here for completeness. It is usually better to use
+        `get_prev_nonempty_section` since that must be visited in any case.
+        """
         prev_sections = self.get_all_prev_sections().order_by('-position')
         if prev_sections.exists():
             return prev_sections[0]
+        return None
+
+    def get_prev_nonempty_section(self):
+        """Get the prevous nonempty section before *this* one
+
+        This is a better section to jump to than `get_prev_section` since it
+        always contains questions and must eventually be visited anyway.
+        """
+        prev_sections = (self.get_all_prev_sections()
+                         .filter(questions__isnull=False)
+                         .order_by('-position'))
+        if prev_sections.exists():
+            return prev_sections[0]
+        return None
+
+    def get_first_question_in_next_section(self):
+        """Get first question in *the next nonempty* section
+
+        These are always obligatory and always safe to jump to.
+        """
+        next_section = self.get_next_nonempty_section()
+        if next_section:
+            next_question = next_section.questions.order_by('position')[0]
+            self.__LOG.debug('get_first_question_in_next_section: found: #%i', next_question.id)
+            return next_question
+        self.__LOG.debug('get_first_question_in_next_section: last quesdtion in template')
+        return None
+
+    def get_last_question_in_prev_section(self):
+        """Get last question in *the previous nonempty* section
+
+        This method is here for completeness. It is always better to use
+        `get_last_obligatory_question_in_prev_section()` since that must be
+        visited in any case.
+        """
+        prev_section = self.get_prev_nonempty_section()
+        if prev_section:
+            return prev_section.last_question
+        return None
+
+    def get_last_obligatory_question_in_prev_section(self):
+        """Get last *obligatory* question in *the previous nonempty* section
+
+        This is a better question to jump backwards to than
+        `get_last_question_in_prev_section()` since that might be
+        a non-obligatory question, which an end-user might not ever visit due
+        to branching.
+        """
+        prev_section = self.get_prev_nonempty_section()
+        if prev_section:
+            return prev_section.last_obligatory_question
+        return None
+
+    def get_last_answered_question_in_prev_section(self, answers):
+        """Get last *obligatory* question in *the previous nonempty* section
+
+        This is a better question to jump backwards to than
+        `get_last_question_in_prev_section()` since that might be
+        a non-obligatory question, which an end-user might not ever visit due
+        to branching.
+        """
+        prev_section = self.get_prev_nonempty_section()
+        if prev_section:
+            self.__LOG.debug('get_last_answered_question_in_prev_section: prev section is nonempty')
+            result = prev_section.get_last_answered_question(answers)
+            return result
+        self.__LOG.debug('get_last_answered_question_in_prev_section: no suitable prev sections')
         return None
 
     def get_topmost_section(self):
@@ -603,6 +687,42 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         while obj.super_section is not None:
             obj = obj.super_section
         return obj
+
+    def get_answered_questions(self, answers):
+        return get_answered_questions(self.questions.all(), answers)
+
+    def get_last_answered_question(self, answers):
+        questions = self.get_answered_questions(answers)
+        if not questions.exists():
+            self.__LOG.debug('get_last_answered_question: nothing answered')
+            return None
+        last = self._get_last_answered_obligatory_question(answers)
+        end = questions.order_by('position').last().get_instance()
+        if last:
+            if last == end:
+                self.__LOG.debug('get_last_answered_question: found: #%i',
+                                 last.id)
+                return last
+            self.__LOG.debug('get_last_answered_question: walking forward')
+            result = last._walk_forward_to_last_answered(last, answers)
+            return result
+        self.__LOG.debug('get_last_answered_question: not found')
+        return None
+
+    def get_obligatory_questions(self):
+        return self.questions.filter(obligatory=True)
+
+    def _get_last_answered_obligatory_question(self, answers):
+        obligatories = self.get_obligatory_questions()
+        if not obligatories.exists():
+            # Empty section, so no obligatory questions
+            return None
+
+        # Find the answered obligatory question with the last position
+        answered = get_answered_questions(obligatories, answers)
+        if answered:
+            last = tuple(answered)[-1]
+            return last
 
     # END: Section movement helpers
 
@@ -669,14 +789,49 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             paths.append(tuple(path))
         return paths
 
-    def generate_transition_map(self):
+    def generate_transition_map(self, pk=True, start=None, end=None):
+        assert isinstance(start, (type(None), int, Question))
+        assert isinstance(end, (type(None), int, Question))
         tm = TransitionMap()
-        for question in self.questions.order_by('position'):
-            next_questions = question.get_potential_next_questions_with_transitions()
-            for category, choice, next_question in next_questions:
-                next = id_or_none(next_question)
-                t = Transition(category, question.pk, choice, next)
-                tm.add(t)
+        ebs = ExplicitBranch.objects.filter(
+            current_question__in=self.questions.all()
+        )
+        if start:
+            if isinstance(start, int):
+                start = Question.objects.get(pk=start)
+        if end:
+            if isinstance(end, int):
+                end = Question.objects.get(pk=end)
+        if ebs:
+            if start:
+                ebs = ebs.filter(
+                    current_question__position__gte=start.position
+                )
+            if end:
+                ebs = ebs.filter(
+                    current_question__position__lt=end.position
+                )
+            for eb in ebs:
+                tm.add(eb.to_transition(pk=pk))
+        questions = self.questions.order_by('position')
+        if start:
+            questions = questions.filter(position__gte=start.position)
+        if end:
+            questions = questions.filter(position__lt=end.position)
+        for question in questions:
+            transitions = question.get_potential_next_questions_with_transitions()
+            for trn in transitions:
+                if pk:
+                    next_question = id_or_none(trn.next)
+                    current = question.pk
+                else:
+                    next_question = trn.next
+                    current = question
+                category = trn.category
+                # Don't overwrite an existing branch
+                if not tm.select_transition(current, trn.choice):
+                    t = Transition(category, current, trn.choice, next_question)
+                    tm.add(t)
         return tm
 
     def generate_dotsource(self, debug=False):
@@ -721,7 +876,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                     q_label += ' n{}'.format(node.pk)
             q_kwargs['label'] = fill(q_label, 20)
             q_id = 'q{}'.format(question.pk)
-            if question.pk == self.get_first_question().pk:
+            if question.pk == self.first_question.pk:
                 dot.edge(s_start_id, q_id, **s_kwargs)
             dot.node(q_id, **q_kwargs)
             next_questions = tm.transition_map.get(question.pk, None)
@@ -729,9 +884,9 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                 cas = question.canned_answers.all()
                 for choice in next_questions:
                     category = next_questions[choice]['category']
-                    next = next_questions[choice]['next']
-                    if next:
-                        nq_id = 'q{}'.format(next)
+                    next_question = next_questions[choice]['next']
+                    if next_question:
+                        nq_id = 'q{}'.format(next_question)
                     else:
                         nq_id = s_end_id
                     edge_label = category
@@ -746,8 +901,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                             edge_label += ' p{} #{}'.format(ca.position, ca.pk)
                             if ca.edge:
                                 edge_label += ' e{}'.format(ca.edge.pk)
-                    if choice:
-                        edge_label += ': "{}"'.format(choice)
+                        if category in ('CannedAnswer', 'ExplicitBranch'):
+                            edge_label += ': "{}"'.format(choice)
                     dot.edge(q_id, nq_id, label=fill(edge_label, 15))
             else:
                 dot.edge(q_id, s_end_id)
@@ -832,10 +987,15 @@ class ExplicitBranchQuerySet(models.QuerySet):
     def transitions(self, pks=False):
         transitions = set()
         for eb in self.all():
-            current = eb.current_question.pk if pks else eb.current_question
-            next = eb.next_question.pk if pks else eb.next_question
+            current = eb.current_question or None
+            if current:
+                current = current.pk if pks else current.get_instance()
+            next_question = eb.next_question or None
+            if next_question:
+                next_question = next_question.pk if pks else next_question.get_instance()
+            condition = eb.condition or None
             transitions.add(
-                Transition(eb.category, current, eb.condition, next)
+                Transition(eb.category, current, condition, next_question)
             )
         return transitions
 
@@ -900,7 +1060,6 @@ class ExplicitBranch(DeletionMixin, models.Model):
         if not condition:
             condition = None
         current = explicit_branch.current_question.get_instance()
-        current = current.get_instance() if current else None
         next_question = explicit_branch.next_question
         next_question = next_question.get_instance() if next_question else None
         if pk:
@@ -931,6 +1090,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
     * The question need not have a `CannedAnswer`.
     * The `choice` is converted to an empty string.
     """
+    __LOG = logging.getLogger(__name__ + '.Question')
     branching_possible = False
     has_notes = True
 
@@ -1034,12 +1194,12 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             return True
         return False
 
-    def _serialize_condition(self, _):
-        """Convert an answer into a lookup key, if applicable
+    def _serialize_condition(self, answer):
+        """Convert an answer into a lookup key
 
-        This is only applicable if `branching_possible` is True.
+        For non-branching capable questions this is always "None"
         """
-        raise NotImplementedError
+        return None
 
     def validate_choice(self, data):
         raise NotImplementedError
@@ -1103,8 +1263,27 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         condition = ''
         if self.branching_possible:
             # The choice is used to look up an Edge.condition
-            condition = str(answer.get('choice', ''))
+            condition = str(self.get_transition_choice(answer))
         return condition
+
+    def get_transition_choice(self, answer):
+        if not self.branching_possible:
+            return None
+        choice = answer.get('choice', None)
+        if choice is None:
+            return None
+        if isinstance(choice, list):
+            return None
+        return choice
+
+    def get_condition(self, answers):
+        if not answers:
+            return None
+        answer = answers.get(str(self.pk), None)
+        if answer is None:
+            return None
+        q = self.get_instance()
+        return q.get_transition_choice(answer)
 
     @classmethod
     def map_answers_to_nodes(self, answers):
@@ -1145,9 +1324,22 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             prev_section = prev_section.get_prev_section()
         return None
 
+    def is_answered(self, answers):
+        answer = answers.get(str(self.pk), None)
+        return bool(answer)
+
+    def get_next_obligatory(self):
+        qs = self.section.questions.filter(obligatory=True,
+                                           position__gt=self.position)
+        if not qs.exists():
+            # self is or is after last obligatory question of section
+            return None
+        next_obligatory = qs.order_by('position').first()
+        return next_obligatory
+
     def get_all_following_questions(self):
         "Return a qs of all questions in the same section with higher pos"
-        return Question.objects.filter(section=self.section, position__gt=self.position)
+        return self.section.questions.filter(position__gt=self.position)
 
     def get_potential_next_questions_with_transitions(self):
         """Return a set of potential next questions
@@ -1170,14 +1362,23 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
 
         "question" is a Question, or None in the case of "last/Last"
         """
+        proper_self = self.get_instance()
         all_following_questions = self.get_all_following_questions()
         if not all_following_questions.exists():
-            return set([('last', None, None)])
+            return set([Transition('last', proper_self, None, None)])
+        # XX1
+        next_by_position = all_following_questions[0].get_instance()
+        next_by_position_trn = set(
+            [Transition('position', proper_self, None, next_by_position)]
+        )
+        if self.forward_transitions.exists():
+            next_in_db = self.forward_transitions.transitions()
+            return next_in_db | next_by_position_trn
         if not self.node:
-            return set([('position', None, all_following_questions[0])])
+            return next_by_position_trn
         edges = self.node.next_nodes.all()
         if not edges:
-            return set([('Node-edgeless', None, all_following_questions[0])])
+            return set([Transition('Node-edgeless', self, None, all_following_questions[0])])
         next_questions = []
         for edge in edges:
             edge_payload = getattr(edge, 'payload', None)
@@ -1187,36 +1388,84 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
                 category = 'CannedAnswer'
                 condition = str(getattr(edge_payload, 'choice', condition))
             node_payload = getattr(edge.next_node, 'payload', None)
-            next_questions.append((category, condition, node_payload))
+            next_questions.append(Transition(category, self, condition, node_payload))
         next_questions = set(next_questions)
         return next_questions
 
     def get_potential_next_questions(self):
         "Return a set of potential next questions"
         next_questions = self.get_potential_next_questions_with_transitions()
-        return set(v for _, _, v in next_questions if v)
+        return set(v for _, _, _, v in next_questions if v)
 
-    def get_next_question(self, answers=None, in_section=False):
+    def generate_transition_map(self, pk=False):
+        tm = TransitionMap()
+        transitions = self.get_potential_next_questions_with_transitions()
+        current = self.pk if pk else self.get_instance()
+        for trn in transitions:
+            category = trn.category
+            next_question = trn.next
+            if next_question:
+                next_question = next_question.pk if pk else next_question.get_instance()
+            t = Transition(category, current, trn.choice, next_question)
+            tm.add(t)
+        ebs = ExplicitBranch.objects.filter(current_question=self)
+        for eb in ebs:
+            t = eb.to_transition(pk=pk)
+            tm.add(t)
+        return tm
+
+    def get_next_question(self, answers=None, in_section=False, allow_old=True):
+        """Get the best next question, taking branching into account
+
+        If there are no following questions in this section at all, return None
+        if `in_section` is True, otherwise look for a question in the next
+        nonempty section.
+
+        If there are is only one following question go there.
+
+        If there is more than one following question, go to the correct one
+        according to branching, by checking existing answers.
+        """
+        self.__LOG.debug('get_next_question: for #%i', self.id)
+        next_question = self._get_next_question_new(answers, in_section)
+        if next_question or not in_section:
+            self.__LOG.debug('Used new branching system: %s -> %s',
+                      self, next_question)
+            return next_question
+        if allow_old:
+            self.__LOG.debug('Fell back to old branching system: %s -> %s',
+                      self, next_question)
+            next_question = self._get_next_question_old(answers, in_section)
+            return next_question
+        return None
+
+    def _get_next_question_old(self, answers=None, in_section=False):
+        # Old system
         following_questions = self.get_all_following_questions()
+
         if not following_questions.exists():
-            return self.get_first_question_in_next_section()
+            if in_section:
+                return None
+            return self.section.get_first_question_in_next_section()
 
         if not self.node:
             return following_questions[0]
 
         if self.node.end and not in_section:
             # Break out of section because fsa.end == True
-            return self.get_first_question_in_next_section()
+            return self.section.get_first_question_in_next_section()
 
         if not self.node.next_nodes.exists():
             return following_questions[0]
 
         data = self.map_answers_to_nodes(answers)
+        if not data:
+            return None
         next_node = self.node.get_next_node(data)
         if next_node:
             # Break out of section because fsa.end == True
             if next_node.end and not in_section:
-                return self.get_first_question_in_next_section()
+                return self.section.get_first_question_in_next_section()
             # Not at the end, get payload
             try:
                 return next_node.payload
@@ -1225,37 +1474,125 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
 
         return None
 
+    def _get_next_question_new(self, answers=None, in_section=False):
+        # New system
+        transition_map = self.generate_transition_map()
+
+        condition = self.get_instance().get_condition(answers)
+        transition = transition_map.select_transition(self, condition)
+        if transition and transition.next:
+            self.__LOG.debug('get_next_question: found: #%i', transition.next.id)
+            return transition.next
+        self.__LOG.debug('get_next_question: no transition.next')
+        if in_section:
+            self.__LOG.debug('get_next_question: last in section')
+            return None
+        self.__LOG.debug('get_next_question: try next sections')
+        next_question = self.section.get_first_question_in_next_section()
+        return next_question
+
+    def has_prev_question(self):
+        if self.get_all_preceding_questions().exists():
+            self.__LOG.debug('has_prev_question: Yes')
+            return True
+        if self.section.get_prev_nonempty_section():
+            self.__LOG.debug('has_prev_question: Yes')
+            return True
+        self.__LOG.debug('has_prev_question: No')
+        return False
+
     def get_all_preceding_questions(self):
         "Return a qs of all questions in the same section with lower pos"
         return Question.objects.filter(section=self.section, position__lt=self.position)
 
     def get_potential_prev_questions(self):
+        self.__LOG.debug('get_potential_prev_questions: for #%i', self.id)
         preceding_questions = self.get_all_preceding_questions()
+        # No preceding questions
         if not preceding_questions.exists():
+            self.__LOG.debug('get_potential_prev_questions: no preceding')
             return ()
 
+        # Is the previous question obligatory? Use that
         prev_pos_question = list(preceding_questions)[-1]
         if prev_pos_question.obligatory:
+            self.__LOG.debug('get_potential_prev_questions: prev is obligatory: #%i',
+                      prev_pos_question.id)
             return (prev_pos_question,)
+        # Chcek if there are any obligatory questions before us
         all_prev_oblig_questions = preceding_questions.filter(obligatory=True)
         if not all_prev_oblig_questions.exists():
-            return ()
+            self.__LOG.warn('get_potential_prev_questions: no oblig before this, bug?')
+            return ()  # No preceding questions, might be bug
+        # Return all questions after previous obligatory question
         prev_oblig_question = list(all_prev_oblig_questions)[-1]
-        return preceding_questions.filter(position__gte=prev_oblig_question.position)
+        preceding_questions = preceding_questions.filter(
+            position__gte=prev_oblig_question.position
+        )
+        self.__LOG.debug('get_potential_prev_questions: found %i!',
+                  preceding_questions.count())
+        return preceding_questions
 
-    def get_prev_question(self, answers=None, in_section=False):
+    def get_best_prev_question_in_last_section(self, answers):
+        self.__LOG.debug('get_best_prev_question_in_last_section: for #%i',
+                         self.id)
+        last_answered = self.section.get_last_answered_question_in_prev_section(answers)
+        if last_answered:
+            self.__LOG.debug('get_best_prev_question_in_last_section: found, last answered: #%i',
+                             last_answered.id)
+            return last_answered
+        last_obligatory = self.section.get_last_obligatory_question_in_prev_section()
+        if last_obligatory:
+            self.__LOG.debug('get_best_prev_question_in_last_section: found, last obligatory: #%i',
+                             last_obligatory.id)
+            return last_obligatory
+        self.__LOG.debug('get_best_prev_question_in_last_section: last question')
+        return None
+
+    def get_prev_question(self, answers=None, in_section=False, allow_old=True):
+        """Get the best previous question, taking branching into account
+
+        If there are no preceding questions in this section at all, return None
+        if `in_section` is True, otherwise look for a question in the previous
+        nonempty section.
+
+        If there are is only one preceding question go there.
+
+        If there is more than one preceding question, go to the correct one
+        according to branching, by checking existing answers. Technically, go
+        to the previous obligatory answered question then see if any not
+        obligatory questions have been after answered that one.
+        """
+        self.__LOG.debug('get_prev_question: for #%i', self.id)
         preceding_questions = self.get_potential_prev_questions()
         if not preceding_questions:
             if not in_section:
-                return self.get_last_question_in_prev_section()
+                self.__LOG.debug('get_prev_question: try prev sections')
+                result = self.get_best_prev_question_in_last_section(answers)
+                return result
+            self.__LOG.debug('get_prev_question: nothing found')
             return None
 
         if len(preceding_questions) == 1:
-            return list(preceding_questions)[0]
+            prev = list(preceding_questions)[0]
+            self.__LOG.debug('get_prev_question: found, single prev: #%i', prev.id)
+            return prev
 
+        prev = self._get_prev_question_new(answers)
+        if prev:
+            self.__LOG.debug('get_prev_question: found: #%i', prev.id)
+            return prev
+        elif not in_section:
+            self.__LOG.debug('get_prev_question: probably first question in template')
+            return None
+        self.__LOG.debug('get_prev_question: probably first question in section')
+        if allow_old:
+            return self._get_prev_question_old(preceding_questions, answers, in_section)
+
+    def _get_prev_question_old(self, preceding, answers=None, in_section=False):
         # Walk forward from previous obligatory question
         if not self.node or self.node.start:
-            return list(preceding_questions)[-1]
+            return list(preceding)[-1]
 
         data = self.map_answers_to_nodes(answers)
         prev_node = self.node.get_prev_node(data)
@@ -1265,7 +1602,90 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             except Question.DoesNotExist:
                 raise TemplateDesignError('Error in template design: prev node ({}) is not hooked up to a question'.format(prev_node))
 
-        return list(preceding_questions)[-1]
+        return list(preceding)[-1]
+
+    def _get_prev_question_new(self, answers=None):
+        obligatories = self.section.get_obligatory_questions()
+        answered = get_answered_questions(obligatories, answers)
+        if answered:
+            answered = answered.filter(position__lt=self.position)
+            previous_answered = answered.order_by('-position').first()
+            last = self._walk_forward(previous_answered, self.get_instance(), answers)
+            return last
+
+    @classmethod
+    def _walk_forward(cls, start, end, answers):
+        assert end.section == start.section
+        end = end.get_instance()
+        cls.__LOG.debug('_walk_forward: for #%i', start.id)
+        # 1. Find all paths between start and end
+        transition_map = start.section.generate_transition_map(
+            pk=False,
+            start=start,
+            end=end,
+        )
+        paths = transition_map.find_paths(start, end)
+
+        # 2. Walk forward each path until we find end
+        for path in paths:
+            cls.__LOG.debug('_walk_forward: try path %s', path)
+            for q in path:
+                try:
+                    next_question = q.get_next_question(answers, in_section=True, allow_old=False)
+                    cls.__LOG.debug('_walk_forward: next: #%i', id_or_none(next_question))
+                except KeyError:
+                    cls.__LOG.debug('_walk_forward: question not answered')
+                    continue
+                if next_question not in path:  # We're on the wrong path
+                    cls.__LOG.debug('_walk_forward: next not in path, try next path')
+                    break
+                if next_question == end:
+                    cls.__LOG.debug('_walk_forward: found: #%i', id_or_none(q))
+                    return q
+                cls.__LOG.debug('_walk_forward: try next path')
+        cls.__LOG.debug('_walk_forward: not found')
+        return None
+
+    @classmethod
+    def _walk_forward_to_last_answered(cls, start, answers):
+        log_prefix = '_walk_forward_to_last_answered'
+        cls.__LOG.debug('_walk_forward: for #%i', start.id)
+
+        # This is one place python could have been served by REPEAT..UNTIL
+        try:
+            next_question = start.get_next_question(answers, in_section=True, allow_old=False)
+        except KeyError:
+            cls.__LOG.debug('%s: found, last: #%i', log_prefix, start.id)
+            return start
+        if next_question is None:
+            cls.__LOG.debug('%s: found, last: #%i', log_prefix, start.id)
+            return start
+
+        # 1. Find all paths following start
+        transition_map = next_question.generate_transition_map(
+            pk=False,
+        )
+        paths = transition_map.find_paths(next_question)
+
+        # 2. Walk forward each path until we find end
+        for path in paths:
+            cls.__LOG.debug('%s: try path %s', log_prefix, path)
+            for q in path:
+                try:
+                    next_question = q.get_next_question(answers, in_section=True, allow_old=False)
+                    cls.__LOG.debug('%s: next: #%s', log_prefix, id_or_none(next_question))
+                except KeyError:
+                    cls.__LOG.debug('%s: found: #%i:', log_prefix, id_or_none(q))
+                    return q
+                if next_question not in path:  # We're on the wrong path
+                    cls.__LOG.debug('%s: next not in path, try next path', log_prefix)
+                    break
+                if next_question is None:
+                    cls.__LOG.debug('%s: found, last: #%i', log_prefix, id_or_none(q))
+                    return q
+                cls.__LOG.debug('%s: try next path', log_prefix)
+        cls.__LOG.debug('%s: found, start: #%i', log_prefix, start.id)
+        return start
 
     # XXX: ExplicitBranch: Not used
     def is_last_in_section(self):
@@ -1307,6 +1727,14 @@ class NotListedMixin():
     def _serialize_condition(self, answer):
         choice = answer.get('choice', {})
         return choice.get('not-listed', False)
+
+    def get_transition_choice(self, answer):
+        choice = answer.get('choice', None)
+        if choice is None:
+            return None
+        if choice['not-listed']:
+            return 'not-listed'
+        return 'False'
 
     def map_choice_to_condition(self, answer):
         """Convert the `choice` in an answer to an Edge.condition

@@ -37,10 +37,6 @@ def progress(so_far, all):
     return so_far/float(all)*100
 
 
-def has_prevquestion(question, data):
-    return bool(question.get_prev_question(data))
-
-
 def get_section_progress(plan, current_section=None):
     sections = plan.template.sections.filter(section_depth=1).order_by('position')
     visited_sections = plan.visited_sections.all()
@@ -548,20 +544,25 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
         kwargs = {'plan': self.object.pk}
 
         if 'summary' in self.request.POST:
+            LOG.debug('NewQuestionView: Going to summary')
             return reverse('plan_detail', kwargs=kwargs)
         elif 'prev' in self.request.POST:
-            prev_question = question.get_prev_question(self.object.data)
+            prev_question = question.get_prev_question(self.object.data, allow_old=False)
+            LOG.debug('NewQuestionView: Prev question found: "%s"', prev_question)
             kwargs['question'] = prev_question.pk
         elif 'next' in self.request.POST:
             next_question = question.get_next_question(current_data)
+            LOG.debug('NewQuestionView: Next question found: "%s"', next_question)
             if not next_question:
                 # Finished answering all questions
+                LOG.debug('NewQuestionView: No next question, going to summary')
                 return reverse('plan_detail', kwargs=kwargs)
             kwargs['question'] = next_question.pk
         else:
             kwargs['question'] = question.pk
 
         # Go to next on 'next', prev on 'prev', stay on same page otherwise
+        LOG.debug('NewQuestionView: Going to question "%s"', kwargs['question'])
         return reverse('new_question', kwargs=kwargs)
 
     def get_context_data(self, **kwargs):
@@ -598,7 +599,7 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
         form_kwargs = self.get_form_kwargs()
         question = self.question
         generate_kwargs = {
-            'has_prevquestion': has_prevquestion(question, self.object.data),
+            'has_prevquestion': question.has_prev_question(),
         }
         generate_kwargs.update(form_kwargs)
         form = make_form(question, **generate_kwargs)
@@ -839,7 +840,7 @@ class SectionDetailView(DetailView):
         if topmost:
             self.plan.visited_sections.add(topmost)
 
-        question = section.get_first_question()
+        question = section.first_question
         template = '{timestamp} {actor} accessed {action_object} of {target}'
         log_event(request.user, 'access', target=self.plan,
                   object=section, template=template)
@@ -863,7 +864,7 @@ class SectionDetailView(DetailView):
         next_section = self.object.get_next_section()
         if next_section is not None:
             if self.editable:
-                question = next_section.get_first_question()
+                question = next_section.first_question
                 # Has questions
                 if question:
                     return reverse(
@@ -883,7 +884,7 @@ class SectionDetailView(DetailView):
         prev_section = self.object.get_prev_section()
         if prev_section is not None:
             if self.editable:
-                question = prev_section.get_first_question()
+                question = prev_section.first_question
                 # Has questions
                 if question:
                     return reverse(
