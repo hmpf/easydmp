@@ -12,6 +12,11 @@ Unreleased
 
 * Comments for plans.
 
+Next
+----
+
+* Improve testing, by adding fixture-generators among other things.
+
 0.19.4
 ------
 
