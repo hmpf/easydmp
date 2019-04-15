@@ -8,6 +8,10 @@ from easydmp.dmpt.models import BooleanQuestion, ChoiceQuestion, DateRangeQuesti
 from easydmp.dmpt.models import MultipleChoiceOneTextQuestion
 from flow.models import Edge, Node, FSA
 
+from tests.dmpt.factories import (TemplateFactory, BooleanQuestionFactory,
+                                  SectionFactory, ChoiceQuestionFactory,
+                                  QuestionFactory, CannedAnswerFactory)
+
 
 # def generate_questions(start, **canned_question):
 #     s1 = BooleanQuestion.objects.create(label='s1', position=2, **canned_question)
@@ -36,12 +40,8 @@ from flow.models import Edge, Node, FSA
 class CannedData(object):
 
     def setUp(self):
-        self.template = Template.objects.create(title='Template')
-        self.section = Section.objects.create(
-            template=self.template,
-            title='Miscellaneous',
-            position=1,
-        )
+        self.template = TemplateFactory()
+        self.section = SectionFactory(template=self.template, position=1)
         self.canned_question = {
             'section': self.section,
             'question': 's',
@@ -57,42 +57,31 @@ class CannedData(object):
 class TestQuestionGetCannedAnswerMethods(CannedData, test.TestCase):
 
     def test_extra_fields_get_canned_answer(self):
-        q = BooleanQuestion.objects.create(**self.canned_question)
+        q = BooleanQuestionFactory(section=self.section, create_canned_answers=False)
         expected = ''
         result = q.get_canned_answer(True, foo='foo', bar='bar')
         self.assertEqual(result, expected)
 
     def test_bool_no_text_get_canned_answer(self):
-        q = BooleanQuestion.objects.create(**self.canned_question)
+        q = BooleanQuestionFactory(section=self.section, create_canned_answers=False)
         result = q.get_canned_answer(True)
         self.assertEqual(result, '')
 
     def test_bool_one_text_get_canned_answer(self):
-        q = BooleanQuestion.objects.create(**self.canned_question)
+        q = BooleanQuestionFactory(section=self.section, create_canned_answers=False)
         expected = 'ABC 123'
-        t_Yes = CannedAnswer.objects.create(
-            question=q,
-            canned_text=expected,
-        )
+        t_Yes = CannedAnswerFactory(question=q, canned_text=expected)
         result_TRUE = q.get_canned_answer('Yes')
         self.assertEqual(result_TRUE, expected)
         result_whatever = q.get_canned_answer('No')
         self.assertEqual(result_whatever, expected)
 
     def test_bool_get_canned_answer(self):
-        q = BooleanQuestion.objects.create(**self.canned_question)
+        q = BooleanQuestionFactory(section=self.section, create_canned_answers=False)
         t_Yes_expected = 'ABC 123'
-        t_Yes = CannedAnswer.objects.create(
-            question=q,
-            choice='Yes',
-            canned_text=t_Yes_expected,
-        )
+        t_Yes = CannedAnswerFactory(question=q, choice='Yes', canned_text=t_Yes_expected)
         t_No_expected = 'DEF 456'
-        t_No = CannedAnswer.objects.create(
-            question=q,
-            choice='No',
-            canned_text=t_No_expected,
-        )
+        t_No = CannedAnswerFactory(question=q, choice='No', canned_text=t_No_expected)
         self.assertEqual(set((t_Yes, t_No)), set(q.canned_answers.all()))
         result_Yes = q.get_canned_answer('Yes')
         self.assertEqual(result_Yes, t_Yes_expected)
@@ -101,25 +90,13 @@ class TestQuestionGetCannedAnswerMethods(CannedData, test.TestCase):
         self.assertNotEqual(result_Yes, result_No)
 
     def test_choice_get_canned_answer(self):
-        q = ChoiceQuestion.objects.create(**self.canned_question)
+        q = QuestionFactory(section=self.section, input_type='choice')
         t_A_expected = 'ABC 123'
-        t_A = CannedAnswer.objects.create(
-            question=q,
-            choice='A',
-            canned_text=t_A_expected,
-        )
+        t_A = CannedAnswerFactory(question=q, choice='A', canned_text=t_A_expected)
         t_B_expected = 'DEF 456'
-        t_B = CannedAnswer.objects.create(
-            question=q,
-            choice='B',
-            canned_text=t_B_expected,
-        )
+        t_B = CannedAnswerFactory(question=q, choice='B', canned_text=t_B_expected)
         t_C_expected = 'GHI 789'
-        t_C = CannedAnswer.objects.create(
-            question=q,
-            choice='C',
-            canned_text=t_C_expected,
-        )
+        t_C = CannedAnswerFactory(question=q, choice='C', canned_text=t_C_expected)
         self.assertEqual(set((t_A, t_B, t_C)), set(q.canned_answers.all()))
         result_A = q.get_canned_answer('A')
         self.assertEqual(result_A, t_A_expected)
@@ -132,25 +109,14 @@ class TestQuestionGetCannedAnswerMethods(CannedData, test.TestCase):
         self.assertNotEqual(result_B, result_C)
 
     def test_multichoiceonetext_get_canned_answer(self):
-        q = MultipleChoiceOneTextQuestion.objects.create(**self.canned_question)
+        q = QuestionFactory(section=self.section, input_type='multichoiceonetext')
         t_A_expected = 'ABC 123'
-        t_A = CannedAnswer.objects.create(
-            question=q,
-            choice='A',
-            canned_text=t_A_expected,
-        )
+        t_A = CannedAnswerFactory(question=q, choice='A', canned_text=t_A_expected)
         t_B_expected = 'DEF 456'
-        t_B = CannedAnswer.objects.create(
-            question=q,
-            choice='B',
-            canned_text=t_B_expected,
-        )
+        t_B = CannedAnswerFactory(question=q, choice='B', canned_text=t_B_expected)
         t_C_expected = 'GHI 789'
-        t_C = CannedAnswer.objects.create(
-            question=q,
-            choice='C',
-            canned_text=t_C_expected,
-        )
+        t_C = CannedAnswerFactory(question=q, choice='C', canned_text=t_C_expected)
+        t_A_expected = 'ABC 123'
         self.assertEqual(set((t_A, t_B, t_C)), set(q.canned_answers.all()))
         result_A = q.get_canned_answer('A')
         self.assertEqual(result_A, 'A')
@@ -161,14 +127,7 @@ class TestQuestionGetCannedAnswerMethods(CannedData, test.TestCase):
     def test_daterange_get_canned_answer(self):
         daterange = {'start': date(1980, 1, 1), 'end': date(1990, 1, 1)}
         text = 'From {start} to {end}'
-        q = DateRangeQuestion.objects.create(
-            framing_text=text,
-            **self.canned_question
-        )
-        t = CannedAnswer.objects.create(
-            question=q,
-            canned_text=text,
-        )
+        q = QuestionFactory(section=self.section, input_type='daterange', framing_text=text)
         expected = text.format(**daterange)
         result = q.get_canned_answer(daterange)
         self.assertEqual(result, expected)
@@ -177,16 +136,16 @@ class TestQuestionGetCannedAnswerMethods(CannedData, test.TestCase):
 class TestQuestionNextQuestionMethods(CannedData, test.TestCase):
 
     def test_no_next_question(self):
-        q = DateRangeQuestion.objects.create(**self.canned_question)
+        q = QuestionFactory(section=self.section, input_type='daterange', position=1)
         result = q.get_next_question(None)
         self.assertEqual(result, None)
-        q = DateRangeQuestion.objects.create(position=2, **self.canned_question)
+        q = QuestionFactory(section=self.section, input_type='daterange', position=2)
         result = q.get_next_question(None)
         self.assertEqual(result, None)
 
     def test_get_next_question(self):
-        q1 = DateRangeQuestion.objects.create(position=1, **self.canned_question)
-        q2 = ChoiceQuestion.objects.create(position=2, **self.canned_question)
+        q1 = QuestionFactory(section=self.section, input_type='daterange', position=1)
+        q2 = QuestionFactory(section=self.section, input_type='choice', position=2)
         result = q1.get_next_question(None)
         self.assertEqual(result, q2)
 
@@ -194,16 +153,16 @@ class TestQuestionNextQuestionMethods(CannedData, test.TestCase):
 class TestQuestionPrevQuestionMethods(CannedData, test.TestCase):
 
     def test_no_prev_question(self):
-        q5 = DateRangeQuestion.objects.create(position=5, **self.canned_question)
+        q5 = QuestionFactory(section=self.section, input_type='daterange', position=5)
         result = q5.get_prev_question()
         self.assertEqual(result, None)
-        q1 = DateRangeQuestion.objects.create(position=1, **self.canned_question)
+        q1 = QuestionFactory(section=self.section, input_type='daterange', position=1)
         result = q1.get_prev_question()
         self.assertEqual(result, None)
 
     def test_single_prevstate(self):
-        q1 = DateRangeQuestion.objects.create(position=1, **self.canned_question)
-        q2 = ChoiceQuestion.objects.create(position=2, **self.canned_question)
+        q1 = QuestionFactory(section=self.section, input_type='daterange', position=1)
+        q2 = QuestionFactory(section=self.section, input_type='choice', position=2)
         result = q2.get_prev_question()
         self.assertEqual(result, q1)
 
