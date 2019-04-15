@@ -11,6 +11,7 @@ Unreleased
 ----------
 
 * Comments for plans.
+* Change BooleanQuestion to store "Yes"/"No" instead of True/False
 
 0.20.1
 ------
