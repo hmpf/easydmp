@@ -12,10 +12,14 @@ Unreleased
 
 * Comments for plans.
 
-Next
-----
+0.19.5
+------
 
-* Improve testing, by adding fixture-generators among other things.
+* Add explicit LICENSE.txt
+* Freeze version of django-select2, the newest doesn't work on Django 1.11
+* Improve testing, by adding fixture-generators among other things
+* Adjust UI of template chooser a little
+* Prevent showing template version twice in the generated text
 
 0.19.4
 ------

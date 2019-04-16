@@ -61,7 +61,7 @@ author = 'Hanne Moa'
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = '0.19.4'
+release = '0.19.5'
 # The short X.Y version.
 version = release.split('.', 2)[:2]
 
