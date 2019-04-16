@@ -10,6 +10,7 @@
       <thead>
           <tr>
               <th>Template</th>
+              <th>Version</th>
               <th>Description</th>
               <th></th>
               {% if request.user.is_superuser %}
@@ -21,7 +22,8 @@
       <tbody>
         {% for object in object_list %}
         <tr>
-            <td><a href="{% url 'create_plan' template_id=object.id %}"><div>{{ object.title_with_version }}</div></a></td>
+            <td>{{ object.title }}</td>
+            <td>{{ object.version }}</td>
             <td>{{ object.description }}
                 {% if object.more_info %}<a href="{{ object.more_info }}">More info</a>{% endif %}
             </td>
