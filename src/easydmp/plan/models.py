@@ -15,11 +15,10 @@ from jsonfield import JSONField
 # With postgres 9.4+, use this instead
 # from django.contrib.postgres.fields import JSONField
 
-from flow.modelmixins import ClonableModel
-
 from easydmp.dmpt.forms import make_form
 from easydmp.dmpt.utils import DeletionMixin
 from easydmp.eventlog.utils import log_event
+from easydmp.lib.models import ClonableModel
 
 from .utils import purge_answer
 from .utils import get_editors_for_plan
