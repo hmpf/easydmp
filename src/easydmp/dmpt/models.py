@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from copy import deepcopy
+from copy import copy, deepcopy
 from functools import lru_cache
 import os
 from pathlib import Path
@@ -36,7 +36,7 @@ from .utils import render_from_string
 
 from easydmp.eestore.models import EEStoreCache
 from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
-from easydmp.lib.models import ModifiedTimestampModel
+from easydmp.lib.models import ModifiedTimestampModel, ClonableModel
 from easydmp.utils import pprint_list
 
 """
@@ -136,7 +136,7 @@ def copy_permissions(orig, other):
     Returns the number of new permissions set.
     """
     assert isinstance(other, type(orig)), "Objects must share a class"
-    new_uperms =  copy_user_permissions(orig, other)
+    new_uperms = copy_user_permissions(orig, other)
     new_gperms = copy_group_permissions(orig, other)
     return new_uperms + new_gperms
 
@@ -161,7 +161,7 @@ class TemplateQuerySet(models.QuerySet):
         )
 
 
-class Template(ModifiedTimestampModel, DeletionMixin, RenumberMixin, models.Model):
+class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableModel):
     title = models.CharField(max_length=255)
     abbreviation = models.CharField(max_length=8, blank=True)
     description = models.TextField(blank=True)
@@ -214,7 +214,7 @@ class Template(ModifiedTimestampModel, DeletionMixin, RenumberMixin, models.Mode
         return collector
 
     @transaction.atomic
-    def _clone(self, title, version):
+    def _clone(self, title, version, keep_permissions=True):
         """Clone the template and give it <title> and <version>
 
         Also recursively clones all sections, questions, canned answers,
@@ -222,11 +222,19 @@ class Template(ModifiedTimestampModel, DeletionMixin, RenumberMixin, models.Mode
         assert title and version, "Both title and version must be given"
         self_dict = model_to_dict(self, exclude=['id', 'pk', 'title',
                                                  'version', 'published'])
-        new = self.__class__.objects.create(
-            title=title,
-            version=version,
-            **self_dict
-        )
+        new = self.get_copy()
+        new.title = title
+        new.version = version
+        new.published = None
+        new.set_cloned_from(self)
+        new.save()
+
+        self.clone_sections(new)
+        if keep_permissions:
+            copy_permissions(self, new)
+        return new
+
+    def clone_sections(self, new):
         # clone sections, which clones questions, canned answers, fsas and eestore mounts
         section_mapping = {}
         for section in self.sections.all():
@@ -236,8 +244,6 @@ class Template(ModifiedTimestampModel, DeletionMixin, RenumberMixin, models.Mode
             if old_section.super_section:
                 new_section.super_section = section_mapping[old_section.super_section]
                 new_section.save()
-        copy_permissions(self, new)
-        return new
 
     def clone(self, title=None, version=1):
         """Clone the template and save it as <title>
@@ -395,7 +401,7 @@ class TemplateGroupObjectPermission(GroupObjectPermissionBase):
                                        related_name='permissions_group')
 
 
-class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel):
+class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableModel):
     """A section of a :model:`dmpt.Template`.
 
     **Attributes**
@@ -443,13 +449,17 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel):
         return self.title
 
     @transaction.atomic
-    def clone(self, template):
+    def clone(self, template, super_section=None):
         """Make a complete copy of the section and put it in <template>
 
         Copies questions, canned answers, EEStore mounts, FSAs, nodes and edges.
         """
-        self_dict = model_to_dict(self, exclude=['id', 'pk', 'template', 'super_section'])
-        new = self.__class__.objects.create(template=template, **self_dict)
+        new = self.get_copy()
+        new.template = template
+        new.super_section = super_section
+        new.set_cloned_from(self)
+        new.save()
+
         question_mapping = {}
         for question in self.questions.all():
             question_mapping[question] = question.clone(new)
@@ -726,7 +736,7 @@ class SimpleFramingTextMixin:
         return False
 
 
-class Question(DeletionMixin, RenumberMixin, models.Model):
+class Question(DeletionMixin, RenumberMixin, ClonableModel):
     """The database representation of a question
 
     Questions come in many subtypes, stored in `input_type`.
@@ -793,8 +803,11 @@ class Question(DeletionMixin, RenumberMixin, models.Model):
 
     @transaction.atomic
     def clone(self, section):
-        self_dict = model_to_dict(self, exclude=['id', 'pk', 'section', 'node'])
-        new = self.__class__.objects.create(section=section, **self_dict)
+        new = self.get_copy()
+        new.section = section
+        new.node = None
+        new.set_cloned_from(self)
+        new.save()
         for ca in self.canned_answers.all():
             ca.clone(new)
         if getattr(self, 'eestore', None):
@@ -1729,7 +1742,7 @@ class CannedAnswerQuerySet(models.QuerySet):
         return self.order_by('question', 'position', 'pk')
 
 
-class CannedAnswer(DeletionMixin, models.Model):
+class CannedAnswer(DeletionMixin, ClonableModel):
     "Defines the possible answers for a branch-capable question"
     question = models.ForeignKey(Question, related_name='canned_answers')
     position = models.PositiveIntegerField(
@@ -1768,8 +1781,12 @@ class CannedAnswer(DeletionMixin, models.Model):
         return collector
 
     def clone(self, question):
-        self_dict = model_to_dict(self, exclude=['id', 'pk', 'question', 'edge'])
-        return self.__class__.objects.create(question=question, **self_dict)
+        new = self.get_copy()
+        new.question = question
+        new.edge = None
+        new.set_cloned_from(self)
+        new.save()
+        return new
 
     def convert_choice_to_condition(self):
         if self.question.input_type == 'bool':

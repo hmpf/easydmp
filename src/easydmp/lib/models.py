@@ -1,3 +1,5 @@
+from copy import copy
+
 from django.utils.timezone import now as utcnow
 from django.db import models
 
@@ -23,6 +25,16 @@ class ClonableModel(models.Model):
 
     class Meta:
         abstract = True
+
+    def get_copy(self):
+        new = copy(self)
+        new.id = None
+        new.pk = None
+        try:
+            delattr(new, '_prefetched_objects_cache')
+        except AttributeError:
+            pass
+        return new
 
     def set_cloned_from(self, obj):
         self.cloned_from = obj

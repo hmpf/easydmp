@@ -100,6 +100,16 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
         'new_version',
         'private_copy',
     ]
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'abbreviation', 'version', 'description',
+            'more_info', 'domain_specific', 'published', 'retired'),
+        }),
+        ('Advanced', {
+            'fields': ('cloned_from', 'cloned_when',),
+            'classes': ('collapse',),
+        }),
+    )
 
     # displays
 
@@ -153,6 +163,19 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         '=id',
         'title',
     ]
+    fieldsets = (
+        (None, {
+            'fields': ('template', 'label', 'title', 'position',
+                       'branching', 'introductory_text', 'comment'),
+        }),
+        ('Super section', {
+            'fields': ('super_section', 'section_depth'),
+        }),
+        ('Advanced', {
+            'fields': ('cloned_from', 'cloned_when'),
+            'classes': ('collapse',),
+        }),
+    )
     _model_slug = 'section'
 
     def get_limited_queryset(self, request):
@@ -303,6 +326,21 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
         QuestionEEStoreMountInline,
     ]
     save_on_top = True
+    fieldsets = (
+        (None, {
+            'fields': ('input_type', 'section', 'label', 'position',
+                       'question', 'obligatory', 'optional', 'help_text',
+                       'framing_text', 'comment',),
+        }),
+        ('Options for optional questions', {
+            'fields': ('optional_canned_text',),
+            'classes': ('collapse',),
+        }),
+        ('Advanced', {
+            'fields': ('node', 'cloned_from', 'cloned_when',),
+            'classes': ('collapse',),
+        }),
+    )
     _model_slug = 'question'
 
     def get_readonly_fields(self, request, obj=None):
