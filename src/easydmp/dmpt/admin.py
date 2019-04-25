@@ -8,6 +8,7 @@ from guardian.shortcuts import assign_perm
 from guardian.shortcuts import get_objects_for_user
 
 from easydmp.eestore.models import EEStoreMount
+from easydmp.lib.admin import FakeBooleanFilter
 from easydmp.lib.admin import PublishedFilter
 from easydmp.lib.admin import RetiredFilter
 from easydmp.utils.admin import ObjectPermissionModelAdmin
@@ -196,6 +197,12 @@ class QuestionEEStoreMountInline(admin.StackedInline):
     model = EEStoreMount
 
 
+class QuestionHasEEStoreFilter(FakeBooleanFilter):
+    title = 'has EEStore mount'
+    lookup = 'eestore'
+    parameter_name = 'eestore'
+
+
 class QuestionEEStoreTypeFilter(admin.SimpleListFilter):
     title = 'EEStore type'
     parameter_name = 'eestore'
@@ -282,6 +289,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
         'obligatory',
         QuestionTemplateFilter,
         QuestionSectionFilter,
+        QuestionHasEEStoreFilter,
         QuestionEEStoreTypeFilter,
     ]
     inlines = [
