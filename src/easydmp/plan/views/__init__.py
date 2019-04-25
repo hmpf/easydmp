@@ -123,7 +123,7 @@ class StartPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
         try:
             return Template.objects.get(id=self.kwargs.get('template_id'))
         except Template.DoesNotExist:
-            raise 404
+            raise Http404("Template not found")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
