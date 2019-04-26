@@ -19,7 +19,7 @@ from easydmp.dmpt.models import Question, Section, Template
 from easydmp.eventlog.models import EventLog
 from easydmp.eventlog.utils import log_event
 
-from ..models import Answer
+from ..models import AnswerHelper
 from ..models import Plan
 from ..models import PlanComment
 from ..forms import ConfirmForm
@@ -360,7 +360,7 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
         self.plan_pk = kwargs[self.pk_url_kwarg]
         self.plan = self.get_object()
         self.object = self.plan
-        self.answers = [Answer(question, self.plan) for question in self.questions]
+        self.answers = [AnswerHelper(question, self.plan) for question in self.questions]
         template = '{timestamp} {actor} accessed {action_object} of {target}'
         log_event(request.user, 'access', target=self.plan,
                   object=self.section, template=template)
@@ -528,7 +528,7 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
 
         self.question_pk = self.kwargs.get('question')
         self.question = self._get_question()
-        self.answer = Answer(self.question, self.plan)
+        self.answer = AnswerHelper(self.question, self.plan)
         self.section = self.question.section
 
     def set_referer(self, request):

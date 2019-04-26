@@ -28,7 +28,7 @@ LOG = logging.getLogger(__name__)
 GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
 
 
-class Answer():
+class AnswerHelper():
     "Helper-class combining a Question and a Plan"
 
     def __init__(self, question, plan):
