@@ -12,6 +12,12 @@ Unreleased
 
 * Comments for plans.
 
+Next
+----
+
+* Fix error in new template-chooser if attempting to access deleted template
+* Improve the dmpt admin for EEStore mounts
+
 0.19.5
 ------
 
