@@ -10,10 +10,11 @@ from django.db.models import Q
 
 import graphviz as gv
 
+from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
+from easydmp.lib.models import ClonableModel
+
 from .errors import FSANoStartnodeError
 from .errors import FSANoDataError
-from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
-from .modelmixins import ClonableModel
 
 
 SLUG_LENGTH = 40
