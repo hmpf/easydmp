@@ -20,6 +20,7 @@ Next
 
   * Filter questions on EEStore mounts
   * Add method to copy a template
+* Pull in newer versions of some dependencies for security reasons
 
 0.19.5
 ------

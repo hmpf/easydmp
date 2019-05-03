@@ -19,7 +19,7 @@ docutils==0.14
 graphviz==0.10.1
 idna==2.8
 imagesize==1.1.0
-Jinja2==2.10
+Jinja2==2.10.1
 jsonfield2==3.0.2
 MarkupSafe==1.0
 oauthlib==3.0.0
@@ -40,6 +40,6 @@ social-auth-backend-b2access==1.0.0
 social-auth-core==3.0.0
 Sphinx==1.8.3
 sphinxcontrib-websupport==1.1.0
-urllib3==1.24.1
+urllib3==1.24.2
 whitenoise==4.1.2
 django-debug-toolbar==1.11
