@@ -16,7 +16,10 @@ Next
 ----
 
 * Fix error in new template-chooser if attempting to access deleted template
-* Improve the dmpt admin for EEStore mounts
+* Improve the dmpt admin:
+
+  * Filter questions on EEStore mounts
+  * Add method to copy a template
 
 0.19.5
 ------

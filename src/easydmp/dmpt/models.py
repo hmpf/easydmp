@@ -26,6 +26,7 @@ from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 from django.utils.html import format_html, escape
 from django.utils.text import slugify
+from django.utils.timezone import now as tznow
 
 from .errors import TemplateDesignError
 from .utils import DeletionMixin
@@ -238,7 +239,7 @@ class Template(ModifiedTimestampModel, DeletionMixin, RenumberMixin, models.Mode
         copy_permissions(self, new)
         return new
 
-    def clone(self, title=None):
+    def clone(self, title=None, version=1):
         """Clone the template and save it as <title>
 
         If <title> is not given, add a random uuid to the existing ``title``.
@@ -249,11 +250,17 @@ class Template(ModifiedTimestampModel, DeletionMixin, RenumberMixin, models.Mode
         EEStore mounts, FSAs, nodes and edges."""
         if not title:
             title = '{} ({})'.format(self.title, uuid4())
-        new = self._clone(title=title, version=1)
+        new = self._clone(title=title, version=version)
         return new
 
     def new_version(self):
         return self._clone(title=self.title, version=self.version+1)
+
+    def private_copy(self):
+        new_title = 'Copy of "{} v{}" ({})'.format(
+            self.title, self.version, tznow().timestamp()
+        )
+        return self.clone(title=new_title, version=self.version)
 
     def renumber_positions(self):
         """Renumber section positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""

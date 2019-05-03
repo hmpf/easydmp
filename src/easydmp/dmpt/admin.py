@@ -98,6 +98,7 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
     ]
     actions = [
         'new_version',
+        'private_copy',
     ]
 
     # displays
@@ -124,6 +125,11 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
         for q in queryset.all():
             q.new_version()
     new_version.short_description = 'Create new version'
+
+    def private_copy(self, request, queryset):
+        for q in queryset.all():
+            q.private_copy()
+    private_copy.short_description = 'Make a private copy'
 
 
 @admin.register(Section)
