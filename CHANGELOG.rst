@@ -12,8 +12,8 @@ Unreleased
 
 * Comments for plans.
 
-Next
-----
+0.19.6
+------
 
 * Fix error in new template-chooser if attempting to access deleted template
 * Improve the dmpt admin:
