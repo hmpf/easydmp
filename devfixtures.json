@@ -71,26 +71,36 @@
  "model": "dmpt.template",
  "pk": 1,
  "fields": {
+  "modified": "2019-05-09T07:48:23.210Z",
+  "cloned_from": null,
+  "cloned_when": null,
   "title": "Multiple named linear sections example",
   "abbreviation": "",
   "description": "",
+  "more_info": "",
   "domain_specific": false,
   "version": 1,
   "created": "2018-09-26T08:49:52.392Z",
-  "published": null
+  "published": null,
+  "retired": null
  }
 },
 {
  "model": "dmpt.template",
  "pk": 2,
  "fields": {
+  "modified": "2019-05-09T07:48:23.210Z",
+  "cloned_from": null,
+  "cloned_when": null,
   "title": "Single unnamed linear section example",
   "abbreviation": "",
   "description": "",
+  "more_info": "",
   "domain_specific": false,
   "version": 1,
   "created": "2018-09-27T09:08:13.677Z",
-  "published": null
+  "published": null,
+  "retired": null
  }
 },
 {
@@ -143,6 +153,8 @@
  "pk": 1,
  "fields": {
   "modified": "2019-03-07T13:08:16.013Z",
+  "cloned_from": null,
+  "cloned_when": null,
   "template": 1,
   "label": "",
   "title": "First section",
@@ -159,6 +171,8 @@
  "pk": 2,
  "fields": {
   "modified": "2019-03-07T13:08:16.013Z",
+  "cloned_from": null,
+  "cloned_when": null,
   "template": 1,
   "label": "",
   "title": "Empty section",
@@ -175,6 +189,8 @@
  "pk": 3,
  "fields": {
   "modified": "2019-03-07T13:08:16.013Z",
+  "cloned_from": null,
+  "cloned_when": null,
   "template": 1,
   "label": "A label!",
   "title": "Second empty section",
@@ -191,6 +207,8 @@
  "pk": 4,
  "fields": {
   "modified": "2019-03-07T13:08:16.013Z",
+  "cloned_from": null,
+  "cloned_when": null,
   "template": 1,
   "label": "",
   "title": "Last section",
@@ -207,6 +225,8 @@
  "pk": 5,
  "fields": {
   "modified": "2019-03-07T13:08:16.013Z",
+  "cloned_from": null,
+  "cloned_when": null,
   "template": 2,
   "label": "",
   "title": "",
@@ -222,6 +242,8 @@
  "model": "dmpt.question",
  "pk": 1,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "choice",
   "section": 1,
   "position": 1,
@@ -240,6 +262,8 @@
  "model": "dmpt.question",
  "pk": 2,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "daterange",
   "section": 1,
   "position": 2,
@@ -258,6 +282,8 @@
  "model": "dmpt.question",
  "pk": 3,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "multichoiceonetext",
   "section": 1,
   "position": 3,
@@ -276,6 +302,8 @@
  "model": "dmpt.question",
  "pk": 4,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "bool",
   "section": 1,
   "position": 4,
@@ -294,6 +322,8 @@
  "model": "dmpt.question",
  "pk": 5,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "namedurl",
   "section": 1,
   "position": 5,
@@ -312,6 +342,8 @@
  "model": "dmpt.question",
  "pk": 6,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "multinamedurlonetext",
   "section": 1,
   "position": 6,
@@ -330,6 +362,8 @@
  "model": "dmpt.question",
  "pk": 7,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "multidmptypedreasononetext",
   "section": 1,
   "position": 7,
@@ -348,6 +382,8 @@
  "model": "dmpt.question",
  "pk": 8,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "bool",
   "section": 4,
   "position": 1,
@@ -366,6 +402,8 @@
  "model": "dmpt.question",
  "pk": 9,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "reason",
   "section": 4,
   "position": 2,
@@ -384,6 +422,8 @@
  "model": "dmpt.question",
  "pk": 10,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "positiveinteger",
   "section": 4,
   "position": 3,
@@ -402,6 +442,8 @@
  "model": "dmpt.question",
  "pk": 11,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "externalchoice",
   "section": 4,
   "position": 4,
@@ -420,6 +462,8 @@
  "model": "dmpt.question",
  "pk": 12,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "extchoicenotlisted",
   "section": 4,
   "position": 5,
@@ -438,6 +482,8 @@
  "model": "dmpt.question",
  "pk": 13,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "externalmultichoiceonetext",
   "section": 4,
   "position": 6,
@@ -456,6 +502,8 @@
  "model": "dmpt.question",
  "pk": 14,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "extmultichoicenotlistedonetext",
   "section": 4,
   "position": 7,
@@ -474,6 +522,8 @@
  "model": "dmpt.question",
  "pk": 15,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "input_type": "reason",
   "section": 5,
   "position": 1,
@@ -492,6 +542,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 1,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 1,
   "position": 1,
   "choice": "Because of inflation",
@@ -504,6 +556,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 2,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 1,
   "position": 2,
   "choice": "To get to the other side",
@@ -516,6 +570,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 3,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 1,
   "position": 3,
   "choice": "What chicken?!",
@@ -528,6 +584,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 4,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 3,
   "position": 1,
   "choice": "surprise",
@@ -540,6 +598,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 5,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 3,
   "position": 2,
   "choice": "fear",
@@ -552,6 +612,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 6,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 3,
   "position": 3,
   "choice": "ruthless efficiency",
@@ -564,6 +626,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 7,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 3,
   "position": 4,
   "choice": "an almost fanatical devotion to the Pope",
@@ -576,6 +640,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 8,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 3,
   "position": 5,
   "choice": "nice red uniforms",
@@ -588,6 +654,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 9,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 4,
   "position": 1,
   "choice": "Yes",
@@ -600,6 +668,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 10,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 4,
   "position": 2,
   "choice": "No",
@@ -612,6 +682,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 11,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 8,
   "position": 1,
   "choice": "Yes",
@@ -624,6 +696,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 12,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 8,
   "position": 2,
   "choice": "No",
@@ -636,6 +710,8 @@
  "model": "dmpt.cannedanswer",
  "pk": 13,
  "fields": {
+  "cloned_from": null,
+  "cloned_when": null,
   "question": 14,
   "position": 1,
   "choice": "not-listed",
