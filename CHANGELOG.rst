@@ -12,6 +12,11 @@ Unreleased
 
 * Comments for plans.
 
+0.19.7
+------
+
+* Update outdated devfixtures
+
 0.19.6
 ------
 
