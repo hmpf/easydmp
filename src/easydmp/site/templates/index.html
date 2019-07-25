@@ -1,23 +1,32 @@
 {% extends "base.html" %}
 {% block content %}
-	<div class="row">
-		<div class="col-lg-12">
-			<div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-				<h1>Data Management Plan Generator</h1>
-			</div>
-		</div>
-	</div>
-	<div class="row uninett-color-white uninett-whole-row">
-		<div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-		{% if request.user.is_authenticated %}
-		<p>You are logged in as "{{ request.user.username }}".</p>
-		<ul class="uninett-ul">
-			<li class="uninett-ul-li"><a href="{% url 'plan_list' %}">Existing plans</a></li>
-			<li class="uninett-ul-li"><a href="{% url 'choose_template' %}">Create a new plan</a></li>
-		</ul>
-		{% else %}
-		<p>You are not logged in.</p>
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
+        <h1>Data Management Plan Generator</h1>
+      </div>
+    </div>
+  </div>
+  <div class="row uninett-color-white uninett-whole-row">
+    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+    {% if request.user.is_authenticated %}
+    <p>You are logged in as "{{ request.user.username }}".</p>
+    <ul class="uninett-ul">
+      <li class="uninett-ul-li"><a href="{% url 'plan_list' %}">Existing plans</a></li>
+      <li class="uninett-ul-li"><a href="{% url 'choose_template' %}">Create a new plan</a></li>
+    </ul>
+    {% else %}
+    <p>Please <a href="{% url 'login-selector' %}">log in</a> to see/make/change plans.</p>
+    <table class="statistics-box">
+    <tbody>
+        <tr>
+            <td>{{ stats.users.all }} users</td>
+            <td>{{ stats.plans.all }} plans</td>
+            <td>{{ stats.domains.all }} organizations</td>
+        </tr>
+    </tbody>
+    </table>
 {% endif %}
-		</div>
-		</div>
+    </div>
+    </div>
 {% endblock %}

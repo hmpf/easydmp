@@ -1704,6 +1704,11 @@ textarea {
     padding: .5em 1.5em;
 }
 
+.statistics-box { font-size: 1.5em; font-weight: bold; }
+.statistics-box thead th { text-align: right }
+.statistics-box tbody tr { text-align: right }
+.statistics-box th, .statistics-box td { padding-right: 1em; }
+
 /* media queries */
 @media screen and (min-width: 768px) {
   .demo p {

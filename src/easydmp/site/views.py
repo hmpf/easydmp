@@ -2,6 +2,8 @@ from django.views.generic import TemplateView
 from django.contrib.auth import logout
 from django.shortcuts import redirect, render
 
+from easydmp.utils.stats import stats
+
 
 __all__ = [
     'Homepage',
@@ -19,6 +21,10 @@ class Homepage(TemplateView):
             return redirect('plan_list')
         return super().get(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['stats'] = stats()
+        return context
 
 
 class LoginView(TemplateView):
