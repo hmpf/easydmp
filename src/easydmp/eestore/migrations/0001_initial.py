@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('dmpt', '0006_two_new_question_types'),
+        ('dmpt', '0001_squashed_0031_improve_cloning'),
     ]
 
     operations = [
