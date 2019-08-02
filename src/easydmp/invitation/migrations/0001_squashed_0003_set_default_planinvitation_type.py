@@ -10,8 +10,6 @@ import uuid
 
 class Migration(migrations.Migration):
 
-    replaces = [('invitation', '0001_initial'), ('invitation', '0002_rename_planeditorinvitation'), ('invitation', '0003_set_default_planinvitation_type')]
-
     initial = True
 
     dependencies = [

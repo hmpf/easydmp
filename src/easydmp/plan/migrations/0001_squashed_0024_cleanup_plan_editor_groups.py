@@ -13,8 +13,6 @@ import uuid
 
 class Migration(migrations.Migration):
 
-    replaces = [('plan', '0001_initial'), ('plan', '0002_auto_20170926_1315'), ('plan', '0003_plan_editor_group'), ('plan', '0004_set_editor_group'), ('plan', '0005_no_sqlunique_title'), ('plan', '0006_plan_visited_sections'), ('plan', '0007_no_sql_changes'), ('plan', '0008_add_publishing_fields'), ('plan', '0009_no_sql_changed'), ('plan', '0010_add_locking_fields'), ('plan', '0011_generate_uuids'), ('plan', '0012_plancomment'), ('plan', '0013_plan_generated_html'), ('plan', '0014_plan_doi'), ('plan', '0015_update_helptexts'), ('plan', '0016_alter_title_nosql'), ('plan', '0017_add_validation_cache'), ('plan', '0018_validity_as_fk_only'), ('plan', '0019_add_validation_status'), ('plan', '0020_make_plan_clonable'), ('plan', '0021_planaccess'), ('plan', '0022_copy_editors_to_planaccess'), ('plan', '0023_remove_plan_editor_group'), ('plan', '0024_cleanup_plan_editor_groups')]
-
     initial = True
 
     dependencies = [

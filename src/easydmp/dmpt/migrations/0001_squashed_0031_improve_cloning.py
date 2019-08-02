@@ -11,8 +11,6 @@ import easydmp.dmpt.models
 
 class Migration(migrations.Migration):
 
-    replaces = [('dmpt', '0001_initial'), ('dmpt', '0002_auto_20170921_1032'), ('dmpt', '0003_auto_20170921_1220'), ('dmpt', '0004_auto_20170922_0911'), ('dmpt', '0005_section_comment'), ('dmpt', '0006_two_new_question_types'), ('dmpt', '0007_add_externalchoicequestion'), ('dmpt', '0008_add_externalmultionechoicequestion'), ('dmpt', '0009_add_namedurlquestion'), ('dmpt', '0010_add_multinamedurlonetextquestion'), ('dmpt', '0011_auto_20180111_0955'), ('dmpt', '0012_add_indexes'), ('dmpt', '0013_decouple_from_flow'), ('dmpt', '0014_cannedanswer_position'), ('dmpt', '0015_add_subsection_support'), ('dmpt', '0016_question_obligatory'), ('dmpt', '0017_create_model_templateaccess'), ('dmpt', '0018_use_guardian_for_template'), ('dmpt', '0019_migrate_to_guardian'), ('dmpt', '0020_obligatory_default_true'), ('dmpt', '0021_section_branching'), ('dmpt', '0022_set_not_null'), ('dmpt', '0023_add_ordering_indexes'), ('dmpt', '0024_template_box_choice'), ('dmpt', '0025_add_related_names'), ('dmpt', '0026_optional_questions'), ('dmpt', '0027_section_modified'), ('dmpt', '0028_add_shortfreetext_question_type'), ('dmpt', '0029_remove_TemplateAccess'), ('dmpt', '0030_more_template_metadata'), ('dmpt', '0031_improve_cloning')]
-
     initial = True
 
     dependencies = [

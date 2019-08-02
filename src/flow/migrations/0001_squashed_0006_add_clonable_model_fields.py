@@ -8,8 +8,6 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    replaces = [('flow', '0001_initial'), ('flow', '0002_node_end'), ('flow', '0003_alter_edge_unique_together'), ('flow', '0004_lengthen_slug_fields'), ('flow', '0005_make_fsa_slug_unique'), ('flow', '0006_add_clonable_model_fields')]
-
     initial = True
 
     dependencies = [
