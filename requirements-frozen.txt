@@ -27,7 +27,7 @@ packaging==18.0
 psycopg2==2.7.6.1
 Pygments==2.3.1
 PyJWT==1.7.1
-pyparsing==2.3.1
+pyparsing==2.4.2
 python-dataporten-auth==2.0.0
 python3-openid==3.1.0
 pytz==2018.9
