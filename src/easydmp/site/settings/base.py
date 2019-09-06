@@ -190,7 +190,7 @@ LOGGING = {
             '()': 'django.utils.log.RequireDebugTrue',
         },
         'select_filter': {
-            '()': 'easydmp.utils.log.SQLFilter',
+            '()': 'easydmp.lib.log.SQLFilter',
             'keywords': ['SELECT'],
         },
     },

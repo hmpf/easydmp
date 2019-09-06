@@ -13,7 +13,7 @@ from django.views.generic import (
     RedirectView,
 )
 
-from easydmp.common.views.mixins import DeleteFormMixin
+from easydmp.lib.views.mixins import DeleteFormMixin
 from easydmp.dmpt.forms import make_form, NotesForm
 from easydmp.dmpt.models import Question, Section, Template
 from easydmp.eventlog.models import EventLog

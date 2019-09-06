@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
-from easydmp.common.forms import FORM_CLASS
+from easydmp.lib.forms import FORM_CLASS
 
 from .widgets import MultiEmailWidget
 

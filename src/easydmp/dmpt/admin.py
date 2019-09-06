@@ -11,9 +11,9 @@ from easydmp.eestore.models import EEStoreMount
 from easydmp.lib.admin import FakeBooleanFilter
 from easydmp.lib.admin import PublishedFilter
 from easydmp.lib.admin import RetiredFilter
-from easydmp.utils.admin import ObjectPermissionModelAdmin
-from easydmp.utils.admin import SetPermissionsMixin
-from easydmp.utils import get_model_name
+from easydmp.lib.admin import ObjectPermissionModelAdmin
+from easydmp.lib.admin import SetPermissionsMixin
+from easydmp.lib import get_model_name
 
 from .models import Template
 from .models import Section

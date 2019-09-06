@@ -37,7 +37,7 @@ from .utils import render_from_string
 from easydmp.eestore.models import EEStoreCache
 from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
 from easydmp.lib.models import ModifiedTimestampModel, ClonableModel
-from easydmp.utils import pprint_list
+from easydmp.lib import pprint_list
 
 """
 Question and CannedAnswer have the following API re. Node and Edge:

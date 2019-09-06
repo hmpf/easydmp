@@ -8,7 +8,7 @@ from django.views.generic import (
     ListView,
     DeleteView,
 )
-from easydmp.common.views.mixins import DeleteFormMixin
+from easydmp.lib.views.mixins import DeleteFormMixin
 from easydmp.invitation.models import PlanInvitation
 
 from ..models import Plan

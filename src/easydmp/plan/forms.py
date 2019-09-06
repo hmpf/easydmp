@@ -4,7 +4,7 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
-from easydmp.common.forms import FORM_CLASS
+from easydmp.lib.forms import FORM_CLASS
 from easydmp.dmpt.models import Template
 
 from .models import Plan

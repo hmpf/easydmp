@@ -7,7 +7,7 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
-from easydmp.common.forms import FORM_CLASS
+from easydmp.lib.forms import FORM_CLASS
 from easydmp.eestore.models import EEStoreCache
 
 from .models import Template
