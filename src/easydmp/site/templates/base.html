@@ -45,18 +45,25 @@
             border-width: 1px 6px 1px 6px;
             background-color: #f2f2f2;
         }
+        .alert { background-color: #9ed2df; font-weight: bold; text-color: #fff}
+        .instance { background-color: #fc9039}
     </style>
     {% block extrahead %}{% endblock %}
 </head>
 <body>
   <header role="banner">
   <div class="navbar navbar-default navbar-fixed-top" role="navigation">
-    {% if messages %}
+    {% if instance_message or messages %}
     <div class="container messages">
+      {% if instance_message %}
+      <div role="alert" class="alert instance">{{ instance_message }}</div>
+      {% endif %}
+      {% if messages %}
       {% for message in messages %}
       <div role="alert" class="alert">{{ message }}</div>
       {% endfor %}
       {% block "messages" %}{% endblock %}
+      {% endif %}
     </div>
     {% endif %}
     <div class="container">
