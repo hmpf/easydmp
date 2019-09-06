@@ -467,7 +467,8 @@ class PlanAccess(ClonableModel):
         unique_together = ('user', 'plan')
 
     def clone(self, plan):
-        self_dict = model_to_dict(self, exclude=['id', 'pk', 'plan'])
+        self_dict = model_to_dict(self, exclude=['id', 'pk', 'plan', 'user'])
+        self_dict['user'] = self.user
         new = self.__class__.objects.create(plan=plan, **self_dict)
         return new
 
