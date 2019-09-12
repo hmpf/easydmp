@@ -12,6 +12,19 @@ Unreleased
 
 * Comments for plans.
 
+0.19.9
+------
+
+* Do first step of database migration cleanup
+
+See UPGRADING.rst!
+
+0.19.8
+------
+
+* Various bugfixes
+* Squash migrations ahead of branching changeover
+
 0.19.7
 ------
 
