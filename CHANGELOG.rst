@@ -12,6 +12,13 @@ Unreleased
 
 * Comments for plans.
 
+0.20.0
+------
+
+* Do second and last step of database migration cleanup
+
+See UPGRADING.rst!
+
 0.19.9
 ------
 
