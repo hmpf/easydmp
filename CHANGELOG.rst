@@ -11,7 +11,13 @@ Unreleased
 ----------
 
 * Comments for plans.
+
+0.21.0
+------
+
 * Change BooleanQuestion to store "Yes"/"No" instead of True/False
+
+See UPGRADING.rst!
 
 0.20.1
 ------

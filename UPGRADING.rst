@@ -4,6 +4,17 @@ UPGRADING
 Normally, upgrading is just a matter of getting the new code and running
 ``python manage.py migrate``. Any exceptions will be listed here.
 
+0.20.1 -> 0.21.0
+----------------
+
+This rewrites True/False answers in plans to 'Yes/No'.
+
+A plan created on 0.21.0 won't work on an EasyDMP older than 0.21.0. A plan
+created before 0.21.0 won't work on 0.21.0 until the migration have been run.
+
+Specific plans can be converted via the django admin command
+"answers_bool_to_yesno", and back with "answers_yesno_to_bool".
+
 0.20.0 -> 0.20.1
 ----------------
 
