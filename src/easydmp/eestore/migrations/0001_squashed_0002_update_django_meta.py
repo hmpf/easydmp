@@ -10,8 +10,6 @@ import jsonfield.fields
 
 class Migration(migrations.Migration):
 
-    replaces = [('eestore', '0001_initial'), ('eestore', '0002_update_django_meta')]
-
     initial = True
 
     dependencies = [
