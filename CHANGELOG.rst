@@ -12,6 +12,13 @@ Unreleased
 
 * Comments for plans.
 
+0.20.1
+------
+
+* Fix to 0.20.0
+
+See UPGRADING.rst!
+
 0.20.0
 ------
 

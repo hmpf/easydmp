@@ -4,6 +4,16 @@ UPGRADING
 Normally, upgrading is just a matter of getting the new code and running
 ``python manage.py migrate``. Any exceptions will be listed here.
 
+0.20.0 -> 0.20.1
+----------------
+
+There was an error in 0.20.0. It is possible to go directly from a correctly
+migrated 0.19.9 to 0.20.1. When on 0.20.1 run::
+
+    python manage.py migrate --fake
+
+to correctly update the migrations-table.
+
 0.19.9 -> 0.20.0
 ----------------
 
