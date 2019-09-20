@@ -34,14 +34,11 @@ from easydmp.lib.models import ModifiedTimestampModel, ClonableModel
 from easydmp.lib import pprint_list
 
 """
-Question and CannedAnswer have the following API re. Node and Edge:
+Question and CannedAnswer have the following API re. ExplicitBranch:
 
-- They have nullable one to one keys to their respective Nodes and Edges, so
-  that they can be designed separately from these and assigned to them later on.
-- The Nodes and Edges can reach them through the reverse name "payload"
-- They have a property "label" that the Node and Edge can read from
-- For easy questions and answers, with no next states, a suitably minimal
-  node or edge can be automatically created.
+- A Question may have reverse Foreign Keys to ExplicitBranch, via
+  ``forward_transitions`` and ``backward_transitions``.
+- A CannedAnswer may have a OneToOneField to ExplicitBranch, via ``transition``.
 """
 
 LOG = logging.getLogger(__name__)
@@ -185,24 +182,12 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
             return '{} v{}'.format(self.title, self.version)
         return self.title
 
-    def collect(self, **kwargs):
-        collector = super().collect(**kwargs)
-        if self.questions.exists():
-            nodes = [q.node for q in self.questions.all() if q.node]
-            fsas = set(n.fsa for n in nodes)
-            collector.collect(tuple(fsas))
-            edges = set()
-            for n in nodes:
-                edges.update(set(n.next_nodes.all() | n.prev_nodes.all()))
-            collector.collect(tuple(edges))
-        return collector
-
     @transaction.atomic
     def _clone(self, title, version, keep_permissions=True):
         """Clone the template and give it <title> and <version>
 
         Also recursively clones all sections, questions, canned answers,
-        EEStore mounts, FSAs, nodes and edges."""
+        EEStore mounts and ExplicitBranches."""
         assert title and version, "Both title and version must be given"
         new = self.get_copy()
         new.title = title
@@ -235,7 +220,7 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         ``published`` not being set.
 
         Also recursively clones all sections, questions, canned answers,
-        EEStore mounts, explicit branches, FSAs, nodes and edges."""
+        EEStore mounts and explicit branches"""
         if not title:
             title = '{} ({})'.format(self.title, uuid4())
         new = self._clone(title=title, version=version)
@@ -436,7 +421,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     def clone(self, template, super_section=None):
         """Make a complete copy of the section and put it in <template>
 
-        Copies questions, canned answers, EEStore mounts, FSAs, nodes and edges.
+        Copies questions, canned answers, EEStore mounts and  explicitbranches.
         """
         new = self.get_copy()
         new.template = template
@@ -450,7 +435,6 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         ):
             question_mapping[question] = question.clone(new)
         self._clone_transitions(question_mapping)
-        self._clone_fsas(question_mapping, new)
         return new
 
     @transaction.atomic
@@ -469,49 +453,6 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         for old, new in ca_mapping.items():
             new.transition = eb_mapping[old.transition]
             new.save()
-
-    @transaction.atomic
-    def _clone_fsas(self, question_mapping, section):
-        """Clone FSAs, which also clones nodes and edges
-
-        Hook up nodes and edges of the FSAs to questions and canned answers."""
-        node_questions = self.questions.prefetch_related('canned_answers').filter(node__isnull=False)
-        fsas = [q.node.fsa for q in node_questions.distinct()]
-        fsa_mapping = {}
-        # clone fsa
-        for fsa in fsas:
-            title = 's{}-{}'.format(section.pk, fsa.slug)
-            fsa_mapping[fsa] = fsa.clone(title)
-        # hook up new questions to new fsa nodes
-        Edge = apps.get_model('flow', 'Edge')
-        edge_qs = Edge.objects.select_related('prev_node')
-        for question in node_questions:
-            node = question.node
-            new_fsa = fsa_mapping[node.fsa]
-            new_node = new_fsa.nodes.get(slug=node.slug)
-            new_question = question_mapping[question]
-            new_question.node = new_node
-            new_question.save()
-            # hook up new canned answers to new fsa edges
-            old_edges = edge_qs.filter(prev_node=question.node)
-            new_edges = edge_qs.filter(prev_node=new_question.node)
-            edge_mapping = {edge: new_edges.get(condition=edge.condition) for edge in old_edges}
-            for ca in question.canned_answers.filter(edge__isnull=False):
-                new_ca = new_question.canned_answers.get(choice=ca.choice)
-                new_ca.edge = edge_mapping[ca.edge]
-                new_ca.save()
-
-    def collect(self, **kwargs):
-        collector = super().collect(**kwargs)
-        if self.questions.exists():
-            nodes = [q.node for q in self.questions.all() if q.node]
-            fsas = set(n.fsa for n in nodes)
-            collector.collect(tuple(fsas))
-            edges = set()
-            for n in nodes:
-                edges.update(set(n.next_nodes.all() | n.prev_nodes.all()))
-            collector.collect(tuple(edges))
-        return collector
 
     def renumber_positions(self):
         """Renumber question positions so that all are adajcent
@@ -858,7 +799,6 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                     .prefetch_related('canned_answers')
                     .order_by('position')
         ):
-            node = question.node
             q_kwargs = {}
             q_label = '{}\n<{}>'.format(question, question.input_type)
             if debug:
@@ -872,8 +812,6 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                     obligatory,
                     optional
                 )
-                if node:
-                    q_label += ' n{}'.format(node.pk)
             q_kwargs['label'] = fill(q_label, 20)
             q_id = 'q{}'.format(question.pk)
             if question.pk == self.first_question.pk:
@@ -899,8 +837,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                                 pass
                         if ca:
                             edge_label += ' p{} #{}'.format(ca.position, ca.pk)
-                            if ca.edge:
-                                edge_label += ' e{}'.format(ca.edge.pk)
+                            if ca.transition:
+                                edge_label += ' eb{}'.format(ca.transition.pk)
                         if category in ('CannedAnswer', 'ExplicitBranch'):
                             edge_label += ': "{}"'.format(choice)
                     dot.edge(q_id, nq_id, label=fill(edge_label, 15))
@@ -1016,6 +954,10 @@ class ExplicitBranch(DeletionMixin, models.Model):
         'Edge',
         'Node-edgeless',
     )
+    MODERNIZED_CATEGORIES = {
+        'Node-edgeless': 'position',
+        'Edge': 'ExplicitBranch',
+    }
 
     # XX1
     current_question = models.ForeignKey('Question', on_delete=models.CASCADE,
@@ -1070,6 +1012,10 @@ class ExplicitBranch(DeletionMixin, models.Model):
     def to_transition(self, pk=False):
         return self._to_transition(self, pk=pk)
 
+    @classmethod
+    def modernize_category(cls, category):
+        return cls.MODERNIZED_CATEGORIES.get(category, category)
+
 
 class Question(DeletionMixin, RenumberMixin, ClonableModel):
     """The database representation of a question
@@ -1082,8 +1028,6 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
     If branching_possible is True:
 
     * The question *must* have at least one `CannedAnswer`
-    * If branching, the `CannedAnswer.choice` must reflect a
-      `flow.Edge.condition`. This is set by `map_choice_to_condition()`
 
     If branching_possible is False:
 
@@ -1112,8 +1056,6 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
     obligatory = models.BooleanField(default=True)
     optional = models.BooleanField(default=False)
     optional_canned_text = models.TextField(blank=True)
-    node = models.OneToOneField('flow.Node', on_delete=models.SET_NULL,
-                                blank=True, null=True, related_name='payload')
 
     class Meta:
         unique_together = ('section', 'position')
@@ -1127,14 +1069,6 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         if self.label:
             return '{} {}'.format(self.label, self.question)
         return self.question
-
-    def collect(self, **kwargs):
-        collector = super().collect(**kwargs)
-        if self.node:
-            edges = set(self.node.next_nodes.all() | self.node.prev_nodes.all())
-            collector.collect(tuple(edges))
-            collector.collect([self.node])
-        return collector
 
     @transaction.atomic
     def clone(self, section):
@@ -1241,31 +1175,6 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         "Return an HTML representation of the `choice`"
         return self.pprint(value)
 
-    def create_node(self, fsa=None):
-        # ExplicitBranch: not needed
-        from flow.models import Node, FSA
-        label = self.label if self.label else self.id
-        if not fsa:
-            fsa = FSA.objects.create(slug='fsa-{}'.format(label))
-        self.node = Node.objects.create(
-            slug=slugify(label),
-            fsa=fsa,
-        )
-        self.save()
-
-    def map_choice_to_condition(self, answer):
-        """Convert the `choice` in an answer to an Edge.condition
-
-        The choice is unwrapped from its structure, and set to empty if the
-        question type cannot branch.
-        """
-        # ExplicitBranch: not needed
-        condition = ''
-        if self.branching_possible:
-            # The choice is used to look up an Edge.condition
-            condition = str(self.get_transition_choice(answer))
-        return condition
-
     def get_transition_choice(self, answer):
         if not self.branching_possible:
             return None
@@ -1285,43 +1194,12 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         q = self.get_instance()
         return q.get_transition_choice(answer)
 
-    @classmethod
-    def map_answers_to_nodes(self, answers):
-        "Convert question pks to node pks, and choices to conditions"
-        # ExplicitBranch: not needed
-        data = {}
-        questions = {str(q.pk): q for q in (Question.objects
-                                            .select_related('node')
-                                            .filter(pk__in=answers.keys()))}
-        for question_pk, answer in answers.items():
-            q = questions[question_pk]
-            if not q.node:
-                continue
-            q = q.get_instance()
-            condition = q.map_choice_to_condition(answer)
-            data[str(q.node.slug)] = condition
-        return data
-
-    # START: Question movement helpers
-    #
-    # Several of these are here because a name is easier to type correctly,
-    # read, understand, remember and grep for than a long Django queryset dot
-    # after dot structure.
-
-    def get_first_question_in_next_section(self):
-        next_section = self.section.get_next_section()
-        while next_section:
-            if next_section.questions.exists():
-                return next_section.first_question
-            next_section = next_section.get_next_section()
-        return None
-
-    def get_last_question_in_prev_section(self):
-        prev_section = self.section.get_prev_section()
-        while prev_section:
-            if prev_section.questions.exists():
-                return prev_section.last_question
-            prev_section = prev_section.get_prev_section()
+    def get_last_answered_question_in_section(self, answers=None):
+        if not self.section.questions.exists():
+            return None
+        last = self._get_last_answered_obligatory_question(answers)
+        if last:
+            return self._walk_forward(last, None, answers)
         return None
 
     def is_answered(self, answers):
@@ -1346,18 +1224,18 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
 
         Format: a set of tuples (category, choice, question)
 
-        "category" is a string:
+        "category" is a string::
 
-        "position": No node, question next in order by position
-        "Node-edgeless": Node but no edges, question next in order by position
+        "position": No ExplicitBranch, question next in order by position
         "CannedAnswer": choice is from a CannedAnswer
-        "Edge": choice is from an Edge
+        "ExplicitBranch": choice may or may not be relevant, next question from
+            an ExplicitBranch
         "Last": There are no questions after this one, explicitly set
         "last": There are no questions after this one, implicitly
 
         "choice" is a string or None:
 
-        string: from an Edge.condition or CannedAnswer.legend
+        string: from a CannedAnswer.legend
         None: unconditional choice
 
         "question" is a Question, or None in the case of "last/Last"
@@ -1374,23 +1252,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         if self.forward_transitions.exists():
             next_in_db = self.forward_transitions.transitions()
             return next_in_db | next_by_position_trn
-        if not self.node:
-            return next_by_position_trn
-        edges = self.node.next_nodes.all()
-        if not edges:
-            return set([Transition('Node-edgeless', self, None, all_following_questions[0])])
-        next_questions = []
-        for edge in edges:
-            edge_payload = getattr(edge, 'payload', None)
-            condition = edge.condition
-            category = 'Edge'
-            if edge_payload:
-                category = 'CannedAnswer'
-                condition = str(getattr(edge_payload, 'choice', condition))
-            node_payload = getattr(edge.next_node, 'payload', None)
-            next_questions.append(Transition(category, self, condition, node_payload))
-        next_questions = set(next_questions)
-        return next_questions
+        return next_by_position_trn
 
     def get_potential_next_questions(self):
         "Return a set of potential next questions"
@@ -1414,67 +1276,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             tm.add(t)
         return tm
 
-    def get_next_question(self, answers=None, in_section=False, allow_old=True):
-        """Get the best next question, taking branching into account
-
-        If there are no following questions in this section at all, return None
-        if `in_section` is True, otherwise look for a question in the next
-        nonempty section.
-
-        If there are is only one following question go there.
-
-        If there is more than one following question, go to the correct one
-        according to branching, by checking existing answers.
-        """
-        self.__LOG.debug('get_next_question: for #%i', self.id)
-        next_question = self._get_next_question_new(answers, in_section)
-        if next_question or not in_section:
-            self.__LOG.debug('Used new branching system: %s -> %s',
-                      self, next_question)
-            return next_question
-        if allow_old:
-            self.__LOG.debug('Fell back to old branching system: %s -> %s',
-                      self, next_question)
-            next_question = self._get_next_question_old(answers, in_section)
-            return next_question
-        return None
-
-    def _get_next_question_old(self, answers=None, in_section=False):
-        # Old system
-        following_questions = self.get_all_following_questions()
-
-        if not following_questions.exists():
-            if in_section:
-                return None
-            return self.section.get_first_question_in_next_section()
-
-        if not self.node:
-            return following_questions[0]
-
-        if self.node.end and not in_section:
-            # Break out of section because fsa.end == True
-            return self.section.get_first_question_in_next_section()
-
-        if not self.node.next_nodes.exists():
-            return following_questions[0]
-
-        data = self.map_answers_to_nodes(answers)
-        if not data:
-            return None
-        next_node = self.node.get_next_node(data)
-        if next_node:
-            # Break out of section because fsa.end == True
-            if next_node.end and not in_section:
-                return self.section.get_first_question_in_next_section()
-            # Not at the end, get payload
-            try:
-                return next_node.payload
-            except Question.DoesNotExist:
-                raise TemplateDesignError('Error in template design: next node ({}) is not hooked up to a question'.format(next_node))
-
-        return None
-
-    def _get_next_question_new(self, answers=None, in_section=False):
+    def get_next_question(self, answers=None, in_section=False):
         # New system
         transition_map = self.generate_transition_map()
 
@@ -1582,27 +1384,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         if prev:
             self.__LOG.debug('get_prev_question: found: #%i', prev.id)
             return prev
-        elif not in_section:
-            self.__LOG.debug('get_prev_question: probably first question in template')
-            return None
-        self.__LOG.debug('get_prev_question: probably first question in section')
-        if allow_old:
-            return self._get_prev_question_old(preceding_questions, answers, in_section)
-
-    def _get_prev_question_old(self, preceding, answers=None, in_section=False):
-        # Walk forward from previous obligatory question
-        if not self.node or self.node.start:
-            return list(preceding)[-1]
-
-        data = self.map_answers_to_nodes(answers)
-        prev_node = self.node.get_prev_node(data)
-        if prev_node:
-            try:
-                return prev_node.payload
-            except Question.DoesNotExist:
-                raise TemplateDesignError('Error in template design: prev node ({}) is not hooked up to a question'.format(prev_node))
-
-        return list(preceding)[-1]
+        return None
 
     def _get_prev_question_new(self, answers=None):
         obligatories = self.section.get_obligatory_questions()
@@ -1687,23 +1469,6 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         cls.__LOG.debug('%s: found, start: #%i', log_prefix, start.id)
         return start
 
-    # XXX: ExplicitBranch: Not used
-    def is_last_in_section(self):
-        if not self.get_all_following_questions().exists():
-            return True
-        if self.node:
-            if self.node.end:
-                return True
-#             next_nodes = self.node.next_nodes.all()
-#             if next_nodes:
-#
-#                 return True
-        return False
-
-#     def get_next_via_path
-
-    # END: Question movement helpers
-
     def frame_canned_answer(self, answer, frame=True):
         result = answer
         if frame and self.framing_text:
@@ -1735,19 +1500,6 @@ class NotListedMixin():
         if choice['not-listed']:
             return 'not-listed'
         return 'False'
-
-    def map_choice_to_condition(self, answer):
-        """Convert the `choice` in an answer to an Edge.condition
-
-        The choice is unwrapped from its structure, and set to empty if the
-        question type cannot branch.
-        """
-        choice = {}
-        if self.branching_possible:
-            # The choice is used to look up an Edge.condition
-            choice = answer.get('choice', {})
-        condition = str(choice.get('not-listed', False))
-        return condition
 
 
 class BooleanQuestion(ChoiceValidationMixin, Question):
@@ -2432,9 +2184,6 @@ class CannedAnswer(DeletionMixin, ClonableModel):
                                       on_delete=models.SET_NULL,
                                       blank=True, null=True,
                                       related_name='canned_answers')
-    # External FSA support
-    edge = models.OneToOneField('flow.Edge', on_delete=models.SET_NULL,
-                                related_name='payload', blank=True, null=True)
 
     objects = CannedAnswerQuerySet.as_manager()
 
@@ -2455,16 +2204,9 @@ class CannedAnswer(DeletionMixin, ClonableModel):
 #         super().save(*args, **kwargs)
 #         self.sync_transition()
 
-    def collect(self, **kwargs):
-        collector = super().collect(**kwargs)
-        if self.edge:
-            collector.collect([self.edge])
-        return collector
-
     def clone(self, question):
         new = self.get_copy()
         new.question = question
-        new.edge = None
         new.set_cloned_from(self)
         new.save()
         return new
@@ -2477,31 +2219,3 @@ class CannedAnswer(DeletionMixin, ClonableModel):
         if self.transition and self.question.input_type not in mangling_types:
             self.transition.condition = self.choice
             self.transition.save()
-
-    # External FSA support
-
-    def convert_choice_to_condition(self):
-        if self.question.input_type == 'bool':
-            condition = 'False'
-            if self.choice.lower() in ('yes', 'true', 'on', 'ok', 't'):
-                condition = 'True'
-        else:
-            condition = slugify(self.label)[:16]
-        return condition
-
-    def create_edge(self):
-        from flow.models import Edge
-        if not self.question.node:
-            self.question.create_node()
-        condition = self.convert_choice_to_condition()
-        self.edge = Edge.objects.create(
-            condition=condition,
-            prev_node=self.question.node,
-            next_node=None
-        )
-        self.save()
-
-    def update_edge(self):
-        condition = self.convert_choice_to_condition()
-        self.edge.condition = condition
-        self.edge.save()
