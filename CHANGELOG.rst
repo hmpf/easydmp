@@ -12,6 +12,12 @@ Unreleased
 
 * Comments for plans.
 
+0.21.1
+------
+
+* Bugfix in the old branching system, prevent invalid ``Edge``'s from breaking
+  the flow calculator.
+
 0.21.0
 ------
 
