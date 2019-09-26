@@ -95,6 +95,8 @@ class Node(ClonableModel):
             raise FSANoDataError
         for edge in prev_nodes:
             prev_node = edge.prev_node
+            if prev_node is None:
+                return None
             prev_node_slug = prev_node.slug
             if prev_node_slug in data:
                 if edge.condition == data[prev_node_slug]:
@@ -105,7 +107,7 @@ class Node(ClonableModel):
         if not nodes:
             raise FSANoDataError
         edges = self.prev_nodes.all()
-        prev_nodes = set([edge.prev_node for edge in edges])
+        prev_nodes = set([edge.prev_node for edge in edges if edge.prev_node])
         if len(prev_nodes) == 1:  # simple node
             return prev_nodes.pop()
         if len(prev_nodes) > 1:  # complex node
