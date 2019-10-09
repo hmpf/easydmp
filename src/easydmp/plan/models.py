@@ -63,10 +63,10 @@ class AnswerHelper():
         return form
 
     def save_choice(self, choice, saved_by):
-        LOG.debug('q%s/p%s: Answer: previous %s current %s',
+        LOG.debug('save_choice: q%s/p%s: Answer: previous %s current %s',
                   self.question_id, self.plan.pk, self.current_choice, choice)
         if self.current_choice != choice:
-            LOG.debug('q%s/p%s: saving changes',
+            LOG.debug('save_choice: q%s/p%s: saving changes',
                       self.question_id, self.plan.pk)
             self.plan.modified_by = saved_by
             self.plan.previous_data[self.question_id] = self.current_choice
@@ -97,7 +97,7 @@ class AnswerHelper():
 
     def set_invalid(self):
         if self.question_validity.valid:
-            LOG.debug('q%s/p%s: setting invalid', self.question_id, self.plan.pk)
+            LOG.debug('set_invalid: q%s/p%s', self.question_id, self.plan.pk)
             self.question_validity.valid = False
             self.question_validity.save()
             LOG.debug('set_invalid: q%s/p%s: section %',
@@ -327,6 +327,18 @@ class Plan(DeletionMixin, ClonableModel):
         for pa in oldplan.accesses.all():
             pa.clone(self)
 
+    def delete_answers(self, question_ids, commit=True):
+        deleted = set()
+        for question_id in question_ids:
+            str_id = str(question_id)
+            if str_id in self.data:
+                self.previous_data[str_id] = self.data.pop(str_id)
+                deleted.add(question_id)
+        if commit:
+            self.quiet_save()
+        LOG.debug('delete_answers: %s', deleted)
+        return deleted
+
     def quiet_save(self, **kwargs):
         """Save without logging
 
@@ -341,6 +353,84 @@ class Plan(DeletionMixin, ClonableModel):
             # Not for first save
             return
         super().save(**kwargs)
+
+    def hide_unreachable_answers_after(self, question):
+        """Hide any answers unreachable after this question
+
+        First collects all questions as per branching after this question or
+        until either the next obligatory question or the final question in the
+        section. Then calculates all visible questions by walking forward.
+        Finally hides the invisible questions (all minus visible).
+
+        Returns whether anything was changed.
+        """
+        question = question.get_instance()
+        if not question.branching_possible:
+            return False
+        # Find any questions touched by branching
+        next_question = question.get_next_obligatory()
+        between = tuple(question.section
+                   .questions_between(question, next_question)
+                   .values_list('id', flat=True))
+        if not between:
+            # Adjacent obligatories, no branch
+            return False
+        LOG.debug(
+            'hide_unreachable_answers_after: between "%s" and %s: %s',
+            question,
+            '"{}"'.format(next_question) if next_question else 'end',
+            between
+        )
+        # Collect visible questions
+        show = set()
+        while question != next_question:
+            question = question.get_next_question(self.data, in_section=True,
+                                                  allow_old=False)
+            if question is None:
+                # No more questions/last of section
+                break
+            if question.obligatory:
+                # Found next obligatory question
+                break
+            show.add(question.id)
+        # Hide invisible questions
+        delete = set(between) - show
+        hidden = self.delete_answers(delete, commit=False)
+        LOG.info('hide_unreachable_answers_after: Hide %s, show %s',
+                 hidden or None, show or None)
+        # Report whether a save is necessary
+        return bool(hidden) or bool(show)
+
+    def hide_unreachable_answers(self, section_qs=None):
+        """Hide all unreachable answers of a plan or section"""
+        if not self.data:
+            return
+        all_sections = self.template.sections.filter(
+            branching=True,
+            questions__isnull=False
+        ).distinct()
+        if not all_sections.exists():
+            return
+        changed = set()
+        # Only work on a subset of relevant sections
+        if section_qs:
+            all_sections = all_sections.intersection(section_qs).distinct()
+        answer_ids = set([int(key) for key in self.data.keys()])
+        for section in all_sections.order_by('position'):
+            questions = section.questions.filter(obligatory=True).order_by('position')
+            # Skip unanswered sections so they don't show up in the report
+            if not (answer_ids & set(questions.values_list('id', flat=True))):
+                continue
+            LOG.debug('hide_unreachable_answers: Section "%s" (%s)', section,
+                      section.id)
+            # Go, go, go
+            for question in questions:
+                changed.add(self.hide_unreachable_answers_after(question))
+        if any(changed):
+            # One save per plan
+            self.quiet_save()
+        # Report if the plan was changed
+        return any(changed)
 
     def save(self, user=None, question=None, recalculate=False, clone=False, **kwargs):
         if user:

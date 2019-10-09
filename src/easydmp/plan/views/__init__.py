@@ -512,6 +512,7 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
     template_name = 'easydmp/plan/state_form.html'
     pk_url_kwarg = 'plan'
     fields = ('plan_name', 'data')
+    __LOG = logging.getLogger('{}.{}'.format(__name__, 'NewQuestionView'))
 
     def get_queryset(self):
         qs = super().get_queryset().editable(self.request.user)
@@ -610,16 +611,10 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
         form = PlanCommentForm(**form_kwargs)
         return form
 
-    def delete_statedata(self, *args):
-        """Delete data for the statenames in args"""
-        for statename in args:
-            self.object.data.pop(statename, None)
-        self.object.save()
-
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.set_referer(request)
-        LOG.debug('GET-ing q%s/p%s', self.question_pk, self.object.pk)
+        self.__LOG.debug('GET-ing q%s/p%s', self.question_pk, self.object.pk)
         template = '{timestamp} {actor} accessed {action_object} of {target}'
         log_event(request.user, 'access', target=self.object,
                   object=self.question, template=template)
@@ -628,7 +623,7 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.set_referer(request)
-        LOG.debug('POST-ing q%s/p%s', self.question_pk, self.object.pk)
+        self.__LOG.debug('POST-ing q%s/p%s', self.question_pk, self.object.pk)
         form = self.get_form()
         notesform = self.get_notesform()
         if form.is_valid() and notesform.is_valid():
@@ -638,20 +633,30 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
             return self.form_invalid(form, notesform)
 
     def form_valid(self, form, notesform):
-        LOG.debug('q%s/p%s: valid', self.question_pk, self.object.pk)
+        self.__LOG.debug('form_valid: q%s/p%s: valid', self.question_pk, self.object.pk)
         notes = notesform.cleaned_data.get('notes', '')
         choice = form.serialize()
         choice['notes'] = notes
-        self.answer.save_choice(choice, self.request.user)
-        LOG.debug('q%s/p%s: answer saved', self.question_pk, self.object.pk)
+        changed_condition = self.answer.save_choice(choice, self.request.user)
         self.object = self.get_object()  # Refresh
+        if changed_condition:
+            self.__LOG.debug('form_valid: q%s/p%s: change saved',
+                             self.question_pk, self.object.pk)
+            if self.question.branching_possible:
+                self.__LOG.debug('form_valid: q%s/p%s: checking for unreachable answers',
+                                 self.question_pk, self.object.pk)
+                changed = self.object.hide_unreachable_answers_after(self.question)
+                if changed:
+                    self.object.quiet_save()
+        else:
+            self.__LOG.debug('form_valid: q%s/p%s: condition not changed', self.question.pk, self.object.pk)
         template = '{timestamp} {actor} updated {action_object} of {target}'
         log_event(self.request.user, 'update', target=self.object,
                   object=self.question, template=template)
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, notesform):
-        LOG.debug('q%s/p%s: INvalid', self.question_pk, self.object.pk)
+        self.__LOG.debug('q%s/p%s: INvalid', self.question_pk, self.object.pk)
         self.answer.set_invalid()
         return self.render_to_response(
             self.get_context_data(form=form, notesform=notesform))
