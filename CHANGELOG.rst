@@ -12,6 +12,13 @@ Unreleased
 
 * Comments for plans.
 
+0.21.2
+------
+
+* Push out some stable code to lock it in ahead of the big, scary branching
+  change. Small releases are a good thing. Nothing in this release should
+  change anything visible to the end users.
+
 0.21.1
 ------
 
