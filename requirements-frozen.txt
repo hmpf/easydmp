@@ -12,7 +12,7 @@ django-extensions==2.1.4
 django-filter==1.1.0
 django-guardian==1.4.9
 django-select2==6.3.1
-djangorestframework==3.9.0
+djangorestframework==3.9.1
 djangorestframework-filters==0.10.2.post0
 djangorestframework-jwt==1.11.0
 docutils==0.14
