@@ -17,45 +17,7 @@ $( document ).ready(function() {
       parentli.wrap( setlink );
     });
   }
-
-  /*if ( $( ".uninett-whole-row").hasClass("progressbar") ){
-     console.log("Denne siden har progressbar");
-     //$(".section").css({"border-top": "none", "padding": "0", "margin": "0", "padding-top": "1.5em"});
-     //$(".summary-link").css({"left": "0", "top": "-2.3em"});
-     var source = "";
-     var element = "";
-     $( ".progressbar ul li span" ).each(function() {
-       element = $(this,"span");
-       source = element.find("a").attr('href');
-       var setlink = "<a href='"+ source +"'></a>";
-       $(this,"span").wrap( setlink );
-       var parentli = $(this).closest("li");
-       parentli.wrap( setlink );
-     });
-   } */
-  var actiondd = "<div class='actiondd'></div>"
-  $(".dmptable tbody tr td:last-child").wrap(actiondd);
 });
-/*
-$(window).bind('mousewheel', function(event) {
-    if ( (event.originalEvent.wheelDelta >= 0) && ($(document).scrollTop() < 100) ) {
-        $( ".progressbar").addClass("withfadeout");
-        $( ".progressbar" ).removeClass("progressbar-small");
-    }
-    else {
-        $( ".progressbar li span").addClass("withfadein");
-        $( ".progressbar").removeClass("withfadeout");
-        $( ".progressbar" ).addClass("progressbar-small");
-    }
-}); */
-/*
-$("#summary_header .btn-default").click(function() {
-  if($(this).hasClass('open')){
-      $(this).removeClass('open');
-  }else{
-    $(this).addClass('open');
-  }
-});*/
 
 $(".dmpsummary .section .btn-default").click(function() {
   if($(this).hasClass('open')){

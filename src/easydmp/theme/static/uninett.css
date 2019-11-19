@@ -1399,94 +1399,117 @@ textarea {
   line-height: 28px;
 }
 
-.dmptable {
-  width: 100%;
-  margin-top: 0;
-  display: block;
+.plantable .summary td {
+    padding: 2ex 1ex 2ex 1em;
 }
 
-.dmptable tbody {
-  display: block;
+.plantable .plan-title {
+    padding-left: 0;
+    font-weight: bold;
 }
 
-.dmptable tbody tr {
-  position: relative;
-  display: block;
-  height: 60px;
-  width: 100%;
-  border-bottom: 1px dashed #efebe9;
+.plantable .action {
+    padding-right: 0;
 }
 
-.dmptable tbody tr:last-of-type {
-    border-bottom: none !important;
+.plantable tr {
+    border-bottom: 1px dashed #eeebe8;
+    text-align: top;
 }
 
-.dmptable tr th, .dmptable tr td, .dmptable tr .actiondd {
-  padding-bottom: 0.2em;
-  display: inline-block;
-  width: 32%;
-  height: 60px;
-  line-height: 60px;
-  float: left;
-  padding-right: 0 !important;
+.plantable .datetime {
+    min-width: 21ex;
 }
 
-.dmptable tr td:nth-child(1) {
-  width: 38% !important;
-  font-weight: bold;
-  font-family: Arial, sans-serif;
+.plantable .collapse+.in {
+    display: block }
+
+.plantable .collapse {
+    display: none }
+
+.plantable .summary td {
+    vertical-align: top;
 }
 
-.dmptable tr td:nth-child(3) {
-  float: right !important;
-  width: 15% !important;
-}
-
-body .dmptable tr .actiondd{
-  width: 15% !important;
-}
-
-.dmptable tr .actiondd td{
-  width: 100% !important;
-}
-
-.dmptable tr td:nth-child(1) a {
-  display: block;
-}
-
-/*
-tr .dropdown .btn-default {
-  background: url("icons/icon-options-black.png") no-repeat center right;
-  background-size: 12%;
-  width: 100%;
-  height: 60px;
-}
-
-tr td .open .btn-default {
-  background: url("icons/icon-options-black.png") !important;
-  background-size: 12%;
-  width: 100%;
-  height: 60px;
-}*/
-
-tr .dropdown .btn-default .caret{
-  position: absolute;
-  right: 0;
-  top: 5px;
+.plantable .summary button {
+  background-color: white;
   border: none !important;
-  width: 19px;
-  height: 19px;
-  top: 18.5px;
+  padding-left: 2em;
+}
+
+.plantable .summary button .caret{
+  background-color: white;
+  background: url('icons/icon-close.png') no-repeat center center;
+  width: 16px;
+  height: 16px;
+  background-size: 100%;
+  transform: rotate(-0deg);
+  border: none !important;
+  text-align: right;
+}
+
+.plantable .summary button.collapsed .caret {
+  background-color: white;
   background: url('icons/icon-options-black.png') no-repeat center center;
   background-size: 100%;
   transform: rotate(-0deg);
-  margin-right: 1em;
 }
 
-tr .dropdown .btn-default:hover .caret{
+.plantable .summary button.collapsed .caret:hover {
+  background-color: white;
   background: url('icons/icon-options.png') no-repeat center center;
-    background-size: 100%;
+  background-size: 100%;
 }
+
+.plantable .summary .action {
+    text-align: right;
+}
+
+.plantable .actions {
+    background-color: #eef9ff;
+    border-top: 2px solid #eeebe8;
+    border-bottom: 2px solid #eeebe8;
+}
+
+.plantable .actions ul {
+    padding: 0;
+    margin: 0;
+}
+
+.plantable .actions li {
+  width: 33.333%;
+  float: left;
+  display: inline-block;
+}
+
+.plantable .actions li:last-of-type, .plan-actions li:last-of-type{
+  float: right !important;
+}
+
+.plantable .actions li a {
+  line-height: 40px;
+  color: #000000;
+  display: block;
+  padding: .5em 2em;
+}
+
+.plantable .actions li:hover{
+  background: rgba(255,255,255,.95);
+}
+
+.plan-actions li:hover {
+  background: #eef9ff;
+}
+
+.plantable .actions li a:hover {
+  background: transparent;
+}
+
+.plantable .actions img {
+  height: 20px;
+  margin-right: 10px;
+}
+
 
 #slider button .caret{
   background: url('icons/icon-close.png') no-repeat center center;
@@ -1494,14 +1517,6 @@ tr .dropdown .btn-default:hover .caret{
   transform: rotate(-0deg);
 }
 
-/*
-tr .dropdown .btn-default .caret {
-  border-top: none !important;
-  border-left: none !important;
-  border-bottom: none !important;
-  border-right: none !important;
-  background: transparent !important;
-}*/
 .dropdown .btn-default {
   background-color: transparent;
   border-color: transparent;
@@ -1605,23 +1620,6 @@ tr .dropdown .btn-default .caret {
   box-shadow: none;
 }
 
-/*
-.dropdown.open .dropdown-menu {
-  width: 100%;
-  padding: 0 !important;
-  background-color: #eef9ff;
-  position: absolute;
-  left: 0;
-  top: 56px;
-  border-top: 2px solid #efebe9;
-  border-bottom: 2px solid #efebe9;
-  outline: 0 !important;
-  border-left: none !important;
-  border-right: none !important;
-  -webkit-box-shadow: none;
-  -moz-box-shadow: none;
-  box-shadow: none;
-}*/
 .slider2{
   overflow-y: hidden;
   max-height: 185px !important; /* approximate max height */
@@ -1640,56 +1638,30 @@ tr .dropdown .btn-default .caret {
   height: 185px;
 }
 
-.dropdown-menu li, .plan-actions li {
+.plan-actions li {
   width: 33.333%;
   float: left;
   display: inline-block;
 }
 
-.dropdown-menu li:last-of-type, .plan-actions li:last-of-type{
+.plan-actions li:last-of-type{
   float: right !important;
 }
 
-.dropdown-menu li a, .plan-actions li a{
+.plan-actions li a{
   line-height: 40px;
   color: #000000;
   display: block;
   padding: .5em 2em;
 }
 
-.dropdown-menu li:hover{
-  background: rgba(255,255,255,.95);
-}
-
 .plan-actions li:hover {
   background: #eef9ff;
 }
 
-.dropdown-menu li a:hover {
-  background: transparent;
-}
-
-.dropdown-menu img,  .plan-actions img{
+.plan-actions img{
   height: 20px;
   margin-right: 10px;
-}
-
-.dmptable tr th:nth-child(5) {
-  float: left !important;
-}
-
-.actiondd a {
-  padding-right: 1ex;
-}
-
-.actiondd td {
-  font-weight: normal !important;
-  font-family: Arial, sans-serif !important;
-}
-
-.dmptable tr td .dropdown button {
-  float: right;
-  padding-right: 10px;
 }
 
 .template-boxes {

@@ -12,26 +12,29 @@
           <h2><a href="{% url 'choose_template' %}">+ Create new plan</a></h2>
         </div>
       </div>
-      <table class="dmptable" width="80%">
+      <table class="plantable">
+
+        {% for object in object_list %}
         <tbody>
-          {% for object in object_list %}
-          <tr>
-              <td><a href="{% url 'plan_detail' plan=object.id %}">{{ object.title|capfirst }} v{{ object.version }}{% if object.valid %} 🗹{% endif %}</a></td>
-            <td>{{ object.template }}</a></td>
-            <td>
-               <div class="dropdown">
-                 <button class="btn btn-default dropdown-toggle" type="button" id="actionsMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                   <span class="caret"></span>
-                 </button>
-                 <ul class="dropdown-menu" aria-labelledby="actionsMenu">
-                     {% include "easydmp/plan/_plan_actions_dropdown.html" %}
-                 </ul>
-               </div>
+          <tr class="summary">
+            <td class="plan-title"><a href="{% url 'plan_detail' plan=object.id %}">{{ object.title|capfirst }} v{{ object.version }}{% if object.valid %} 🗹{% endif %}</a></td>
+            <td class="template-name">{{ object.template }}</a></td>
+            <td class="datetime">{{ object.added }}</td>
+            <td class="action">
+              <button class="btn btn-default collapsed" id="button-{{ object.id }}" data-toggle="collapse" data-target="#actions-{{ object.id }}" aria-haspopup="true">
+                <span class="caret"></span>
+              </button>
             </td>
-            <td>{{ object.added }}</td>
           </tr>
-          {% endfor %}
+          <tr class="actions collapse" id="actions-{{ object.id }}" aria-expanded="false">
+             <td colspan="4">
+               <ul aria-labelledby="button-{{ object.id }}">
+                 {% include "easydmp/plan/_plan_actions_dropdown.html" %}
+               </ul>
+             </td>
+          </tr>
         </tbody>
+        {% endfor %}
       </table>
       {% else %}
       <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
