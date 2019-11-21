@@ -12,6 +12,11 @@ Unreleased
 
 * Comments for plans.
 
+0.21.3
+------
+
+* Stop a long title from leaking into the next row of plans in the plan list
+
 0.21.2
 ------
 
