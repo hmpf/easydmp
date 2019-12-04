@@ -311,9 +311,7 @@ class Plan(DeletionMixin, ClonableModel):
             log_event(self.added_by, 'create', target=self,
                       timestamp=self.added, template=template)
         else:
-            template = '{timestamp} {actor} saved {target}'
-            log_event(self.added_by, 'save', target=self,
-                      timestamp=self.modified, template=template)
+            self.modified = tznow()
             if question is not None:
                 # set visited
                 self.visited_sections.add(question.section)
@@ -323,6 +321,9 @@ class Plan(DeletionMixin, ClonableModel):
                 # set validated
                 self.validate(user, recalculate, commit=False)
             super().save(**kwargs)
+            template = '{timestamp} {actor} saved {target}'
+            log_event(self.added_by, 'save', target=self,
+                      timestamp=self.modified, template=template)
             LOG.info('Updated plan "%s" (%i)', self, self.pk)
 
     @transaction.atomic
