@@ -12,6 +12,11 @@ Unreleased
 
 * Comments for plans.
 
+0.21.4
+------
+
+* Show some statistics on the public front page
+
 0.21.3
 ------
 

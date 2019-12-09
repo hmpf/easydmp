@@ -32,7 +32,7 @@ try:
     release = easydmp.__version__
     del easydmp
 except ImportError:
-    release = '0.21.3'
+    release = '0.21.4'
 
 # The short X.Y version.
 version = '.'.join(release.split('.', 2)[:2])
