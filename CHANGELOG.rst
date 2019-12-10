@@ -12,6 +12,11 @@ Unreleased
 
 * Comments for plans.
 
+0.21.5
+------
+
+* Bugfix: Unpinned dependency was incompatible with Django 1.11
+
 0.21.4
 ------
 
