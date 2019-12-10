@@ -2,7 +2,7 @@ pytz>=2017
 Sphinx>=1.6
 graphviz>=0.8
 docutils>=0.14
-jsonfield2>=3.0
+jsonfield2>=3.0,<3.1
 django-crispy-forms>=1.6
 whitenoise>=3.3
 djangorestframework>=3.4
@@ -10,7 +10,7 @@ django-cors-headers>=2.5.2
 django-filter>=1.1.0,<2.0
 django_select2==6.3.1
 dj-database-url>=0.4.2
-psycopg2
+psycopg2 --no-binary=psycopg2
 MarkupSafe==1.0
 djangorestframework-filters>=0.10.0
 django-extensions
