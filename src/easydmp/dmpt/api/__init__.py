@@ -10,5 +10,5 @@ from .views import CannedAnswerViewSet
 router = DefaultRouter()
 router.register(r'templates', views.TemplateViewSet)
 router.register(r'sections', views.SectionViewSet)
-router.register(r'questions', views.QuestionViewSet, base_name='question')
+router.register(r'questions', views.QuestionViewSet, basename='question')
 router.register(r'canned-answers', views.CannedAnswerViewSet)

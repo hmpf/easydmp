@@ -4,4 +4,4 @@ from .views import PlanViewSet
 
 
 router = DefaultRouter()
-router.register(r'plans', PlanViewSet, base_name='plan')
+router.register(r'plans', PlanViewSet, basename='plan')
