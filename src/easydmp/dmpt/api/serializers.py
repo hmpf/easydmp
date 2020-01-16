@@ -60,13 +60,17 @@ class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
         view_name='v1:question-detail',
         lookup_field='pk'
     )
-
+    template = serializers.HyperlinkedRelatedField(
+        source='section.template', read_only=True,
+        view_name='v1:template-detail',
+    )
     class Meta:
         model = Question
         fields = [
             'id',
             'url',
             'input_type',
+            'template',
             'section',
             'position',
             'label',
@@ -80,11 +84,7 @@ class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
         ]
 
 
-class HeavyQuestionSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(
-        view_name='v1:question-detail',
-        lookup_field='pk'
-    )
+class HeavyQuestionSerializer(LightQuestionSerializer):
     answer_schema = serializers.SerializerMethodField()
 
     class Meta:
@@ -93,6 +93,7 @@ class HeavyQuestionSerializer(serializers.HyperlinkedModelSerializer):
             'id',
             'url',
             'input_type',
+            'template',
             'section',
             'position',
             'label',

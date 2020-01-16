@@ -22,7 +22,7 @@ class TemplateViewSet(ReadOnlyModelViewSet):
 
 
 class SectionViewSet(ReadOnlyModelViewSet):
-    queryset = Section.objects.all()
+    queryset = Section.objects.select_related('template')
     serializer_class = SectionSerializer
 
     @action(detail=True, methods=['get'], renderer_classes=[
@@ -43,7 +43,7 @@ class SectionViewSet(ReadOnlyModelViewSet):
 
 
 class QuestionViewSet(ReadOnlyModelViewSet):
-    queryset = Question.objects.all()
+    queryset = Question.objects.select_related('section', 'section__template')
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
