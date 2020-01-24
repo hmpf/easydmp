@@ -33,6 +33,7 @@ urlpatterns = [
     url('^login/', LoginView.as_view(), name='login-selector'),
     url('^logout', logout_view, name='logout'),
     url('^privacy/', PublicTemplateView.as_view(template_name='privacy.html'), name='privacy'),
+    url('^account/', include('easydmp.auth.urls')),
 
     url(r'^plan/', include('easydmp.plan.urls')),
     url(r'^invitation/', include('easydmp.invitation.urls')),
