@@ -1,5 +1,8 @@
 from rest_framework import serializers
+from rest_framework.decorators import action
 from rest_framework.fields import JSONField
+from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from django_filters.rest_framework.filterset import FilterSet
@@ -9,6 +12,7 @@ from easydmp.auth.api.views import UserSerializer
 from easydmp.plan.models import Plan
 from easydmp.plan.models import SectionValidity
 from easydmp.plan.models import QuestionValidity
+from easydmp.plan.utils import GenerateRDA10
 
 
 class LightSectionValiditySerializer(serializers.ModelSerializer):
@@ -151,3 +155,9 @@ class PlanViewSet(ReadOnlyModelViewSet):
             pas = self.request.user.plan_accesses.all()
             qs = qs | Plan.objects.filter(accesses__in=pas)
         return qs.distinct()
+
+    @action(detail=True, methods=['get'], renderer_classes=[JSONRenderer])
+    def export_rda(self, request, pk=None, **kwargs):
+        plan = self.get_object()
+        rda = GenerateRDA10(plan)
+        return Response(rda.get_dmp())
