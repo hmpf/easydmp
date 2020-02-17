@@ -307,13 +307,14 @@ class Plan(DeletionMixin, ClonableModel):
         for pa in oldplan.accesses.all():
             pa.clone(self)
 
-    def save(self, user=None, question=None, recalculate=False, **kwargs):
+    def save(self, user=None, question=None, recalculate=False, clone=False, **kwargs):
         if user:
             self.modified_by = user
         if not self.pk: # New, empty plan
             super().save(**kwargs)
-            self.create_section_validities()
-            self.create_question_validities()
+            if not clone:
+                self.create_section_validities()
+                self.create_question_validities()
             self.set_adder_as_editor()
             LOG.info('Created plan "%s" (%i)', self, self.pk)
             template = '{timestamp} {actor} created {target}'
@@ -352,7 +353,7 @@ class Plan(DeletionMixin, ClonableModel):
             added_by=user,
             modified_by=user,
         )
-        new.save()
+        new.save(clone=True)
         new.copy_validations_from(self)
         if keep_users:
             editors = set(self.get_editors())
@@ -369,7 +370,7 @@ class Plan(DeletionMixin, ClonableModel):
         new.pk = None
         new.id = None
         new.set_cloned_from(self)
-        new.save()
+        new.save(clone=True)
         new.copy_validations_from(self)
         new.copy_users_from(self)
         return new
