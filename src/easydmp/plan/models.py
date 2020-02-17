@@ -315,7 +315,7 @@ class Plan(DeletionMixin, ClonableModel):
             if not clone:
                 self.create_section_validities()
                 self.create_question_validities()
-            self.set_adder_as_editor()
+                self.set_adder_as_editor()
             LOG.info('Created plan "%s" (%i)', self, self.pk)
             template = '{timestamp} {actor} created {target}'
             log_event(self.added_by, 'create', target=self,
