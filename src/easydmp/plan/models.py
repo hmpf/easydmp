@@ -359,7 +359,7 @@ class Plan(DeletionMixin, ClonableModel):
             for editor in editors:
                 new.add_user_to_editors(editor)
         template = '{timestamp} {actor} saved {action_object} as {target}'
-        log_event(user, 'save as', target=new, action_object=self,
+        log_event(user, 'save as', target=new, object=self,
                   timestamp=new.added, template=template)
         return new
 
@@ -397,7 +397,7 @@ class Plan(DeletionMixin, ClonableModel):
         if not wait_to_save:
             new.save()
         template = '{timestamp} {actor} created {target}, a new version of {action_object}'
-        log_event(user, 'create new version', target=new, action_object=self,
+        log_event(user, 'create new version', target=new, object=self,
                   timestamp=new.added, template=template)
         return new
 
