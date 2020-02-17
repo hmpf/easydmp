@@ -129,15 +129,21 @@ class SectionValidity(ClonableModel):
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = ('plan', 'section')
+
+    def __str__(self):
+        return 'section: {}, plan: {}, valid: {}'.format(
+            self.section_id,
+            self.plan_id,
+            self.valid)
+
     def clone(self, plan):
         new = self.__class__(plan=plan, section=self.section, valid=self.valid,
                              last_validated=self.last_validated)
         new.set_cloned_from(self)
         new.save()
         return new
-
-    class Meta:
-        unique_together = ('plan', 'section')
 
 
 class QuestionValidity(ClonableModel):
@@ -202,6 +208,9 @@ class Plan(DeletionMixin, ClonableModel):
 
     def __str__(self):
         return self.title
+
+    def __repr__(self):
+        return '{} V{} ({})'.format(self.title, self.version, self.id)
 
     def logprint(self):
         return 'Plan #{}: {}'.format(self.pk, self.title)
@@ -466,6 +475,10 @@ class PlanAccess(ClonableModel):
 
     class Meta:
         unique_together = ('user', 'plan')
+
+    def __repr__(self):
+        return 'user: {}, plan:{}, may edit: {}'.format(
+            self.user_id, self.plan_id, self.may_edit)
 
     def clone(self, plan):
         self_dict = model_to_dict(self, exclude=['id', 'pk', 'plan', 'user'])
