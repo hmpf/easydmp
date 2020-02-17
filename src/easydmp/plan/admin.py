@@ -14,7 +14,7 @@ class LockedFilter(FakeBooleanFilter):
 
 @admin.register(Plan)
 class PlanAdmin(admin.ModelAdmin):
-    list_display = ['title', 'template', 'added_by', 'added']
+    list_display = ['title', 'version', 'template', 'added_by', 'added']
     list_filter = ['template', LockedFilter, PublishedFilter]
     search_fields = ['title', 'abbreviation', 'added_by__email', 'added_by__username',]
     readonly_fields = ['added', 'added_by', 'uuid', 'locked', 'locked_by',
