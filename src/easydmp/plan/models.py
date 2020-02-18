@@ -389,12 +389,13 @@ class Plan(DeletionMixin, ClonableModel):
     def create_new_version(self, user, timestamp=None, wait_to_save=False):
         timestamp = timestamp if timestamp else tznow()
         new = self.clone()
+        new.version = self.version + 1
         new.unset_status_metadata()
         new.added_by = user
         new.added = timestamp
         new.modified_by = user
         new.modified = timestamp
-        new.version += self.version
+        new.add_user_to_editors(user)
         if not wait_to_save:
             new.save()
         template = '{timestamp} {actor} created {target}, a new version of {action_object}'
