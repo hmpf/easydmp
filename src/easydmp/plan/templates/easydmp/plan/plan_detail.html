@@ -1,5 +1,7 @@
 {% extends "easydmp/plan/base.html" %}
 {% load static %}
+{% block title %}
+{{ block.super }}, Plan - {{ object.title|capfirst }} V{{object.version }} {% if object.valid %} {% endif %}{% endblock %}
 {% block content %}
   <!--
       valid: {{ object.valid }}
@@ -8,7 +10,7 @@
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
         <div id="summary_header">
-            <h2>{{ object.title|capfirst }}{% if object.valid %} 🗹{% endif %}</h2>
+            <h2>{{ object.title|capfirst }} V{{object.version }} {% if object.valid %} 🗹{% endif %}</h2>
           <div class="actions dropdown">
             <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapseExample" aria-controls="collapseExample">
                 <span class="caret"></span>
