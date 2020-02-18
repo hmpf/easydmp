@@ -129,15 +129,21 @@ class SectionValidity(ClonableModel):
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = ('plan', 'section')
+
+    def __str__(self):
+        return 'section: {}, plan: {}, valid: {}'.format(
+            self.section_id,
+            self.plan_id,
+            self.valid)
+
     def clone(self, plan):
         new = self.__class__(plan=plan, section=self.section, valid=self.valid,
                              last_validated=self.last_validated)
         new.set_cloned_from(self)
         new.save()
         return new
-
-    class Meta:
-        unique_together = ('plan', 'section')
 
 
 class QuestionValidity(ClonableModel):
@@ -202,6 +208,9 @@ class Plan(DeletionMixin, ClonableModel):
 
     def __str__(self):
         return self.title
+
+    def __repr__(self):
+        return '{} V{} ({})'.format(self.title, self.version, self.id)
 
     def logprint(self):
         return 'Plan #{}: {}'.format(self.pk, self.title)
@@ -298,14 +307,15 @@ class Plan(DeletionMixin, ClonableModel):
         for pa in oldplan.accesses.all():
             pa.clone(self)
 
-    def save(self, user=None, question=None, recalculate=False, **kwargs):
+    def save(self, user=None, question=None, recalculate=False, clone=False, **kwargs):
         if user:
             self.modified_by = user
         if not self.pk: # New, empty plan
             super().save(**kwargs)
-            self.create_section_validities()
-            self.create_question_validities()
-            self.set_adder_as_editor()
+            if not clone:
+                self.create_section_validities()
+                self.create_question_validities()
+                self.set_adder_as_editor()
             LOG.info('Created plan "%s" (%i)', self, self.pk)
             template = '{timestamp} {actor} created {target}'
             log_event(self.added_by, 'create', target=self,
@@ -343,14 +353,14 @@ class Plan(DeletionMixin, ClonableModel):
             added_by=user,
             modified_by=user,
         )
-        new.save()
+        new.save(clone=True)
         new.copy_validations_from(self)
         if keep_users:
             editors = set(self.get_editors())
             for editor in editors:
                 new.add_user_to_editors(editor)
         template = '{timestamp} {actor} saved {action_object} as {target}'
-        log_event(user, 'save as', target=new, action_object=self,
+        log_event(user, 'save as', target=new, object=self,
                   timestamp=new.added, template=template)
         return new
 
@@ -360,7 +370,7 @@ class Plan(DeletionMixin, ClonableModel):
         new.pk = None
         new.id = None
         new.set_cloned_from(self)
-        new.save()
+        new.save(clone=True)
         new.copy_validations_from(self)
         new.copy_users_from(self)
         return new
@@ -379,16 +389,17 @@ class Plan(DeletionMixin, ClonableModel):
     def create_new_version(self, user, timestamp=None, wait_to_save=False):
         timestamp = timestamp if timestamp else tznow()
         new = self.clone()
+        new.version = self.version + 1
         new.unset_status_metadata()
         new.added_by = user
         new.added = timestamp
         new.modified_by = user
         new.modified = timestamp
-        new.version += self.version
+        new.add_user_to_editors(user)
         if not wait_to_save:
             new.save()
         template = '{timestamp} {actor} created {target}, a new version of {action_object}'
-        log_event(user, 'create new version', target=new, action_object=self,
+        log_event(user, 'create new version', target=new, object=self,
                   timestamp=new.added, template=template)
         return new
 
@@ -466,6 +477,10 @@ class PlanAccess(ClonableModel):
 
     class Meta:
         unique_together = ('user', 'plan')
+
+    def __repr__(self):
+        return 'user: {}, plan:{}, may edit: {}'.format(
+            self.user_id, self.plan_id, self.may_edit)
 
     def clone(self, plan):
         self_dict = model_to_dict(self, exclude=['id', 'pk', 'plan', 'user'])

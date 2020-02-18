@@ -318,13 +318,13 @@ class CreateNewVersionPlanView(PlanAccessViewMixin, UpdateView):
         qs = super().get_queryset().locked()
         return qs
 
-    def get_success_url(self):
-        return reverse('plan_detail', kwargs={'plan': self.object.pk})
+    def get_success_url(self):  # Not used, url generated in post()
+        pass
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        success_url = self.get_success_url()
-        self.object.create_new_version(request.user)
+        new = self.object.create_new_version(request.user)
+        success_url = reverse('plan_detail', kwargs={'plan': new.pk})
         return HttpResponseRedirect(success_url)
 
 
