@@ -2,15 +2,30 @@
 CHANGELOG
 =========
 
-This project adheres to `Semantic Versioning
-<https://semver.org/spec/v2.0.0.html>`_) as of v0.10. Prior to
-v0.10, named tags per feature, named tag plus date per feature or
-commit hashes were used.
+This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_)
+as of v0.10. Prior to v0.10, named tags per feature, named tag plus date per
+feature or commit hashes were used.
 
 Unreleased
 ----------
 
 * Comments for plans.
+
+0.22.0
+------
+
+* Fix an annoyance with the layout/whitespace between the page header and page
+  contents.
+* Show a plan's title and version in the page title, for bookmarks etc.
+* Bugfixes galore: When cloning (saving a plan under a new name, or unlocking)
+  section validities and editors were created twice, which ran into
+  a unique-constraint. This also hid a typo in the event logging, and an error
+  with incrementing the version number when unlocking.
+* Make it so that Plan.modified only updates on explicit alterations by
+  a human, not when batch-processing fixes.
+* Improve the API for dmpt models: show template and newer fields on Question,
+  allow search and filtering on Template, Section, Question and CannedAnswer.
+* Upgrade lots of dependencies and allow testing on newer Djangos
 
 0.21.5
 ------
