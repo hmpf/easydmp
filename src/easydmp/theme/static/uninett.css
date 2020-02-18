@@ -1,12 +1,9 @@
 body {
-    /*
- background-color: #eeebe8;
-    */
  font-family: Arial, sans-serif;
  font-size: 16px;
  line-height: 1.6;
- padding-top: 70px;
- background-image: url("/static/eudat/bg_page.png")
+ background-image: url("/static/eudat/bg_page.png");
+ margin: 0 !important;
 }
 
 main {
@@ -55,6 +52,10 @@ input[type="search"] {
  -webkit-appearance: none;
  -moz-appearance: none;
  border-radius: 3px;
+}
+
+header .navbar {
+    margin-bottom: 0;
 }
 
 .navbar-fixed-top {
@@ -542,7 +543,6 @@ dt {
 @media (max-width: 767px) {
 
  body {
-  padding-top: 46px;
   font-family: Arial, sans-serif;
   font-size: 14px;
   line-height: 1.4;
@@ -699,9 +699,14 @@ a {
   background-color: transparent !important;
 }
 
+header {
+    margin-top: 0;
+    padding-top: 0;
+}
+
 /* navigation */
 .navbar-fixed-top {
-  position: absolute !important;
+  position: relative !important;
   background: #00404b;
 }
 
