@@ -3,6 +3,8 @@ from datetime import timedelta
 from django.test import TestCase
 from django.utils.timezone import now as tznow
 
+from guardian.utils import get_anonymous_user
+
 from easydmp.auth.models import User
 from easydmp.dmpt.models import Template
 from easydmp.plan.models import Plan
@@ -42,16 +44,16 @@ class StatsTestCase(TestCase):
         template = Template.objects.create(title='testtemplate')
         u1 = User.objects.create(username='testuser1', email='a@b.com')
         u2 = User.objects.create(username='testuser2', email='b@c.com')
-        Plan.objects.create(title='testplan1', joined_by=u1, modified_by=u1,
+        Plan.objects.create(title='testplan1', added_by=u1, modified_by=u1,
                             template=template)
-        Plan.objects.create(title='testplan2', joined_by=u2, modified_by=u2,
+        Plan.objects.create(title='testplan2', added_by=u2, modified_by=u2,
                             template=template)
 
         result = stats()
         expected = {
             'users': {
                 'all': 2 + self.min_all_user,
-                'last_30days': self.min_last_30days_user,
+                'last_30days': 2 + self.min_last_30days_user,
             },
             'plans': {
                 'all': 2,

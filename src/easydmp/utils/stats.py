@@ -27,7 +27,7 @@ def stats():
     now = tznow()
     last_30days = now - timedelta(days=30)
     last_30days_users = User.objects.filter(date_joined__gte=last_30days)
-    last_30days_plans = User.objects.filter(date_joined__gte=last_30days)
+    last_30days_plans = Plan.objects.filter(added__gte=last_30days)
 
     return {
         'users': {
