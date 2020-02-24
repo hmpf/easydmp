@@ -438,7 +438,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     class Meta:
         unique_together = (
             ('template', 'title'),
-            ('template', 'position'),
+            ('template', 'super_section', 'position'),
         )
 
     @lru_cache(None)
