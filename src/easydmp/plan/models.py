@@ -117,9 +117,13 @@ class PlanQuerySet(models.QuerySet):
         return self.exclude(valid=True)
 
     def editable(self, user):
+        if user.is_superuser and user.is_staff and user.is_active:
+            return self.all()
         return self.filter(accesses__user=user, accesses__may_edit=True)
 
     def viewable(self, user):
+        if user.is_superuser and user.is_staff and user.is_active:
+            return self.all()
         return self.filter(accesses__user=user)
 
 
