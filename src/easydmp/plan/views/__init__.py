@@ -691,14 +691,21 @@ class AddCommentView(AbstractQuestionMixin, CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class PlanListView(PlanAccessViewMixin, ListView):
+class PlanListView(ListView):
     "List all plans for a user"
 
     model = Plan
     template_name = 'easydmp/plan/plan_list.html'
 
+    def has_superpowers(self):
+        return 'superpowers' in self.request.GET
+
     def get_queryset(self):
         qs = super().get_queryset()
+        if self.has_superpowers():
+            qs = qs.all()
+        else:
+            qs = qs.viewable(self.request.user, superpowers=False)
         return qs.order_by('-added')
 
     def get(self, request, *args, **kwargs):

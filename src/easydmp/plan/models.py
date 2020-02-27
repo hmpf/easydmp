@@ -116,13 +116,13 @@ class PlanQuerySet(models.QuerySet):
     def invalid(self):
         return self.exclude(valid=True)
 
-    def editable(self, user):
-        if user.is_superuser and user.is_staff and user.is_active:
+    def editable(self, user, superpowers=True):
+        if superpowers and user.has_superpowers:
             return self.all()
         return self.filter(accesses__user=user, accesses__may_edit=True)
 
-    def viewable(self, user):
-        if user.is_superuser and user.is_staff and user.is_active:
+    def viewable(self, user, superpowers=True):
+        if superpowers and user.has_superpowers:
             return self.all()
         return self.filter(accesses__user=user)
 
