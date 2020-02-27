@@ -11,6 +11,12 @@ Unreleased
 
 * Comments for plans.
 
+0.22.2
+------
+
+* Amend the previous patch so that superusers can choose whether to see all
+  plans in existance in the persnal plan list or not.
+
 0.22.1
 ------
 
