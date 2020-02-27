@@ -11,6 +11,12 @@ Unreleased
 
 * Comments for plans.
 
+0.22.1
+------
+
+* Allow superusers access to all plans in end user web ui
+* Fix a problem when working on templates with subsections
+
 0.22.0
 ------
 
