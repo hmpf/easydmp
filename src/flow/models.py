@@ -1,6 +1,5 @@
 # encoding: utf-8
 
-from functools import lru_cache
 from uuid import uuid4
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -55,12 +54,7 @@ class Node(ClonableModel):
         ordering = ('fsa',)
         unique_together = ('fsa', 'slug')
 
-    @lru_cache(None)
     def __str__(self):  # pragma: no cover
-        try:
-            return self.payload.legend()
-        except (ObjectDoesNotExist, AttributeError):
-            pass
         return self.slug
 
     def clone(self, fsa):
@@ -141,12 +135,7 @@ class Edge(ClonableModel):
     class Meta:
         unique_together = ('condition', 'prev_node', 'next_node')
 
-    @lru_cache(None)
     def __str__(self):
-        try:
-            return self.payload.legend()
-        except (ObjectDoesNotExist, AttributeError):
-            pass
         me = self.prev_node
         return '{} ({} is "{}") -> {}'.format(
             me, me, self.condition, self.next_node

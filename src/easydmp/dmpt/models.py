@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from copy import deepcopy
-from functools import lru_cache
 import os
 from pathlib import Path
 from textwrap import fill
@@ -448,9 +447,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             ('template', 'super_section', 'position'),
         )
 
-    @lru_cache(None)
     def __str__(self):
-        return '{}: {}'.format(self.template, self.full_title())
+        return '{}: {}'.format(self.template.title, self.full_title())
 
     def full_title(self):
         if self.label:
@@ -965,7 +963,6 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             models.Index(fields=['section', 'position']),
         ]
 
-    @lru_cache(None)
     def __str__(self):
         if self.label:
             return '{} {}'.format(self.label, self.question)
@@ -2023,7 +2020,6 @@ class CannedAnswer(DeletionMixin, ClonableModel):
     def label(self):
         return self.choice
 
-    @lru_cache(None)
     def __str__(self):
         return '{}: "{}" {}'.format(self.question.question, self.choice, self.canned_text)
 
