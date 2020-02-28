@@ -1282,7 +1282,27 @@ class ChoiceValidationMixin():
         return False
 
 
-class BooleanQuestion(ChoiceValidationMixin, Question):
+class NotListedMixin():
+
+    def _serialize_condition(self, answer):
+        choice = answer.get('choice', {})
+        return choice.get('not-listed', False)
+
+    def map_choice_to_condition(self, answer):
+        """Convert the `choice` in an answer to an Edge.condition
+
+        The choice is unwrapped from its structure, and set to empty if the
+        question type cannot branch.
+        """
+        choice = {}
+        if self.branching_possible:
+            # The choice is used to look up an Edge.condition
+            choice = answer.get('choice', {})
+        condition = str(choice.get('not-listed', False))
+        return condition
+
+
+class BooleanQuestion(Question):
     """A branch-capable question answerable with "Yes" or "No"
 
     The choice is converted to True or False.
@@ -1524,7 +1544,7 @@ class ExternalChoiceQuestion(ChoiceValidationMixin, EEStoreMixin, Question):
         return self.frame_canned_answer(answer.name, frame)
 
 
-class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
+class ExternalChoiceNotListedQuestion(NotListedMixin, EEStoreMixin, Question):
     """A branch-capable question answerable with a single choice
 
     The choices are fetched and cached from an EEStore via an
@@ -1574,19 +1594,6 @@ class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
         if out:
             return mark_safe(' '.join(out))
         return mark_safe('')
-
-    def map_choice_to_condition(self, answer):
-        """Convert the `choice` in an answer to an Edge.condition
-
-        The choice is unwrapped from its structure, and set to empty if the
-        question type cannot branch.
-        """
-        choice = {}
-        if self.branching_possible:
-            # The choice is used to look up an Edge.condition
-            choice = answer.get('choice', {})
-        condition = str(choice.get('not-listed', False))
-        return condition
 
     def validate_choice(self, data):
         answer = data.get('choice', {})
@@ -1653,7 +1660,7 @@ class ExternalMultipleChoiceOneTextQuestion(EEStoreMixin, Question):
         return False
 
 
-class ExternalMultipleChoiceNotListedOneTextQuestion(EEStoreMixin, Question):
+class ExternalMultipleChoiceNotListedOneTextQuestion(NotListedMixin, EEStoreMixin, Question):
     """A branch-capable question answerable with multiple choices
 
     The choices are fetched and cached from an EEStore via an
@@ -1713,19 +1720,6 @@ class ExternalMultipleChoiceNotListedOneTextQuestion(EEStoreMixin, Question):
         if out:
             return mark_safe(' '.join(out))
         return mark_safe('')
-
-    def map_choice_to_condition(self, answer):
-        """Convert the `choice` in an answer to an Edge.condition
-
-        The choice is unwrapped from its structure, and set to empty if the
-        question type cannot branch.
-        """
-        choice = {}
-        if self.branching_possible:
-            # The choice is used to look up an Edge.condition
-            choice = answer.get('choice', {})
-        condition = str(choice.get('not-listed', False))
-        return condition
 
     def validate_choice(self, data):
         answer = data.get('choice', {})
