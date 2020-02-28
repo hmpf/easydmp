@@ -65,6 +65,12 @@ INPUT_TYPES = (
 CONDITION_FIELD_LENGTH = 255
 
 
+def id_or_none(modelobj):
+    if modelobj:
+        return modelobj.id
+    return None
+
+
 def dfs_paths(graph, start):
     """Find all paths in  DAG graph, return a generator of lists
 
@@ -655,7 +661,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         for question in self.questions.order_by('position'):
             next_questions = question.get_potential_next_questions_with_transitions()
             for category, choice, next_question in next_questions:
-                next = next_question.pk if next_question else None
+                next = id_or_none(next_question)
                 t = Transition(category, question.pk, choice, next)
                 tm.add(t)
         return tm
@@ -856,10 +862,10 @@ class ExplicitBranch(DeletionMixin, models.Model):
     def __str__(self):
         return u'{}({}): ({}, {}, {})'.format(
             self.__class__.__name__,
-            self.current_question.pk,
+            id_or_none(self.current_question),
             self.category,
             force_text(self.condition),
-            self.next_question.pk,
+            id_or_none(self.next_question),
         )
 
     def __repr__(self):
@@ -885,8 +891,8 @@ class ExplicitBranch(DeletionMixin, models.Model):
         next_question = explicit_branch.next_question
         next_question = next_question.get_instance() if next_question else None
         if pk:
-            current = current.pk if current else None
-            next_question = next.pk if next else None
+            current = id_or_none(current)
+            next_question = id_or_none(next)
         return Transition(category, current, condition, next_question)
 
     def to_transition(self, pk=False):
