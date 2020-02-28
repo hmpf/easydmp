@@ -38,7 +38,8 @@ class AbstractEmailInvitation(models.Model):
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email_address = models.EmailField()
-    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL)
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                   on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True, editable=False)
     sent = models.DateTimeField(blank=True, null=True)
     used = models.DateTimeField(blank=True, null=True)
@@ -161,7 +162,7 @@ class PlanInvitation(AbstractEmailInvitation):
         InvitationType.view.name: 'view',
     }
 
-    plan = models.ForeignKey('plan.Plan')
+    plan = models.ForeignKey('plan.Plan', on_delete=models.CASCADE)
     type = models.CharField(choices=InvitationType.choices(), max_length=4, default='view')
 
     objects = PlanInvitationManager()

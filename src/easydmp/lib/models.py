@@ -18,9 +18,9 @@ class ModifiedTimestampModel(models.Model):
 
 
 class ClonableModel(models.Model):
-    cloned_from = models.ForeignKey('self', blank=True, null=True,
-                                    related_name='clones',
-                                    on_delete=models.SET_NULL)
+    cloned_from = models.ForeignKey('self', on_delete=models.SET_NULL,
+                                    blank=True, null=True,
+                                    related_name='clones')
     cloned_when = models.DateTimeField(blank=True, null=True)
 
     class Meta:

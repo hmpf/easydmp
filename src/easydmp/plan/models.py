@@ -182,7 +182,7 @@ class Plan(DeletionMixin, ClonableModel):
     )
     version = models.PositiveIntegerField(default=1)
     uuid = models.UUIDField(default=uuid4, editable=False)
-    template = models.ForeignKey('dmpt.Template', related_name='plans')
+    template = models.ForeignKey('dmpt.Template', models.CASCADE, related_name='plans')
     valid = models.NullBooleanField()
     last_validated = models.DateTimeField(blank=True, null=True)
     data = JSONField(default={})
@@ -195,18 +195,19 @@ class Plan(DeletionMixin, ClonableModel):
         help_text='Use the URLified DOI, https://dx.doi.org/<doi>',
     )
     added = models.DateTimeField(auto_now_add=True)
-    added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='added_plans')
+    added_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE,
+                                 related_name='added_plans')
     modified = models.DateTimeField(auto_now=True)
-    modified_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='modified_plans')
+    modified_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE,
+                                    related_name='modified_plans')
     locked = models.DateTimeField(blank=True, null=True)
-    locked_by = models.ForeignKey(settings.AUTH_USER_MODEL,
-                                  related_name='locked_plans', blank=True,
-                                  null=True, on_delete=models.SET_NULL)
+    locked_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL,
+                                  blank=True, null=True,
+                                  related_name='locked_plans')
     published = models.DateTimeField(blank=True, null=True)
-    published_by = models.ForeignKey(settings.AUTH_USER_MODEL,
-                                     related_name='published_plans',
+    published_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.SET_NULL,
                                      blank=True, null=True,
-                                     on_delete=models.SET_NULL)
+                                     related_name='published_plans')
 
     objects = PlanQuerySet.as_manager()
 
@@ -474,7 +475,8 @@ class Plan(DeletionMixin, ClonableModel):
 
 
 class PlanAccess(ClonableModel):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, related_name='plan_accesses')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE,
+                             related_name='plan_accesses')
     plan = models.ForeignKey(Plan, models.CASCADE, related_name='accesses')
 
     may_edit = models.NullBooleanField(blank=True, null=True)
@@ -498,8 +500,9 @@ class PlanAccess(ClonableModel):
 
 
 class PlanComment(models.Model):
-    plan = models.ForeignKey(Plan, related_name='comments')
-    question = models.ForeignKey('dmpt.Question')
+    plan = models.ForeignKey(Plan, models.CASCADE, related_name='comments')
+    question = models.ForeignKey('dmpt.Question', models.CASCADE)
     comment = models.TextField()
     added = models.DateTimeField(auto_now_add=True)
-    added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='plan_comments')
+    added_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE,
+                                 related_name='plan_comments')

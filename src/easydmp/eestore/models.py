@@ -29,8 +29,8 @@ class EEStoreType(models.Model):
 class EEStoreSource(models.Model):
     eestore_type = models.ForeignKey(
         EEStoreType,
-        related_name='sources',
         on_delete=models.CASCADE,
+        related_name='sources',
     )
     name = models.CharField(max_length=64)
 
@@ -109,13 +109,13 @@ class EEStoreCache(models.Model):
     eestore_id = models.IntegerField()
     eestore_type = models.ForeignKey(
         EEStoreType,
-        related_name='records',
         on_delete=models.CASCADE,
+        related_name='records',
     )
     source = models.ForeignKey(
         EEStoreSource,
-        related_name='records',
         on_delete=models.CASCADE,
+        related_name='records',
     )
 
     name = models.CharField(max_length=255)
@@ -144,8 +144,8 @@ class EEStoreMount(models.Model):
     """
     question = models.OneToOneField(
         'dmpt.Question',
-        related_name='eestore',
         on_delete=models.CASCADE,
+        related_name='eestore',
     )
     eestore_type = models.ForeignKey(EEStoreType, on_delete=models.CASCADE)
     sources = models.ManyToManyField(

@@ -179,24 +179,25 @@ class EventLogManager(models.Manager):
 
 
 class EventLog(models.Model):
-    actor_content_type = models.ForeignKey(ContentType, related_name='actor',
+    actor_content_type = models.ForeignKey(ContentType,
                                            on_delete=models.DO_NOTHING,
-                                           db_index=True)
+                                           related_name='actor', db_index=True)
     actor_object_id = models.TextField(db_index=True)
 
     verb = models.CharField(max_length=255, db_index=True)
     description = models.TextField(blank=True, null=True)
 
-    target_content_type = models.ForeignKey(ContentType, blank=True,
-                                            null=True, related_name='target',
+    target_content_type = models.ForeignKey(ContentType,
                                             on_delete=models.DO_NOTHING,
+                                            blank=True, null=True,
+                                            related_name='target',
                                             db_index=True)
     target_object_id = models.TextField(blank=True, null=True, db_index=True)
 
-    action_object_content_type = models.ForeignKey(ContentType, blank=True,
-                                                   null=True,
-                                                   related_name='action_object',
+    action_object_content_type = models.ForeignKey(ContentType,
                                                    on_delete=models.DO_NOTHING,
+                                                   blank=True, null=True,
+                                                   related_name='action_object',
                                                    db_index=True)
     action_object_object_id = models.TextField(blank=True, null=True,
                                                db_index=True)

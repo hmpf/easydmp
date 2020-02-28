@@ -418,7 +418,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     only be used once per template, this is checked when attempting to save.
     """
     GRAPHVIZ_TMPDIR = '/tmp/dmpt/'
-    template = models.ForeignKey(Template, related_name='sections')
+    template = models.ForeignKey(Template, on_delete=models.CASCADE,
+                                 related_name='sections')
     label = models.CharField(max_length=16, blank=True)
     title = models.CharField(
         max_length=255,
@@ -431,7 +432,9 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     )
     introductory_text = models.TextField(blank=True)
     comment = models.TextField(blank=True)
-    super_section = models.ForeignKey('self', null=True, blank=True, related_name='subsections')
+    super_section = models.ForeignKey('self', on_delete=models.CASCADE,
+                                      null=True, blank=True,
+                                      related_name='subsections')
     section_depth = models.PositiveSmallIntegerField(default=1)
     branching = models.BooleanField(default=False)
 
@@ -845,10 +848,13 @@ class ExplicitBranch(DeletionMixin, models.Model):
     )
 
     # XX1
-    current_question = models.ForeignKey('Question', related_name='forward_transitions')
+    current_question = models.ForeignKey('Question', on_delete=models.CASCADE,
+                                         related_name='forward_transitions')
     category = models.CharField(max_length=16, choices=zip(CATEGORIES, CATEGORIES))
     condition = models.CharField(max_length=CONDITION_FIELD_LENGTH, blank=True)
-    next_question = models.ForeignKey('Question', related_name='backward_transitions', blank=True, null=True)
+    next_question = models.ForeignKey('Question', on_delete=models.CASCADE,
+                                      related_name='backward_transitions',
+                                      blank=True, null=True)
 
     objects = ExplicitBranchQuerySet.as_manager()
 
@@ -917,7 +923,8 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         max_length=32,
         choices=zip(INPUT_TYPES, INPUT_TYPES),
     )
-    section = models.ForeignKey(Section, related_name='questions')
+    section = models.ForeignKey(Section, on_delete=models.CASCADE,
+                                related_name='questions')
     position = models.PositiveIntegerField(
         default=1,
         help_text='Position in section. Must be unique.',
@@ -930,9 +937,8 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
     obligatory = models.BooleanField(default=True)
     optional = models.BooleanField(default=False)
     optional_canned_text = models.TextField(blank=True)
-    node = models.OneToOneField('flow.Node', related_name='payload',
-                                blank=True, null=True,
-                                on_delete=models.SET_NULL)
+    node = models.OneToOneField('flow.Node', on_delete=models.SET_NULL,
+                                blank=True, null=True, related_name='payload')
 
     class Meta:
         unique_together = ('section', 'position')
@@ -1891,7 +1897,8 @@ class CannedAnswerQuerySet(models.QuerySet):
 
 class CannedAnswer(DeletionMixin, ClonableModel):
     "Defines the possible answers for a branch-capable question"
-    question = models.ForeignKey(Question, related_name='canned_answers')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE,
+                                 related_name='canned_answers')
     position = models.PositiveIntegerField(
         default=1,
         help_text='Position in question. Just used for ordering.',
@@ -1907,8 +1914,8 @@ class CannedAnswer(DeletionMixin, ClonableModel):
                                       blank=True, null=True,
                                       related_name='canned_answers')
     # External FSA support
-    edge = models.OneToOneField('flow.Edge', related_name='payload', blank=True,
-                           null=True, on_delete=models.SET_NULL)
+    edge = models.OneToOneField('flow.Edge', on_delete=models.SET_NULL,
+                                related_name='payload', blank=True, null=True)
 
     objects = CannedAnswerQuerySet.as_manager()
 

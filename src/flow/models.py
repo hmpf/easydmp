@@ -36,15 +36,19 @@ class Node(ClonableModel):
     next_nodes, prev_nodes: where to next
     """
 
-    fsa = models.ForeignKey('FSA', related_name='nodes', on_delete=models.CASCADE)
+    fsa = models.ForeignKey(
+        'FSA',
+        on_delete=models.CASCADE,
+        related_name='nodes'
+    )
     slug = models.SlugField(max_length=SLUG_LENGTH)
     start = models.BooleanField(default=False)
     end = models.BooleanField(default=False)
     depends = models.ForeignKey(
         'self',
+        on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        on_delete=models.SET_NULL,
     )
 
     class Meta:
@@ -121,17 +125,17 @@ class Edge(ClonableModel):
     condition = models.CharField(max_length=64, blank=True)
     prev_node = models.ForeignKey(
         Node,
+        on_delete=models.SET_NULL,
         related_name='next_nodes',
         blank=True,
         null=True,
-        on_delete=models.SET_NULL,
     )
     next_node = models.ForeignKey(
         Node,
+        on_delete=models.SET_NULL,
         related_name='prev_nodes',
         blank=True,
         null=True,
-        on_delete=models.SET_NULL,
     )
 
     class Meta:
