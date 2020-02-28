@@ -842,6 +842,7 @@ class ExplicitBranch(DeletionMixin, models.Model):
     current_question = models.ForeignKey('Question', on_delete=models.CASCADE,
                                          related_name='forward_transitions')
     category = models.CharField(max_length=16, choices=zip(CATEGORIES, CATEGORIES))
+    # condition: None or a string of length > 0, but Django insist on NOT NULL
     condition = models.CharField(max_length=CONDITION_FIELD_LENGTH, blank=True)
     next_question = models.ForeignKey('Question', on_delete=models.CASCADE,
                                       related_name='backward_transitions',
@@ -873,19 +874,23 @@ class ExplicitBranch(DeletionMixin, models.Model):
         return new
 
     @classmethod
-    def _to_transition(cls, question, pk=False):
-        current = question.current_question
-        next = question.next_question
+    def _to_transition(cls, explicit_branch, pk=False):
+        category = explicit_branch.category
+        # Django doesn't like NULLable CharFields..
+        condition = explicit_branch.condition
+        if not condition:
+            condition = None
+        current = explicit_branch.current_question.get_instance()
+        current = current.get_instance() if current else None
+        next_question = explicit_branch.next_question
+        next_question = next_question.get_instance() if next_question else None
         if pk:
             current = current.pk if current else None
-            next = next.pk if next else None
-        return Transition(category, current, condition, next)
+            next_question = next.pk if next else None
+        return Transition(category, current, condition, next_question)
 
     def to_transition(self, pk=False):
-        current = self.current_question.pk if pk else self.current_question
-        next = self.next_question.pk if pk else self.next_question
-        category = self.modernize_category(self.category)
-        return Transition(category, current, self.condition, next)
+        return self._to_transition(self, pk=pk)
 
 
 class Question(DeletionMixin, RenumberMixin, ClonableModel):
@@ -1043,10 +1048,11 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         if self.canned_answers.count() == 1:
             return self.canned_answers.get().canned_text
 
-        choice = self._serialize_condition(answer)
-        canned = self.canned_answers.filter(choice=choice)
-        if canned:
-            return canned[0].canned_text or answer
+        choice = self.get_instance()._serialize_condition(answer)
+        if choice is not None:
+            canned = self.canned_answers.filter(choice=choice)
+            if canned:
+                return canned[0].canned_text or answer
         return ''
 
     def pprint(self, value):
@@ -1058,6 +1064,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         return self.pprint(value)
 
     def create_node(self, fsa=None):
+        # ExplicitBranch: not needed
         from flow.models import Node, FSA
         label = self.label if self.label else self.id
         if not fsa:
@@ -1074,6 +1081,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         The choice is unwrapped from its structure, and set to empty if the
         question type cannot branch.
         """
+        # ExplicitBranch: not needed
         condition = ''
         if self.branching_possible:
             # The choice is used to look up an Edge.condition
@@ -1083,6 +1091,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
     @classmethod
     def map_answers_to_nodes(self, answers):
         "Convert question pks to node pks, and choices to conditions"
+        # ExplicitBranch: not needed
         data = {}
         questions = {str(q.pk): q for q in (Question.objects
                                             .select_related('node')
@@ -1234,6 +1243,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
 
         return list(preceding_questions)[-1]
 
+    # XXX: ExplicitBranch: Not used
     def is_last_in_section(self):
         if not self.get_all_following_questions().exists():
             return True
