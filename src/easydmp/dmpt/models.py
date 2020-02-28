@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from copy import copy, deepcopy
+from copy import deepcopy
 from functools import lru_cache
 import os
 from pathlib import Path
@@ -7,24 +7,18 @@ from textwrap import fill
 from uuid import uuid4
 import logging
 
-LOG = logging.getLogger(__name__)
-
-import graphviz as gv
+import graphviz as gv  # noqa
 from guardian.models import UserObjectPermissionBase
 from guardian.models import GroupObjectPermissionBase
 from guardian.shortcuts import get_objects_for_user, assign_perm
 
 from django.apps import apps
 from django.conf import settings
-from django.contrib.admin.utils import NestedObjects
 from django.db import models
-from django.db import router
 from django.db import transaction
 from django.forms import model_to_dict
-from django.template import engines, Context
-from django.utils.encoding import force_text, force_bytes
+from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
-from django.utils.html import format_html, escape
 from django.utils.text import slugify
 from django.utils.timezone import now as tznow
 
@@ -51,6 +45,7 @@ Question and CannedAnswer have the following API re. Node and Edge:
   node or edge can be automatically created.
 """
 
+LOG = logging.getLogger(__name__)
 INPUT_TYPES = (
     'bool',
     'choice',
@@ -205,7 +200,6 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
     def collect(self, **kwargs):
         collector = super().collect(**kwargs)
         if self.questions.exists():
-            Edge = apps.get_model('flow', 'Edge')
             nodes = [q.node for q in self.questions.all() if q.node]
             fsas = set(n.fsa for n in nodes)
             collector.collect(tuple(fsas))
@@ -222,8 +216,6 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         Also recursively clones all sections, questions, canned answers,
         EEStore mounts, FSAs, nodes and edges."""
         assert title and version, "Both title and version must be given"
-        self_dict = model_to_dict(self, exclude=['id', 'pk', 'title',
-                                                 'version', 'published'])
         new = self.get_copy()
         new.title = title
         new.version = version
@@ -525,7 +517,6 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     def collect(self, **kwargs):
         collector = super().collect(**kwargs)
         if self.questions.exists():
-            Edge = apps.get_model('flow', 'Edge')
             nodes = [q.node for q in self.questions.all() if q.node]
             fsas = set(n.fsa for n in nodes)
             collector.collect(tuple(fsas))
@@ -1878,7 +1869,7 @@ INPUT_TYPE_MAP = {
     'daterange': DateRangeQuestion,
     'multichoiceonetext': MultipleChoiceOneTextQuestion,
     'reason': ReasonQuestion,
-    'shortfreetext' : ShortFreetextQuestion,
+    'shortfreetext': ShortFreetextQuestion,
     'positiveinteger': PositiveIntegerQuestion,
     'externalchoice': ExternalChoiceQuestion,
     'extchoicenotlisted': ExternalChoiceNotListedQuestion,
