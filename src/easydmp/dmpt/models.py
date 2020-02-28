@@ -273,6 +273,8 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         sections = self.sections.order_by('position')
         self._renumber_positions(sections)
 
+    # START: Template movement helpers
+
     @property
     def questions(self):
         return Question.objects.filter(section__template=self)
@@ -294,6 +296,8 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
     def last_question(self):
         section = self.last_section
         return section.last_question
+
+    # END: Template movement helpers
 
     def generate_canned_text(self, data):
         texts = []
@@ -537,6 +541,13 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         questions = self.questions.order_by('position')
         self._renumber_positions(questions)
 
+    # START: Section movement helpers
+    #
+    # Several of these are here because a name is easier to type correctly,
+    # read, understand, remember and grep for than a long Django queryset dot
+    # after dot structure. There are also a lot more variables then necessary,
+    # to better facilitate the use of pdb. "Improve" at your own peril!
+
     def get_first_question(self):
         if self.questions.exists():
             return self.questions.order_by('position')[0]
@@ -569,14 +580,6 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             return prev_section.last_question
         return None
 
-    def generate_canned_text(self, data):
-        texts = []
-        for question in self.questions.order_by('position'):
-            answer = question.get_instance().generate_canned_text(data)
-            if not isinstance(answer.get('text', ''), bool):
-                texts.append(answer)
-        return texts
-
     def get_all_next_sections(self):
         return Section.objects.filter(template=self.template, position__gt=self.position)
 
@@ -600,6 +603,16 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         while obj.super_section is not None:
             obj = obj.super_section
         return obj
+
+    # END: Section movement helpers
+
+    def generate_canned_text(self, data):
+        texts = []
+        for question in self.questions.order_by('position'):
+            answer = question.get_instance().generate_canned_text(data)
+            if not isinstance(answer.get('text', ''), bool):
+                texts.append(answer)
+        return texts
 
     def find_validity_of_questions(self, data):
         assert data, 'No data, cannot validate'
@@ -1111,6 +1124,12 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             data[str(q.node.slug)] = condition
         return data
 
+    # START: Question movement helpers
+    #
+    # Several of these are here because a name is easier to type correctly,
+    # read, understand, remember and grep for than a long Django queryset dot
+    # after dot structure.
+
     def get_first_question_in_next_section(self):
         next_section = self.section.get_next_section()
         while next_section:
@@ -1263,6 +1282,8 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         return False
 
 #     def get_next_via_path
+
+    # END: Question movement helpers
 
     def frame_canned_answer(self, answer, frame=True):
         result = answer
