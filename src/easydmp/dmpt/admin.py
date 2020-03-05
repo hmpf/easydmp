@@ -313,8 +313,9 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
         'section',
         'input_type',
         'obligatory',
-        'has_node',
+        'optional',
         'get_mount',
+        'has_node',
     )
     list_select_related = ['section']
     list_display_links = ('position', 'id', 'question')
@@ -331,6 +332,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     ]
     list_filter = [
         'obligatory',
+        'optional',
         QuestionTemplateFilter,
         QuestionSectionFilter,
         QuestionHasEEStoreFilter,

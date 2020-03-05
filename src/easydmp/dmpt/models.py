@@ -694,11 +694,15 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             q_kwargs = {}
             q_label = '{}\n<{}>'.format(question, question.input_type)
             if debug:
-                q_label = '"{}"\n<{}>\np{} #{}'.format(
+                obligatory = '-' if question.obligatory else 'N'
+                optional = 'o' if question.optional else '-'
+                q_label = '"{}"\n<{}>\np{} #{} {}{}'.format(
                     question,
                     question.input_type,
                     question.position,
-                    question.pk
+                    question.pk,
+                    obligatory,
+                    optional
                 )
                 if node:
                     q_label += ' n{}'.format(node.pk)
@@ -805,7 +809,7 @@ class SimpleFramingTextMixin:
 
     def validate_choice(self, data):
         choice = data.get('choice', None)
-        if choice:
+        if choice or self.optional:
             return True
         return False
 
@@ -1005,13 +1009,8 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         if not data:
             return False
         choice = data.get(str(self.pk), None)
-        if choice is None:
-            return False
         valid = self.get_instance().validate_choice(choice)
         if valid:
-            return True
-        # Optional questions are valid if not filled out
-        if self.optional and not choice:
             return True
         return False
 
@@ -1020,6 +1019,9 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
 
         This is only applicable if `branching_possible` is True.
         """
+        raise NotImplementedError
+
+    def validate_choice(self, data):
         raise NotImplementedError
 
     def get_optional_canned_answer(self):
@@ -1256,7 +1258,18 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         return mark_safe(result)
 
 
-class BooleanQuestion(Question):
+class ChoiceValidationMixin():
+
+    def validate_choice(self, data):
+        choice = data.get('choice', None)
+        if self.optional and choice is None:
+            return True
+        if choice in self.get_choices_keys():
+            return True
+        return False
+
+
+class BooleanQuestion(ChoiceValidationMixin, Question):
     """A branch-capable question answerable with "Yes" or "No"
 
     The choice is converted to True or False.
@@ -1293,16 +1306,8 @@ class BooleanQuestion(Question):
         )
         return choices
 
-    def validate_choice(self, data):
-        choice = data.get('choice', None)
-        if choice is None:
-            return False
-        if choice in self.get_choices_keys():
-            return True
-        return False
 
-
-class ChoiceQuestion(Question):
+class ChoiceQuestion(ChoiceValidationMixin, Question):
     "A branch-capable question answerable with one of a small set of choices"
     branching_possible = True
 
@@ -1332,15 +1337,6 @@ class ChoiceQuestion(Question):
                 v = k
             fixed_choices.append((k, v))
         return tuple(fixed_choices)
-
-    def validate_choice(self, data):
-        choice = data.get('choice', None)
-        if not choice:
-            return False
-        choices = self.get_choices_keys()
-        if choice in choices:
-            return True
-        return False
 
 
 class MultipleChoiceOneTextQuestion(Question):
@@ -1381,8 +1377,8 @@ class MultipleChoiceOneTextQuestion(Question):
 
     def validate_choice(self, data):
         choice = set(data.get('choice', []))
-        if not choice:
-            return False
+        if self.optional and not choice:
+            return True
         choices = set(self.get_choices_keys())
         if choice <= choices:
             return True
@@ -1419,8 +1415,8 @@ class DateRangeQuestion(NoCheckMixin, Question):
 
     def validate_choice(self, data):
         choice = data.get('choice', {})
-        if not choice:
-            return False
+        if self.optional and not choice:
+            return True
         if choice.get('start', False) and choice.get('end', False):
             return True
         return False
@@ -1489,7 +1485,7 @@ class EEStoreMixin:
         return choices
 
 
-class ExternalChoiceQuestion(EEStoreMixin, Question):
+class ExternalChoiceQuestion(ChoiceValidationMixin, EEStoreMixin, Question):
     """A non-branch-capable question answerable with a single choice
 
     The choices are fetched and cached from an EEStore via an
@@ -1513,15 +1509,6 @@ class ExternalChoiceQuestion(EEStoreMixin, Question):
             return ''
         answer = answers[0]
         return self.frame_canned_answer(answer.name, frame)
-
-    def validate_choice(self, data):
-        choice = data.get('choice', {})
-        if not choice:
-            return False
-        choices = self.get_choices_keys()
-        if choice in choices:
-            return True
-        return False
 
 
 class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
@@ -1590,8 +1577,8 @@ class ExternalChoiceNotListedQuestion(EEStoreMixin, Question):
 
     def validate_choice(self, data):
         answer = data.get('choice', {})
-        if not answer:
-            return False
+        if self.optional and not answer:
+            return True
         choice = answer.get('choices', '')
         not_listed = answer.get('not-listed', False)
         choices = self.get_choices_keys()
@@ -1645,8 +1632,8 @@ class ExternalMultipleChoiceOneTextQuestion(EEStoreMixin, Question):
 
     def validate_choice(self, data):
         choice = data.get('choice', [])
-        if not choice:
-            return False
+        if self.optional and not choice:
+            return True
         choices = set(self.get_choices_keys())
         if choices.issuperset(choice):
             return True
@@ -1729,8 +1716,8 @@ class ExternalMultipleChoiceNotListedOneTextQuestion(EEStoreMixin, Question):
 
     def validate_choice(self, data):
         answer = data.get('choice', {})
-        if not answer:
-            return False
+        if self.optional and not answer:
+            return True
         try:
             choice = set(answer.get('choices', []))
         except AttributeError:
@@ -1776,8 +1763,8 @@ class NamedURLQuestion(NoCheckMixin, Question):
 
     def validate_choice(self, data):
         choice = data.get('choice', {})
-        if not choice:
-            return False
+        if self.optional and not choice:
+            return True
         if choice.get('url', False):
             return True
         return False
@@ -1819,9 +1806,8 @@ class MultiNamedURLOneTextQuestion(NoCheckMixin, Question):
 
     def validate_choice(self, data):
         choices = data.get('choice', [])
-        if not choices:
-            return False
-        urls = []
+        if self.optional and not choices:
+            return True
         for choice in choices:
             url = choice.get('url', None)
             if url:
@@ -1870,9 +1856,8 @@ class MultiDMPTypedReasonOneTextQuestion(NoCheckMixin, Question):
 
     def validate_choice(self, data):
         choices = data.get('choice', [])
-        if not choices:
-            return False
-        triples = []
+        if self.optional and not choices:
+            return True
         for choice in choices:
             type_ = choice.get('type', None)
             reason = choice.get('reason', None)
