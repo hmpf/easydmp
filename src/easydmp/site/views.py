@@ -17,7 +17,7 @@ class Homepage(TemplateView):
     login_required = False
 
     def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             return redirect('plan_list')
         return super().get(request, *args, **kwargs)
 

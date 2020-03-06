@@ -147,7 +147,7 @@ class PlanViewSet(ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = Plan.objects.exclude(published=None)
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             pas = self.request.user.plan_accesses.all()
             qs = qs | Plan.objects.filter(accesses__in=pas)
         return qs.distinct()

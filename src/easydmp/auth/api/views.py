@@ -137,7 +137,7 @@ class UserViewSet(ReadOnlyModelViewSet):
     serializer_class = UserSerializer
 
 #     def get_serializer_class(self):
-#         if self.request.user.is_authenticated():
+#         if self.request.user.is_authenticated:
 #             return UserSerializer
 #         return ObfuscatedUserSerializer
 

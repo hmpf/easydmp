@@ -29,14 +29,14 @@ class TestLoginRequiredMiddleware(test.TestCase):
 
     def test_process_view_authenticated(self):
         view_func = lambda : None
-        self.request.user.is_authenticated = Mock(return_value=True)
+        self.request.user.is_authenticated = True
         result = LoginRequiredMiddleware().process_view(self.request, view_func, None, {})
         self.assertIsNone(result)
         delattr(self.request.user, 'is_authenticated')
 
     def test_process_view_redirect(self):
         view_func = lambda : None
-        self.request.user.is_authenticated = Mock(return_value=False)
+        self.request.user.is_authenticated = False
         result = LoginRequiredMiddleware().process_view(self.request, view_func, None, {})
         self.assertIsNotNone(result)
         self.assertIsInstance(result, HttpResponseRedirect)

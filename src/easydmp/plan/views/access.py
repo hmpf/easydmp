@@ -1,7 +1,7 @@
 import logging
 
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.core.urlresolvers import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.http import HttpResponseRedirect
 from django.views.generic import (
     UpdateView,

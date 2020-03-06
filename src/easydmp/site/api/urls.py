@@ -73,3 +73,5 @@ urlpatterns = jwt_urls + [
     url(r'auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^', include(router.urls)),
 ]
+
+app_name = 'v1'

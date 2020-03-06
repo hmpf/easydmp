@@ -1,7 +1,7 @@
 from copy import deepcopy
 import logging
 
-from django.core.urlresolvers import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.http import HttpResponseRedirect, Http404, HttpResponseServerError
 from django.shortcuts import redirect
 from django.views.generic import (
@@ -746,7 +746,7 @@ class AbstractGeneratedPlanView(DetailView):
     def get_queryset(self):
         "Show published plans to the public, otherwise only viewable"
         qs = self.model.objects.exclude(published=None)
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             qs = qs | self.model.objects.viewable(self.request.user)
         return qs.distinct()
 

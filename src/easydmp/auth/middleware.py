@@ -36,7 +36,7 @@ class LoginRequiredMiddleware(MiddlewareMixin):
                 return None
 
         # Allow authenticated users
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             return None
 
         # Redirect unauthenticated users to login page
