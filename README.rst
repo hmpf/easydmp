@@ -234,3 +234,8 @@ version is 3.5, the follwing path must be somehow added to the python path::
     /path/to/virtualenv/lib/python3.5/site-pacakges/
 
 If using Apache, do not use ``mod_python``, use ``mod_wsgi`` in daemon mode.
+
+----
+
+This work is co-funded by the EOSC-hub project (Horizon 2020) under Grant
+number 777536.
