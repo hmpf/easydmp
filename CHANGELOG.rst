@@ -11,11 +11,19 @@ Unreleased
 
 * Comments for plans.
 
+0.22.3
+------
+
+* Fix the docker-compose setup to work on a newer OS with newer postgres image
+* Improve miscellanea about optional questions. Validation, show in admin, show
+  in gv graphs.
+* Switch to run on Django 2.2
+
 0.22.2
 ------
 
 * Amend the previous patch so that superusers can choose whether to see all
-  plans in existance in the persnal plan list or not.
+  plans in existance in the personal plan list or not.
 
 0.22.1
 ------
