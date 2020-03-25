@@ -12,6 +12,10 @@ __all__ = [
 ]
 
 
+class PublicTemplateView(TemplateView):
+    login_required = False
+
+
 class Homepage(TemplateView):
     template_name = 'index.html'
     login_required = False

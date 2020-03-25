@@ -17,7 +17,10 @@ from django.conf import settings
 from django.conf.urls import url, include
 from django.contrib import admin
 
-from easydmp.site.views import Homepage, LoginView, logout_view
+from easydmp.site.views import Homepage
+from easydmp.site.views import LoginView
+from easydmp.site.views import logout_view
+from easydmp.site.views import PublicTemplateView
 
 urlpatterns = [
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
@@ -29,6 +32,8 @@ urlpatterns = [
     url('^$', Homepage.as_view(), name='home'),
     url('^login/', LoginView.as_view(), name='login-selector'),
     url('^logout', logout_view, name='logout'),
+    url('^privacy/', PublicTemplateView.as_view(template_name='privacy.html'), name='privacy'),
+
     url(r'^plan/', include('easydmp.plan.urls')),
     url(r'^invitation/', include('easydmp.invitation.urls')),
 
