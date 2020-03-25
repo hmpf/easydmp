@@ -6,26 +6,46 @@
 
       <h2>Data on logged in users</h2>
 
-      <p>EasyDMP uses <strong>email addresses</strong> as user names. EasyDMP
-      stores these with itself, together with a timestamp marking the first
-      login, and a timestamp for the newest login. This is the <em>only</em>
-      data intentionally collected about users and it is our intention that
-      this will remain so.</p>
+      <p>We strive to collect as little as possible about our users, but some
+      data is necessary for things to work.</p>
+
+      <h3>Email addresses</h3>
+ 
+      <p>EasyDMP uses email addresses as user names.
+      EasyDMP stores these with itself, together with a timestamp marking the
+      first login, and a timestamp for the newest login.</p>
 
       <p>These addresses are stored on first log in, and comes from the login
       facility. Therefore, we only support login mechanisms that supply us with
       an email address. This also means that if a user needs to change their
       email address, they need to do it at whatever facility they use to log
-      in, for instance <a href="">Dataporten</a> or <a href="">B2ACCESS</a>,
-      and then <a href="mailto:support@easydmp.sigma2.no">contact us</a>.</p>
+      in, for instance <a href="https://www.feide.no/omfeide">Feide</a> or
+      <a href="https://eudat.eu/services/b2access">B2ACCESS</a>, and then
+      <a href="mailto:support@easydmp.sigma2.no">contact us</a>.</p>
 
-      <p>The mail address is visible to other logged in users. It is used to
+      <p>The email address is visible to other logged in users. It is used to
       contact other users, invite other users to work on a plan, or for the
       support team at Sigma to get in contact with specific users if a problem
       occurs. There currently exists no easily used list of all email addresses
       in order to easily contact every user at once as of yet, as there haven't
       been any use for it. If the need should occur, details of the lists will
       be added to this page.</p>
+
+      <h3>Full personal names</h3>
+
+      <p>In order to have a valid export to
+      <a href="https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard/">
+RDA DMP Common Standard</a>,
+      a machine-readable DMP standard, it is necessary to collect your full name
+      (first + last in that order).</p>
+
+      <p>As with email addresses, we can to some degree get this from the login
+      mechanisms. When the login mechanism does not support this, there will be
+      an extra form on login that will ask for your full name.</p>
+
+      <p>Since collecting full names was not part of the original design, if we
+      do not already have the full name of a specific user, it will be added
+      during next login.</p>
 
       <h2>Data on other users</h2>
 
@@ -44,5 +64,5 @@
 
       <p>This policy is in line with <a href="https://www.eudat.eu/privacy-policy">EUDAT's Privacy Policy</a>, see that for the legalese.</p>
 
-      <p>Last updated: 2019-03-28</p>
+      <p>Last updated: 2020-03-25</p>
 {% endblock %}
