@@ -11,6 +11,14 @@ Unreleased
 
 * Comments for plans.
 
+0.23.0
+------
+
+* Add support for exporting to RDA DMP Common Standard. This necessitated
+  adding one more piece of personal data: the full name of persons involved
+  with a plan. For this reason the privacy policy has been updated as well,
+  and it has been moved from the database to code for easier versioning.
+
 0.22.3
 ------
 
