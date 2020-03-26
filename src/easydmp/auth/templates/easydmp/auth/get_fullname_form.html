@@ -1,0 +1,23 @@
+{% extends "easydmp/auth/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+  <div class="row uninett-color-white uninett-whole-row">
+    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
+      <h2>Add full name to account</h2>
+      <p>Your login method didn't provide a full name so you will have to
+      input it below. By <i>full name</i> we mean <i>firstname lastname</i>
+      with however many middle names or initials between the two that you
+      commonly use, for instance: <b>Pāṇini</b>, <b>Charles Darwin</b>,
+      <b>Robert M. W. Dixon</b> or <b>RMW Dixon</b>.</p>
+
+      <p>This is currently used in a specific plan export format, see the
+      <a href="{% url 'privacy' %}" title="EasyDMP privacy policy">privacy
+      policy</a> for details.</p>
+      <form action="{{ nexthop }}" method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  </div>
+{% endblock content %}
