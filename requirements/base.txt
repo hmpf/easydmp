@@ -2,7 +2,7 @@ django-cors-headers>=3.2.1
 django-crispy-forms>=1.6
 django-extensions
 django-filter>=2.2.0,<2.3
-django-guardian==1.4.9
+django-guardian>=2.2,<2.3
 djangorestframework>=3.11
 djangorestframework-jwt>=1.11.0
 django_select2==6.3.1
