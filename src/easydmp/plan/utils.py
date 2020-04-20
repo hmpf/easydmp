@@ -41,6 +41,25 @@ def get_editors_for_plan(plan):
     return qs
 
 
+def select_plans(plan_ids=(), template_ids=(), section_ids=()):
+    from easydmp.plan.models import Plan
+    from easydmp.dmpt.models import Template, Section
+
+    plan_qs = Plan.objects.exclude(data={})
+    template_qs = Template.objects.all()
+    if template_ids:
+        template_qs = Template.objects.filter(template_id__in=template_ids)
+    section_qs = Section.objects.all()
+    if section_ids:
+        section_qs = Section.objects.filter(id__in=section_ids)
+        template_qs = template_qs.filter(sections__in=section_qs)
+    plan_qs = plan_qs.filter(template__in=template_qs)
+    if plan_ids:
+        plan_qs = plan_qs.filter(id__in=plan_ids)
+
+    return plan_qs, template_qs, section_qs
+
+
 class GenerateRDA10:
 
     def __init__(self, plan):
@@ -71,7 +90,7 @@ class GenerateRDA10:
         plan = {
             'title': self.plan.title,
             id_name: {
-                'identifier':str(self.plan.uuid),
+                'identifier': str(self.plan.uuid),
                 'type': 'other',
             },
         }
