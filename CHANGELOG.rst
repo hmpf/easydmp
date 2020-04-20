@@ -11,6 +11,18 @@ Unreleased
 
 * Comments for plans.
 
+0.23.1
+------
+
+Maintenance release
+
+* Fix bug due to incompatibility with Django 2.1 that affected invitations
+* Upstream auth.User has changed so alter our own copy likewise
+* New CLI-command for seeing rough plan question usage statitstics: which plans
+  have answered which questions
+* Various code cleanup, e.g. fixing code broken and/or missing after rebase
+* Switch to running on Django 2.2 and prep for running on 3.x
+
 0.23.0
 ------
 
