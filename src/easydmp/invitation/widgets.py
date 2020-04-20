@@ -19,6 +19,6 @@ class MultiEmailWidget(Textarea):
             return "\n".join(value)
         raise ValidationError('Invalid format.')
 
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, attrs=None, renderer=None):
         value = self.prep_value(value)
-        return super().render(name, value, attrs)
+        return super().render(name, value, attrs, renderer)
