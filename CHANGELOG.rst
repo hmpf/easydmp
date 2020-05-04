@@ -11,6 +11,11 @@ Unreleased
 
 * Comments for plans.
 
+Next
+----
+
+* Use Python 3.8 due to cached_property
+
 0.23.1
 ------
 
