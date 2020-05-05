@@ -1323,7 +1323,7 @@ class NotListedMixin():
         return condition
 
 
-class BooleanQuestion(Question):
+class BooleanQuestion(ChoiceValidationMixin, Question):
     """A branch-capable question answerable with "Yes" or "No"
 
     The choice is converted to True or False.

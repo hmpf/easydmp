@@ -14,6 +14,7 @@ Unreleased
 Next
 ----
 
+* Fix bug with missing methid on BooleanQuestion after refactor
 * Use Python 3.8 due to cached_property
 
 0.23.1
