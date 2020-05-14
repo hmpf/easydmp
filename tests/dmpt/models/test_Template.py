@@ -6,33 +6,11 @@ from tests.plan.factories import PlanFactory
 
 class TestTemplateMiscMethods(test.TestCase):
 
-    def setUp(self):
-        self.template = TemplateFactory()
-        self.section = SectionFactory(template=self.template, position=1)
-
     def test_list_unknown_questions(self):
-        plan = PlanFactory(template=self.template)
+        template = TemplateFactory()
+        section = SectionFactory(template=template, position=1)
+
         bad_ids = set((56, 565678587))
-        plan.data = dict(zip(bad_ids, bad_ids))
-        result = self.template.list_unknown_questions(plan)
+        data = dict(zip(bad_ids, bad_ids))
+        result = template.list_unknown_questions(data)
         self.assertEqual(bad_ids, result)
-
-    def test_validate_plan_empty_plan(self):
-        plan = PlanFactory(template=self.template)
-        plan.data = None
-        self.template.list_unknown_questions = lambda x: set()
-        result = self.template.validate_plan(plan, recalculate=False)
-        expected = False
-        self.assertEqual(result, expected)
-
-# TODO: replace with test that verifies that answers for deleted questions get
-# deleted on save/verify
-#     def test_validate_plan_wrong_pks_in_plan(self):
-#         plan = PlanFactory(template=self.template)
-#         plan.data = None
-#         self.template.list_unknown_questions = lambda x: set((56, 57))
-#         with self.assertLogs(logger='easydmp.dmpt.models', level='ERROR') as log:
-#             result = self.template.validate_plan(plan, recalculate=False)
-#             expected = False
-#             self.assertEqual(result, expected)
-#             self.assertIn('contains nonsense data:', log.output[0])
