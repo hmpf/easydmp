@@ -313,35 +313,11 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
             }
         return summary
 
-    def list_unknown_questions(self, plan):
-        "List out all question pks of a plan that are unknown in the template"
-        assert self == plan.template, "Mrong template for plan"
+    def list_unknown_questions(self, data):
+        "Find question pks of an answer set that are unknown in this template"
         question_pks = self.questions.values_list('pk', flat=True)
-        data_pks = set(int(k) for k in plan.data)
+        data_pks = set(int(k) for k in data)
         return data_pks.difference(question_pks)
-
-    def validate_plan(self, plan, recalculate=True):
-# TODO: clean away answers for questions that have been deleted
-#         wrong_pks = [str(pk) for pk in self.list_unknown_questions(plan)]
-#         if wrong_pks:
-#             error = 'The plan {} contains nonsense data: template has no questions for: {}'
-#             planstr = '{} ({}), template {} ({})'.format(plan, plan.pk, self, self.pk)
-#             LOG.error(error.format(planstr, ' '.join(wrong_pks)))
-#             assert False, 'here'
-#             return False
-        if not plan.data:
-            error = 'The plan {} ({}) has no data: invalid'
-            LOG.error(error.format(plan, plan.pk))
-            return False
-        if recalculate:
-            for section in self.sections.all():
-                valids, invalids = section.find_validity_of_questions(plan.data)
-                section.set_validity_of_questions(plan, valids, invalids)
-            valids, invalids = self.find_validity_of_sections(plan.data)
-            self.set_validity_of_sections(plan, valids, invalids)
-        if plan.section_validity.filter(valid=True).count() == plan.template.sections.count():
-            return True
-        return False
 
     def find_validity_of_sections(self, data):
         valids = set(self.sections.filter(questions__optional=True).values_list('pk', flat=True))
@@ -355,10 +331,6 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
             else:
                 invalids.add(section.pk)
         return (valids, invalids)
-
-    def set_validity_of_sections(self, plan, valids, invalids):
-        plan.set_sections_as_valid(*valids)
-        plan.set_sections_as_invalid(*invalids)
 
     def validate_data(self, data):
         assert False, data
@@ -735,10 +707,6 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             else:
                 invalids.add(question.pk)
         return (valids, invalids)
-
-    def set_validity_of_questions(self, plan, valids, invalids):
-        plan.set_questions_as_valid(*valids)
-        plan.set_questions_as_invalid(*invalids)
 
     def validate_data(self, data):
         if not data:

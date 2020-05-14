@@ -143,6 +143,7 @@ class PlanQuerySet(models.QuerySet):
 
 
 class SectionValidity(ClonableModel):
+    # TODO: replace with AnswerSet
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='section_validity')
     section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='+')
     valid = models.BooleanField()
@@ -166,6 +167,7 @@ class SectionValidity(ClonableModel):
 
 
 class QuestionValidity(ClonableModel):
+    # TODO: replace with Answer, pointing to AnswerSet, not Plan directly
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='question_validity')
     question = models.ForeignKey('dmpt.Question', models.CASCADE, related_name='+')
     valid = models.BooleanField()
@@ -235,6 +237,9 @@ class Plan(DeletionMixin, ClonableModel):
     def logprint(self):
         return 'Plan #{}: {}'.format(self.pk, self.title)
 
+    # Access
+    # TODO: Replace with django-guardian?
+
     def may_edit(self, user):
         if not user.is_authenticated:
             return False
@@ -248,9 +253,6 @@ class Plan(DeletionMixin, ClonableModel):
         if self.accesses.filter(user=user):
             return True
         return False
-
-    def get_first_question(self):
-        return self.template.first_question
 
     def get_viewers(self):
         User = get_user_model()
@@ -275,55 +277,10 @@ class Plan(DeletionMixin, ClonableModel):
     def set_adder_as_editor(self):
         self.add_user_to_editors(self.added_by)
 
-    def create_section_validities(self):
-        svs = []
-        for section in self.template.sections.all():
-            svs.append(SectionValidity(plan=self, section=section, valid=False))
-        SectionValidity.objects.bulk_create(svs)
-
-    def set_sections_as_valid(self, *section_pks):
-        qs = SectionValidity.objects.filter(plan=self, section_id__in=section_pks)
-        qs.update(valid=True)
-
-    def set_sections_as_invalid(self, *section_pks):
-        qs = SectionValidity.objects.filter(plan=self, section_id__in=section_pks)
-        qs.update(valid=False)
-
-    def create_question_validities(self):
-        qvs = []
-        sections = self.template.sections.all()
-        for section in sections:
-            for question in section.questions.all():
-                qvs.append(QuestionValidity(plan=self, question=question, valid=False))
-        QuestionValidity.objects.bulk_create(qvs)
-
-    def set_questions_as_valid(self, *question_pks):
-        qs = QuestionValidity.objects.filter(plan=self, question_id__in=question_pks)
-        qs.update(valid=True)
-
-    def set_questions_as_invalid(self, *question_pks):
-        qs = QuestionValidity.objects.filter(plan=self, question_id__in=question_pks)
-        qs.update(valid=False)
-
-    def validate(self, user, recalculate=False, commit=True, timestamp=None):
-        timestamp = timestamp if timestamp else tznow()
-        valid = self.template.validate_plan(self, recalculate)
-        self.valid = valid
-        self.last_validated = timestamp
-        if commit:
-            validity = {True: 'valid', False: 'invalid'}
-            template = '{timestamp} {actor} validated {target}: {extra[validity]}'
-            log_event(user, 'validate', target=self, timestamp=timestamp,
-                      extra={'validity': validity[valid]}, template=template)
-            self.save()
-
-    def copy_validations_from(self, oldplan):
-        for sv in oldplan.section_validity.all():
-            sv.clone(self)
-        for qv in oldplan.question_validity.all():
-            qv.clone(self)
+    # Saving, status changes
 
     def copy_users_from(self, oldplan):
+        # TODO: needs updating if switching to django-guardian
         for pa in oldplan.accesses.all():
             pa.clone(self)
 
@@ -552,6 +509,114 @@ class Plan(DeletionMixin, ClonableModel):
         if not wait_to_save:
             self.save()
 
+    @transaction.atomic
+    def publish(self, user, timestamp=None):
+        if self.valid:
+            timestamp = timestamp if timestamp else tznow()
+            if not self.locked:
+                self.lock(user, timestamp, True)
+            self.generated_html = self.generate_html()
+            self.published = timestamp
+            self.published_by = user
+            self.save()
+            template = '{timestamp} {actor} published {target}'
+            log_event(user, 'publish', target=self, timestamp=timestamp,
+                      template=template)
+
+    # Template traversal
+
+    def get_first_question(self):
+        return self.template.first_question
+
+    # Validation
+
+    def create_section_validities(self):
+        # TODO: To be changed to create_answersets
+        svs = []
+        for section in self.template.sections.all():
+            svs.append(SectionValidity(plan=self, section=section, valid=False))
+        SectionValidity.objects.bulk_create(svs)
+
+    def create_question_validities(self):
+        # TODO: Use method on AnswerSet instead
+        qvs = []
+        sections = self.template.sections.all()
+        for section in sections:
+            for question in section.questions.all():
+                qvs.append(QuestionValidity(plan=self, question=question, valid=False))
+        QuestionValidity.objects.bulk_create(qvs)
+
+    def set_validity_of_sections(self, valids, invalids):
+        # TODO: will work on answersets instead
+        self._set_sections_as_valid(*valids)
+        self._set_sections_as_invalid(*invalids)
+
+    def _set_sections_as_valid(self, *section_pks):
+        # TODO: will work on answersets instead
+        qs = self.section_validity.filter(section_id__in=section_pks)
+        qs.update(valid=True)
+
+    def _set_sections_as_invalid(self, *section_pks):
+        # TODO: will work on answersets instead
+        qs = self.section_validity.filter(section_id__in=section_pks)
+        qs.update(valid=False)
+
+    def set_questions_as_valid(self, *question_pks):
+        # TODO: Maybe turn into function?
+        qs = QuestionValidity.objects.filter(plan=self, question_id__in=question_pks)
+        qs.update(valid=True)
+
+    def set_questions_as_invalid(self, *question_pks):
+        # TODO: Maybe turn into function?
+        qs = QuestionValidity.objects.filter(plan=self, question_id__in=question_pks)
+        qs.update(valid=False)
+
+    def copy_validations_from(self, oldplan):
+        # TODO: Use answersets instead of section_validities
+        for sv in oldplan.section_validity.all():
+            sv.clone(self)
+        for qv in oldplan.question_validities.all():
+            qv.clone(self)
+
+    def validate_data(self, recalculate=True):
+        wrong_pks = [str(pk) for pk in self.template.list_unknown_questions(self.data)]
+        if wrong_pks:
+            error = 'The self {} contains nonsense data: template has no questions for: {}'
+            selfstr = '{} ({}), template {} ({})'.format(self, self.pk, self.template, self.pk)
+            LOG.error(error.format(selfstr, ' '.join(wrong_pks)))
+            return False
+        if not self.data:
+            error = 'The self {} ({}) has no data: invalid'
+            LOG.error(error.format(self, self.pk))
+            return False
+        if recalculate:
+            for sv in self.section_validity.all():
+                valids, invalids = sv.section.find_validity_of_questions(self.data)
+                sv.set_validity_of_questions(valids, invalids)
+            valids, invalids = self.template.find_validity_of_sections(self.data)
+            self.set_validity_of_sections(valids, invalids)
+        if self.section_validity.filter(valid=True).count() == self.template.sections.count():
+            return True
+        return False
+
+    def validate(self, user, recalculate=False, commit=True, timestamp=None):
+        timestamp = timestamp if timestamp else tznow()
+        valid = self.validate_data(recalculate)
+        self.valid = valid
+        self.last_validated = timestamp
+        if commit:
+            validity = {True: 'valid', False: 'invalid'}
+            template = '{timestamp} {actor} validated {target}: {extra[validity]}'
+            log_event(user, 'validate', target=self, timestamp=timestamp,
+                      extra={'validity': validity[valid]}, template=template)
+            self.save()
+
+    # Summary/generated text
+
+    def generate_html(self):
+        context = self.get_context_for_generated_text()
+        return render_to_string(GENERATED_HTML_TEMPLATE, context)
+
     def get_summary(self, data=None):
         if not data:
             data = self.data.copy()
@@ -576,24 +641,6 @@ class Plan(DeletionMixin, ClonableModel):
             'plan': self,
             'template': self.template,
         }
-
-    def generate_html(self):
-        context = self.get_context_for_generated_text()
-        return render_to_string(GENERATED_HTML_TEMPLATE, context)
-
-    @transaction.atomic
-    def publish(self, user, timestamp=None):
-        if self.valid:
-            timestamp = timestamp if timestamp else tznow()
-            if not self.locked:
-                self.lock(user, timestamp, True)
-            self.generated_html = self.generate_html()
-            self.published = timestamp
-            self.published_by = user
-            self.save()
-            template = '{timestamp} {actor} published {target}'
-            log_event(user, 'publish', target=self, timestamp=timestamp,
-                      template=template)
 
 
 class PlanAccess(ClonableModel):
