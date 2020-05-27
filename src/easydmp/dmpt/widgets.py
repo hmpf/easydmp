@@ -1,5 +1,5 @@
 from django import forms
-from django.forms.widgets import MultiWidget
+from django.forms.widgets import MultiWidget, DateInput
 
 from django_select2.forms import Select2Widget
 from django_select2.forms import Select2MultipleWidget
@@ -10,6 +10,7 @@ __all__ = [
     'Select2MultipleWidget',
 
     # simple
+    'DMPTDateInput',
     'DMPTRadioSelect',
 
     # complex
@@ -23,10 +24,14 @@ __all__ = [
 
 # Overridden standard widgets
 
+
+class DMPTDateInput(DateInput):
+    input_type = 'date'
+
+
 class DMPTRadioSelect(forms.RadioSelect):
     template_name = 'widgets/radio.html'
     option_template_name = 'widgets/radio_option.html'
-
 
 
 # Multiwidgets

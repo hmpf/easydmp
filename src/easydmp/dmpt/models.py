@@ -54,6 +54,7 @@ INPUT_TYPES = (
     'reason',
     'shortfreetext',
     'positiveinteger',
+    'date',
     'externalchoice',
     'extchoicenotlisted',
     'externalmultichoiceonetext',
@@ -1511,6 +1512,20 @@ class PositiveIntegerQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
         super().save(*args, **kwargs)
 
 
+class DateQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
+    """A non-branch-capable question answerable with an iso date
+
+    Stored format: "YYYY-mm-dd"
+    """
+
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        self.input_type = 'date'
+        super().save(*args, **kwargs)
+
+
 class EEStoreMixin:
 
     def is_valid(self):
@@ -1902,6 +1917,7 @@ INPUT_TYPE_MAP = {
     'reason': ReasonQuestion,
     'shortfreetext': ShortFreetextQuestion,
     'positiveinteger': PositiveIntegerQuestion,
+    'date': DateQuestion,
     'externalchoice': ExternalChoiceQuestion,
     'extchoicenotlisted': ExternalChoiceNotListedQuestion,
     'externalmultichoiceonetext': ExternalMultipleChoiceOneTextQuestion,

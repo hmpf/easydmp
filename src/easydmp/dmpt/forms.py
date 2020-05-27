@@ -17,6 +17,7 @@ from .fields import NamedURLField
 from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
 from .fields import DMPTypedReasonField
+from .widgets import DMPTDateInput
 from .widgets import Select2Widget
 from .widgets import Select2MultipleWidget
 
@@ -287,6 +288,19 @@ class PositiveIntegerForm(AbstractNodeForm):
         return attrs
 
 
+class DateForm(AbstractNodeForm):
+    json_type = 'string'
+
+    def _add_choice_field(self):
+        self.fields['choice'] = forms.DateField(
+            label=self.label,
+            help_text=self.help_text,
+            required=not self.question.optional,
+            widget=DMPTDateInput,
+        )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
+
+
 class ExternalChoiceForm(AbstractNodeForm):
     json_type = 'string'
 
@@ -527,6 +541,7 @@ INPUT_TYPE_TO_FORMS = {
     'reason': ReasonForm,
     'shortfreetext' : ShortFreetextForm,
     'positiveinteger': PositiveIntegerForm,
+    'date': DateForm,
     'externalchoice': ExternalChoiceForm,
     'extchoicenotlisted': ExternalChoiceNotListedForm,
     'externalmultichoiceonetext': ExternalMultipleChoiceOneTextForm,
