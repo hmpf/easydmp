@@ -17,6 +17,7 @@ from .fields import NamedURLField
 from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
 from .fields import DMPTypedReasonField
+from .fields import RDACostField
 from .widgets import DMPTDateInput
 from .widgets import Select2Widget
 from .widgets import Select2MultipleWidget
@@ -533,6 +534,53 @@ MultiDMPTypedReasonOneTextFormSet = forms.formset_factory(
 )
 
 
+class RDACostFormSetForm(forms.Form):
+    # Low magic form to be used in a formset
+    #
+    # The formset has the node-magic
+    choice = RDACostField(label='')
+    choice.widget.attrs.update({'class': 'question-multirdacostonetext'})
+
+
+class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
+
+    @classmethod
+    def generate_choice(cls, choice):
+        return {
+            'currency_code': choice['currency_code'],
+            'description': choice['description'],
+            'title': choice['title'],
+            'value': choice['value'],
+        }
+
+    def serialize_subform(self):
+        return {
+            'properties': {
+                'currency_code': {
+                    'type': 'string',
+                },
+                'description': {
+                    'type': 'string',
+                },
+                'title': {
+                    'type': 'string',
+                },
+                'value': {
+                    'type': 'number',
+                },
+            },
+            'required': ['title'],
+        }
+
+
+MultiRDACostOneTextFormSet = forms.formset_factory(
+    RDACostFormSetForm,
+    min_num=1,
+    formset=AbstractMultiRDACostOneTextFormSet,
+    can_delete=True,
+)
+
+
 INPUT_TYPE_TO_FORMS = {
     'bool': BooleanForm,
     'choice': ChoiceForm,
@@ -549,6 +597,7 @@ INPUT_TYPE_TO_FORMS = {
     'namedurl': NamedURLForm,
     'multinamedurlonetext': MultiNamedURLOneTextFormSet,
     'multidmptypedreasononetext': MultiDMPTypedReasonOneTextFormSet,
+    'multirdacostonetext': MultiRDACostOneTextFormSet,
 }
 
 

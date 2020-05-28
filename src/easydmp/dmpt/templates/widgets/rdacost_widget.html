@@ -1,0 +1,13 @@
+<div class="question-rdacost">
+{% with widget.subwidgets.2 as widget %}
+<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>Title</label>
+{% include widget.template_name %}{% endwith %}<br />
+{% with widget.subwidgets.1 as widget %}
+{% include widget.template_name %}{% endwith %}<br />
+{% with widget.subwidgets.0 as widget %}
+<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>Currency</label>
+{% include widget.template_name %}{% endwith %}
+{% with widget.subwidgets.3 as widget %}
+<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>Value</label>
+{% include widget.template_name %}{% endwith %}<br />
+</div>
