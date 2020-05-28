@@ -480,7 +480,7 @@ class DMPTypedReasonFormSetForm(forms.Form):
     #
     # The formset has the node-magic
     choice = DMPTypedReasonField(label='')
-    choice.widget.attrs.update({'class': 'question-multinamedurlonetext'})
+    choice.widget.attrs.update({'class': 'question-multidmptypedreasononetext'})
 
 
 class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
