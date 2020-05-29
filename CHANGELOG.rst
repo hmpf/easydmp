@@ -11,6 +11,13 @@ Unreleased
 
 * Comments for plans.
 
+0.24.0
+------
+
+* Two new question types: date and multirdacostonetext, developed during the
+  May 2020 virtual RDA hackathon
+* Sundry fixes and dependency updates
+
 0.23.2
 ------
 

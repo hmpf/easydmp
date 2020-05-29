@@ -27,12 +27,9 @@ sys.path.insert(0, os.path.abspath('../src'))
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-try:
-    import easydmp
-    release = easydmp.__version__
-    del easydmp
-except ImportError:
-    release = '0.23.2'
+import easydmp
+release = easydmp.__version__
+del easydmp
 
 # The short X.Y version.
 version = '.'.join(release.split('.', 2)[:2])
