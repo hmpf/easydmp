@@ -89,6 +89,14 @@ header .navbar {
   font-weight: 600;
 }
 
+.formset .controls {
+    margin-top: 2em;
+}
+
+.formset .controls:last-child {
+    margin-bottom: 1em;
+}
+
 /*.username should look like a link if in the header */
 .navbar-default .navbar-nav > li .username  {
   font-family: Arial, sans-serif;
