@@ -1,5 +1,5 @@
 from django import forms
-from django.forms.widgets import MultiWidget
+from django.forms.widgets import MultiWidget, DateInput
 
 from django_select2.forms import Select2Widget
 from django_select2.forms import Select2MultipleWidget
@@ -9,24 +9,30 @@ __all__ = [
     'Select2Widget',
     'Select2MultipleWidget',
 
-    # simple
+    # simple: overrides default widgets
+    'DMPTDateInput',
     'DMPTRadioSelect',
 
-    # complex
+    # complex: form in a field
     'DateRangeWidget',
     'NamedURLWidget',
     'SelectNotListed',
     'SelectMultipleNotListed',
     'DMPTypedReasonWidget',
+    'RDACostWidget',
 ]
 
 
 # Overridden standard widgets
 
+
+class DMPTDateInput(DateInput):
+    input_type = 'date'
+
+
 class DMPTRadioSelect(forms.RadioSelect):
     template_name = 'widgets/radio.html'
     option_template_name = 'widgets/radio_option.html'
-
 
 
 # Multiwidgets
@@ -132,3 +138,29 @@ class DMPTypedReasonWidget(forms.MultiWidget):
         if value:
             return value['type'], value['reason'], value['access_url']
         return (None, None, None)
+
+
+class RDACostWidget(forms.MultiWidget):
+    template_name = 'widgets/rdacost_widget.html'
+
+    def __init__(self, attrs=None, *args, **kwargs):
+        if attrs is None:
+            attrs = {}
+        attrs.pop('placeholder', None)
+        currency_code_attrs = dict(placeholder='Currency code', **attrs)
+        description_attrs = dict(placeholder='Description', **attrs)
+        title_attrs = dict(placeholder='Title', **attrs)
+        value_attrs = dict(placeholder='Value', **attrs)
+        widgets = (
+            forms.TextInput(attrs=currency_code_attrs),
+            forms.Textarea(attrs=description_attrs),
+            forms.TextInput(attrs=title_attrs),
+            forms.NumberInput(attrs=value_attrs),
+        )
+        self.widgets = widgets
+        super().__init__(widgets, attrs)
+
+    def decompress(self, value):
+        if value:
+            return value['currency_code'], value['description'], value['title'], value['value']
+        return (None, None, None, None)

@@ -17,6 +17,8 @@ from .fields import NamedURLField
 from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
 from .fields import DMPTypedReasonField
+from .fields import RDACostField
+from .widgets import DMPTDateInput
 from .widgets import Select2Widget
 from .widgets import Select2MultipleWidget
 
@@ -287,6 +289,19 @@ class PositiveIntegerForm(AbstractNodeForm):
         return attrs
 
 
+class DateForm(AbstractNodeForm):
+    json_type = 'string'
+
+    def _add_choice_field(self):
+        self.fields['choice'] = forms.DateField(
+            label=self.label,
+            help_text=self.help_text,
+            required=not self.question.optional,
+            widget=DMPTDateInput,
+        )
+        self.fields['choice'].widget.attrs.update({'class': self.input_class})
+
+
 class ExternalChoiceForm(AbstractNodeForm):
     json_type = 'string'
 
@@ -519,6 +534,53 @@ MultiDMPTypedReasonOneTextFormSet = forms.formset_factory(
 )
 
 
+class RDACostFormSetForm(forms.Form):
+    # Low magic form to be used in a formset
+    #
+    # The formset has the node-magic
+    choice = RDACostField(label='')
+    choice.widget.attrs.update({'class': 'question-multirdacostonetext'})
+
+
+class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
+
+    @classmethod
+    def generate_choice(cls, choice):
+        return {
+            'currency_code': choice['currency_code'],
+            'description': choice['description'],
+            'title': choice['title'],
+            'value': choice['value'],
+        }
+
+    def serialize_subform(self):
+        return {
+            'properties': {
+                'currency_code': {
+                    'type': 'string',
+                },
+                'description': {
+                    'type': 'string',
+                },
+                'title': {
+                    'type': 'string',
+                },
+                'value': {
+                    'type': 'number',
+                },
+            },
+            'required': ['title'],
+        }
+
+
+MultiRDACostOneTextFormSet = forms.formset_factory(
+    RDACostFormSetForm,
+    min_num=1,
+    formset=AbstractMultiRDACostOneTextFormSet,
+    can_delete=True,
+)
+
+
 INPUT_TYPE_TO_FORMS = {
     'bool': BooleanForm,
     'choice': ChoiceForm,
@@ -527,6 +589,7 @@ INPUT_TYPE_TO_FORMS = {
     'reason': ReasonForm,
     'shortfreetext' : ShortFreetextForm,
     'positiveinteger': PositiveIntegerForm,
+    'date': DateForm,
     'externalchoice': ExternalChoiceForm,
     'extchoicenotlisted': ExternalChoiceNotListedForm,
     'externalmultichoiceonetext': ExternalMultipleChoiceOneTextForm,
@@ -534,6 +597,7 @@ INPUT_TYPE_TO_FORMS = {
     'namedurl': NamedURLForm,
     'multinamedurlonetext': MultiNamedURLOneTextFormSet,
     'multidmptypedreasononetext': MultiDMPTypedReasonOneTextFormSet,
+    'multirdacostonetext': MultiRDACostOneTextFormSet,
 }
 
 

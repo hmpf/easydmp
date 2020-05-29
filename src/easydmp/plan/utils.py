@@ -80,10 +80,12 @@ class GenerateRDA10:
             }
         }
 
-    def _get_contributor(self, person, role='Unknown'):
+    def _get_contributor(self, person, roles=None):
+        if roles is None:
+            roles = ['Unknown']
         data = self._get_person_data(person, 'contributor_id')
         if data:
-            data['role'] = role
+            data['role'] = roles
         return data
 
     def _get_plan_metadata(self, id_name='id'):
@@ -159,7 +161,21 @@ class GenerateRDA10:
         return {}
 
     def get_cost(self):
-        return []
+        if not self.plan.data:
+            return {}
+        cost_question_ids = (self.plan.template.questions
+                            .filter(input_type='multirdacostonetext')
+                            .values_list('id', flat=True))
+        cost_list = []
+        for qid in cost_question_ids:
+            qid = str(qid)
+            # XXX: get the choice in a better way
+            costs = self.plan.data.get(str(qid), {}).get('choice', [])
+            # Hide unset fields
+            for cost in costs:
+                filtered_cost = {k: v for k, v in cost.items() if v}
+                cost_list.append(filtered_cost)
+        return {'cost': cost_list}
 
 
 # Deprecated. Remove after squashing plan migrations
