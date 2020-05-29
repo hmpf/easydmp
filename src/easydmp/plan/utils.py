@@ -80,10 +80,12 @@ class GenerateRDA10:
             }
         }
 
-    def _get_contributor(self, person, role='Unknown'):
+    def _get_contributor(self, person, roles=None):
+        if roles is None:
+            roles = ['Unknown']
         data = self._get_person_data(person, 'contributor_id')
         if data:
-            data['role'] = role
+            data['role'] = roles
         return data
 
     def _get_plan_metadata(self, id_name='id'):
