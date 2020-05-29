@@ -48,6 +48,7 @@ class PlanFilter(FilterSet):
             'modified': ['lt', 'gt', 'lte', 'gte'],
             'locked': ['lt', 'gt', 'lte', 'gte'],
             'published': ['lt', 'gt', 'lte', 'gte'],
+            'template': ['exact'],
         }
 
 
@@ -141,6 +142,7 @@ class HeavyPlanSerializer(LightPlanSerializer):
 
 class PlanViewSet(ReadOnlyModelViewSet):
     filter_class = PlanFilter
+    search_fields = ['=id', 'title', '=abbreviation']
     serializer_class = HeavyPlanSerializer
 
 # 
