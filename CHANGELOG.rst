@@ -11,6 +11,13 @@ Unreleased
 
 * Comments for plans.
 
+0.24.1
+------
+
+* Improve plan API: add search, improve filtering
+* Improve looks for formsets
+* Improve looks for sinle section templates
+
 0.24.0
 ------
 
