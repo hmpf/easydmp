@@ -609,6 +609,6 @@ def make_form(question, **kwargs):
     if form_type is None:
         assert False, 'Unknown input type: {}'.format(question.input_type)
     form = form_type(**kwargs)
-    if not question.optional and isinstance(form, forms.BaseFormSet):
-        form.validate_min = True
-    return form_type(**kwargs)
+    if isinstance(form, forms.BaseFormSet):
+        form.validate_min = not question.optional
+    return form
