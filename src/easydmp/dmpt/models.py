@@ -907,7 +907,7 @@ class ExplicitBranch(DeletionMixin, models.Model):
         next_question = next_question.get_instance() if next_question else None
         if pk:
             current = id_or_none(current)
-            next_question = id_or_none(next)
+            next_question = id_or_none(next_question)
         return Transition(category, current, condition, next_question)
 
     def to_transition(self, pk=False):
