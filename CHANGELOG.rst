@@ -11,6 +11,16 @@ Unreleased
 
 * Comments for plans.
 
+0.25.0
+------
+
+Last version using the old branching system
+
+* Remove upgrade-commands needed for the last important upgrade, going from
+  0.20.1 to 0.21. (Probably should have been removed in 0.22.)
+* Search for users in eventlog (admin)
+* Fix for a bug in Question formsets
+
 0.24.1
 ------
 
