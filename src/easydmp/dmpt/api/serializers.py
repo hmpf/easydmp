@@ -82,7 +82,6 @@ class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
             'optional',
             'optional_canned_text',
             'comment',
-            'node',
         ]
 
 
@@ -106,7 +105,6 @@ class HeavyQuestionSerializer(LightQuestionSerializer):
             'optional',
             'optional_canned_text',
             'comment',
-            'node',
             'answer_schema',
         ]
 
@@ -134,7 +132,6 @@ class CannedAnswerSerializer(serializers.HyperlinkedModelSerializer):
             'choice',
             'canned_text',
             'comment',
-            'edge',
         ]
 
 
