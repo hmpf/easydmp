@@ -14,6 +14,7 @@ from easydmp.dmpt.models import Template
 from easydmp.dmpt.models import Section
 from easydmp.dmpt.models import Question
 from easydmp.dmpt.models import CannedAnswer
+from easydmp.dmpt.models import ExplicitBranch
 
 
 class TemplateViewSet(ReadOnlyModelViewSet):
@@ -64,3 +65,11 @@ class CannedAnswerViewSet(ReadOnlyModelViewSet):
     serializer_class = CannedAnswerSerializer
     filter_fields = ['question', 'question__input_type', 'question__section',
                      'question__section__template', ]
+
+
+class ExplicitBranchViewSet(ReadOnlyModelViewSet):
+    queryset = ExplicitBranch.objects.select_related('current_question', 'next_question')
+    serializer_class = ExplicitBranchSerializer
+    filter_fields = ['current_question', 'next_question', 'condition',
+                     'category']
+    search_fields = ['current_question', 'next_question']
