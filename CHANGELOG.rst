@@ -6,10 +6,19 @@ This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.htm
 as of v0.10. Prior to v0.10, named tags per feature, named tag plus date per
 feature or commit hashes were used.
 
-Unreleased
-----------
+Planned
+-------
 
-* Comments for plans.
+* Optional sections
+* Repeated sections
+* Better support for exporting to RDA DMP Common Standard
+
+1.0.0
+-----
+
+First version using the new branching system
+
+See UPGRADING.rst!
 
 0.25.0
 ------
