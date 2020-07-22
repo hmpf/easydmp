@@ -1,7 +1,9 @@
 import factory
 
-from easydmp.dmpt.models import Template
 from easydmp.plan.models import Plan
+
+from tests.auth.factories import UserFactory
+from tests.dmpt.factories import TemplateFactory
 
 
 __all__ = [
@@ -14,5 +16,7 @@ class PlanFactory(factory.DjangoModelFactory):
     class Meta:
         model = Plan
 
-    template = factory.Iterator(Template.objects.all())
+    template = factory.SubFactory(TemplateFactory)
     title = factory.Faker('sentence', nb_words=6)
+    added_by = factory.SubFactory(UserFactory)
+    modified_by = factory.SubFactory(UserFactory)

@@ -25,6 +25,7 @@
   "is_staff": true,
   "is_active": true,
   "date_joined": "2018-09-25T11:03:27Z",
+  "full_name": "",
   "groups": [],
   "user_permissions": []
  }
@@ -42,6 +43,7 @@
   "is_staff": true,
   "is_active": true,
   "date_joined": "2018-09-26T10:19:05.564Z",
+  "full_name": "",
   "groups": [],
   "user_permissions": []
  }
@@ -59,6 +61,7 @@
   "is_staff": true,
   "is_active": true,
   "date_joined": "2018-09-27T09:14:00Z",
+  "full_name": "",
   "groups": [
    [
     "Template Designer"
@@ -549,6 +552,7 @@
   "choice": "Because of inflation",
   "canned_text": "The chicken crossed the road due to inflation.",
   "comment": "This is a comment to the canned answer \"Because of inflation\". This was added because for the 2016 dmp tool, the cannned text looked like \"Canned text COMMENT comment\" and some javascript picked out the text after \"COMMENT\" and displayed it in a popup when hovering above the choice.",
+  "transition": null,
   "edge": null
  }
 },
@@ -563,6 +567,7 @@
   "choice": "To get to the other side",
   "canned_text": "The chicken crossed the road in order to get to the other side.",
   "comment": "This is a comment to the canned answer \"To get to the other side\".  This was added because for the 2016 dmp tool, the cannned text looked like \"Canned text COMMENT comment\" and some javascript picked out the text after \"COMMENT\" and displayed it in a popup when hovering above the choice.",
+  "transition": null,
   "edge": null
  }
 },
@@ -577,6 +582,7 @@
   "choice": "What chicken?!",
   "canned_text": "",
   "comment": "This is a comment to the answer \"What chicken?!\". This was added because for the 2016 dmp tool, the cannned text looked like \"Canned text COMMENT comment\" and some javascript picked out the text after \"COMMENT\" and displayed it in a popup when hovering above the choice. This answer lacks a canned text, and falls back to just showing \"What chicken?!\" in the generated HTML.",
+  "transition": null,
   "edge": null
  }
 },
@@ -591,6 +597,7 @@
   "choice": "surprise",
   "canned_text": "",
   "comment": "",
+  "transition": null,
   "edge": null
  }
 },
@@ -605,6 +612,7 @@
   "choice": "fear",
   "canned_text": "",
   "comment": "",
+  "transition": null,
   "edge": null
  }
 },
@@ -619,6 +627,7 @@
   "choice": "ruthless efficiency",
   "canned_text": "",
   "comment": "",
+  "transition": null,
   "edge": null
  }
 },
@@ -633,6 +642,7 @@
   "choice": "an almost fanatical devotion to the Pope",
   "canned_text": "",
   "comment": "",
+  "transition": null,
   "edge": null
  }
 },
@@ -647,6 +657,7 @@
   "choice": "nice red uniforms",
   "canned_text": "",
   "comment": "",
+  "transition": null,
   "edge": null
  }
 },
@@ -661,6 +672,7 @@
   "choice": "Yes",
   "canned_text": "This was the final question of the section.",
   "comment": "",
+  "transition": null,
   "edge": null
  }
 },
@@ -675,6 +687,7 @@
   "choice": "No",
   "canned_text": "This was not the final question of the section.",
   "comment": "",
+  "transition": null,
   "edge": null
  }
 },
@@ -689,6 +702,7 @@
   "choice": "Yes",
   "canned_text": "",
   "comment": "",
+  "transition": null,
   "edge": null
  }
 },
@@ -703,6 +717,7 @@
   "choice": "No",
   "canned_text": "",
   "comment": "",
+  "transition": null,
   "edge": null
  }
 },
@@ -717,6 +732,7 @@
   "choice": "not-listed",
   "canned_text": "Nothing were chosen",
   "comment": "",
+  "transition": null,
   "edge": null
  }
 },

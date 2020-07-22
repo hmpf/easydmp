@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 from django.conf import settings
 from django.db import models
 from django.db import transaction
@@ -21,7 +19,6 @@ class EEStoreType(models.Model):
         db_table = 'easydmp_eestore_type'
         verbose_name = 'EEStore type'
 
-    @lru_cache(maxsize=64)
     def __str__(self):
         return self.name
 
@@ -38,7 +35,6 @@ class EEStoreSource(models.Model):
         db_table = 'easydmp_eestore_source'
         verbose_name = 'EEStore source'
 
-    @lru_cache(maxsize=4096)
     def __str__(self):
         return '{}:{}'.format(self.eestore_type.name, self.name)
 
@@ -132,7 +128,6 @@ class EEStoreCache(models.Model):
         db_table = 'easydmp_eestore_cache'
         verbose_name = 'EEStore cache'
 
-    @lru_cache(None)
     def __str__(self):
         return '{}: {}'.format(self.source, self.name)
 
@@ -176,6 +171,5 @@ class EEStoreMount(models.Model):
         by_type = EEStoreCache.objects.filter(eestore_type=self.eestore_type)
         return by_type
 
-    @lru_cache(maxsize=4096)
     def __str__(self):
         return '{}: {}'.format(self.eestore_type, self.question)

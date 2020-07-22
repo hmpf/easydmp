@@ -4,6 +4,7 @@ from easydmp.dmpt.models import Template
 from easydmp.dmpt.models import Section
 from easydmp.dmpt.models import Question
 from easydmp.dmpt.models import CannedAnswer
+from easydmp.dmpt.models import ExplicitBranch
 from easydmp.dmpt.forms import INPUT_TYPE_TO_FORMS
 
 
@@ -13,6 +14,7 @@ __all__ = [
     'LightQuestionSerializer',
     'HeavyQuestionSerializer',
     'CannedAnswerSerializer',
+    'ExplicitBranchSerializer',
 ]
 
 
@@ -80,7 +82,6 @@ class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
             'optional',
             'optional_canned_text',
             'comment',
-            'node',
         ]
 
 
@@ -104,7 +105,6 @@ class HeavyQuestionSerializer(LightQuestionSerializer):
             'optional',
             'optional_canned_text',
             'comment',
-            'node',
             'answer_schema',
         ]
 
@@ -132,5 +132,22 @@ class CannedAnswerSerializer(serializers.HyperlinkedModelSerializer):
             'choice',
             'canned_text',
             'comment',
-            'edge',
+        ]
+
+
+class ExplicitBranchSerializer(serializers.HyperlinkedModelSerializer):
+    url = serializers.HyperlinkedIdentityField(
+        view_name='v1:explicitbranch-detail',
+        lookup_field='pk'
+    )
+
+    class Meta:
+        model = ExplicitBranch
+        fields = [
+            'id',
+            'url',
+            'current_question',
+            'category',
+            'condition',
+            'next_question',
         ]

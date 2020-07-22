@@ -8,6 +8,7 @@ from easydmp.dmpt.models import CannedAnswer
 from easydmp.dmpt.models import ChoiceQuestion
 from easydmp.dmpt.models import INPUT_TYPES
 from easydmp.dmpt.models import Question
+from easydmp.dmpt.models import ReasonQuestion
 from easydmp.dmpt.models import Section
 from easydmp.dmpt.models import Template
 
@@ -19,6 +20,7 @@ __all__ = [
     'QuestionFactory',
     'BooleanQuestionFactory',
     'ChoiceQuestionFactory',
+    'ReasonQuestionFactory',
     'create_smallest_template',
 ]
 
@@ -54,10 +56,13 @@ class SectionFactory(factory.DjangoModelFactory):
 
 class AbstractQuestionFactory(factory.DjangoModelFactory):
 
-    position = factory.Sequence(lambda n: n)
-    input_type = factory.Iterator(INPUT_TYPES)
-    section = factory.Iterator(Section.objects.all())
+    class Meta:
+        abstract = True
+
     question = factory.Faker('sentence', nb_words=10)
+    position = factory.Sequence(lambda n: n)
+    section = factory.Iterator(Section.objects.all())
+    obligatory = True
     help_text = factory.Faker('paragraph')
 
     @classmethod
@@ -70,6 +75,9 @@ class QuestionFactory(AbstractQuestionFactory):
 
     class Meta:
         model = Question
+        django_get_or_create = ('question', 'position')
+
+    input_type = factory.Iterator(INPUT_TYPES)
 
 
 class CannedAnswerFactory(factory.DjangoModelFactory):
@@ -87,6 +95,7 @@ class BooleanQuestionFactory(AbstractQuestionFactory):
 
     class Meta:
         model = BooleanQuestion
+        django_get_or_create = ('question', 'position')
 
     input_type = 'bool'
 
@@ -103,6 +112,7 @@ class ChoiceQuestionFactory(AbstractQuestionFactory):
 
     class Meta:
         model = ChoiceQuestion
+        django_get_or_create = ('question', 'position')
 
     input_type = 'choice'
 
@@ -117,3 +127,12 @@ class ChoiceQuestionFactory(AbstractQuestionFactory):
         words = Faker().words(nb=count)
         for word in words:
             CannedAnswerFactory(question=obj, choice=word, **kwargs)
+
+
+class ReasonQuestionFactory(AbstractQuestionFactory):
+
+    class Meta:
+        model = ReasonQuestion
+        django_get_or_create = ('question', 'position')
+
+    input_type = 'reason'

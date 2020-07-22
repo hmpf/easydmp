@@ -150,7 +150,6 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         'position',
         'section_depth',
         'id',
-        'label',
         'title',
         'graph_pdf',
     )
@@ -166,7 +165,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
     ]
     fieldsets = (
         (None, {
-            'fields': ('template', 'label', 'title', 'position',
+            'fields': ('template', 'title', 'position',
                        'branching', 'introductory_text', 'comment'),
         }),
         ('Super section', {
@@ -226,13 +225,8 @@ class QuestionExplicitBranchInline(admin.StackedInline):
 
 class QuestionCannedAnswerInline(admin.StackedInline):
     model = CannedAnswer
-    raw_id_fields = ['transition', 'edge']
-
-    def get_readonly_fields(self, request, obj=None):
-        readonly = ('cloned_from', 'cloned_when')
-        if request.user.is_superuser:
-            return readonly
-        return readonly + ('edge',)
+    raw_id_fields = ['transition']
+    readonly_fields = ('cloned_from', 'cloned_when')
 
 
 class QuestionEEStoreMountInline(admin.StackedInline):
@@ -304,18 +298,15 @@ class QuestionSectionFilter(admin.SimpleListFilter):
 
 @admin.register(Question)
 class QuestionAdmin(ObjectPermissionModelAdmin):
-    raw_id_fields = ['node']
     list_display = (
         'position',
         'id',
-        'label',
         'question',
         'section',
         'input_type',
         'obligatory',
         'optional',
         'get_mount',
-        'has_node',
     )
     list_select_related = ['section']
     list_display_links = ('position', 'id', 'question')
@@ -325,7 +316,6 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
         'section__title',
     ]
     actions = [
-        'create_node',
         'toggle_obligatory',
         'increment_position',
         'decrement_position',
@@ -346,7 +336,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     save_on_top = True
     fieldsets = (
         (None, {
-            'fields': ('input_type', 'section', 'label', 'position',
+            'fields': ('input_type', 'section', 'position',
                        'question', 'obligatory', 'optional', 'help_text',
                        'framing_text', 'comment',),
         }),
@@ -355,7 +345,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
             'classes': ('collapse',),
         }),
         ('Advanced', {
-            'fields': ('node', 'cloned_from', 'cloned_when',),
+            'fields': ('cloned_from', 'cloned_when',),
             'classes': ('collapse',),
         }),
     )
@@ -365,7 +355,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
         readonly = ('cloned_from', 'cloned_when')
         if request.user.is_superuser:
             return readonly
-        return readonly + ('node', 'obligatory')
+        return readonly + ('obligatory',)
 
     def get_queryset(self, request):
         return get_questions_for_user(request.user)
@@ -378,23 +368,12 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
 
     # display fields
 
-    def has_node(self, obj):
-        return True if obj.node else False
-    has_node.short_description = 'Node'
-    has_node.boolean = True
-
     def get_mount(self, obj):
         return obj.eestore.eestore_type if obj.eestore else ''
     get_mount.short_description = 'EEStore'
     get_mount.admin_order_field = 'eestore'
 
     # actions
-
-    def create_node(self, request, queryset):
-        for q in queryset.all():
-            if not q.node:
-                q.create_node()
-    create_node.short_description = 'Create node'
 
     def toggle_obligatory(self, request, queryset):
         for q in queryset.all():
