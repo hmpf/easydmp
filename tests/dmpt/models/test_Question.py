@@ -11,8 +11,8 @@ from easydmp.dmpt.models import ExplicitBranch
 
 from tests.dmpt.factories import (TemplateFactory, QuestionFactory,
                                   SectionFactory, BooleanQuestionFactory,
-                                  ChoiceQuestionFactory, QuestionFactory,
-                                  CannedAnswerFactory, ReasonQuestionFactory)
+                                  ChoiceQuestionFactory, CannedAnswerFactory,
+                                  ReasonQuestionFactory)
 
 
 class CannedData(object):
@@ -252,7 +252,7 @@ class TestNextQuestionMethods(BranchingCannedData, test.TestCase):
         condition = qstart.get_condition(data)
         expected = 'Yes'
         self.assertEqual(condition, expected)
-        qnext = qstart._get_next_question_new(data)
+        qnext = qstart.get_next_question(data)
         self.assertEqual(qnext, None)
 
         # If qstart is "No", take the detour via implicit position
@@ -268,18 +268,18 @@ class TestNextQuestionMethods(BranchingCannedData, test.TestCase):
 
         # If qstart is "Right", go to qright via ExplicitBranch
         data = {str(qstart.pk): {'choice': 'Right'}}
-        qnext = qstart._get_next_question_new(data)
+        qnext = qstart.get_next_question(data)
         self.assertEqual(qnext, qright)
         # After that should be qend
-        qnext = qright._get_next_question_new(data)
+        qnext = qright.get_next_question(data)
         self.assertEqual(qnext, qend, "Right didn't go to End")
 
         # If qstart is "Left", go to qleft via position
         data = {str(qstart.pk): {'choice': 'Left'}}
-        qnext = qstart._get_next_question_new(data)
+        qnext = qstart.get_next_question(data)
         self.assertEqual(qnext, qleft)
         # After that should be qend
-        qnext = qleft._get_next_question_new(data)
+        qnext = qleft.get_next_question(data)
         self.assertEqual(qnext, qend, "Left didn't go to End")
 
 
