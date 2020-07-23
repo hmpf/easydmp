@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.fields import JSONField
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from django_filters.rest_framework.filterset import FilterSet
@@ -63,6 +64,7 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
         many=False,
         read_only=True,
     )
+    generated_html_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Plan
@@ -74,6 +76,7 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
             'abbreviation',
             'version',
             'template',
+            'generated_html_url',
             'valid',
             'added',
             'modified',
@@ -81,6 +84,10 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
             'locked',
             'published',
         ]
+
+    def get_generated_html_url(self, obj):
+        return reverse( 'generated_plan_html', kwargs={'plan': obj.id},
+                       request=self.context['request'])
 
 
 class HeavyPlanSerializer(LightPlanSerializer):
@@ -128,6 +135,7 @@ class HeavyPlanSerializer(LightPlanSerializer):
             'data',
             'previous_data',
             'generated_html',
+            'generated_html_url',
             'doi',
             'added',
             'added_by',
