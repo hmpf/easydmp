@@ -31,9 +31,12 @@ class TemplateSerializer(serializers.HyperlinkedModelSerializer):
             'url',
             'title',
             'abbreviation',
+            'description',
+            'more_info',
             'version',
             'created',
             'published',
+            'retired',
         ]
 
 
