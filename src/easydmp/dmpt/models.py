@@ -1147,6 +1147,8 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         choice = answer.get('choice', None)
         canned = self.get_instance().get_canned_answer(choice)
         answer['text'] = canned
+        question = str(self)
+        answer['question'] = question
         return answer
 
     def get_canned_answer(self, answer, frame=None, **kwargs):
