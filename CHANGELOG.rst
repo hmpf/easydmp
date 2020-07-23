@@ -13,6 +13,11 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.0.2
+-----
+
+* Bugfix of 1.0.1
+
 1.0.1
 -----
 
