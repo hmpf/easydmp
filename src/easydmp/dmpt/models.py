@@ -795,7 +795,6 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         dot.node(s_end_id, label='End', **s_kwargs)
         for question in (
                 self.questions
-                    .select_related('node')
                     .prefetch_related('canned_answers')
                     .order_by('position')
         ):
