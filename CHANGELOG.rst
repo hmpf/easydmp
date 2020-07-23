@@ -13,6 +13,11 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.0.1
+-----
+
+* First step of removing the old branching system: remove code, delete tables.
+
 1.0.0
 -----
 
