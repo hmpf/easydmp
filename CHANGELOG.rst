@@ -13,6 +13,17 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+Unreleased
+----------
+
+1.1.0
+-----
+
+* Add a way to show questions in the generated text, not just the answers and
+  notes. Toggled by a field on the template.
+* Make the template API up to date with newer template fields
+* Add the url to the genrated html to the plan API
+
 1.0.2
 -----
 
