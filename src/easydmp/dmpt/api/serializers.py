@@ -33,6 +33,7 @@ class TemplateSerializer(serializers.HyperlinkedModelSerializer):
             'abbreviation',
             'description',
             'more_info',
+            'reveal_questions',
             'version',
             'created',
             'published',

@@ -104,7 +104,8 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
     fieldsets = (
         (None, {
             'fields': ('title', 'abbreviation', 'version', 'description',
-            'more_info', 'domain_specific', 'published', 'retired'),
+                       'more_info', 'reveal_questions', 'domain_specific',
+                       'published', 'retired'),
         }),
         ('Advanced', {
             'fields': ('cloned_from', 'cloned_when',),

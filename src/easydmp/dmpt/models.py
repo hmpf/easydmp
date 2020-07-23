@@ -149,6 +149,10 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
     description = models.TextField(blank=True)
     more_info = models.URLField(blank=True)
     domain_specific = models.BooleanField(default=False)
+    reveal_questions = models.BooleanField(
+        default=False,
+        help_text='Should the questions be shown in the generated text?',
+    )
     version = models.PositiveIntegerField(default=1)
     created = models.DateTimeField(auto_now_add=True)
     published = models.DateTimeField(
