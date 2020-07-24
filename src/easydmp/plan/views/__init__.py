@@ -760,6 +760,7 @@ class AbstractGeneratedPlanView(DetailView):
         context = self.object.get_context_for_generated_text()
         context.update(**kwargs)
         context['logs'] = EventLog.objects.any(self.object)
+        context['reveal_questions'] = self.object.template.reveal_questions
         return super().get_context_data(**context)
 
     def get(self, request, *args, **kwargs):

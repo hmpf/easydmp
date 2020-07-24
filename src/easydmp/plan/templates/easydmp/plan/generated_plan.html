@@ -36,6 +36,7 @@
   {% for para in section.text %}
     {% if para.text or para.notes %}
     <div class="answer">
+        {% if reveal_questions %}<h3 class="question">{{ para.question }}</h3>{% endif %}
       <div class="canned">{{ para.text }}</div>{% if para.notes %}
       <div class="note">Note: {{ para.notes }}</div>{% endif %}
     </div>

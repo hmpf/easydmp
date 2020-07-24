@@ -4,7 +4,9 @@
 {{ section.section.introductory_text|wordwrap:66 }}{% endif %}
 {% for para in section.text %}{% if para.text or para.notes %}
 
-{{ para.text|wordwrap:66 }}{% if para.notes %}
+{% if reveal_questions %}{{ para.question|wordwrap:66 }}
+
+{% endif %}{{ para.text|wordwrap:66 }}{% if para.notes %}
 
 Note: {{ para.notes|wordwrap:66 }}{% endif %}
 {% endif %}{% endfor %}
