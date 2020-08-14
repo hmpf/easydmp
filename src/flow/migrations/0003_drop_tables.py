@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('flow', '0002_change_bool_edge_to_yesno'),
+        ('flow', '0001_squashed_0006_add_clonable_model_fields'),
         ('dmpt', '0006_remove_old_flow'),
     ]
 
