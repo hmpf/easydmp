@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 
-class PlanFactory(factory.DjangoModelFactory):
+class PlanFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Plan

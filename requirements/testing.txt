@@ -1,4 +1,4 @@
 tox
 coverage
-factory_boy
+factory-boy>=3.0,<4.0
 flake8

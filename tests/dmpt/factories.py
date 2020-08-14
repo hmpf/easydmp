@@ -1,6 +1,7 @@
 from django.utils.timezone import now as utcnow
 
 import factory
+import factory.django
 from faker import Faker
 
 from easydmp.dmpt.models import BooleanQuestion
@@ -34,7 +35,7 @@ def create_smallest_template(published=None):
     return t
 
 
-class TemplateFactory(factory.DjangoModelFactory):
+class TemplateFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Template
@@ -43,7 +44,7 @@ class TemplateFactory(factory.DjangoModelFactory):
     description = factory.Faker('sentence', nb_words=20)
 
 
-class SectionFactory(factory.DjangoModelFactory):
+class SectionFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Section
@@ -54,7 +55,7 @@ class SectionFactory(factory.DjangoModelFactory):
     introductory_text = factory.Faker('paragraph')
 
 
-class AbstractQuestionFactory(factory.DjangoModelFactory):
+class AbstractQuestionFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         abstract = True
@@ -80,7 +81,7 @@ class QuestionFactory(AbstractQuestionFactory):
     input_type = factory.Iterator(INPUT_TYPES)
 
 
-class CannedAnswerFactory(factory.DjangoModelFactory):
+class CannedAnswerFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = CannedAnswer

@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 
-class UserFactory(factory.DjangoModelFactory):
+class UserFactory(factory.django.DjangoModelFactory):
     usertype = 'default'
     username = factory.Faker('name')
     password = 'password'
