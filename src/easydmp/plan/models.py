@@ -384,8 +384,7 @@ class Plan(DeletionMixin, ClonableModel):
         # Collect visible questions
         show = set()
         while question != next_question:
-            question = question.get_next_question(self.data, in_section=True,
-                                                  allow_old=False)
+            question = question.get_next_question(self.data, in_section=True)
             if question is None:
                 # No more questions/last of section
                 break

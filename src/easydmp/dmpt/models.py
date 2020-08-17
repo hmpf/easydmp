@@ -1356,7 +1356,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         self.__LOG.debug('get_best_prev_question_in_last_section: last question')
         return None
 
-    def get_prev_question(self, answers=None, in_section=False, allow_old=True):
+    def get_prev_question(self, answers=None, in_section=False):
         """Get the best previous question, taking branching into account
 
         If there are no preceding questions in this section at all, return None
@@ -1440,7 +1440,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
 
         # This is one place python could have been served by REPEAT..UNTIL
         try:
-            next_question = start.get_next_question(answers, in_section=True, allow_old=False)
+            next_question = start.get_next_question(answers, in_section=True)
         except KeyError:
             cls.__LOG.debug('%s: found, last: #%i', log_prefix, start.id)
             return start
@@ -1459,7 +1459,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             cls.__LOG.debug('%s: try path %s', log_prefix, path)
             for q in path:
                 try:
-                    next_question = q.get_next_question(answers, in_section=True, allow_old=False)
+                    next_question = q.get_next_question(answers, in_section=True)
                     cls.__LOG.debug('%s: next: #%s', log_prefix, id_or_none(next_question))
                 except KeyError:
                     cls.__LOG.debug('%s: found: #%i:', log_prefix, id_or_none(q))

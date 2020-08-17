@@ -548,7 +548,7 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
             LOG.debug('NewQuestionView: Going to summary')
             return reverse('plan_detail', kwargs=kwargs)
         elif 'prev' in self.request.POST:
-            prev_question = question.get_prev_question(self.object.data, allow_old=False)
+            prev_question = question.get_prev_question(self.object.data)
             LOG.debug('NewQuestionView: Prev question found: "%s"', prev_question)
             kwargs['question'] = prev_question.pk
         elif 'next' in self.request.POST:
