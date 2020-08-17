@@ -16,6 +16,11 @@ Planned
 Unreleased
 ----------
 
+1.1.2
+-----
+
+* Improves on earlier bugfix.
+
 1.1.1
 -----
 
