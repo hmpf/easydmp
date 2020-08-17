@@ -1418,7 +1418,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             cls.__LOG.debug('_walk_forward: try path %s', path)
             for q in path:
                 try:
-                    next_question = q.get_next_question(answers, in_section=True, allow_old=False)
+                    next_question = q.get_next_question(answers, in_section=True)
                     cls.__LOG.debug('_walk_forward: next: #%i', id_or_none(next_question))
                 except KeyError:
                     cls.__LOG.debug('_walk_forward: question not answered')
