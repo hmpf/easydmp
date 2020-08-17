@@ -16,6 +16,11 @@ Planned
 Unreleased
 ----------
 
+1.1.1
+-----
+
+* Fixes a bug where the application crashes when navigating forward to next page.
+
 1.1.0
 -----
 
