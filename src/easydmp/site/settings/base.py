@@ -69,6 +69,7 @@ SITE_ID = 1 # For flatpages
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'easydmp.lib.middleware.MaintenanceModeMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
