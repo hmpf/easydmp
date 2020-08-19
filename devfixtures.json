@@ -257,8 +257,7 @@
   "comment": "This is a comment. It is in addition to the help text. Each choice in the form have their own help texts for this question, check the html code, the div with class \"answers\".",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -277,8 +276,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -297,8 +295,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -317,8 +314,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -337,8 +333,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -357,8 +352,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -377,8 +371,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -397,8 +390,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -417,8 +409,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -437,8 +428,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -457,8 +447,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -477,8 +466,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -497,8 +485,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -517,8 +504,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -537,8 +523,7 @@
   "comment": "",
   "obligatory": true,
   "optional": false,
-  "optional_canned_text": "",
-  "node": null
+  "optional_canned_text": ""
  }
 },
 {
@@ -552,8 +537,7 @@
   "choice": "Because of inflation",
   "canned_text": "The chicken crossed the road due to inflation.",
   "comment": "This is a comment to the canned answer \"Because of inflation\". This was added because for the 2016 dmp tool, the cannned text looked like \"Canned text COMMENT comment\" and some javascript picked out the text after \"COMMENT\" and displayed it in a popup when hovering above the choice.",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -567,8 +551,7 @@
   "choice": "To get to the other side",
   "canned_text": "The chicken crossed the road in order to get to the other side.",
   "comment": "This is a comment to the canned answer \"To get to the other side\".  This was added because for the 2016 dmp tool, the cannned text looked like \"Canned text COMMENT comment\" and some javascript picked out the text after \"COMMENT\" and displayed it in a popup when hovering above the choice.",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -582,8 +565,7 @@
   "choice": "What chicken?!",
   "canned_text": "",
   "comment": "This is a comment to the answer \"What chicken?!\". This was added because for the 2016 dmp tool, the cannned text looked like \"Canned text COMMENT comment\" and some javascript picked out the text after \"COMMENT\" and displayed it in a popup when hovering above the choice. This answer lacks a canned text, and falls back to just showing \"What chicken?!\" in the generated HTML.",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -597,8 +579,7 @@
   "choice": "surprise",
   "canned_text": "",
   "comment": "",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -612,8 +593,7 @@
   "choice": "fear",
   "canned_text": "",
   "comment": "",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -627,8 +607,7 @@
   "choice": "ruthless efficiency",
   "canned_text": "",
   "comment": "",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -642,8 +621,7 @@
   "choice": "an almost fanatical devotion to the Pope",
   "canned_text": "",
   "comment": "",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -657,8 +635,7 @@
   "choice": "nice red uniforms",
   "canned_text": "",
   "comment": "",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -672,8 +649,7 @@
   "choice": "Yes",
   "canned_text": "This was the final question of the section.",
   "comment": "",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -687,8 +663,7 @@
   "choice": "No",
   "canned_text": "This was not the final question of the section.",
   "comment": "",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -702,8 +677,7 @@
   "choice": "Yes",
   "canned_text": "",
   "comment": "",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -717,8 +691,7 @@
   "choice": "No",
   "canned_text": "",
   "comment": "",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
@@ -732,8 +705,7 @@
   "choice": "not-listed",
   "canned_text": "Nothing were chosen",
   "comment": "",
-  "transition": null,
-  "edge": null
+  "transition": null
  }
 },
 {
