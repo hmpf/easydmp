@@ -584,16 +584,14 @@ MultiRDACostOneTextFormSet = forms.formset_factory(
 
 
 class StorageForecastForm(forms.Form):
-
-    def __init__(self, year=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if year:
-            year_field = self._meta.fields.get('year')
-            year_field = year
-
     """
     A row in the "matrix" for a 5 year storage forecast
     """
+
+    def __init__(self, year=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['year'].initial = year
+
     year = forms.CharField(disabled=True, max_length=4, required=True)
     storage_estimate = forms.IntegerField(label='', required=True)
     backup_percentage = forms.ChoiceField(
@@ -605,6 +603,9 @@ class StorageForecastForm(forms.Form):
 
 
 class StorageForecastBaseFormSet(BaseFormSet):
+    """
+    A table of 5 year forecast for storage
+    """
 
     def get_form_kwargs(self, form_index):
         form_kwargs = super().get_form_kwargs(form_index)
