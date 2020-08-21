@@ -588,7 +588,7 @@ class StorageForecastForm(forms.Form):
     A row in the "matrix" for a 5 year storage forecast
     """
 
-    def __init__(self, year=None, *args, **kwargs):
+    def __init__(self, year=None, question=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['year'].initial = year
 
@@ -602,7 +602,7 @@ class StorageForecastForm(forms.Form):
         )
 
 
-class StorageForecastBaseFormSet(BaseFormSet):
+class StorageForecastBaseFormSet(AbstractNodeFormSet):
     """
     A table of 5 year forecast for storage
     """
@@ -610,7 +610,7 @@ class StorageForecastBaseFormSet(BaseFormSet):
     def get_form_kwargs(self, form_index):
         form_kwargs = super().get_form_kwargs(form_index)
         if form_index is not None:
-            form_kwargs['year'] = str(datetime.datetime.now().year + 1 + form_index)
+            form_kwargs['year'] = str(datetime.now().year + 1 + form_index)
         return form_kwargs
 
 
