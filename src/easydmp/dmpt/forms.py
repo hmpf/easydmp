@@ -1,11 +1,12 @@
 from collections import OrderedDict
 from copy import deepcopy
-from datetime import date
+from datetime import date, datetime
 
 from django import forms
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
+from django.forms import BaseFormSet
 
 from easydmp.lib.forms import FORM_CLASS
 from easydmp.eestore.models import EEStoreCache
@@ -579,6 +580,44 @@ MultiRDACostOneTextFormSet = forms.formset_factory(
     min_num=1,
     formset=AbstractMultiRDACostOneTextFormSet,
     can_delete=True,
+)
+
+
+class StorageForecastForm(forms.Form):
+
+    def __init__(self, year=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if year:
+            year_field = self._meta.fields.get('year')
+            year_field = year
+
+    """
+    A row in the "matrix" for a 5 year storage forecast
+    """
+    year = forms.CharField(disabled=True, max_length=4, required=True)
+    storage_estimate = forms.IntegerField(label='', required=True)
+    backup_percentage = forms.ChoiceField(
+            label='',
+            choices=[(1, 'Up to 25%'), (2, 'Up to 50%'), (3, 'Up to 75%'), (4, 'Up to 100%')],
+            widget=forms.RadioSelect,
+            required=True
+        )
+
+
+class StorageForecastBaseFormSet(BaseFormSet):
+
+    def get_form_kwargs(self, form_index):
+        form_kwargs = super().get_form_kwargs(form_index)
+        if form_index is not None:
+            form_kwargs['year'] = str(datetime.datetime.now().year + 1 + form_index)
+        return form_kwargs
+
+
+StorageForecastFormSet = forms.formset_factory(
+    form=StorageForecastForm,
+    formset=StorageForecastBaseFormSet,
+    min_num=5,
+    max_num=5,
 )
 
 
