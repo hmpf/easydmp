@@ -639,6 +639,7 @@ INPUT_TYPE_TO_FORMS = {
     'multinamedurlonetext': MultiNamedURLOneTextFormSet,
     'multidmptypedreasononetext': MultiDMPTypedReasonOneTextFormSet,
     'multirdacostonetext': MultiRDACostOneTextFormSet,
+    'storageforecast': StorageForecastFormSet
 }
 
 

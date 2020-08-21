@@ -59,6 +59,7 @@ INPUT_TYPES = (
     'multinamedurlonetext',
     'multidmptypedreasononetext',
     'multirdacostonetext',
+    'storageforecast'
 )
 CONDITION_FIELD_LENGTH = 255
 
