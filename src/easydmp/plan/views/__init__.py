@@ -762,6 +762,7 @@ class AbstractGeneratedPlanView(DetailView):
         context['logs'] = EventLog.objects.any(self.object)
         context['reveal_questions'] = self.object.template.reveal_questions
         context['editors'] = ', '.join([str(ed) for ed in self.get_editors()])
+        context['last_validated_ok'] = self.object.last_validated if self.object.valid else '-'
         return super().get_context_data(**context)
 
     def get(self, request, *args, **kwargs):
