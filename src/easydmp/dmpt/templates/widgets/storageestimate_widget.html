@@ -1,0 +1,19 @@
+<div>
+{% with widget.subwidgets.0 as widget %}
+<input type="{{ widget.type }}" name="{{ widget.name }}" value="{{ widget.attrs.year }}" {% include "django/forms/widgets/attrs.html" %}>
+{% endwith %}
+
+{% with widget.subwidgets.1 as widget %}
+<label><input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %}
+{% include "django/forms/widgets/attrs.html" %}> TiB</label>
+{% endwith %}
+
+{% with widget.subwidgets.2 as widget %}
+<select name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>{% for group_name, group_choices, group_index in widget.optgroups %}{% if group_name %}
+  <optgroup label="{{ group_name }}">{% endif %}{% for option in group_choices %}
+  {% include option.template_name with widget=option %}{% endfor %}{% if group_name %}
+  </optgroup>{% endif %}{% endfor %}
+</select>
+{% endwith %}
+
+</div>

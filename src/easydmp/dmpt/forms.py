@@ -19,6 +19,7 @@ from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
 from .fields import DMPTypedReasonField
 from .fields import RDACostField
+from .fields import StorageForecastField
 from .widgets import DMPTDateInput
 from .widgets import Select2Widget
 from .widgets import Select2MultipleWidget
@@ -601,6 +602,50 @@ class StorageForecastForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields['year'].initial = year
 
+class StorageForecastFormSetForm(forms.Form):
+    choice = StorageForecastField(label='')
+    choice.widget.attrs.update({'class': 'question-storageforecast'})
+
+    def __init__(self, year, *args, **kwargs):
+        self.year = year
+        super().__init__(*args, **kwargs)
+        self.fields['choice'].widget.attrs.update({'year': year})
+
+class AbstractStorageForecastFormSet(AbstractNodeFormSet):
+    next_year = int(datetime.now().year) + 1
+
+    @classmethod
+    def generate_choice(cls, choice):
+        return {
+            'year': choice['year'],
+            'storage_estimate': choice['storage_estimate'],
+            'backup_percentage': choice['backup_percentage'],
+        }
+
+    def serialize_subform(self):
+        return {
+            'properties': {
+                'year': {
+                    'type': 'string',
+                },
+                'storage_estimate': {
+                    'type': 'string',
+                },
+                'backup_percentage': {
+                    'type': 'string',
+                },
+            },
+            'required': ['year', 'storage_estimate', 'backup_percentage'],
+        }
+
+    def get_form_kwargs(self, form_index):
+        form_kwargs = super().get_form_kwargs(form_index)
+        index = 0
+        if form_index is not None:
+            index = form_index
+        form_kwargs['year'] = str(self.next_year + index)
+        return form_kwargs
+
 
 class StorageForecastBaseFormSet(AbstractNodeFormSet):
     """
@@ -609,13 +654,14 @@ class StorageForecastBaseFormSet(AbstractNodeFormSet):
 
     def get_form_kwargs(self, form_index):
         form_kwargs = super().get_form_kwargs(form_index)
+        assert False, form_kwargs
         form_kwargs['year'] = str(int(datetime.now().year) + 1 + form_index)
         return form_kwargs
 
 
 StorageForecastFormSet = forms.formset_factory(
-    form=StorageForecastForm,
-    formset=StorageForecastBaseFormSet,
+    form=StorageForecastFormSetForm,
+    formset=AbstractStorageForecastFormSet,
     min_num=5,
     max_num=5,
 )
