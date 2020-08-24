@@ -10,7 +10,9 @@
             {{ f.errors.choice }}
             </div>
             {% endif %}
+            {% if formset.can_delete %}
             <label> Delete: {{ f.DELETE }}</label>
+            {% endif %}
         </div>
     </div>
     {% endfor %}
