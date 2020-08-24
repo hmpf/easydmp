@@ -608,9 +608,8 @@ class StorageForecastBaseFormSet(AbstractNodeFormSet):
     """
 
     def get_form_kwargs(self, form_index):
-        form_kwargs = super().get_form_kwargs(form_index)
-        if form_index is not None:
-            form_kwargs['year'] = str(datetime.now().year + 1 + form_index)
+        form_kwargs = super().get_form_kwargs(form_index) or {}
+        form_kwargs['year'] = str(int(datetime.now().year) + 1 + form_index)
         return form_kwargs
 
 
