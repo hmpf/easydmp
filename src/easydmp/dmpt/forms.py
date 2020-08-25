@@ -416,6 +416,7 @@ class NamedURLForm(AbstractNodeForm):
 
 
 class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
+    can_add = True  # Whether adding extra rows is allowed
     json_type = 'array'
 
     def deserialize(self, initial):
