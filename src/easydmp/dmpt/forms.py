@@ -584,24 +584,6 @@ MultiRDACostOneTextFormSet = forms.formset_factory(
 )
 
 
-class StorageForecastForm(forms.Form):
-    """
-    A row in the "matrix" for a 5 year storage forecast
-    """
-
-    year = forms.CharField(disabled=True, max_length=4, required=True)
-    storage_estimate = forms.IntegerField(label='', required=True)
-    backup_percentage = forms.ChoiceField(
-            label='',
-            choices=[(1, 'Up to 25%'), (2, 'Up to 50%'), (3, 'Up to 75%'), (4, 'Up to 100%')],
-            widget=forms.RadioSelect,
-            required=True
-        )
-
-    def __init__(self, year=None, question=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['year'].initial = year
-
 class StorageForecastFormSetForm(forms.Form):
     choice = StorageForecastField(label='')
     choice.widget.attrs.update({'class': 'question-storageforecast'})
@@ -610,6 +592,7 @@ class StorageForecastFormSetForm(forms.Form):
         self.year = year
         super().__init__(*args, **kwargs)
         self.fields['choice'].widget.attrs.update({'year': year})
+
 
 class AbstractStorageForecastFormSet(AbstractNodeFormSet):
     next_year = int(datetime.now().year) + 1
@@ -644,18 +627,6 @@ class AbstractStorageForecastFormSet(AbstractNodeFormSet):
         if form_index is not None:
             index = form_index
         form_kwargs['year'] = str(self.next_year + index)
-        return form_kwargs
-
-
-class StorageForecastBaseFormSet(AbstractNodeFormSet):
-    """
-    A table of 5 year forecast for storage
-    """
-
-    def get_form_kwargs(self, form_index):
-        form_kwargs = super().get_form_kwargs(form_index)
-        assert False, form_kwargs
-        form_kwargs['year'] = str(int(datetime.now().year) + 1 + form_index)
         return form_kwargs
 
 
