@@ -5,6 +5,11 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
     full_name = models.CharField(max_length=200, blank=True, default='')
 
+    def __str__(self):
+        if self.full_name:
+            return '{} ({})'.format(self.full_name, self.get_username())
+        return self.get_username()
+
     @property
     def has_superpowers(self):
         return self.is_superuser and self.is_staff and self.is_active

@@ -19,7 +19,7 @@ from easydmp.dmpt.models import Question, Section, Template
 from easydmp.eventlog.models import EventLog
 from easydmp.eventlog.utils import log_event
 
-from ..models import AnswerHelper
+from ..models import AnswerHelper, PlanAccess
 from ..models import Plan
 from ..models import PlanComment
 from ..forms import ConfirmForm
@@ -761,6 +761,8 @@ class AbstractGeneratedPlanView(DetailView):
         context.update(**kwargs)
         context['logs'] = EventLog.objects.any(self.object)
         context['reveal_questions'] = self.object.template.reveal_questions
+        context['editors'] = ', '.join([str(ed) for ed in self.get_editors()])
+        context['last_validated_ok'] = self.object.last_validated if self.object.valid else '-'
         return super().get_context_data(**context)
 
     def get(self, request, *args, **kwargs):
@@ -769,6 +771,10 @@ class AbstractGeneratedPlanView(DetailView):
         log_event(request.user, 'access generated plan', target=self.object,
                   template=template)
         return next
+
+    def get_editors(self):
+        return [access.user for access in
+                PlanAccess.objects.filter(plan=self.object).filter(may_edit=True).all()]
 
 
 class GeneratedPlanHTMLView(AbstractGeneratedPlanView):
