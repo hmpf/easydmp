@@ -595,6 +595,7 @@ class StorageForecastFormSetForm(forms.Form):
 
 
 class AbstractStorageForecastFormSet(AbstractNodeFormSet):
+    can_add = False
     next_year = int(datetime.now().year) + 1
 
     @classmethod
