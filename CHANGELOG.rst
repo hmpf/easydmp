@@ -16,6 +16,13 @@ Planned
 Unreleased
 ----------
 
+1.1.3
+-----
+
+* Improve the generated html
+* Update devfixtures to not mention the old flow
+
+
 1.1.2
 -----
 
@@ -32,7 +39,7 @@ Unreleased
 * Add a way to show questions in the generated text, not just the answers and
   notes. Toggled by a field on the template.
 * Make the template API up to date with newer template fields
-* Add the url to the genrated html to the plan API
+* Add the url to the generated html to the plan API
 
 1.0.2
 -----
