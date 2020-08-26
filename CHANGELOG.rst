@@ -20,7 +20,6 @@ Unreleased
 -----
 
 * Adds a new question type for storage forecast
-* Plan exports now include all editors, including full names. Also includes the timestamp of the last OK check.
 
 
 1.1.3
