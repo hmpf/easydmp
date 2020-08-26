@@ -1,7 +1,7 @@
 {% with form as formset %}
 {{ formset.management_form }}
 <div class="formset">
-    {% for f in formset %}
+    {% for f in formset.forms %} {% comment %}Force the creation of all the forms early{% endcomment %}
     <div class="control-group">
         <div class="controls">
             {{ f.choice }}

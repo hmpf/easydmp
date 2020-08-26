@@ -15,6 +15,7 @@ __all__ = [
     'ChoiceNotListedField',
     'MultipleChoiceNotListedField',
     'DMPTypedReasonField',
+    'StorageForecastField',
 ]
 
 
@@ -215,4 +216,51 @@ class RDACostField(forms.MultiValueField):
             'description': value[1],
             'title': value[2],
             'value': value[3]
+        }
+
+
+class StorageForecastField(forms.MultiValueField):
+    error_messages = {
+        'required': "All fields are required.",
+        'incomplete': "All fields must be filled out",
+        'year_missing': '''"Year" has not been filled out''',
+        'storage_estimate_missing': '''"Storage Estimate" has not been filled out''',
+        'storage_estimate_negative': '''"Storage Estimate" cannot be less than 0''',
+        'backup_percentage_missing': '''"Backup Percentage" has not been filled out''',
+    }
+
+    def __init__(self, *args, **kwargs):
+        require_all_fields = kwargs.pop('require_all_fields', True)
+        kwargs['widget'] = StorageForecastWidget
+        fields = [
+            forms.CharField(min_length=4, max_length=4, disabled=True, required=True),
+            forms.IntegerField(label='', required=True),
+            forms.ChoiceField(
+                label='',
+                choices=StorageForecastWidget.BACKUP_ESTIMATE_CHOICES,
+                required=True,
+            )
+        ]
+        super().__init__(fields=fields, error_messages=self.error_messages,
+                         require_all_fields=require_all_fields, *args,
+                         **kwargs)
+
+
+    def compress(self, value):
+        errors = []
+        if not value[0]:
+            errors.append(ValidationError(self.error_messages['year_missing'], code='year_missing'))
+        if not str(value[1]):
+            errors.append(ValidationError(self.error_messages['storage_estimate_missing'], code='storage_estimate_missing'))
+        elif value[1] < 0:
+            errors.append(ValidationError(self.error_messages['storage_estimate_negative'], code='storage_estimate_negative'))
+        if not value[2]:
+            errors.append(ValidationError(self.error_messages['backup_percentage_missing'], code='backup_percentage_missing'))
+        if errors:
+            raise ValidationError(errors)
+
+        return {
+            'year': value[0],
+            'storage_estimate': value[1],
+            'backup_percentage': value[2],
         }

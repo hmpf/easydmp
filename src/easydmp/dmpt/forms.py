@@ -1,11 +1,12 @@
 from collections import OrderedDict
 from copy import deepcopy
-from datetime import date
+from datetime import date, datetime
 
 from django import forms
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
+from django.forms import BaseFormSet
 
 from easydmp.lib.forms import FORM_CLASS
 from easydmp.eestore.models import EEStoreCache
@@ -18,6 +19,7 @@ from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
 from .fields import DMPTypedReasonField
 from .fields import RDACostField
+from .fields import StorageForecastField
 from .widgets import DMPTDateInput
 from .widgets import Select2Widget
 from .widgets import Select2MultipleWidget
@@ -582,6 +584,61 @@ MultiRDACostOneTextFormSet = forms.formset_factory(
 )
 
 
+class StorageForecastFormSetForm(forms.Form):
+    choice = StorageForecastField(label='')
+    choice.widget.attrs.update({'class': 'question-storageforecast'})
+
+    def __init__(self, year, *args, **kwargs):
+        self.year = year
+        super().__init__(*args, **kwargs)
+        self.fields['choice'].widget.attrs.update({'year': year})
+
+
+class AbstractStorageForecastFormSet(AbstractNodeFormSet):
+    can_add = False
+    next_year = int(datetime.now().year) + 1
+
+    @classmethod
+    def generate_choice(cls, choice):
+        return {
+            'year': choice['year'],
+            'storage_estimate': choice['storage_estimate'],
+            'backup_percentage': choice['backup_percentage'],
+        }
+
+    def serialize_subform(self):
+        return {
+            'properties': {
+                'year': {
+                    'type': 'string',
+                },
+                'storage_estimate': {
+                    'type': 'string',
+                },
+                'backup_percentage': {
+                    'type': 'string',
+                },
+            },
+            'required': ['year', 'storage_estimate', 'backup_percentage'],
+        }
+
+    def get_form_kwargs(self, form_index):
+        form_kwargs = super().get_form_kwargs(form_index)
+        index = 0
+        if form_index is not None:
+            index = form_index
+        form_kwargs['year'] = str(self.next_year + index)
+        return form_kwargs
+
+
+StorageForecastFormSet = forms.formset_factory(
+    form=StorageForecastFormSetForm,
+    formset=AbstractStorageForecastFormSet,
+    min_num=5,
+    max_num=5,
+)
+
+
 INPUT_TYPE_TO_FORMS = {
     'bool': BooleanForm,
     'choice': ChoiceForm,
@@ -599,6 +656,7 @@ INPUT_TYPE_TO_FORMS = {
     'multinamedurlonetext': MultiNamedURLOneTextFormSet,
     'multidmptypedreasononetext': MultiDMPTypedReasonOneTextFormSet,
     'multirdacostonetext': MultiRDACostOneTextFormSet,
+    'storageforecast': StorageForecastFormSet
 }
 
 
