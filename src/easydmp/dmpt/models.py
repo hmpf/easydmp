@@ -29,7 +29,7 @@ from .utils import print_url
 from .utils import render_from_string
 
 from easydmp.eestore.models import EEStoreCache
-from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
+from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file, render_dotsource_to_bytes
 from easydmp.lib.models import ModifiedTimestampModel, ClonableModel
 from easydmp.lib import pprint_list
 
@@ -780,6 +780,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                     tm.add(t)
         return tm
 
+    # Start Graphviz: generate graphs to show section branching
+
     def generate_dotsource(self, debug=False):
         global gv
         dot = gv.Digraph()
@@ -851,6 +853,10 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         return dot.source
 
     def view_dotsource(self, format, dotsource=None, debug=False):  # pragma: no cover
+        """Show graph on locally attached monitor - development only!
+
+        This depends on the OS recognizing the format.
+        """
         if not dotsource:
             dotsource = self.generate_dotsource(debug=debug)
         view_dotsource(format, dotsource, self.GRAPHVIZ_TMPDIR)
@@ -862,6 +868,11 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         if not dotsource:
             dotsource = self.generate_dotsource(debug=debug)
         return render_dotsource_to_file(format, filename, dotsource, root_directory, sub_directory, mode=0o755)
+
+    def render_dotsource_to_bytes(self, format, dotsource=None, debug=False):
+        if not dotsource:
+            dotsource = self.generate_dotsource(debug=debug)
+        return render_dotsource_to_bytes(format, dotsource)
 
     def get_cached_dotsource_filename(self, format='pdf'):
         return 'section-{}.{}'.format(self.pk, format)
@@ -898,6 +909,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                 )
             sitepath.joinpath(filename).write_bytes(filepath.read_bytes())
 
+    # End Graphviz: generate graphs to show section branching
 
 class NoCheckMixin:
 

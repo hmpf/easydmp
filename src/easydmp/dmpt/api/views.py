@@ -1,13 +1,12 @@
-from django.http.response import HttpResponseRedirect
-
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework import serializers
 
-from easydmp.site.api.renderers import PDFRenderer
-from easydmp.site.api.renderers import PNGRenderer
-from easydmp.site.api.renderers import DOTRenderer
-from easydmp.site.api.renderers import SVGRenderer
+from easydmp.site.api.renderers import DotPDFRenderer
+from easydmp.site.api.renderers import DotPNGRenderer
+from easydmp.site.api.renderers import DotDOTRenderer
+from easydmp.site.api.renderers import DotSVGRenderer
 
 from easydmp.dmpt.api.serializers import *
 from easydmp.dmpt.models import Template
@@ -28,22 +27,21 @@ class SectionViewSet(ReadOnlyModelViewSet):
     serializer_class = SectionSerializer
     filter_fields = ['template', 'branching']
     search_fields = ['title']
+    _formats = {
+        'pdf': DotPDFRenderer,
+        'png': DotPNGRenderer,
+        'dot': DotDOTRenderer,
+        'svg': DotSVGRenderer,
+    }
 
-    @action(detail=True, methods=['get'], renderer_classes=[
-        PDFRenderer,
-        PNGRenderer,
-        DOTRenderer,
-        SVGRenderer,
-    ])
+    @action(detail=True, methods=['get'], renderer_classes=_formats.values())
     def graph(self, request, pk=None, format=None):
-        supported_formats = ('pdf', 'svg', 'png', 'dot')
         format = 'pdf' if not format else format
-        if format not in supported_formats:
+        if format not in self.formats:
             format = 'pdf'
         section = self.get_object()
-        section.refresh_cached_dotsource(format, debug=True)
-        urlpath = section.get_cached_dotsource_urlpath(format)
-        return HttpResponseRedirect(urlpath)
+        dotsource = section.generate_dotsource(debug=True)
+        return Response(dotsource)
 
 
 class QuestionViewSet(ReadOnlyModelViewSet):

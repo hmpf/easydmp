@@ -1,11 +1,17 @@
 from rest_framework.renderers import BaseRenderer
 
+from easydmp.lib.graphviz import render_dotsource_to_bytes
+
 
 __all__ = [
     'PDFRenderer',
     'PNGRenderer',
     'SVGRenderer',
     'DOTRenderer'
+    'DotPDFRenderer',
+    'DotPNGRenderer',
+    'DotSVGRenderer',
+    'DotDOTRenderer'
 ]
 
 
@@ -38,3 +44,25 @@ class DOTRenderer(BaseRenderer):
     media_type = 'text/vnd.graphviz'
     format = 'dot'
     charset = 'utf-8'
+
+
+class DotMixin:
+
+    def render(self, data, media_type=None, renderer_context=None):
+        return render_dotsource_to_bytes(self.format, data)
+
+
+class DotPDFRenderer(DotMixin, PDFRenderer):
+    pass
+
+
+class DotPNGRenderer(DotMixin, PNGRenderer):
+    pass
+
+
+class DotSVGRenderer(DotMixin, SVGRenderer):
+    pass
+
+
+class DotDOTRenderer(DotMixin, DOTRenderer):
+    pass
