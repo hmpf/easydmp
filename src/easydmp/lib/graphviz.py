@@ -70,3 +70,12 @@ def render_dotsource_to_file(format, filename, dotsource, root_directory, direct
     graph.render(cleanup=True)
     full_path = directory / PurePath(filename).with_suffix(extension)
     return full_path
+
+
+def render_dotsource_to_bytes(format, dotsource):
+    graph = gv.Source(
+        source=dotsource,
+        format=format,
+    )
+    graphstring = graph.pipe()
+    return graphstring

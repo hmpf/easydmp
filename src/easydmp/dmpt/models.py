@@ -29,7 +29,7 @@ from .utils import print_url
 from .utils import render_from_string
 
 from easydmp.eestore.models import EEStoreCache
-from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file
+from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file, render_dotsource_to_bytes
 from easydmp.lib.models import ModifiedTimestampModel, ClonableModel
 from easydmp.lib import pprint_list
 
@@ -780,6 +780,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                     tm.add(t)
         return tm
 
+    # Start Graphviz: generate graphs to show section branching
+
     def generate_dotsource(self, debug=False):
         global gv
         dot = gv.Digraph()
@@ -851,6 +853,10 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         return dot.source
 
     def view_dotsource(self, format, dotsource=None, debug=False):  # pragma: no cover
+        """Show graph on locally attached monitor - development only!
+
+        This depends on the OS recognizing the format.
+        """
         if not dotsource:
             dotsource = self.generate_dotsource(debug=debug)
         view_dotsource(format, dotsource, self.GRAPHVIZ_TMPDIR)
@@ -863,41 +869,15 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             dotsource = self.generate_dotsource(debug=debug)
         return render_dotsource_to_file(format, filename, dotsource, root_directory, sub_directory, mode=0o755)
 
-    def get_cached_dotsource_filename(self, format='pdf'):
+    def render_dotsource_to_bytes(self, format, dotsource=None, debug=False):
+        if not dotsource:
+            dotsource = self.generate_dotsource(debug=debug)
+        return render_dotsource_to_bytes(format, dotsource)
+
+    def get_dotsource_filename(self, format='pdf'):
         return 'section-{}.{}'.format(self.pk, format)
 
-    def get_cached_dotsource_urlpath(self, format='pdf'):
-        filename = self.get_cached_dotsource_filename(format)
-        return '{}cached/dmpt/{}'.format(settings.STATIC_URL, filename)
-
-    def refresh_cached_dotsource(self, format='pdf', debug=False):
-        assert format in ('pdf', 'svg', 'dot', 'png'), 'Unsupported format: {}'.format(format)
-        filename = self.get_cached_dotsource_filename(format)
-        subdirectory = 'cached/dmpt'
-        apppath = Path(__file__).parent.joinpath('static').resolve()
-        apppath = apppath.joinpath(subdirectory)
-        apppath.mkdir(mode=0o755, parents=True, exist_ok=True)
-        sitepath = Path(settings.STATIC_ROOT).resolve().joinpath(subdirectory)
-        sitepath.mkdir(mode=0o755, parents=True, exist_ok=True)
-        filepath = apppath.joinpath(filename)
-        try:
-            modified = os.path.getmtime(filepath)
-        except FileNotFoundError:
-            modified = 0.0
-        if modified < self.modified.timestamp():
-            if format == 'dot':
-                dotsource = self.generate_dotsource(debug=debug)
-                with open(filepath, 'w') as Dotfile:
-                    Dotfile.write(dotsource)
-            else:
-                self.render_dotsource_to_file(
-                    format,
-                    filename.rstrip('.'+format),
-                    root_directory=apppath,
-                    debug=debug
-                )
-            sitepath.joinpath(filename).write_bytes(filepath.read_bytes())
-
+    # End Graphviz: generate graphs to show section branching
 
 class NoCheckMixin:
 
