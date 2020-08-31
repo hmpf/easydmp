@@ -16,6 +16,13 @@ Planned
 Unreleased
 ----------
 
+1.2.1
+-----
+
+* Fix a bug when navigating through a template with both branching and linear
+  sections.
+* Stop caching section graphs on disc, generate them realtime instead
+
 1.2.0
 -----
 
