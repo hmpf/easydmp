@@ -217,6 +217,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
 class QuestionExplicitBranchInline(admin.StackedInline):
     model = ExplicitBranch
     fk_name = "current_question"
+    raw_id_fields = ['next_question']
 
     def get_readonly_fields(self, request, obj=None):
         if request.user.is_superuser:
