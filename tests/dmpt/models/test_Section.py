@@ -190,3 +190,33 @@ class TestPrevSectionMethods(test.TestCase):
         }
         result = section.get_last_answered_question(answers)
         self.assertEqual(result, q1)
+
+
+class TestOptionalSections(test.TestCase):
+
+    def setUp(self):
+        self.template = TemplateFactory()
+
+    def test_optional_question_added(self):
+        section = SectionFactory(template=self.template, position=1)
+        section.optional = True
+        section.save()
+        self.assertEqual(1, len(section.questions.all()))
+        q0 = section.questions.get()
+        self.assertEqual(0, q0.position)
+        self.assertEqual('bool', q0.input_type)
+        self.assertEqual(1, len(ExplicitBranch.objects.all()))
+        branch = ExplicitBranch.objects.get()
+        self.assertEqual('Last', branch.category)
+        self.assertEqual(q0, branch.current_question)
+        Question(question='Foo', section=section, position=1).save()
+        Question(question='Bar', section=section, position=2).save()
+        self.assertEqual(3, len(section.questions.all()))
+        self.assertEqual(0, section.questions.first().position)
+
+        section.optional = False
+        section.save()
+        self.assertEqual(0, len(ExplicitBranch.objects.all()))
+        self.assertEqual(2, len(section.questions.all()))
+        self.assertEqual(1, section.questions.get(question='Foo').position)
+        self.assertEqual(2, section.questions.get(question='Bar').position)

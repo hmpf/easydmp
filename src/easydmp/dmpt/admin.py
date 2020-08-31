@@ -173,7 +173,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
             'fields': ('super_section', 'section_depth'),
         }),
         ('Advanced', {
-            'fields': ('cloned_from', 'cloned_when'),
+            'fields': ('cloned_from', 'cloned_when', 'optional'),
             'classes': ('collapse',),
         }),
     )

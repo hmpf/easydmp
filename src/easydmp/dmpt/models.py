@@ -7,6 +7,7 @@ from uuid import uuid4
 import logging
 
 import graphviz as gv  # noqa
+from django.db.models.signals import pre_save
 from guardian.models import UserObjectPermissionBase
 from guardian.models import GroupObjectPermissionBase
 from guardian.shortcuts import get_objects_for_user, assign_perm
@@ -23,6 +24,7 @@ from django.utils.timezone import now as tznow
 
 from .errors import TemplateDesignError
 from .flow import Transition, TransitionMap, dfs_paths
+from .signals import prohibit_0_question_position
 from .utils import DeletionMixin
 from .utils import RenumberMixin
 from .utils import print_url
@@ -412,6 +414,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                                       related_name='subsections')
     section_depth = models.PositiveSmallIntegerField(default=1)
     branching = models.BooleanField(default=False)
+    optional = models.BooleanField(default=False,
+                                   help_text='True if this section is optional. The template designer needs to provide a wording to an automatically generated yes/no question at the start of the section.')
 
     class Meta:
         unique_together = (
@@ -421,6 +425,35 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
 
     def __str__(self):
         return '{}: {}'.format(self.template.title, self.full_title())
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            do_section_question = BooleanQuestion.objects.filter(section=self, position=0)
+            if self.optional:
+                if not do_section_question:
+                    self.branching = True
+                    super().save(*args, **kwargs)
+                    self._make_do_section_question()
+            elif do_section_question:
+                do_section_question.delete()
+            super().save(*args, **kwargs)
+
+    def _make_do_section_question(self):
+        """
+        Automatically add a bool question with branch and add first
+        """
+        do_section_question = BooleanQuestion(section=self,
+                                              question='(Template designer please add)',
+                                              position=0)
+        pre_save.disconnect(prohibit_0_question_position, sender=Question)
+        do_section_question.save()
+        pre_save.connect(prohibit_0_question_position, sender=Question)
+        yes = CannedAnswer(question=do_section_question, canned_text='Yes', choice='Yes')
+        yes.save()
+        no = CannedAnswer(question=do_section_question, canned_text='No', choice='No')
+        no.save()
+        branch_past_section = ExplicitBranch(current_question=do_section_question, category='Last', condition='No')
+        branch_past_section.save()
 
     def full_title(self):
         if self.label:
