@@ -363,21 +363,31 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
+        default_kwargs = {'plan': self.plan_pk}
         if 'save' in self.request.POST:
-            return reverse(
-                'answer_linear_section',
-                kwargs={'plan': self.plan_pk, 'section': self.section.pk}
-            )
+            if self.next_section and self.next.section.branching:
+                kwargs=dict(question=self.next_section.first_question.pk, **default_kwargs)
+                viewname = 'new_question'
+            else:
+                kwargs = dict(section=self.section.pk, **default_kwargs)
+                viewname = 'answer_linear_section'
+            return reverse(viewname, kwargs=kwargs)
         if 'next' in self.request.POST and self.next_section:
-            return reverse(
-                'answer_linear_section',
-                kwargs={'plan': self.plan_pk, 'section': self.next_section.pk}
-            )
+            if self.next_section and self.next_section.branching:
+                kwargs=dict(question=self.next_section.first_question.pk, **default_kwargs)
+                viewname = 'new_question'
+            else:
+                kwargs = dict(section=self.next_section.pk, **default_kwargs)
+                viewname = 'answer_linear_section'
+            return reverse(viewname, kwargs=kwargs)
         if 'prev' in self.request.POST and self.prev_section:
-            return reverse(
-                'answer_linear_section',
-                kwargs={'plan': self.plan_pk, 'section': self.prev_section.pk}
-            )
+            if self.prev_section.branching:
+                kwargs=dict(question=self.prev_section.last_question.pk, **default_kwargs)
+                viewname = 'new_question'
+            else:
+                kwargs = dict(section=self.prev_section.pk, **default_kwargs)
+                viewname = 'answer_linear_section'
+            return reverse(viewname, kwargs=kwargs)
         return reverse('plan_detail', kwargs={'plan': self.plan_pk})
 
     def get(self, _request, *args, **kwargs):
