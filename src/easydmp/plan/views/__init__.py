@@ -328,6 +328,7 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
     template_name = 'easydmp/plan/plan_section_update.html'
     model = Plan
     pk_url_kwarg = 'plan'
+    __LOG = logging.getLogger('{}.{}'.format(__name__, 'UpdateLinearSectionView'))
 
     def dispatch(self, request, *args, **kwargs):
         error_message_404 = "This Section cannot be edited in one go"
@@ -340,6 +341,7 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
                     .get(branching=False, pk=self.section_pk)
             )
         except Section.DoesNotExist:
+            # TODO: Jump to first question of section with NewQuestionView
             raise Http404(error_message_404)
         self.questions = (
             self.section.questions
@@ -348,6 +350,7 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
         )
         # Check that all questions are obligatory
         if self.section.questions.count() != self.questions.count():
+            # TODO: Jump to first question of section with NewQuestionView
             # Not a linear section
             raise Http404(error_message_404)
         self.prev_section = self.section.get_prev_section()
@@ -407,17 +410,20 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
     def forms_valid(self, forms):
         prev_data = deepcopy(self.plan.data)
         for question in forms:
+            answer = question['answer']
             form = question['form']
             notesform = question['notesform']
             notesform.is_valid()
             notes = notesform.cleaned_data.get('notes', '')
             choice = form.serialize()
             choice['notes'] = notes
-            answer = question['answer']
-            if answer.current_choice != choice:
-                qid = str(answer.question_id)
-                self.plan.previous_data[qid] = answer.current_choice
-                self.plan.data[qid] = choice
+            changed_condition = answer.save_choice(choice, self.request.user)
+            if changed_condition:
+                self.__LOG.debug('form_valid: q%s/p%s: change saved',
+                                 answer.question_id, self.object.pk)
+            else:
+                self.__LOG.debug('form_valid: q%s/p%s: condition not changed',
+                                 answer.question_id, self.object.pk)
         if prev_data != self.plan.data:
             self.plan.modified_by = self.request.user
             self.plan.save(user=self.request.user)
