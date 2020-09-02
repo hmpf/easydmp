@@ -16,6 +16,11 @@ Planned
 Unreleased
 ----------
 
+1.2.2
+-----
+
+* Fix bug in section graph rendering in the api, affecting the admin
+
 1.2.1
 -----
 
