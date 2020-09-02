@@ -16,6 +16,11 @@ Planned
 Unreleased
 ----------
 
+1.2.3
+-----
+
+* Improve the widget for storage forecast
+
 1.2.2
 -----
 
