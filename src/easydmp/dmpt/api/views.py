@@ -36,8 +36,7 @@ class SectionViewSet(ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['get'], renderer_classes=_formats.values())
     def graph(self, request, pk=None, format=None):
-        format = 'pdf' if not format else format
-        if format not in self.formats:
+        if format not in self._formats:
             format = 'pdf'
         section = self.get_object()
         dotsource = section.generate_dotsource(debug=True)
