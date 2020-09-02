@@ -365,7 +365,7 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
     def get_success_url(self):
         default_kwargs = {'plan': self.plan_pk}
         if 'save' in self.request.POST:
-            if self.next_section and self.next.section.branching:
+            if self.next_section and self.next_section.branching:
                 kwargs=dict(question=self.next_section.first_question.pk, **default_kwargs)
                 viewname = 'new_question'
             else:
