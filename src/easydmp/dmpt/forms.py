@@ -596,7 +596,7 @@ class StorageForecastFormSetForm(forms.Form):
 
 class AbstractStorageForecastFormSet(AbstractNodeFormSet):
     can_add = False
-    next_year = int(datetime.now().year) + 1
+    start_year = int(datetime.now().year)
 
     @classmethod
     def generate_choice(cls, choice):
@@ -627,7 +627,7 @@ class AbstractStorageForecastFormSet(AbstractNodeFormSet):
         index = 0
         if form_index is not None:
             index = form_index
-        form_kwargs['year'] = str(self.next_year + index)
+        form_kwargs['year'] = str(self.start_year + index)
         return form_kwargs
 
 
