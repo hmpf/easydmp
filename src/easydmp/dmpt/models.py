@@ -341,14 +341,17 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         return False
 
     def find_validity_of_sections(self, data):
-        valid_sections = set()
-        invalid_sections = set()
+        valids = set(self.sections.filter(questions__optional=True).values_list('pk', flat=True))
+        if not data:
+            invalids = set(self.sections.values_list('pk', flat=True))
+            return (valids, invalids)
+        invalids = set()
         for section in self.sections.all():
             if section.validate_data(data):
-                valid_sections.add(section.pk)
+                valids.add(section.pk)
             else:
-                invalid_sections.add(section.pk)
-        return (valid_sections, invalid_sections)
+                invalids.add(section.pk)
+        return (valids, invalids)
 
     def set_validity_of_sections(self, plan, valids, invalids):
         plan.set_sections_as_valid(*valids)
@@ -681,9 +684,11 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         return texts
 
     def find_validity_of_questions(self, data):
-        assert data, 'No data, cannot validate'
         questions = self.questions.all()
-        valids = set()
+        valids = set(questions.filter(optional=True).values_list('pk', flat=True))
+        if not data:
+            invalids = questions.filter(optional=False)
+            return (valids, set(invalids.values_list('pk', flat=True)))
         invalids = set()
         for question in questions:
             question = question.get_instance()
@@ -691,6 +696,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                 valid = question.validate_data(data)
             except AttributeError:
                 valid = False
+                if question.optional:
+                    valid = True
             if valid:
                 valids.add(question.pk)
             else:
