@@ -169,6 +169,7 @@ class RDACostWidget(forms.MultiWidget):
 
 class StorageForecastWidget(forms.MultiWidget):
     BACKUP_ESTIMATE_CHOICES = [
+         ('= 0%', '0%'),
          ('≤ 25%', 'Up to 25%'),
          ('≤ 50%', 'Up to 50%'),
          ('≤ 75%', 'Up to 75%'),
