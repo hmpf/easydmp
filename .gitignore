@@ -7,6 +7,8 @@
 *~
 .coverage
 .tox
+localsettings.py
+Attic
 htmlcov
 build
 dist
