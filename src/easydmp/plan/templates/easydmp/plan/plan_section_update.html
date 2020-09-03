@@ -18,10 +18,10 @@
       <h3>{{ section.full_title }}</h3>
       {% if section.introductory_text or section.comment %}
       <div class="actions dropdown section-information">
-        <button class="btn btn-default collapsed" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+        <button class="btn btn-default open" type="button" data-toggle="collapse" data-target="#collapsible_section_metadata" aria-expanded="true" aria-controls="collapsible_section_metadata">
           <span class="caret"></span>
         </button>
-        <div class="collapse" id="collapseExample" aria-expanded="false" style="height: 0px">
+        <div class="collapse in" id="collapsible_section_metadata" aria-expanded="true">
           <div class="section-info-wrap">
             <div class="section-introduction">{{ section.introductory_text }}</div>
             <div class="section-comment">{{ section.comment }}</div>
@@ -30,15 +30,11 @@
       </div>
       {% endif %}
 
-    <form method="post">
+    <form class="blueForms" method="post">
     {% csrf_token %}
     {% for question in forms %}
       {% with form=question.form notesform=question.notesform answer=question.answer %}
-      <div class="row uninett-color-white uninett-whole-row">
-        <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-          {% include "easydmp/plan/_answer_form.html"%}
-        </div>
-      </div>
+      {% include "easydmp/plan/_answer_form.html"%}
       {% endwith %}
     {% endfor %}
 
@@ -59,4 +55,5 @@
       </div>
     </form>
   </div>
+</div>
 {% endblock content %}

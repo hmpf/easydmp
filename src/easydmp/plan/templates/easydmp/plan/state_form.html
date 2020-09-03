@@ -28,15 +28,15 @@
       <h3>{{ section.full_title }}</h3>
       {% if section.introductory_text or section.comment %}
       <div class="actions dropdown section-information">
-          <button class="btn btn-default collapsed" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+        <button class="btn btn-default open" type="button" data-toggle="collapse" data-target="#collapsible_section_metadata" aria-expanded="true" aria-controls="collapsible_section_metadata">
           <span class="caret"></span>
-          </button>
-          <div class="collapse" id="collapseExample" aria-expanded="false" style="height: 0px">
-            <div class="section-info-wrap">
-              <div class="section-introduction">{{ section.introductory_text }}</div>
-              <div class="section-comment">{{ section.comment }}</div>
-            </div>
+        </button>
+        <div class="collapse in" id="collapsible_section_metadata" aria-expanded="true">
+          <div class="section-info-wrap">
+            <div class="section-introduction">{{ section.introductory_text }}</div>
+            <div class="section-comment">{{ section.comment }}</div>
           </div>
+        </div>
       </div>
       {% endif %}
       {% if user.is_superuser %}
@@ -109,9 +109,9 @@
         {% endfor %}
         <div id="framing-text">{{ framing_text }}</div>
       </div>
-  </div>
     </div>
   </div>
+</div>
 
 {% endblock content %}
 {% block postload %}
