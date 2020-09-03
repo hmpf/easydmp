@@ -320,12 +320,14 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         return data_pks.difference(question_pks)
 
     def validate_plan(self, plan, recalculate=True):
-        wrong_pks = [str(pk) for pk in self.list_unknown_questions(plan)]
-        if wrong_pks:
-            error = 'The plan {} contains nonsense data: template has no questions for: {}'
-            planstr = '{} ({}), template {} ({})'.format(plan, plan.pk, self, self.pk)
-            LOG.error(error.format(planstr, ' '.join(wrong_pks)))
-            return False
+# TODO: clean away answers for questions that have been deleted
+#         wrong_pks = [str(pk) for pk in self.list_unknown_questions(plan)]
+#         if wrong_pks:
+#             error = 'The plan {} contains nonsense data: template has no questions for: {}'
+#             planstr = '{} ({}), template {} ({})'.format(plan, plan.pk, self, self.pk)
+#             LOG.error(error.format(planstr, ' '.join(wrong_pks)))
+#             assert False, 'here'
+#             return False
         if not plan.data:
             error = 'The plan {} ({}) has no data: invalid'
             LOG.error(error.format(plan, plan.pk))
