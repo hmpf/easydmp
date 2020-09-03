@@ -16,6 +16,13 @@ Planned
 Unreleased
 ----------
 
+1.2.4
+-----
+
+* Wherever answers can be entered, show the section introductory text by default
+* Stop making irrelevant answers in Plan.data from leading to a validation error
+* Fix bug in validation when clicking "Check" in the UI
+
 1.2.3
 -----
 
