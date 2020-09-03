@@ -25,12 +25,14 @@ class TestTemplateMiscMethods(test.TestCase):
         expected = False
         self.assertEqual(result, expected)
 
-    def test_validate_plan_wrong_pks_in_plan(self):
-        plan = PlanFactory(template=self.template)
-        plan.data = None
-        self.template.list_unknown_questions = lambda x: set((56, 57))
-        with self.assertLogs(logger='easydmp.dmpt.models', level='ERROR') as log:
-            result = self.template.validate_plan(plan, recalculate=False)
-            expected = False
-            self.assertEqual(result, expected)
-            self.assertIn('contains nonsense data:', log.output[0])
+# TODO: replace with test that verifies that answers for deleted questions get
+# deleted on save/verify
+#     def test_validate_plan_wrong_pks_in_plan(self):
+#         plan = PlanFactory(template=self.template)
+#         plan.data = None
+#         self.template.list_unknown_questions = lambda x: set((56, 57))
+#         with self.assertLogs(logger='easydmp.dmpt.models', level='ERROR') as log:
+#             result = self.template.validate_plan(plan, recalculate=False)
+#             expected = False
+#             self.assertEqual(result, expected)
+#             self.assertIn('contains nonsense data:', log.output[0])
