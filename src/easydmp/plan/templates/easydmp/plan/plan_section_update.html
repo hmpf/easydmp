@@ -33,6 +33,7 @@
     <form class="blueForms" method="post">
     {% csrf_token %}
     {% for question in forms %}
+      <p>
       {% with form=question.form notesform=question.notesform answer=question.answer %}
       {% include "easydmp/plan/_answer_form.html"%}
       {% endwith %}
