@@ -45,7 +45,7 @@
             border-width: 1px 6px 1px 6px;
             background-color: #f2f2f2;
         }
-        .alert { background-color: #9ed2df; font-weight: bold; text-color: #fff}
+        .alert { background-color: #9ed2df; font-weight: bold; color: #fff}
         .instance { background-color: #fc9039}
     </style>
     {% block extrahead %}{% endblock %}
@@ -115,9 +115,9 @@
   <footer role="contentinfo">
     <div class="row uninett-whole-row">
         <p>
-        <a href="https://eudat.eu/"><img src="{% static 'eudat/logo.png' %}" alt="EUDAT logo" width="150px"></a>
+        <a href="https://eudat.eu/"><img src="{% static 'eudat/logo.png' %}" alt="EUDAT logo" width="150"></a>
         <span style="padding: 1em"> </span>
-        <a href="https://www.sigma2.no/"><img src="{% static 'uninett/UNINETT_Sigma2_logo_H.png' %}" alt="Uninett logo" width="200px"></a>
+        <a href="https://www.sigma2.no/"><img src="{% static 'uninett/UNINETT_Sigma2_logo_H.png' %}" alt="Uninett logo" width="200"></a>
         <span style="padding: 1em"> </span>
         <a href="https://www.sigma2.no/easydmp/how-to">User Guide</a>
         <span style="padding: 1em"> </span>
@@ -139,7 +139,6 @@
 <script src="{% static 'bootstrap3/js/bootstrap.min.js' %}"></script>
 <script src="{% static 'usit/usitoverride.js' %}"></script>
 {% block postload %}{% endblock %}
-</div>
 </body>
 </html>
 
