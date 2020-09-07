@@ -16,6 +16,11 @@ Planned
 Unreleased
 ----------
 
+1.2.5
+-----
+
+* Layout improvements
+
 1.2.4
 -----
 
