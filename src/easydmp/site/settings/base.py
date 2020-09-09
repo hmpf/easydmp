@@ -116,11 +116,16 @@ ALLOWED_HOSTS = [
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-DATABASE_URL = getenv('DMP_DATABASE_URL', None)
-if DATABASE_URL is not None:
+_DATABASE_URL_SECRET = getenv('DMP_DATABASE_URL', None)
+_DATABASE_PASSWORD = getenv('DMP_DATABASE_PASSWORD', None)
+if _DATABASE_URL_SECRET is not None:
     DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL),
+        'default': dj_database_url.parse(_DATABASE_URL_SECRET),
     }
+    del _DATABASE_URL_SECRET
+    if _DATABASE_PASSWORD is not None:  # To support switching the password easily
+        DATABASES['default']['PASSWORD'] = _DATABASE_PASSWORD
+    del _DATABASE_PASSWORD
 else:
     DATABASES = {
         'default': {
