@@ -20,7 +20,7 @@ import dj_database_url
 def getenv(name, default=None):
     value = os.getenv(name, default)
     if isinstance(value, str):
-        env = value.strip()
+        value = value.strip()
     return value
 
 SECRET_KEY = getenv('SECRET_KEY', None)
