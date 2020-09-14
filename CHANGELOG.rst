@@ -16,6 +16,13 @@ Planned
 Unreleased
 ----------
 
+1.2.6
+-----
+
+* Plan serializer was missing the validation-fields
+* Make it easier to override just the password for a database, in settings
+* Bugfix
+
 1.2.5
 -----
 
