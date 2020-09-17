@@ -358,7 +358,7 @@ class Plan(DeletionMixin, ClonableModel):
         """Hide any answers unreachable after this question
 
         First collects all questions as per branching after this question or
-        until either the next obligatory question or the final question in the
+        until either the next on_trunk question or the final question in the
         section. Then calculates all visible questions by walking forward.
         Finally hides the invisible questions (all minus visible).
 
@@ -368,7 +368,7 @@ class Plan(DeletionMixin, ClonableModel):
         if not question.branching_possible:
             return False
         # Find any questions touched by branching
-        next_question = question.get_next_obligatory()
+        next_question = question.get_next_on_trunk()
         between = tuple(question.section
                    .questions_between(question, next_question)
                    .values_list('id', flat=True))
@@ -388,8 +388,8 @@ class Plan(DeletionMixin, ClonableModel):
             if question is None:
                 # No more questions/last of section
                 break
-            if question.obligatory:
-                # Found next obligatory question
+            if question.on_trunk:
+                # Found next on_trunk question
                 break
             show.add(question.id)
         # Hide invisible questions
@@ -416,7 +416,7 @@ class Plan(DeletionMixin, ClonableModel):
             all_sections = all_sections.intersection(section_qs).distinct()
         answer_ids = set([int(key) for key in self.data.keys()])
         for section in all_sections.order_by('position'):
-            questions = section.questions.filter(obligatory=True).order_by('position')
+            questions = section.questions.filter(on_trunk=True).order_by('position')
             # Skip unanswered sections so they don't show up in the report
             if not (answer_ids & set(questions.values_list('id', flat=True))):
                 continue

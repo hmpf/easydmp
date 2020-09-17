@@ -45,9 +45,9 @@ class SectionViewSet(ReadOnlyModelViewSet):
 
 class QuestionViewSet(ReadOnlyModelViewSet):
     queryset = Question.objects.select_related('section', 'section__template')
-    filterset_fields = ['input_type', 'obligatory', 'optional', 'section',
+    filterset_fields = ['input_type', 'on_trunk', 'optional', 'section',
                         'section__template']
-    filter_fields = ['input_type', 'obligatory', 'optional', 'section',
+    filter_fields = ['input_type', 'on_trunk', 'optional', 'section',
                      'section__template']
     search_fields = ['question']
 

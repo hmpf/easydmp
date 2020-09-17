@@ -255,7 +255,7 @@
   "help_text": "Yes, this is a joke. It also shows off a \"choice\" question. Just pick one. Feel free to discuss this class of joke in the \"Notes\"-field.",
   "framing_text": "",
   "comment": "This is a comment. It is in addition to the help text. Each choice in the form have their own help texts for this question, check the html code, the div with class \"answers\".",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -274,7 +274,7 @@
   "help_text": "This shows off the date range type.",
   "framing_text": "The dates chosen are between {start} and {end}.",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -293,7 +293,7 @@
   "help_text": "This shows of a \"multichoiceonetext\" question.",
   "framing_text": "The main weapon of the Spanish Inquisition is {}.",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -312,7 +312,7 @@
   "help_text": "Another joke, and showing off the \"bool\" question.",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -331,7 +331,7 @@
   "help_text": "This is the \"namedurl\" question. The url is obligatory, the name is not.",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -350,7 +350,7 @@
   "help_text": "This is the \"multinamedurlonetext\" question.",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -369,7 +369,7 @@
   "help_text": "This is an example of a \"multidmptypedreasononetext\" question. This is a question very specialized for H2020. You need to explain why specific data types cannot be fully publicly accessible.",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -388,7 +388,7 @@
   "help_text": "A new joke for a new section.",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -407,7 +407,7 @@
   "help_text": "This is a \"reason\" question. Please explain.",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -426,7 +426,7 @@
   "help_text": "This is a \"positiveinteger\" question. 0 is okay, really.",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -445,7 +445,7 @@
   "help_text": "This is an \"externalchoice\" question. The choices are fetched via API and cached before they are rendered here.",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -464,7 +464,7 @@
   "help_text": "If the license you would prefer is not in the list, choose \"Not listed\".",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -483,7 +483,7 @@
   "help_text": "This is an \"externalmultichoiceonetext\" question. You have to choose at least one. The choices are fetched from an API and cached before being rendered here.",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -502,7 +502,7 @@
   "help_text": "This is an \"extmultichoicenotlistedonetext\" question. The choices are fetched by API and cached before rendering. You do not need to choose anything, but in that case, tick off \"not listed\". If you can't find what you're looking for you can also tick off \"not listed\".",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
@@ -521,7 +521,7 @@
   "help_text": "",
   "framing_text": "",
   "comment": "",
-  "obligatory": true,
+  "on_trunk": true,
   "optional": false,
   "optional_canned_text": ""
  }
