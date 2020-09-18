@@ -16,6 +16,11 @@ Planned
 Unreleased
 ----------
 
+1.2.7
+-----
+
+* Plan list in API will not filter on published field
+
 1.2.6
 -----
 
