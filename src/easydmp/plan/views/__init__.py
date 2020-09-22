@@ -345,10 +345,10 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
             raise Http404(error_message_404)
         self.questions = (
             self.section.questions
-            .filter(obligatory=True)
+            .filter(on_trunk=True)
             .order_by('position')
         )
-        # Check that all questions are obligatory
+        # Check that all questions are on_trunk
         if self.section.questions.count() != self.questions.count():
             # TODO: Jump to first question of section with NewQuestionView
             # Not a linear section

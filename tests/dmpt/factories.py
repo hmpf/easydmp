@@ -63,7 +63,7 @@ class AbstractQuestionFactory(factory.django.DjangoModelFactory):
     question = factory.Faker('sentence', nb_words=10)
     position = factory.Sequence(lambda n: n)
     section = factory.Iterator(Section.objects.all())
-    obligatory = True
+    on_trunk = True
     help_text = factory.Faker('paragraph')
 
     @classmethod

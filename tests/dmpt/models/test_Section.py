@@ -148,23 +148,23 @@ class TestPrevSectionMethods(test.TestCase):
         result = section.get_last_question_in_prev_section()
         self.assertEqual(result, question)
 
-    def test_get_last_obligatory_question_in_prev_section_no_prev_nonempty_section(self):
+    def test_get_last_on_trunk_question_in_prev_section_no_prev_nonempty_section(self):
         section = SectionFactory(template=self.template, position=1)
-        result = section.get_last_obligatory_question_in_prev_section()
+        result = section.get_last_on_trunk_question_in_prev_section()
         self.assertIsNone(result)
 
-    def test_get_last_obligatory_question_in_prev_section_no_prev_oblig_question(self):
+    def test_get_last_on_trunk_question_in_prev_section_no_prev_oblig_question(self):
         prev_section = SectionFactory(template=self.template, position=1)
         section = SectionFactory(template=self.template, position=2)
-        QuestionFactory(section=prev_section, obligatory=False)
-        result = section.get_last_obligatory_question_in_prev_section()
+        QuestionFactory(section=prev_section, on_trunk=False)
+        result = section.get_last_on_trunk_question_in_prev_section()
         self.assertIsNone(result)
 
-    def test_get_last_obligatory_question_in_prev_section(self):
+    def test_get_last_on_trunk_question_in_prev_section(self):
         prev_section = SectionFactory(template=self.template, position=1)
         section = SectionFactory(template=self.template, position=2)
-        question = QuestionFactory(section=prev_section, obligatory=True)
-        result = section.get_last_obligatory_question_in_prev_section()
+        question = QuestionFactory(section=prev_section, on_trunk=True)
+        result = section.get_last_on_trunk_question_in_prev_section()
         self.assertEqual(result, question)
 
     def test_get_last_answered_question_empty_section(self):
@@ -174,7 +174,7 @@ class TestPrevSectionMethods(test.TestCase):
 
     def test_get_last_answered_question_no_oblig_questions(self):
         section = SectionFactory(template=self.template, position=1)
-        q2 = QuestionFactory(section=section, obligatory=False)
+        q2 = QuestionFactory(section=section, on_trunk=False)
         result = section.get_last_answered_question({})
         self.assertIsNone(result)
 
@@ -182,9 +182,9 @@ class TestPrevSectionMethods(test.TestCase):
         # When testing that an answer exists, do not use a bare QuestionFactory
         # since an "answer" is only defined for Question subclasses
         section = SectionFactory(template=self.template, position=1)
-        q1 = ReasonQuestionFactory(section=section, obligatory=True, position=1)
-        q2 = ReasonQuestionFactory(section=section, obligatory=True, position=2)
-        q3 = ReasonQuestionFactory(section=section, obligatory=True, position=3)
+        q1 = ReasonQuestionFactory(section=section, on_trunk=True, position=1)
+        q2 = ReasonQuestionFactory(section=section, on_trunk=True, position=2)
+        q3 = ReasonQuestionFactory(section=section, on_trunk=True, position=3)
         answers = {
             str(q1.id): 'foo',
         }

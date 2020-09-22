@@ -12,7 +12,7 @@ is just used as an organizational tool. Sections that do have at least one
 a linear section. If a branching section is needed it needs to be set
 explicitly on that section.
 
-All questions are by default ``obligatory``. That means that they will all be
+All questions are by default ``on_trunk``. That means that they will all be
 shown to the plan maker. In a branching plan, questions hidden by a branch are
-NOT obligatory, they can be skipped over completely, never seen by the plan
+NOT on_trunk, they can be skipped over completely, never seen by the plan
 maker.

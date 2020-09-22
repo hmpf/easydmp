@@ -23,7 +23,7 @@ from .models import CannedAnswer
 
 """
 The admin is simplified for non-superusers. Branching sections are disallowed,
-hence all questions are obligatory.
+hence all questions are on_trunk.
 """
 
 
@@ -306,7 +306,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
         'question',
         'section',
         'input_type',
-        'obligatory',
+        'on_trunk',
         'optional',
         'get_mount',
     )
@@ -318,12 +318,12 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
         'section__title',
     ]
     actions = [
-        'toggle_obligatory',
+        'toggle_on_trunk',
         'increment_position',
         'decrement_position',
     ]
     list_filter = [
-        'obligatory',
+        'on_trunk',
         'optional',
         QuestionTemplateFilter,
         QuestionSectionFilter,
@@ -339,7 +339,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     fieldsets = (
         (None, {
             'fields': ('input_type', 'section', 'position',
-                       'question', 'obligatory', 'optional', 'help_text',
+                       'question', 'on_trunk', 'optional', 'help_text',
                        'framing_text', 'comment',),
         }),
         ('Options for optional questions', {
@@ -357,7 +357,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
         readonly = ('cloned_from', 'cloned_when')
         if request.user.is_superuser:
             return readonly
-        return readonly + ('obligatory',)
+        return readonly + ('on_trunk',)
 
     def get_queryset(self, request):
         return get_questions_for_user(request.user)
@@ -377,11 +377,11 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
 
     # actions
 
-    def toggle_obligatory(self, request, queryset):
+    def toggle_on_trunk(self, request, queryset):
         for q in queryset.all():
-            q.obligatory = not q.obligatory
+            q.on_trunk = not q.on_trunk
             q.save()
-    toggle_obligatory.short_description = 'Toggle obligatoriness'
+    toggle_on_trunk.short_description = 'Toggle whether on trunk'
 
     def increment_position(self, request, queryset):
         for q in queryset.order_by('-position'):

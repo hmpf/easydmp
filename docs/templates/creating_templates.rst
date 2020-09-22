@@ -29,7 +29,7 @@ You might want to write the questions down on Post-Its (one per question) and
 move them around 'til they have the order you want before you add them in the
 admin, since reordering is a bit clunky.
 
-For a linear section, all questions are ``obligatory``, so no need to change
+For a linear section, all questions are ``on_trunk``, so no need to change
 that. An ``optional`` question need not be answered. The
 ``optional_canned_text`` will be shown in the generated text if the question
 isn't given an answer. An optional question cannot start a branch, since in

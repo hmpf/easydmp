@@ -23,12 +23,12 @@ class CannedData(object):
         self.canned_question = {
             'section': self.section,
             'question': 's',
-            'obligatory': True,
+            'on_trunk': True,
         }
         self.canned_data = {
             'section': self.section,
             'template': self.template,
-            'obligatory': True,
+            'on_trunk': True,
         }
 
 
@@ -144,10 +144,10 @@ class BranchingCannedData(CannedData):
     @staticmethod
     def create_implicit_diamond(section):
         # Implicit diamond: one explicit branch, one repair branch
-        # Note that qright and qleft cannot be obligatory, or going backwards won't work
+        # Note that qright and qleft cannot be on_trunk, or going backwards won't work
         qstart = ChoiceQuestionFactory(question='Choose direction:', section=section, position=1)
-        qleft = ReasonQuestionFactory(question='Left', section=section, position=2, obligatory=False)
-        qright = ReasonQuestionFactory(question='Right', section=section, position=3, obligatory=False)
+        qleft = ReasonQuestionFactory(question='Left', section=section, position=2, on_trunk=False)
+        qright = ReasonQuestionFactory(question='Right', section=section, position=3, on_trunk=False)
         qend = ReasonQuestionFactory(question='End', section=section, position=4)
         ExplicitBranch.objects.create(current_question=qstart, condition='Right', category='CannedAnswer', next_question=qright)
         ExplicitBranch.objects.create(current_question=qleft, condition='', category='ExplicitBranch', next_question=qend)

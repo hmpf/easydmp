@@ -493,7 +493,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     def first_question(self):
         """Get first question in *this* section
 
-        First questions are always obligatory and always safe to jump to.
+        First questions are always on_trunk and always safe to jump to.
         """
         if self.questions.exists():
             return self.questions.order_by('position')[0]
@@ -504,21 +504,21 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         """Get last question in *this* section
 
         This method is here for completeness. It is usually better to use
-        `last_obligatory_question` since that must be visited in any case.
+        `last_on_trunk_question` since that must be visited in any case.
         """
         if self.questions.exists():
             return self.questions.order_by('-position')[0]
         return None
 
     @property
-    def last_obligatory_question(self):
-        """Get last *obligatory* question in *this* section
+    def last_on_trunk_question(self):
+        """Get last *on_trunk* question in *this* section
 
         This is a better question to jump backwards to than `last_question`
-        since that might be a non-obligatory question, which an end-user might
-        not ever visit due to branching.
+        since that might be a question in a branch (not on_trunk), which an
+        end-user might not ever visit due to branching.
         """
-        qs = self.questions.filter(obligatory=True)
+        qs = self.questions.filter(on_trunk=True)
         if qs.exists():
             return qs.order_by('-position')[0]
         return None
@@ -582,7 +582,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     def get_first_question_in_next_section(self):
         """Get first question in *the next nonempty* section
 
-        These are always obligatory and always safe to jump to.
+        These are always on_trunk and always safe to jump to.
         """
         next_section = self.get_next_nonempty_section()
         if next_section:
@@ -596,7 +596,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         """Get last question in *the previous nonempty* section
 
         This method is here for completeness. It is always better to use
-        `get_last_obligatory_question_in_prev_section()` since that must be
+        `get_last_on_trunk_question_in_prev_section()` since that must be
         visited in any case.
         """
         prev_section = self.get_prev_nonempty_section()
@@ -604,26 +604,26 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             return prev_section.last_question
         return None
 
-    def get_last_obligatory_question_in_prev_section(self):
-        """Get last *obligatory* question in *the previous nonempty* section
+    def get_last_on_trunk_question_in_prev_section(self):
+        """Get last *on_trunk* question in *the previous nonempty* section
 
         This is a better question to jump backwards to than
-        `get_last_question_in_prev_section()` since that might be
-        a non-obligatory question, which an end-user might not ever visit due
-        to branching.
+        `get_last_question_in_prev_section()` since that might be a question in
+        a branch (not on_trunk), which an end-user might not ever visit due to
+        branching.
         """
         prev_section = self.get_prev_nonempty_section()
         if prev_section:
-            return prev_section.last_obligatory_question
+            return prev_section.last_on_trunk_question
         return None
 
     def get_last_answered_question_in_prev_section(self, answers):
-        """Get last *obligatory* question in *the previous nonempty* section
+        """Get last *on_trunk* question in *the previous nonempty* section
 
         This is a better question to jump backwards to than
-        `get_last_question_in_prev_section()` since that might be
-        a non-obligatory question, which an end-user might not ever visit due
-        to branching.
+        `get_last_question_in_prev_section()` since that might be a question in
+        a branch (not on_trunk), which an end-user might not ever visit due to
+        branching.
         """
         prev_section = self.get_prev_nonempty_section()
         if prev_section:
@@ -647,7 +647,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         if not questions.exists():
             self.__LOG.debug('get_last_answered_question: nothing answered')
             return None
-        last = self._get_last_answered_obligatory_question(answers)
+        last = self._get_last_answered_on_trunk_question(answers)
         end = questions.order_by('position').last().get_instance()
         if last:
             if last == end:
@@ -660,17 +660,17 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         self.__LOG.debug('get_last_answered_question: not found')
         return None
 
-    def get_obligatory_questions(self):
-        return self.questions.filter(obligatory=True)
+    def get_on_trunk_questions(self):
+        return self.questions.filter(on_trunk=True)
 
-    def _get_last_answered_obligatory_question(self, answers):
-        obligatories = self.get_obligatory_questions()
-        if not obligatories.exists():
-            # Empty section, so no obligatory questions
+    def _get_last_answered_on_trunk_question(self, answers):
+        qs_on_trunk = self.get_on_trunk_questions()
+        if not qs_on_trunk.exists():
+            # Empty section, so no on_trunk questions
             return None
 
-        # Find the answered obligatory question with the last position
-        answered = get_answered_questions(obligatories, answers)
+        # Find the answered on_trunk question with the last position
+        answered = get_answered_questions(qs_on_trunk, answers)
         if answered:
             last = tuple(answered)[-1]
             return last
@@ -724,7 +724,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         return False
 
     def find_minimal_path(self, data=None):
-        minimal_qs = self.questions.filter(obligatory=True).order_by('position')
+        minimal_qs = self.questions.filter(on_trunk=True).order_by('position')
         if not data:
             return list(minimal_qs)
         answered_pks = [int(pk) for pk in data.keys()]
@@ -817,14 +817,14 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             q_kwargs = {}
             q_label = '{}\n<{}>'.format(question, question.input_type)
             if debug:
-                obligatory = '-' if question.obligatory else 'N'
+                on_trunk = '-' if question.on_trunk else 'N'
                 optional = 'o' if question.optional else '-'
                 q_label = '"{}"\n<{}>\np{} #{} {}{}'.format(
                     question,
                     question.input_type,
                     question.position,
                     question.pk,
-                    obligatory,
+                    on_trunk,
                     optional
                 )
             q_kwargs['label'] = fill(q_label, 20)
@@ -1046,7 +1046,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
     help_text = models.TextField(blank=True)
     framing_text = models.TextField(blank=True)
     comment = models.TextField(blank=True, null=True)
-    obligatory = models.BooleanField(default=True)
+    on_trunk = models.BooleanField(default=True)
     optional = models.BooleanField(default=False)
     optional_canned_text = models.TextField(blank=True)
 
@@ -1192,7 +1192,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
     def get_last_answered_question_in_section(self, answers=None):
         if not self.section.questions.exists():
             return None
-        last = self._get_last_answered_obligatory_question(answers)
+        last = self._get_last_answered_on_trunk_question(answers)
         if last:
             return self._walk_forward(last, None, answers)
         return None
@@ -1201,14 +1201,14 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         answer = answers.get(str(self.pk), None)
         return bool(answer)
 
-    def get_next_obligatory(self):
-        qs = self.section.questions.filter(obligatory=True,
+    def get_next_on_trunk(self):
+        qs = self.section.questions.filter(on_trunk=True,
                                            position__gt=self.position)
         if not qs.exists():
-            # self is or is after last obligatory question of section
+            # self is or is after last on_trunk question of section
             return None
-        next_obligatory = qs.order_by('position').first()
-        return next_obligatory
+        next_on_trunk = qs.order_by('position').first()
+        return next_on_trunk
 
     def get_all_following_questions(self):
         "Return a qs of all questions in the same section with higher pos"
@@ -1310,18 +1310,18 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             self.__LOG.debug('get_potential_prev_questions: no preceding')
             return ()
 
-        # Is the previous question obligatory? Use that
+        # Is the previous question on_trunk? Use that
         prev_pos_question = list(preceding_questions)[-1]
-        if prev_pos_question.obligatory:
-            self.__LOG.debug('get_potential_prev_questions: prev is obligatory: #%i',
+        if prev_pos_question.on_trunk:
+            self.__LOG.debug('get_potential_prev_questions: prev is on_trunk: #%i',
                       prev_pos_question.id)
             return (prev_pos_question,)
-        # Chcek if there are any obligatory questions before us
-        all_prev_oblig_questions = preceding_questions.filter(obligatory=True)
+        # Chcek if there are any on_trunk questions before us
+        all_prev_oblig_questions = preceding_questions.filter(on_trunk=True)
         if not all_prev_oblig_questions.exists():
             self.__LOG.warn('get_potential_prev_questions: no oblig before this, bug?')
             return ()  # No preceding questions, might be bug
-        # Return all questions after previous obligatory question
+        # Return all questions after previous on_trunk question
         prev_oblig_question = list(all_prev_oblig_questions)[-1]
         preceding_questions = preceding_questions.filter(
             position__gte=prev_oblig_question.position
@@ -1338,11 +1338,11 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             self.__LOG.debug('get_best_prev_question_in_last_section: found, last answered: #%i',
                              last_answered.id)
             return last_answered
-        last_obligatory = self.section.get_last_obligatory_question_in_prev_section()
-        if last_obligatory:
-            self.__LOG.debug('get_best_prev_question_in_last_section: found, last obligatory: #%i',
-                             last_obligatory.id)
-            return last_obligatory
+        last_on_trunk = self.section.get_last_on_trunk_question_in_prev_section()
+        if last_on_trunk:
+            self.__LOG.debug('get_best_prev_question_in_last_section: found, last on_trunk: #%i',
+                             last_on_trunk.id)
+            return last_on_trunk
         self.__LOG.debug('get_best_prev_question_in_last_section: last question')
         return None
 
@@ -1357,8 +1357,8 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
 
         If there is more than one preceding question, go to the correct one
         according to branching, by checking existing answers. Technically, go
-        to the previous obligatory answered question then see if any not
-        obligatory questions have been after answered that one.
+        to the previous on_trunk answered question then see if any not
+        on_trunk questions have been after answered that one.
         """
         self.__LOG.debug('get_prev_question: for #%i', self.id)
         preceding_questions = self.get_potential_prev_questions()
@@ -1382,8 +1382,8 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         return None
 
     def _get_prev_question_new(self, answers=None):
-        obligatories = self.section.get_obligatory_questions()
-        answered = get_answered_questions(obligatories, answers)
+        qs_on_trunk = self.section.get_on_trunk_questions()
+        answered = get_answered_questions(qs_on_trunk, answers)
         if answered:
             answered = answered.filter(position__lt=self.position)
             previous_answered = answered.order_by('-position').first()
