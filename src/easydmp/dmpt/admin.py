@@ -208,9 +208,13 @@ class SectionAdmin(ObjectPermissionModelAdmin):
     increment_position.short_description = 'Increment position by 1'
 
     def decrement_position(self, request, queryset):
-        for q in queryset.order_by('position'):
-            q.position -= 1
-            q.save()
+        qs = queryset.order_by('position')
+        if not qs.exists():
+            return
+        if qs[0].position > 1:
+            for q in qs:
+                q.position -= 1
+                q.save()
     decrement_position.short_description = 'Decrement position by 1'
 
 
@@ -390,9 +394,13 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     increment_position.short_description = 'Increment position by 1'
 
     def decrement_position(self, request, queryset):
-        for q in queryset.order_by('position'):
-            q.position -= 1
-            q.save()
+        qs = queryset.order_by('position')
+        if not qs.exists():
+            return
+        if qs[0].position > 1:
+            for q in qs:
+                q.position -= 1
+                q.save()
     decrement_position.short_description = 'Decrement position by 1'
 
 
