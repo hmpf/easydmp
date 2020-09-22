@@ -366,6 +366,17 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     def get_queryset(self, request):
         return get_questions_for_user(request.user)
 
+    def get_object(self, request, object_id, from_field=None):
+        queryset = self.get_queryset(request)
+        model = queryset.model
+        field = model._meta.pk if from_field is None else model._meta.get_field(from_field)
+        try:
+            object_id = field.to_python(object_id)
+            obj = queryset.get(**{field.name: object_id})
+            return obj.get_instance()
+        except (model.DoesNotExist, ValidationError, ValueError):
+            return None
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'section' and not request.user.is_superuser:
             sections = get_sections_for_user(request.user)

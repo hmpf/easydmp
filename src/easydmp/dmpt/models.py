@@ -7,13 +7,13 @@ from uuid import uuid4
 import logging
 
 import graphviz as gv  # noqa
-from django.db.models.signals import pre_save
 from guardian.models import UserObjectPermissionBase
 from guardian.models import GroupObjectPermissionBase
 from guardian.shortcuts import get_objects_for_user, assign_perm
 
 from django.apps import apps
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db import transaction
 from django.forms import model_to_dict
@@ -24,7 +24,6 @@ from django.utils.timezone import now as tznow
 
 from .errors import TemplateDesignError
 from .flow import Transition, TransitionMap, dfs_paths
-from .signals import prohibit_0_question_position
 from .utils import DeletionMixin
 from .utils import RenumberMixin
 from .utils import print_url
@@ -445,9 +444,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         do_section_question = BooleanQuestion(section=self,
                                               question='(Template designer please add)',
                                               position=0)
-        pre_save.disconnect(prohibit_0_question_position, sender=Question)
         do_section_question.save()
-        pre_save.connect(prohibit_0_question_position, sender=Question)
         yes = CannedAnswer(question=do_section_question, canned_text='Yes', choice='Yes')
         yes.save()
         no = CannedAnswer(question=do_section_question, canned_text='No', choice='No')
@@ -1095,6 +1092,16 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         if self.label:
             return '{} {}'.format(self.label, self.question)
         return self.question
+
+    def clean(self):
+        # Only an optional section can have a question in position 0
+        if self.position == 0:
+            optional_section = getattr(self.section, 'optional', False)
+            if not optional_section:  # readability counts
+                raise ValidationError(
+                    "Only optional sections may have a question in position 0.",
+                    code='invalid',
+                )
 
     @transaction.atomic
     def clone(self, section):
