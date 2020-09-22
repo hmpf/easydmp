@@ -155,7 +155,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         'graph_pdf',
     )
     list_display_links = ('template', 'section_depth', 'id', 'position')
-    list_filter = ('branching', 'template')
+    list_filter = ('branching', 'template', 'optional')
     actions = [
         'increment_position',
         'decrement_position',
@@ -166,14 +166,14 @@ class SectionAdmin(ObjectPermissionModelAdmin):
     ]
     fieldsets = (
         (None, {
-            'fields': ('template', 'title', 'position',
-                       'branching', 'introductory_text', 'comment'),
+            'fields': ('template', 'title', 'position', 'branching',
+                       'optional', 'introductory_text', 'comment'),
         }),
         ('Super section', {
             'fields': ('super_section', 'section_depth'),
         }),
         ('Advanced', {
-            'fields': ('cloned_from', 'cloned_when', 'optional'),
+            'fields': ('cloned_from', 'cloned_when'),
             'classes': ('collapse',),
         }),
     )
