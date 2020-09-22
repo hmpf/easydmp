@@ -16,6 +16,11 @@ Planned
 Unreleased
 ----------
 
+1.2.8
+-----
+
+* Rename Question.obligatory to Question.on_trunk
+
 1.2.7
 -----
 
