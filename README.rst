@@ -2,6 +2,8 @@
 Easydmp Django Project
 ======================
 
+.. image:: https://github.com/hmpf/easydmp/workflows/Python%20package/badge.svg
+
 This project has been designed to be installable via ``setup.py``.
 
 Layout:
