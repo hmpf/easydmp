@@ -162,7 +162,7 @@ class PlanViewSet(ReadOnlyModelViewSet):
 #         return LightPlanSerializer
 
     def get_queryset(self):
-        qs = Plan.objects
+        qs = Plan.objects.all()
         if self.request.user.is_authenticated:
             pas = self.request.user.plan_accesses.all()
             qs = qs | Plan.objects.filter(accesses__in=pas)
