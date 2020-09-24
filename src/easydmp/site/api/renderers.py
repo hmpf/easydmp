@@ -7,11 +7,11 @@ __all__ = [
     'PDFRenderer',
     'PNGRenderer',
     'SVGRenderer',
-    'DOTRenderer'
+    'DOTRenderer',
     'DotPDFRenderer',
     'DotPNGRenderer',
     'DotSVGRenderer',
-    'DotDOTRenderer'
+    'DotDOTRenderer',
 ]
 
 

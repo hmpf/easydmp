@@ -59,7 +59,7 @@ def find_end_nodes(graph):
 
 
 def find_isolated_nodes(graph):
-    isoated = set()
+    isolated = set()
     for node in graph:
         if not graph[node]:
             isolated.add(node)

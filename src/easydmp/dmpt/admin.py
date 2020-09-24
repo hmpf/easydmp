@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils.html import format_html, mark_safe
 
