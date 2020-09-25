@@ -6,7 +6,7 @@ from .models import User
 
 
 @admin.register(User)
-class EasyDMPUserAdmin(UserAdmin):
+class EasyDMPUserAdmin(UsrAdmin):
     date_hierarchy = 'date_joined'
     list_display = ('username', 'email', 'full_name', 'is_staff')
     search_fields = ('username', 'full_name', 'email')
