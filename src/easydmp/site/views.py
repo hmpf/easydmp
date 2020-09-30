@@ -2,7 +2,7 @@ from django.views.generic import TemplateView
 from django.contrib.auth import logout
 from django.shortcuts import redirect, render
 
-from easydmp.utils.stats import stats
+from easydmp.lib.stats import stats
 
 
 __all__ = [

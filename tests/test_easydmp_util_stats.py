@@ -8,7 +8,7 @@ from guardian.utils import get_anonymous_user
 from easydmp.auth.models import User
 from easydmp.dmpt.models import Template
 from easydmp.plan.models import Plan
-from easydmp.utils.stats import stats
+from easydmp.lib.stats import stats
 
 
 class StatsTestCase(TestCase):
