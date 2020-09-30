@@ -156,7 +156,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         'graph_pdf',
     )
     list_display_links = ('template', 'section_depth', 'id', 'position')
-    list_filter = ('branching', 'template')
+    list_filter = ('branching', 'template', 'optional')
     actions = [
         'increment_position',
         'decrement_position',
@@ -167,8 +167,8 @@ class SectionAdmin(ObjectPermissionModelAdmin):
     ]
     fieldsets = (
         (None, {
-            'fields': ('template', 'title', 'position',
-                       'branching', 'introductory_text', 'comment'),
+            'fields': ('template', 'title', 'position', 'branching',
+                       'optional', 'introductory_text', 'comment'),
         }),
         ('Super section', {
             'fields': ('super_section', 'section_depth'),
@@ -209,9 +209,13 @@ class SectionAdmin(ObjectPermissionModelAdmin):
     increment_position.short_description = 'Increment position by 1'
 
     def decrement_position(self, request, queryset):
-        for q in queryset.order_by('position'):
-            q.position -= 1
-            q.save()
+        qs = queryset.order_by('position')
+        if not qs.exists():
+            return
+        if qs[0].position > 1:
+            for q in qs:
+                q.position -= 1
+                q.save()
     decrement_position.short_description = 'Decrement position by 1'
 
 
@@ -363,6 +367,17 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     def get_queryset(self, request):
         return get_questions_for_user(request.user)
 
+    def get_object(self, request, object_id, from_field=None):
+        queryset = self.get_queryset(request)
+        model = queryset.model
+        field = model._meta.pk if from_field is None else model._meta.get_field(from_field)
+        try:
+            object_id = field.to_python(object_id)
+            obj = queryset.get(**{field.name: object_id})
+            return obj.get_instance()
+        except (model.DoesNotExist, ValidationError, ValueError):
+            return None
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'section' and not request.user.is_superuser:
             sections = get_sections_for_user(request.user)
@@ -391,9 +406,13 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     increment_position.short_description = 'Increment position by 1'
 
     def decrement_position(self, request, queryset):
-        for q in queryset.order_by('position'):
-            q.position -= 1
-            q.save()
+        qs = queryset.order_by('position')
+        if not qs.exists():
+            return
+        if qs[0].position > 1:
+            for q in qs:
+                q.position -= 1
+                q.save()
     decrement_position.short_description = 'Decrement position by 1'
 
 

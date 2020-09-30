@@ -368,7 +368,10 @@ class Plan(DeletionMixin, ClonableModel):
         if not question.branching_possible:
             return False
         # Find any questions touched by branching
-        next_question = question.get_next_on_trunk()
+        if question.position == 0:  # optional section!
+            next_question = question.get_next_question(self.data, in_section=True)
+        else:
+            next_question = question.get_next_on_trunk()
         between = tuple(question.section
                    .questions_between(question, next_question)
                    .values_list('id', flat=True))

@@ -13,6 +13,7 @@ from guardian.shortcuts import get_objects_for_user, assign_perm
 
 from django.apps import apps
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db import transaction
 from django.forms import model_to_dict
@@ -412,6 +413,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                                       related_name='subsections')
     section_depth = models.PositiveSmallIntegerField(default=1)
     branching = models.BooleanField(default=False)
+    optional = models.BooleanField(default=False,
+                                   help_text='True if this section is optional. The template designer needs to provide a wording to an automatically generated yes/no question at the start of the section.')
 
     class Meta:
         unique_together = (
@@ -421,6 +424,33 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
 
     def __str__(self):
         return '{}: {}'.format(self.template.title, self.full_title())
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            do_section_question = BooleanQuestion.objects.filter(section=self, position=0)
+            if self.optional:
+                if not do_section_question:
+                    self.branching = True
+                    super().save(*args, **kwargs)
+                    self._make_do_section_question()
+            elif do_section_question:
+                do_section_question.delete()
+            super().save(*args, **kwargs)
+
+    def _make_do_section_question(self):
+        """
+        Automatically add a bool question with branch and add first
+        """
+        do_section_question = BooleanQuestion(section=self,
+                                              question='(Template designer please add)',
+                                              position=0)
+        do_section_question.save()
+        yes = CannedAnswer(question=do_section_question, canned_text='Yes', choice='Yes')
+        yes.save()
+        no = CannedAnswer(question=do_section_question, canned_text='No', choice='No')
+        no.save()
+        branch_past_section = ExplicitBranch(current_question=do_section_question, category='Last', condition='No')
+        branch_past_section.save()
 
     def full_title(self):
         if self.label:
@@ -1062,6 +1092,16 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         if self.label:
             return '{} {}'.format(self.label, self.question)
         return self.question
+
+    def clean(self):
+        # Only an optional section can have a question in position 0
+        if self.position == 0:
+            optional_section = getattr(self.section, 'optional', False)
+            if not optional_section:  # readability counts
+                raise ValidationError(
+                    "Only optional sections may have a question in position 0.",
+                    code='invalid',
+                )
 
     @transaction.atomic
     def clone(self, section):
