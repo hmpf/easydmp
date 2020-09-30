@@ -16,6 +16,18 @@ Planned
 Unreleased
 ----------
 
+1.3.0
+-----
+
+New: Add support for optional sections
+
+1.2.9
+-----
+
+* Run tests on github for a shiny, shiny badge
+* Allow running flake8 from tox
+* Fix thinko in plan list api
+
 1.2.8
 -----
 
