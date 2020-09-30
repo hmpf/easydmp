@@ -5,7 +5,7 @@
 *.sh
 *.sqlite3
 *~
-.coverage
+.coverage*
 .tox
 localsettings.py
 Attic
