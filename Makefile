@@ -7,7 +7,6 @@ clean:
 	-find . -name __pycache__ -print0 | xargs -0 rm -rf
 	-find . -name "*.pyc" -print0 | xargs -0 rm -rf
 	-find . -name "*.egg-info" -print0 | xargs -0 rm -rf
-	-rm -rf src/easydmp/dmpt/static/cached/dmpt/*
 	-rm -rf build
 	-rm -rf dist
 
