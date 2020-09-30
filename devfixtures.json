@@ -82,6 +82,7 @@
   "description": "",
   "more_info": "",
   "domain_specific": false,
+  "reveal_questions": false,
   "version": 1,
   "created": "2018-09-26T08:49:52.392Z",
   "published": null,
@@ -100,6 +101,7 @@
   "description": "",
   "more_info": "",
   "domain_specific": false,
+  "reveal_questions": false,
   "version": 1,
   "created": "2018-09-27T09:08:13.677Z",
   "published": null,
@@ -166,7 +168,8 @@
   "comment": "This is the comment to the first section of this template.",
   "super_section": null,
   "section_depth": 1,
-  "branching": false
+  "branching": false,
+  "optional": false
  }
 },
 {
@@ -184,7 +187,8 @@
   "comment": "Since there aren't any questions, nothing to do here.",
   "super_section": null,
   "section_depth": 1,
-  "branching": false
+  "branching": false,
+  "optional": false
  }
 },
 {
@@ -202,7 +206,8 @@
   "comment": "Nothing to do here either.",
   "super_section": null,
   "section_depth": 1,
-  "branching": false
+  "branching": false,
+  "optional": false
  }
 },
 {
@@ -220,7 +225,8 @@
   "comment": "This section also has a comment.",
   "super_section": null,
   "section_depth": 1,
-  "branching": false
+  "branching": false,
+  "optional": false
  }
 },
 {
@@ -238,7 +244,8 @@
   "comment": "",
   "super_section": null,
   "section_depth": 1,
-  "branching": false
+  "branching": false,
+  "optional": false
  }
 },
 {
