@@ -283,6 +283,7 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         summary = OrderedDict()
         data = deepcopy(data)  # 1/2 Make absolutely sure we're working on a copy
         for section in self.sections.order_by('position'):
+            optional_section_chosen = True
             section_summary = OrderedDict()
             for question in section.find_minimal_path(data):
                 value = {}
@@ -295,6 +296,10 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
                 # 2/2 Otherwise this might edit the actual plan data in memory!
                 # Mutable types strike back..
                 value['question'] = question
+                if answer and question.is_optional_section_question() and answer.get('choice', None) == 'No':
+                    optional_section_chosen = False
+                if not question.is_optional_section_question() and not optional_section_chosen:
+                    continue
                 section_summary[question.pk] = value
             summary[section.full_title()] = {
                 'data': section_summary,
@@ -1509,6 +1514,12 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         if frame and self.framing_text:
             result = self.framing_text.format(answer)
         return mark_safe(result)
+
+    def is_optional_section_question(self):
+        """
+        True if this question is the auto-generated question about answering a section or not
+        """
+        return self.position == 0
 
 
 class ChoiceValidationMixin():
