@@ -204,11 +204,10 @@ class DateRangeForm(AbstractNodeForm):
             if data and data.lower and data.upper:
                 start, end = data.lower, data.upper
                 return {
-                    'choice':
-                        {
-                            'start': start.isoformat(),
-                            'end': end.isoformat(),
-                        },
+                    'choice': {
+                        'start': start.isoformat(),
+                        'end': end.isoformat(),
+                    },
                 }
             else:
                 if self.question.optional:
@@ -219,7 +218,8 @@ class DateRangeForm(AbstractNodeForm):
 
     def pprint(self):
         if self.is_valid() and not self.question.optional:
-            return '{}–{}'.format(self.serialize())
+            choice = self.serialize()['choice']
+            return '{}–{}'.format(choice['start'], choice['end'])
         return 'Not set'
 
     def serialize_choice(self):

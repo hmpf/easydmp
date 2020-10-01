@@ -100,11 +100,11 @@ class EventLogQuerySet(models.QuerySet):
 
     def delete(self):
         return (0, {})
-    delete.queryset_only = True
+    delete.queryset_only = True  # type: ignore
 
     def update(self, **_):
         return 0
-    update.queryset_only = True
+    update.queryset_only = True  # type: ignore
 
     def _get_gfks(self, field, *objects):
         ct = GFK_MAPPER[field]['ct']

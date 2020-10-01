@@ -33,8 +33,8 @@ class InvitationQuerySet(models.QuerySet):
 
 
 class AbstractEmailInvitation(models.Model):
-    template_name = None
-    email_subject_template = None
+    template_name: str
+    email_subject_template: str
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email_address = models.EmailField()
