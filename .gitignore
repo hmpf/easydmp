@@ -6,8 +6,8 @@
 *.sqlite3
 *~
 .coverage*
+.mypy*
 .tox
-.mypi.ini
 localsettings.py
 Attic
 htmlcov

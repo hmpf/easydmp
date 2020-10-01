@@ -16,4 +16,5 @@ testclean: clean
 
 nuke: testclean
 	-rm -rf .tox
+	-rm -rf .mypy-cache
 	-find . -name 'db.sqlite3' -print0 | xargs -0 rm -rf
