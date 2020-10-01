@@ -220,3 +220,25 @@ class TestOptionalSections(test.TestCase):
         self.assertEqual(2, len(section.questions.all()))
         self.assertEqual(1, section.questions.get(question='Foo').position)
         self.assertEqual(2, section.questions.get(question='Bar').position)
+
+    def test_optional_section_in_summary(self):
+        section0 = SectionFactory(template=self.template, position=1)
+        section0.optional = True
+        section0.save()
+        q01 = Question(question='Foo', section=section0, position=1)
+        q01.save()
+        q02 = Question(question='Bar', section=section0, position=2)
+        q02.save()
+        section1 = SectionFactory(template=self.template, position=1)
+        section1.optional = False
+        section1.save()
+        Question(question='Foo', section=section1, position=1).save()
+        Question(question='Bar', section=section1, position=2).save()
+
+        # get summary from data set of answers
+        summary = self.template.get_summary({str(section0.questions.all().first().pk): {"choice": "No"},
+                                             str(q01.pk): {},
+                                             str(q02.pk): {}})
+        self.assertEqual(1, len(summary[section0.title]['data']))
+        self.assertEqual('(Template designer please add)', summary[section0.title]['data'][1]['question'].question)
+        self.assertEqual(2, len(summary[section1.title]['data']))
