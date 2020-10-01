@@ -679,9 +679,31 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
 
     # END: Section movement helpers
 
+    def get_optional_section_question(self):
+        if self.optional:
+            return self.questions.get(position=0).get_instance()
+        return None
+
+    def is_skipped(self, data):
+        if not self.optional:  # Non-optional sections can never be skipped
+            return False
+        toggle_question = self.get_optional_section_question()
+        toggle_answer = toggle_question.get_answer_choice(data)
+        if not data or not toggle_answer:
+            return True  # Should simplify logic elsewhere
+        toggle = toggle_question._serialize_condition(toggle_answer)
+        if toggle == 'Yes':
+            return True
+        return False
+
     def generate_canned_text(self, data):
         texts = []
-        for question in self.questions.order_by('position'):
+        questions = self.questions.order_by('position')
+        if self.is_skipped(data):
+            questions = [self.get_optional_section_question()]
+        else:
+            questions = questions.filter(position__gt=0)
+        for question in questions:
             answer = question.get_instance().generate_canned_text(data)
             if not isinstance(answer.get('text', ''), bool):
                 texts.append(answer)
@@ -1119,6 +1141,10 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
     def get_choices_keys(self):
         choices = self.get_choices()
         return [item[0] for item in choices]
+
+    def get_answer_choice(self, data):
+        choicedict = data.get(str(self.pk), {})
+        return choicedict.get('choice', None)
 
     def validate_data(self, data):
         if not data:
