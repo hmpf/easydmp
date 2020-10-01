@@ -198,7 +198,7 @@ class TestOptionalSections(test.TestCase):
         self.template = TemplateFactory()
 
     def test_optional_question_added(self):
-        section = SectionFactory(template=self.template, position=1)
+        section = SectionFactory(position=1)
         section.optional = True
         section.save()
         self.assertEqual(1, len(section.questions.all()))
@@ -220,3 +220,46 @@ class TestOptionalSections(test.TestCase):
         self.assertEqual(2, len(section.questions.all()))
         self.assertEqual(1, section.questions.get(question='Foo').position)
         self.assertEqual(2, section.questions.get(question='Bar').position)
+
+    def test_get_optional_section_question_in_optional_section(self):
+        section = SectionFactory.build(optional=True)
+        section.save()
+        question = section.get_optional_section_question()
+        self.assertEqual(question.position, 0)
+        self.assertEqual(question.input_type, 'bool')
+
+    def test_get_optional_section_question_in_normal_section(self):
+        section = SectionFactory.build(optional=False)
+        section.save()
+        question = section.get_optional_section_question()
+        self.assertEqual(question, None)
+
+    def test_is_skipped_true(self):
+        section = SectionFactory.build(optional=True)
+        section.save()
+        toggle_question = section.get_optional_section_question()
+        data = {str(toggle_question.pk): {'choice': 'Yes'}}
+        result = section.is_skipped(data)
+        self.assertTrue(result)
+
+    def test_is_skipped_when_not_answered_is_true(self):
+        section = SectionFactory.build(optional=True)
+        section.save()
+        toggle_question = section.get_optional_section_question()
+        data = {}
+        result = section.is_skipped(data)
+        self.assertTrue(result)
+
+    def test_is_skipped_on_normal_section_is_false(self):
+        section = SectionFactory.build(optional=False)
+        section.save()
+        result = section.is_skipped(None)
+        self.assertFalse(result)
+
+    def test_is_skipped_false(self):
+        section = SectionFactory.build(optional=True)
+        section.save()
+        toggle_question = section.get_optional_section_question()
+        data = {str(toggle_question.pk): {'choice': 'No'}}
+        result = section.is_skipped(data)
+        self.assertFalse(result)
