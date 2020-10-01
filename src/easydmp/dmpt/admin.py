@@ -120,16 +120,16 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
         if obj.published:
             return True
         return False
-    is_published.short_description = 'Is published'
-    is_published.boolean = True
+    is_published.short_description = 'Is published'  # type: ignore
+    is_published.boolean = True  # type: ignore
 
 
     def is_retired(self, obj):
         if obj.retired:
             return True
         return False
-    is_retired.short_description = 'Is retired'
-    is_retired.boolean = True
+    is_retired.short_description = 'Is retired'  # type: ignore
+    is_retired.boolean = True  # type: ignore
 
 
     # actions
@@ -137,12 +137,12 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
     def new_version(self, request, queryset):
         for q in queryset.all():
             q.new_version()
-    new_version.short_description = 'Create new version'
+    new_version.short_description = 'Create new version'  # type: ignore
 
     def private_copy(self, request, queryset):
         for q in queryset.all():
             q.private_copy()
-    private_copy.short_description = 'Make a private copy'
+    private_copy.short_description = 'Make a private copy'  # type: ignore
 
 
 @admin.register(Section)
@@ -197,8 +197,8 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         pdf_url = reverse('v1:section-graph', kwargs={'pk': obj.pk})
         html = '<a target="_blank" href="{}">PDF</a>'
         return format_html(html, mark_safe(pdf_url))
-    graph_pdf.short_description = 'Graph'
-    graph_pdf.allow_tags = True
+    graph_pdf.short_description = 'Graph'  # type: ignore
+    graph_pdf.allow_tags = True  # type: ignore
 
     # actions
 
@@ -206,7 +206,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         for q in queryset.order_by('-position'):
             q.position += 1
             q.save()
-    increment_position.short_description = 'Increment position by 1'
+    increment_position.short_description = 'Increment position by 1'  # type: ignore
 
     def decrement_position(self, request, queryset):
         qs = queryset.order_by('position')
@@ -216,7 +216,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
             for q in qs:
                 q.position -= 1
                 q.save()
-    decrement_position.short_description = 'Decrement position by 1'
+    decrement_position.short_description = 'Decrement position by 1'  # type: ignore
 
 
 class QuestionExplicitBranchInline(admin.StackedInline):
@@ -388,8 +388,8 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
 
     def get_mount(self, obj):
         return obj.eestore.eestore_type if obj.eestore else ''
-    get_mount.short_description = 'EEStore'
-    get_mount.admin_order_field = 'eestore'
+    get_mount.short_description = 'EEStore'  # type: ignore
+    get_mount.admin_order_field = 'eestore'  # type: ignore
 
     # actions
 
@@ -397,13 +397,13 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
         for q in queryset.all():
             q.on_trunk = not q.on_trunk
             q.save()
-    toggle_on_trunk.short_description = 'Toggle whether on trunk'
+    toggle_on_trunk.short_description = 'Toggle whether on trunk'  # type: ignore
 
     def increment_position(self, request, queryset):
         for q in queryset.order_by('-position'):
             q.position += 1
             q.save()
-    increment_position.short_description = 'Increment position by 1'
+    increment_position.short_description = 'Increment position by 1'  # type: ignore
 
     def decrement_position(self, request, queryset):
         qs = queryset.order_by('position')
@@ -413,7 +413,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
             for q in qs:
                 q.position -= 1
                 q.save()
-    decrement_position.short_description = 'Decrement position by 1'
+    decrement_position.short_description = 'Decrement position by 1'  # type: ignore
 
 
 @admin.register(ExplicitBranch)

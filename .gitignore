@@ -7,6 +7,7 @@
 *~
 .coverage*
 .tox
+.mypi.ini
 localsettings.py
 Attic
 htmlcov
@@ -15,6 +16,7 @@ dist
 staticfiles
 _build
 eudat-template
+mypi.ini
 collected_static_files
 src/easydmp/dmpt/static/**/*.svg
 src/easydmp/dmpt/static/**/*.png

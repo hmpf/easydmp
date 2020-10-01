@@ -11,7 +11,7 @@ __all__ = [
 LOG_TRACE = 5
 
 LOG = logging.getLogger(__name__)
-LOG.trace = lambda *args, **kwargs: LOG.log(LOG_TRACE, *args, **kwargs)
+LOG.trace = lambda *args, **kwargs: LOG.log(LOG_TRACE, *args, **kwargs)  # type: ignore
 
 
 HashableOrNone = Optional[Hashable]

@@ -3,7 +3,7 @@ from copy import deepcopy
 import os
 from pathlib import Path
 from textwrap import fill
-from typing import Dict, Tuple
+from typing import Text, Any, TypedDict, MutableMapping, Type, Dict, Tuple
 from uuid import uuid4
 import logging
 
@@ -64,6 +64,20 @@ INPUT_TYPES = (
     'storageforecast'
 )
 CONDITION_FIELD_LENGTH = 255
+
+
+# Types
+
+AnswerNote = Text
+AnswerChoice = Any
+Data = MutableMapping[str, dict]
+
+class AnswerStruct(TypedDict):
+    choice: Any
+    notes: str
+
+
+# Helper functions
 
 
 def id_or_none(modelobj):
@@ -268,7 +282,7 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
 
     # END: Template movement helpers
 
-    def generate_canned_text(self, data):
+    def generate_canned_text(self, data: Data):
         texts = []
         for section in self.sections.order_by('position'):
             canned_text = section.generate_canned_text(data)
@@ -280,14 +294,14 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
             })
         return texts
 
-    def get_summary(self, data: Dict[str, Dict], valid_section_ids: Tuple = ()):
+    def get_summary(self, data: Data, valid_section_ids: Tuple = ()) -> OrderedDict:
         summary = OrderedDict()
         data = deepcopy(data)  # 1/2 Make absolutely sure we're working on a copy
         for section in self.sections.order_by('position'):
             optional_section_chosen = True
             section_summary = OrderedDict()
             for question in section.find_minimal_path(data):
-                value = {}
+                value: Dict[str, Any] = {}
                 question = question.get_instance()
                 answer = data.get(str(question.pk), None)
                 if not answer or answer.get('choice', None) is None:
@@ -494,7 +508,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             questions = questions.filter(position__lt=end.position)
         return questions
 
-    def is_answered(self, answers):
+    def is_answered(self, answers: Data):
         answer = answers.get(str(self.pk), None)
         return bool(answer)
 
@@ -703,7 +717,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             return True
         return False
 
-    def generate_canned_text(self, data):
+    def generate_canned_text(self, data: Data):
         texts = []
         questions = self.questions.order_by('position')
         if self.is_skipped(data):
@@ -750,7 +764,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                 return True
         return False
 
-    def find_minimal_path(self, data=None):
+    def find_minimal_path(self, data: Data=None):
         minimal_qs = self.questions.filter(on_trunk=True).order_by('position')
         if not data:
             return list(minimal_qs)
@@ -926,12 +940,12 @@ class SimpleFramingTextMixin:
 
     This includes strings, but excludes any other iterables.
     """
-    def get_canned_answer(self, choice, frame=True, **kwargs):
+    def get_canned_answer(self, choice: AnswerChoice, frame=True, **kwargs):
         if not choice:
-            return self.get_optional_canned_answer()
+            return self.get_optional_canned_answer()  # type: ignore
 
         choice = str(choice)
-        return self.frame_canned_answer(choice, frame)
+        return self.frame_canned_answer(choice, frame)  # type: ignore
 
     def validate_choice(self, data):
         choice = data.get('choice', None)
@@ -1149,7 +1163,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         choices = self.get_choices()
         return [item[0] for item in choices]
 
-    def get_answer_choice(self, data):
+    def get_answer_choice(self, data: Data) -> AnswerChoice:
         choicedict = data.get(str(self.pk), {})
         return choicedict.get('choice', None)
 
@@ -1162,14 +1176,14 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             return True
         return False
 
-    def _serialize_condition(self, answer):
+    def _serialize_condition(self, answer: AnswerChoice) -> str:
         """Convert an answer into a lookup key
 
         For non-branching capable questions this is always "None"
         """
-        return None
+        pass
 
-    def validate_choice(self, data):
+    def validate_choice(self, data: Data):
         raise NotImplementedError
 
     def get_optional_canned_answer(self):
@@ -1177,7 +1191,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             return self.optional_canned_text
         return ''
 
-    def generate_canned_text(self, data):
+    def generate_canned_text(self, data: Data):
         answer = deepcopy(data.get(str(self.pk), {}))  # Very explicitly work on a copy
         choice = answer.get('choice', None)
         canned = self.get_instance().get_canned_answer(choice)
@@ -1186,8 +1200,8 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         answer['question'] = question
         return answer
 
-    def get_canned_answer(self, answer, frame=None, **kwargs):
-        if not answer:
+    def get_canned_answer(self, choice: AnswerChoice, **kwargs) -> str:
+        if not choice:
             return self.get_optional_canned_answer()
 
         if not self.canned_answers.exists():
@@ -1196,18 +1210,18 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         if self.canned_answers.count() == 1:
             return self.canned_answers.get().canned_text
 
-        choice = self.get_instance()._serialize_condition(answer)
+        choice = self.get_instance()._serialize_condition(choice)
         if choice is not None:
             canned = self.canned_answers.filter(choice=choice)
             if canned:
-                return canned[0].canned_text or answer
+                return canned[0].canned_text or choice
         return ''
 
-    def pprint(self, value):
+    def pprint(self, value: AnswerStruct):
         "Return a plaintext representation of the `choice`"
         return value['choice']
 
-    def pprint_html(self, value):
+    def pprint_html(self, value: AnswerStruct):
         "Return an HTML representation of the `choice`"
         return self.pprint(value)
 
@@ -1623,18 +1637,18 @@ class MultipleChoiceOneTextQuestion(Question):
             return True
         return False
 
-    def get_canned_answer(self, answer, frame=True, **kwargs):
+    def get_canned_answer(self, choice: AnswerChoice, frame=True, **kwargs):
         """
         answer = ['list', 'of', 'answers']
         """
 
-        if not answer:
+        if not choice:
             return self.get_optional_canned_answer()
 
-        if len(answer) == 1:
-            return self.frame_canned_answer(answer[0], frame)
+        if len(choice) == 1:
+            return self.frame_canned_answer(choice[0], frame)
 
-        joined_answer = '{} and {}'.format(', '.join(answer[:-1]), answer[-1])
+        joined_answer = '{} and {}'.format(', '.join(choice[:-1]), choice[-1])
         return self.frame_canned_answer(joined_answer, frame)
 
     def pprint(self, value):

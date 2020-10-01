@@ -83,4 +83,4 @@ class RenumberMixin:
         for i, obj in enumerate(objects, 1):
             obj.position = i
             obj.save()
-    _renumber_positions.alters_data = True
+    _renumber_positions.alters_data = True  # type: ignore
