@@ -3,6 +3,7 @@ from copy import deepcopy
 import os
 from pathlib import Path
 from textwrap import fill
+from typing import Dict, Tuple
 from uuid import uuid4
 import logging
 
@@ -279,10 +280,11 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
             })
         return texts
 
-    def get_summary(self, data, valid_section_ids=()):
+    def get_summary(self, data: Dict[str, Dict], valid_section_ids: Tuple = ()):
         summary = OrderedDict()
         data = deepcopy(data)  # 1/2 Make absolutely sure we're working on a copy
         for section in self.sections.order_by('position'):
+            optional_section_chosen = True
             section_summary = OrderedDict()
             for question in section.find_minimal_path(data):
                 value = {}
@@ -295,6 +297,11 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
                 # 2/2 Otherwise this might edit the actual plan data in memory!
                 # Mutable types strike back..
                 value['question'] = question
+                if answer and section.get_optional_section_question() == question and answer.get('choice',
+                                                                                                 None) == 'No':
+                    optional_section_chosen = False
+                if not section.get_optional_section_question() == question and not optional_section_chosen:
+                    continue
                 section_summary[question.pk] = value
             summary[section.full_title()] = {
                 'data': section_summary,
