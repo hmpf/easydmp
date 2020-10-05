@@ -296,7 +296,8 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
                 # 2/2 Otherwise this might edit the actual plan data in memory!
                 # Mutable types strike back..
                 value['question'] = question
-                if answer and section.get_optional_section_question() == question:
+                if answer and section.get_optional_section_question() == question and answer.get('choice',
+                                                                                                 None) == 'No':
                     optional_section_chosen = False
                 if not section.get_optional_section_question() == question and not optional_section_chosen:
                     continue
