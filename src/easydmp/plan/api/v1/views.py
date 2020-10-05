@@ -17,7 +17,7 @@ from easydmp.plan.models import QuestionValidity
 from easydmp.plan.utils import GenerateRDA10
 
 
-class LightSectionValiditySerializer(serializers.ModelSerializer):
+class SectionValiditySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SectionValidity
@@ -29,7 +29,7 @@ class LightSectionValiditySerializer(serializers.ModelSerializer):
         ]
 
 
-class LightQuestionValiditySerializer(serializers.ModelSerializer):
+class QuestionValiditySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = QuestionValidity
@@ -54,7 +54,7 @@ class PlanFilter(FilterSet):
         }
 
 
-class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
+class PlanSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.HyperlinkedIdentityField(
         view_name='plan-detail',
         lookup_field='pk',
@@ -66,33 +66,6 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
         read_only=True,
     )
     generated_html_url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Plan
-        fields = [
-            'id',
-            'uuid',
-            'url',
-            'title',
-            'abbreviation',
-            'version',
-            'template',
-            'generated_html_url',
-            'valid',
-            'last_validated',
-            'added',
-            'modified',
-            'locked',
-            'published',
-        ]
-
-    @extend_schema_field(OpenApiTypes.URI)
-    def get_generated_html_url(self, obj):
-        return reverse( 'generated_plan_html', kwargs={'plan': obj.id},
-                       request=self.context['request'])
-
-
-class HeavyPlanSerializer(LightPlanSerializer):
     data = JSONField(binary=False)
     previous_data = JSONField(binary=False)
     added_by = serializers.HyperlinkedRelatedField(
@@ -119,8 +92,8 @@ class HeavyPlanSerializer(LightPlanSerializer):
         many=False,
         read_only=True,
     )
-    section_validity = LightSectionValiditySerializer(many=True, read_only=True)
-    question_validity = LightQuestionValiditySerializer(many=True, read_only=True)
+    section_validity = SectionValiditySerializer(many=True, read_only=True)
+    question_validity = QuestionValiditySerializer(many=True, read_only=True)
 
     class Meta:
         model = Plan
@@ -152,18 +125,17 @@ class HeavyPlanSerializer(LightPlanSerializer):
         ]
         read_only_fields = ['generated_html']
 
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_generated_html_url(self, obj):
+        return reverse( 'generated_plan_html', kwargs={'plan': obj.id},
+                       request=self.context['request'])
+
 
 class PlanViewSet(ReadOnlyModelViewSet):
     filter_class = PlanFilter
     search_fields = ['=id', 'title', '=abbreviation']
-    serializer_class = HeavyPlanSerializer
+    serializer_class = PlanSerializer
     pagination_class = ToggleablePageNumberPagination
-
-# 
-#     def get_serializer_class(self):
-#         if self.action == 'retrieve':
-#             return HeavyPlanSerializer
-#         return LightPlanSerializer
 
     def get_queryset(self):
         qs = Plan.objects.all()
