@@ -229,19 +229,30 @@ class TestOptionalSections(test.TestCase):
         q01.save()
         q02 = Question(question='Bar', section=section0, position=2)
         q02.save()
-        section1 = SectionFactory(template=self.template, position=1)
+        section1 = SectionFactory(template=self.template, position=2)
         section1.optional = False
         section1.save()
         Question(question='Foo', section=section1, position=1).save()
         Question(question='Bar', section=section1, position=2).save()
+        section2 = SectionFactory(template=self.template, position=3)
+        section2.optional = True
+        q21 = Question(question='Foo2', section=section2, position=1)
+        q21.save()
+        q22 = Question(question='Bar2', section=section2, position=2)
+        q22.save()
 
         # get summary from data set of answers
         summary = self.template.get_summary({str(section0.questions.all().first().pk): {"choice": "No"},
                                              str(q01.pk): {},
-                                             str(q02.pk): {}})
+                                             str(q02.pk): {},
+                                             str(section2.questions.all().first().pk): {"choice": "Yes"},
+                                             str(q21.pk): {},
+                                             str(q22.pk): {},
+                                             })
         self.assertEqual(1, len(summary[section0.title]['data']))
         self.assertEqual('(Template designer please add)', summary[section0.title]['data'][1]['question'].question)
         self.assertEqual(2, len(summary[section1.title]['data']))
+        self.assertEqual(2, len(summary[section2.title]['data']))
 
     def test_get_optional_section_question_in_optional_section(self):
         section = SectionFactory.build(optional=True)
