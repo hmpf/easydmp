@@ -3,6 +3,7 @@ from copy import deepcopy
 import os
 from pathlib import Path
 from textwrap import fill
+from typing import Dict, Tuple
 from uuid import uuid4
 import logging
 
@@ -279,7 +280,7 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
             })
         return texts
 
-    def get_summary(self, data, valid_section_ids=()):
+    def get_summary(self, data: Dict[str, Dict], valid_section_ids: Tuple = ()):
         summary = OrderedDict()
         data = deepcopy(data)  # 1/2 Make absolutely sure we're working on a copy
         for section in self.sections.order_by('position'):
