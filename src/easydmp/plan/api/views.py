@@ -10,6 +10,7 @@ from django_filters.rest_framework.filterset import FilterSet
 
 from easydmp.auth.api.views import UserSerializer
 
+from easydmp.lib.api.pagination import ToggleablePageNumberPagination
 from easydmp.plan.models import Plan
 from easydmp.plan.models import SectionValidity
 from easydmp.plan.models import QuestionValidity
@@ -154,6 +155,7 @@ class PlanViewSet(ReadOnlyModelViewSet):
     filter_class = PlanFilter
     search_fields = ['=id', 'title', '=abbreviation']
     serializer_class = HeavyPlanSerializer
+    pagination_class = ToggleablePageNumberPagination
 
 # 
 #     def get_serializer_class(self):

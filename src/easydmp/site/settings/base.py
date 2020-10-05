@@ -56,7 +56,6 @@ INSTALLED_APPS = [
     'corsheaders',
 
     'easydmp.auth.apps.EasyDMPAuthConfig',
-    'flow',
     'easydmp.dmpt',
     'easydmp.plan',
     'easydmp.invitation',

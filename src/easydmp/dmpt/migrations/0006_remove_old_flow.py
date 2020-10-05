@@ -9,13 +9,4 @@ class Migration(migrations.Migration):
         ('dmpt', '0005_noop'),
     ]
 
-    operations = [
-        migrations.RemoveField(
-            model_name='cannedanswer',
-            name='edge',
-        ),
-        migrations.RemoveField(
-            model_name='question',
-            name='node',
-        ),
-    ]
+    operations = []

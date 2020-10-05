@@ -296,9 +296,9 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
                 # 2/2 Otherwise this might edit the actual plan data in memory!
                 # Mutable types strike back..
                 value['question'] = question
-                if answer and question.is_optional_section_question() and answer.get('choice', None) == 'No':
+                if answer and section.get_optional_section_question() == question:
                     optional_section_chosen = False
-                if not question.is_optional_section_question() and not optional_section_chosen:
+                if not section.get_optional_section_question() == question and not optional_section_chosen:
                     continue
                 section_summary[question.pk] = value
             summary[section.full_title()] = {
@@ -318,35 +318,11 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
             }
         return summary
 
-    def list_unknown_questions(self, plan):
-        "List out all question pks of a plan that are unknown in the template"
-        assert self == plan.template, "Mrong template for plan"
+    def list_unknown_questions(self, data):
+        "Find question pks of an answer set that are unknown in this template"
         question_pks = self.questions.values_list('pk', flat=True)
-        data_pks = set(int(k) for k in plan.data)
+        data_pks = set(int(k) for k in data)
         return data_pks.difference(question_pks)
-
-    def validate_plan(self, plan, recalculate=True):
-# TODO: clean away answers for questions that have been deleted
-#         wrong_pks = [str(pk) for pk in self.list_unknown_questions(plan)]
-#         if wrong_pks:
-#             error = 'The plan {} contains nonsense data: template has no questions for: {}'
-#             planstr = '{} ({}), template {} ({})'.format(plan, plan.pk, self, self.pk)
-#             LOG.error(error.format(planstr, ' '.join(wrong_pks)))
-#             assert False, 'here'
-#             return False
-        if not plan.data:
-            error = 'The plan {} ({}) has no data: invalid'
-            LOG.error(error.format(plan, plan.pk))
-            return False
-        if recalculate:
-            for section in self.sections.all():
-                valids, invalids = section.find_validity_of_questions(plan.data)
-                section.set_validity_of_questions(plan, valids, invalids)
-            valids, invalids = self.find_validity_of_sections(plan.data)
-            self.set_validity_of_sections(plan, valids, invalids)
-        if plan.section_validity.filter(valid=True).count() == plan.template.sections.count():
-            return True
-        return False
 
     def find_validity_of_sections(self, data):
         valids = set(self.sections.filter(questions__optional=True).values_list('pk', flat=True))
@@ -360,10 +336,6 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
             else:
                 invalids.add(section.pk)
         return (valids, invalids)
-
-    def set_validity_of_sections(self, plan, valids, invalids):
-        plan.set_sections_as_valid(*valids)
-        plan.set_sections_as_invalid(*invalids)
 
     def validate_data(self, data):
         assert False, data
@@ -712,9 +684,31 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
 
     # END: Section movement helpers
 
+    def get_optional_section_question(self):
+        if self.optional:
+            return self.questions.get(position=0).get_instance()
+        return None
+
+    def is_skipped(self, data):
+        if not self.optional:  # Non-optional sections can never be skipped
+            return False
+        toggle_question = self.get_optional_section_question()
+        toggle_answer = toggle_question.get_answer_choice(data)
+        if not data or not toggle_answer:
+            return True  # Should simplify logic elsewhere
+        toggle = toggle_question._serialize_condition(toggle_answer)
+        if toggle == 'Yes':
+            return True
+        return False
+
     def generate_canned_text(self, data):
         texts = []
-        for question in self.questions.order_by('position'):
+        questions = self.questions.order_by('position')
+        if self.is_skipped(data):
+            questions = [self.get_optional_section_question()]
+        else:
+            questions = questions.filter(position__gt=0)
+        for question in questions:
             answer = question.get_instance().generate_canned_text(data)
             if not isinstance(answer.get('text', ''), bool):
                 texts.append(answer)
@@ -740,10 +734,6 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             else:
                 invalids.add(question.pk)
         return (valids, invalids)
-
-    def set_validity_of_questions(self, plan, valids, invalids):
-        plan.set_questions_as_valid(*valids)
-        plan.set_questions_as_invalid(*invalids)
 
     def validate_data(self, data):
         if not data:
@@ -1157,6 +1147,10 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         choices = self.get_choices()
         return [item[0] for item in choices]
 
+    def get_answer_choice(self, data):
+        choicedict = data.get(str(self.pk), {})
+        return choicedict.get('choice', None)
+
     def validate_data(self, data):
         if not data:
             return False
@@ -1514,12 +1508,6 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         if frame and self.framing_text:
             result = self.framing_text.format(answer)
         return mark_safe(result)
-
-    def is_optional_section_question(self):
-        """
-        True if this question is the auto-generated question about answering a section or not
-        """
-        return self.position == 0
 
 
 class ChoiceValidationMixin():

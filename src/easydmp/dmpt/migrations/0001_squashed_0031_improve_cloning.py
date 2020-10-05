@@ -15,7 +15,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('auth', '0008_alter_user_username_max_length'),
-        ('flow', '0001_squashed_0006_add_clonable_model_fields'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -78,7 +77,6 @@ class Migration(migrations.Migration):
                 ('label', models.CharField(blank=True, max_length=16)),
                 ('help_text', models.TextField(blank=True)),
                 ('framing_text', models.TextField(blank=True)),
-                ('node', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='payload', to='flow.Node')),
                 ('section', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='questions', to='dmpt.Section')),
                 ('comment', models.TextField(blank=True, null=True)),
                 ('obligatory', models.BooleanField(default=True)),
@@ -256,7 +254,6 @@ class Migration(migrations.Migration):
                 ('choice', models.CharField(help_text='Human friendly view of condition', max_length=255)),
                 ('canned_text', models.TextField(blank=True, null=True)),
                 ('comment', models.TextField(blank=True, null=True)),
-                ('edge', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='payload', to='flow.Edge')),
                 ('question', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='canned_answers', to='dmpt.Question')),
                 ('position', models.PositiveIntegerField(blank=True, default=1, help_text='Position in question. Just used for ordering.', null=True)),
                 ('cloned_from', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='clones', to='dmpt.CannedAnswer')),
