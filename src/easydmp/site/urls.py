@@ -47,7 +47,8 @@ urlpatterns = [
     path('api/', RedirectView.as_view(pattern_name='swagger-ui'), name='go-to-swagger-ui'),
     path('api/schema/',SpectacularAPIView.as_view(), name='schema'),
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    url(r'^api/v1/', include('easydmp.site.api.urls', namespace='v1')),
+    url(r'^api/v1/', include('easydmp.site.api.v1.urls', namespace='v1')),
+    url(r'^api/v2/', include('easydmp.site.api.v2.urls', namespace='v2')),
 ]
 
 if settings.DEBUG:

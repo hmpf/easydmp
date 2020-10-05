@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from easydmp.auth.api.views import UserSerializer
+from easydmp.auth.api.v2.views import UserSerializer
 from easydmp.lib.api.pagination import ToggleablePageNumberPagination
 from easydmp.plan.models import Plan
 from easydmp.plan.models import SectionValidity
@@ -150,7 +150,6 @@ class HeavyPlanSerializer(LightPlanSerializer):
             'published',
             'published_by',
         ]
-        read_only_fields = ['generated_html']
 
 
 class PlanViewSet(ReadOnlyModelViewSet):
