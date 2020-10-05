@@ -22,7 +22,8 @@ jobs:
         pip install tox tox-gh-actions
     - name: Lint with flake8
       run: |
+        tox -e flake8-critical
         tox -e flake8
     - name: Test with tox
       run: |
-        tox
+        tox -e clean -e py38-django22 -e coverage-xml
