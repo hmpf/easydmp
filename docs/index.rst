@@ -22,6 +22,7 @@ See the :doc:`overview <overview>`.
    installation
    templates
    development
+   terminology
 
 
 
