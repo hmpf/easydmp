@@ -250,7 +250,7 @@ class TestOptionalSections(test.TestCase):
                                              str(q22.pk): {},
                                              })
         self.assertEqual(1, len(summary[section0.title]['data']))
-        self.assertEqual('(Template designer please add)', summary[section0.title]['data'][1]['question'].question)
+        self.assertEqual('(Template designer please update)', summary[section0.title]['data'][1]['question'].question)
         self.assertEqual(2, len(summary[section1.title]['data']))
         self.assertEqual(2, len(summary[section2.title]['data']))
 
