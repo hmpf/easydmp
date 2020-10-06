@@ -9,12 +9,28 @@ feature or commit hashes were used.
 Planned
 -------
 
-* Optional sections
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
 Unreleased
 ----------
+
+1.3.1
+-----
+
+* Fix various bugs in optional sectons
+* Add some type hints to tricky bits. This will help with making setions
+  repeatable but does *not* mean that we will aim for everything typed.
+
+  Common setup is added to "setup.cfg". Override with "mypi.ini" and
+  ".mypi.ini", which are in .gitignore.
+* Add support for toggleable pagination, turn on with query param `page_size`
+* Remove last vestiges of old flow-app
+* Refactor Plan, especially validation. This is the first step in adding
+  repeatable sections.
+* Move the remains of easydmp.utils to easydmp.lib
+* Update devfixtures.json for v1.3.0
+* Remove final traces of cached section graphs
 
 1.3.0
 -----
