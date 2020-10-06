@@ -561,6 +561,10 @@ class Plan(DeletionMixin, ClonableModel):
         qs = self.section_validity.filter(section_id__in=section_pks)
         qs.update(valid=False)
 
+    def set_validity_of_questions(self, valids, invalids):
+        self.set_questions_as_valid(*valids)
+        self.set_questions_as_invalid(*invalids)
+
     def set_questions_as_valid(self, *question_pks):
         # TODO: Maybe turn into function?
         qs = QuestionValidity.objects.filter(plan=self, question_id__in=question_pks)
@@ -592,7 +596,7 @@ class Plan(DeletionMixin, ClonableModel):
         if recalculate:
             for sv in self.section_validity.all():
                 valids, invalids = sv.section.find_validity_of_questions(self.data)
-                sv.set_validity_of_questions(valids, invalids)
+                self.set_validity_of_questions(valids, invalids)
             valids, invalids = self.template.find_validity_of_sections(self.data)
             self.set_validity_of_sections(valids, invalids)
         if self.section_validity.filter(valid=True).count() == self.template.sections.count():
