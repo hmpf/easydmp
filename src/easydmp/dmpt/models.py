@@ -713,7 +713,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         if not data or not toggle_answer:
             return True  # Should simplify logic elsewhere
         toggle = toggle_question._serialize_condition(toggle_answer)
-        if toggle == 'Yes':
+        if toggle == 'No':
             return True
         return False
 
@@ -755,6 +755,9 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         if not data:
             return False
         if not self.questions.exists():
+            return True
+        # Toggle question == 'No' makes the section valid
+        if self.is_skipped(data):
             return True
         valids, invalids = self.find_validity_of_questions(data)
         if not invalids:

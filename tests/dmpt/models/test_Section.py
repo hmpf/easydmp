@@ -271,7 +271,7 @@ class TestOptionalSections(test.TestCase):
         section = SectionFactory.build(optional=True)
         section.save()
         toggle_question = section.get_optional_section_question()
-        data = {str(toggle_question.pk): {'choice': 'Yes'}}
+        data = {str(toggle_question.pk): {'choice': 'No'}}
         result = section.is_skipped(data)
         self.assertTrue(result)
 
@@ -293,6 +293,6 @@ class TestOptionalSections(test.TestCase):
         section = SectionFactory.build(optional=True)
         section.save()
         toggle_question = section.get_optional_section_question()
-        data = {str(toggle_question.pk): {'choice': 'No'}}
+        data = {str(toggle_question.pk): {'choice': 'Yes'}}
         result = section.is_skipped(data)
         self.assertFalse(result)
