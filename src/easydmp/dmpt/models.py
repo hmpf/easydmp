@@ -433,9 +433,15 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     def _make_do_section_question(self):
         """
         Automatically add a bool question with branch and add first
+
+        If this question is answered "No", skip the section.
         """
+        text_to_update = "(Template designer please update)"
+        help_text = (text_to_update + 'This is an optional section. '
+                     'If you select "No", this section will be skipped.')
         do_section_question = BooleanQuestion(section=self,
-                                              question='(Template designer please add)',
+                                              question=text_to_update,
+                                              help_text=help_text,
                                               position=0)
         do_section_question.save()
         yes = CannedAnswer(question=do_section_question, canned_text='Yes', choice='Yes')
