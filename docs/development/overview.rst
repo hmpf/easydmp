@@ -63,23 +63,18 @@ affected by any FSAs that questions are connected to.
 
 The currently supported types are:
 
-* Boolean
-* Positive integer
-* Text field
-* Daterange
-* Choice (choose one of a short list of predefined choices)
-* Multi choice (choose one or more of a short list of predefined choices)
-* Single url + name/description
-* Multiple pairs of urls with name/description
-* External choice (choose one of a long list fetched from the EEStore)
-* External multi choice (choose one or more of a long list fetched from
-  the EEStore)
+.. csv-table:: Question types
+   :file: ./question-types.csv
+   :delim: ;
+   :widths: 15, 55, 10, 20
+   :header-rows: 1
 
-The "Boolean" and "Choice"-types can branch, that is: which question is
-the next may depend on a specific answer. Such questions are part of an
-FSA, and their answers gives the keys to lookup the correct edge between
-two nodes. If there is no FSA, the next question is decided by position,
-higher position is asked later.
+The types with Branch start" set to "yes" can be the start of a branch,
+that is: which question is the next may depend on a specific answer.
+Such questions are part of an FSA, and their answers gives the keys to
+lookup the correct edge between two nodes, as encided in an
+``ExplicitBranch``. If there is no FSA, the next question is decided by
+position, higher position is asked later.
 
 Plans
 -----
