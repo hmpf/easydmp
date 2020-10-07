@@ -5,7 +5,8 @@ Flow
 For linear (non-branching) sections, flow, the order of questions, is solely
 controlled by the ``position``-field in Sections and Questions.
 
-For branching sections, the FSA comes into play.
+For optional and branching sections, the ``ExplicitBranch`` model comes into
+play.
 
 Visualizing flow
 ================
@@ -54,5 +55,3 @@ empty
 Too many of the last type is usually a sign that the graph is too complex.
 
 There should be no loops.
-
-.. automodule:: flow

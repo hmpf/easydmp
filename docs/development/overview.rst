@@ -15,11 +15,11 @@ A bird's eye view
 Legend
 ------
 
-Arrow with single arrow-head: read only, points towards reader Arrow
+Arrow with single arrow-head: read only, points towards reader. Arrow
 with two arrow-heads: read-write
 
 The **DB** is a PostGreSQL database that stores all state: questions,
-answers, templates, plans, FSAs and users.
+answers, templates, plans and users.
 
 The **Model** is an ORM that wraps the tables in the **DB** and holds
 the business logic.
@@ -55,11 +55,11 @@ Templates
 A template designer creates a plan template in the web interface.
 A template consists of some metadata and one or more sections. Each
 section consist of one or more questions, and each question has a type,
-a position, and is optionally part of an Finite State Automaton (FSA).
+a position, and is optionally part of a Finite State Automaton (FSA).
 
 The sections can be reordered within a template, and the questions can
-be reordered within each section. The actual order of questions is also
-affected by any FSAs that questions are connected to.
+be reordered within each section. The actual order questions may be
+visited in is also affected by any FSAs that questions take part in.
 
 The currently supported types are:
 
@@ -81,32 +81,32 @@ Plans
 
 When planners create a plan, they answer each question in order, and the
 question-id and actual answer is stored in the plan. Each question-type
-then has logic to pretty-print the value of their answers, the so-called
-"canned answer". The "canned answers" are used to generate a text that
-is suitable for a paper-based application process, be it for funding or
-etther resources.
+has logic to pretty-print the value of their answers, the so-called
+"canned answer". The "canned answers" are used to generate a text,
+a so-called "canned text", that is suitable for a paper-based
+application process, be it for funding or etther resources.
 
-In order to output the generated the text, the answers in the plan are
-run through a *flow*, a serialized traversal of a directed acyclic graph
-(DAG). By running the flow through an FSA the answers are mapped to
-canned responses, building up to a text that appears to be hand written.
-This is then suitable for being attached, in paper form if need be, to
-a project proposal.
 
-The questions are not all nodes in the same FSA, as that proved to make
-template design quite unwieldy. Instead, only questions that lead to
-a branch and the questions that take part in the branches are part of
-the same FSA. Also, an FSA might only connect two questions that are in
-the same section. The goal is to have a winding road with the occasional
-shortcut, not a tree.
+There is also a summary available.
+
+In order to output the canned text, the answers in the plan are run
+through a *flow*, a serialized traversal of a directed acyclic graph
+(DAG). In so doing the answers are mapped to canned responses, building
+up to a text that appears to be hand written. This is then suitable for
+being edited, or attached, in paper form if need be, to a project
+proposal.
+
+Only questions that trigger a branch and the minimal amount of questions
+necessary that follow are part of the same FSA. Also, an FSA might only
+connect two questions that are in the same section. The goal is to have
+a winding road with the occasional shortcut, not a tree.
 
 For simplicity's sake, each question has its own page with its own url,
-so it is very easy to revisit a specific question.
+so it is easy to revisit a specific question, or bookmark it.
 
 .. todo::
-    A template, a section and a specific FSA can all be copied to be
-    reused in a different template, section or FSA. Templates are
-    versioned, and the system handles multiple templates
-    simultaneously. A specific plan is made from a specific versioned
-    template, and each plan is also versioned.
+   A template or a section can all be copied to be reused in a different
+   template or section. Templates are versioned, and the system handles
+   multiple templates simultaneously. A specific plan is made from a specific
+   versioned template, and each plan is also versioned.
 
