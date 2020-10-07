@@ -16,6 +16,8 @@ pathjoin = os.path.join
 
 import dj_database_url
 
+from ... import __version__ as VERSION
+
 
 def getenv(name, default=None):
     value = os.getenv(name, default)
@@ -54,6 +56,7 @@ INSTALLED_APPS = [
     'django_filters',
     'guardian',
     'corsheaders',
+    'drf_spectacular',
 
     'easydmp.auth.apps.EasyDMPAuthConfig',
     'easydmp.dmpt',
@@ -266,14 +269,22 @@ REST_FRAMEWORK = {
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
     'DEFAULT_VERSION': 'v1',
     'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.backends.DjangoFilterBackend',
+        'drf_spectacular.contrib.django_filters.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 JWT_AUTH = {
     'JWT_ALLOW_REFRESH': True,
     'JWT_LEEWAY': 30,
+}
+
+# drf-spectacular (swagger/OpenAPI)
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'EasyDMP',
+    'VERSION': VERSION,
 }
 
 # PSA
