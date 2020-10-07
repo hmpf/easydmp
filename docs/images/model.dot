@@ -12,19 +12,12 @@ digraph model {
         Question -> Section [label="has"];
         Section -> Template [label="has"];
         CannedAnswer -> Question [label="has"];
+        ExplicitBranch -> Question [label="has"];
+        ExplicitBranch -> Question [style=dotted, label="may have"];
     }
     subgraph  cluster_plan {
         label="plan";
         Plan;
     }
     Plan -> Template [label="has"];
-    node[group=right];
-    subgraph  cluster_flow {
-        label="flow";
-        "Edge" -> "Node" [style=dotted, label="may have"];
-        "Node" -> "FSA" [label="has"];
-    }
-    Question -> "Node" [style=dotted, label="may have"];
-    CannedAnswer -> "Edge" [style=dotted, label="may have"];
-    node[group=left];
 }
