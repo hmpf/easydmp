@@ -4,103 +4,105 @@ Terminology
 
 Some terms, alphabetized.
 
-branching section
-    A section where which questions are available to be answered depends on
-    what questions have already been answered.
+.. glossary::
 
-editor
-    A person that controls a plan. May invite others to edit, or to view the
-    plan.
+   branching section
+       A section where which questions are available to be answered depends on
+       what questions have already been answered.
 
-invitation
-    When an editor wants to allow others to edit or view their plans, they can
-    make an invitation. The invitation is done by sending an email with
-    a magical link. On visiting that link and clicking on the button there,
-    access to the plan is granted.
+   editor
+       A person that controls a plan. May invite others to edit, or to view the
+       plan.
 
-linear section
-    A section without any branches (except for a magical one if the section is
-    also optional.)
+   invitation
+       When an editor wants to allow others to edit or view their plans, they can
+       make an invitation. The invitation is done by sending an email with
+       a magical link. On visiting that link and clicking on the button there,
+       access to the plan is granted.
 
-    Every question is on_trunk.
+   linear section
+       A section without any branches (except for a magical one if the section is
+       also optional.)
 
-on_branch question
-    A question that *may* never bee seen or contemplated by an editor, because
-    it may be hidden in a different branch.
+       Every question is on_trunk.
 
-on_trunk question
-    A question that *must* be contemplated for a plan to be validi, unless it
-    is in an optional section. It may be optional.
+   on_branch question
+       A question that *may* never bee seen or contemplated by an editor, because
+       it may be hidden in a different branch.
 
-    The first question (and any optional section question) of a section is
-    always on_trunk.
+   on_trunk question
+       A question that *must* be contemplated for a plan to be validi, unless it
+       is in an optional section. It may be optional.
 
-optional question
-    A question that need not be answered.
+       The first question (and any optional section question) of a section is
+       always on_trunk.
 
-    If it is not answered it will still count towards that plan being valid.
+   optional question
+       A question that need not be answered.
 
-optional section
-    A section that is designed to be optional and need not be answered.
+       If it is not answered it will still count towards that plan being valid.
 
-    It has a magical toggle question, that if answered with "No" will skip that
-    section.
+   optional section
+       A section that is designed to be optional and need not be answered.
 
-    If it is not answered it will still count towards that plan being valid.
+       It has a magical toggle question, that if answered with "No" will skip that
+       section.
 
-optional section question
-    An optional section's magical toggle question. It has two possible
-    answers, "Yes", and "No". Answering "No" will skip the section.
+       If it is not answered it will still count towards that plan being valid.
 
-    It is the first question of a sections's questions and have a magical
-    position of "0". It will be automatically created when a section is
-    designated as "optional".
+   optional section question
+       An optional section's magical toggle question. It has two possible
+       answers, "Yes", and "No". Answering "No" will skip the section.
 
-plan
-    A named collection of question-answer pairs according to some template, and
-    some metadata.
+       It is the first question of a sections's questions and have a magical
+       position of "0". It will be automatically created when a section is
+       designated as "optional".
 
-    A plan is valid if its answers as checked against its template are valid.
+   plan
+       A named collection of question-answer pairs according to some template, and
+       some metadata.
 
-question
-    A question that may be answered in a plan. A question has a type. Can be
-    optional. Can have multiple answers of the same type. Questions are ordered.
+       A plan is valid if its answers as checked against its template are valid.
 
-required question
-    The opposite of an optional question, this is the default. These nust
-    always be answered if not hidden by a branch.
+   question
+       A question that may be answered in a plan. A question has a type. Can be
+       optional. Can have multiple answers of the same type. Questions are ordered.
 
-    Marked with a red dot after the question text itself.
+   required question
+       The opposite of an optional question, this is the default. These nust
+       always be answered if not hidden by a branch.
 
-section
-    A named collection of a subset of a template's questions. Can be nested.
-    Can be optional. Can be branching or linear. Need not have any questions
-    itself but just serve as structural support. Sections are ordered.
+       Marked with a red dot after the question text itself.
 
-    A section is valid if their questions' answers are valid.
+   section
+       A named collection of a subset of a template's questions. Can be nested.
+       Can be optional. Can be branching or linear. Need not have any questions
+       itself but just serve as structural support. Sections are ordered.
 
-required section
-    The opposite of an optional section. A section that must be seen and whose
-    questions must be answered. This is the default.
+       A section is valid if their questions' answers are valid.
 
-skipped section
-    An optional section that has been skipped by a plan having answered it with
-    "No".
+   required section
+       The opposite of an optional section. A section that must be seen and whose
+       questions must be answered. This is the default.
 
-    Skipped sections are automatically valid.
+   skipped section
+       An optional section that has been skipped by a plan having answered it with
+       "No".
 
-template
-    A named collection of questions that a plan seeks to answer. Consists of
-    one or more sections.
+       Skipped sections are automatically valid.
 
-   Templates are valid if the answers to the questions in their sections are
-   valid.
+   template
+       A named collection of questions that a plan seeks to answer. Consists of
+       one or more sections.
 
-template designer
-    A person that may dersign a template for editors to use.
+      Templates are valid if the answers to the questions in their sections are
+      valid.
 
-toggle question
-    See "optional section question".
+   template designer
+       A person that may dersign a template for editors to use.
 
-viewer
-    A person that has read-only access to the plan.
+   toggle question
+       See "optional section question".
+
+   viewer
+       A person that has read-only access to the plan.
