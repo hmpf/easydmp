@@ -1,16 +1,16 @@
 Question;More details;Branch start;Input type
-Boolean ;"choose either ""Yes"" or ""No""";Yes;``bool``
-Positive integer;;No;positiveinteger'
+Boolean ;"choose either ""Yes"" or ""No""";**Yes**;``bool``
+Positive integer;;No;``positiveinteger``
 Text field;;No;``reason``
 Single line text field;;No;``shortfreetext``
 Date range;"two dates";No;``daterange``
-Choice;"choose one of a short list of predefined choices";Yes;``choice``
+Choice;"choose one of a short list of predefined choices";**Yes**;``choice``
 Multichoice;"choose one or more of a short list of predefined choices";No;``multichoiceonetext``
 Date;without time;No;``date``
 External choice;"choose one of a long list of choices fetched from the EEStore";No;``externalchoice``
-External choice with not listed;"choose one of a long list of predefined choices fetched from the EEStore, or ""not listed""";Yes;``extchoicenotlisted``
+External choice with not listed;"choose one of a long list of predefined choices fetched from the EEStore, or ""not listed""";**Yes**;``extchoicenotlisted``
 External multi choice;"choose one or more of a long list of choices fetched from the EEStore";No;``externalmultichoiceonetext``
-External multi choice with not listed;"choose one or more of a long list of choices fetched from the EEStore, or ""not listed""";Yes;``extmultichoicenotlistedonetext``
+External multi choice with not listed;"choose one or more of a long list of choices fetched from the EEStore, or ""not listed""";**Yes**;``extmultichoicenotlistedonetext``
 Named url;url with title;No;``namedurl``
 Multiple named urls;"a table with columns url, title";No;``multinamedurlonetext``
 Multi type, reason, url;"a table with columns type, reason, url";No;``multidmptypedreasononetext``
