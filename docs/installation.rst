@@ -29,7 +29,7 @@ Layout:
 Prerequisites
 =============
 
-- python >= 3.5
+- python >= 3.8
 - pip
 - graphviz
 - virtualenv/wrapper (optional)
@@ -151,8 +151,8 @@ a ``virtualenv``, which means that the web server will need to know about the
 path to the virtualenv.
 
 If the virtualenv is installed at ``/path/to/virtualenv`` and the python
-version is 3.5, the follwing path must be somehow added to the python path::
+version is 3.8, the follwing path must be somehow added to the python path::
 
-    /path/to/virtualenv/lib/python3.5/site-pacakges/
+    /path/to/virtualenv/lib/python3.8/site-pacakges/
 
 If using Apache, do not use ``mod_python``, use ``mod_wsgi`` in daemon mode.
