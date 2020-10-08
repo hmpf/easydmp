@@ -45,9 +45,8 @@ Workflow
 ========
 
 .. _figure_model:
-.. figure:: ../images/model.*
-
-   Figure 2: Inside the model
+.. graphviz:: ../images/model.dot
+   :caption: Figure 2: Inside the model
 
 Templates
 ---------

@@ -45,6 +45,7 @@ version = '.'.join(release.split('.', 2)[:2])
 # ones.
 extensions = [
     'sphinx.ext.intersphinx',
+    'sphinx.ext.graphviz',
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
@@ -119,6 +120,8 @@ html_sidebars = {
         'donate.html',
     ]
 }
+
+graphviz_output_format = 'svg'
 
 
 # -- Options for HTMLHelp output ------------------------------------------
