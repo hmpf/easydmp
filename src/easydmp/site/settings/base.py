@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'django_su',
     'django.contrib.admin',
     'django.contrib.admindocs',
     'django.contrib.auth',
@@ -92,6 +93,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django_su.context_processors.is_su',
                 'easydmp.lib.context_processors.common',
             ],
         },
@@ -194,6 +196,7 @@ LOGIN_URL = 'login-selector'
 LOGIN_REDIRECT_URL = '/plan/'
 
 AUTHENTICATION_BACKENDS = [
+    'django_su.backends.SuBackend',
     'django.contrib.auth.backends.RemoteUserBackend',
     'django.contrib.auth.backends.ModelBackend',
     'guardian.backends.ObjectPermissionBackend',

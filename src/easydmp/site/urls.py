@@ -28,6 +28,7 @@ urlpatterns = [
     path('logout', logout_view, name='logout'),
     path('privacy/', PublicTemplateView.as_view(template_name='privacy.html'), name='privacy'),
     path('account/', include('easydmp.auth.urls')),
+    path('^su/', include('django_su.urls')),
 
     path('plan/', include('easydmp.plan.urls')),
     path('invitation/', include('easydmp.invitation.urls')),
