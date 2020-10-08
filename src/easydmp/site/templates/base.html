@@ -53,8 +53,13 @@
 <body>
   <header role="banner">
   <div class="navbar navbar-default navbar-fixed-top" role="navigation">
-    {% if instance_message or messages %}
+    {% if instance_message or messages or IS_SU %}
     <div class="container messages">
+      {% if IS_SU %}
+      <div role="alert" class="alert impersonation">You are impersonating {{ request.user }} 
+          <a href="{% url 'su_logout' %}">Switch back to yourself</a>
+      </div>
+      {% endif %}
       {% if instance_message %}
       <div role="alert" class="alert instance">{{ instance_message }}</div>
       {% endif %}
