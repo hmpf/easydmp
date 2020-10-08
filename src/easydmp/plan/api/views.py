@@ -1,3 +1,6 @@
+from django_filters.rest_framework.filterset import FilterSet
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.fields import JSONField
@@ -6,10 +9,7 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from django_filters.rest_framework.filterset import FilterSet
-
 from easydmp.auth.api.views import UserSerializer
-
 from easydmp.lib.api.pagination import ToggleablePageNumberPagination
 from easydmp.plan.models import Plan
 from easydmp.plan.models import SectionValidity
@@ -86,6 +86,7 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
             'published',
         ]
 
+    @extend_schema_field(OpenApiTypes.URI)
     def get_generated_html_url(self, obj):
         return reverse( 'generated_plan_html', kwargs={'plan': obj.id},
                        request=self.context['request'])
@@ -149,6 +150,7 @@ class HeavyPlanSerializer(LightPlanSerializer):
             'published',
             'published_by',
         ]
+        read_only_fields = ['generated_html']
 
 
 class PlanViewSet(ReadOnlyModelViewSet):
