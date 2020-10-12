@@ -90,7 +90,7 @@ class CreatePlanViewerInvitationView(AbstractCreatePlanInvitationView):
 
 
 class AbstractPlanInvitationView:
-#    fields = []
+    fields = []  # type: ignore
     pk_url_kwarg = 'uuid'
 
     def get_invitations(self):
