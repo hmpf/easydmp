@@ -15,6 +15,12 @@ Planned
 Unreleased
 ----------
 
+1.3.2
+-----
+
+* Fix typo during refactor
+* Fix bug caused by mypy
+
 1.3.1
 -----
 
