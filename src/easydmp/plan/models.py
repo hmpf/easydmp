@@ -579,7 +579,7 @@ class Plan(DeletionMixin, ClonableModel):
         # TODO: Use answersets instead of section_validities
         for sv in oldplan.section_validity.all():
             sv.clone(self)
-        for qv in oldplan.question_validities.all():
+        for qv in oldplan.question_validity.all():
             qv.clone(self)
 
     def validate_data(self, recalculate=True):
