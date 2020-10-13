@@ -61,6 +61,9 @@ def select_plans(plan_ids=(), template_ids=(), section_ids=()):
 
 
 class GenerateRDA10:
+    """
+    A minimal WIP RDA DMP CS serializer
+    """
 
     def __init__(self, plan):
         self.plan = plan
