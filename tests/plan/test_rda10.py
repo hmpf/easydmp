@@ -16,29 +16,6 @@ class RdaTest(test.TestCase):
         plan_uuid = 'cccaced2-a381-48a4-9806-70b9e329a83d'
         p1 = Plan.objects.create(title='testplan1', added_by=u1, modified_by=u1, template=template, uuid=plan_uuid)
         dmp = GenerateRDA10(p1).get_dmp()
-        foo = {'created': '2020-10-14T07:14:56.867371',
-               'modified': '2020-10-14T07:14:56.867543',
-               'language': 'eng',
-               'title': 'testplan1',
-               'dmp_id': {'identifier': 'a3adf473-f2f1-4a3f-a20d-3c0469bb6b39',
-                          'type': 'other'},
-               'contact': {'mbox': 'testuser1',
-                           'name': 'testuser1',
-                           'contact_id': {'identifier': '2',
-                                          'type': 'other'}},
-               'dataset': [
-                   {'personal_data': 'unknown',
-                    'sensitive_data': 'unknown',
-                    'title': 'testplan1',
-                    'dataset_id': {'identifier': 'a3adf473-f2f1-4a3f-a20d-3c0469bb6b39',
-                                   'type': 'other'}}],
-               'ethical_issues_exist': 'unknown',
-               'contributor': [
-                   {'mbox': 'testuser1',
-                    'name': 'testuser1',
-                    'contributor_id': {'identifier': '2',
-                                       'type': 'other'},
-                    'role': ['Unknown']}]}
         self.assertEqual('eng', dmp['dmp']['language'])
         self.assertEqual('testplan1', dmp['dmp']['title'])
         self.assertEqual(plan_uuid, dmp['dmp']['dmp_id']['identifier'])
