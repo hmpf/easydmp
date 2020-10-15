@@ -3,17 +3,17 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework import serializers
 
-from easydmp.site.api.renderers import DotPDFRenderer
-from easydmp.site.api.renderers import DotPNGRenderer
-from easydmp.site.api.renderers import DotDOTRenderer
-from easydmp.site.api.renderers import DotSVGRenderer
+from easydmp.lib.api.renderers import DotPDFRenderer
+from easydmp.lib.api.renderers import DotPNGRenderer
+from easydmp.lib.api.renderers import DotDOTRenderer
+from easydmp.lib.api.renderers import DotSVGRenderer
 
-from easydmp.dmpt.api.serializers import *
 from easydmp.dmpt.models import Template
 from easydmp.dmpt.models import Section
 from easydmp.dmpt.models import Question
 from easydmp.dmpt.models import CannedAnswer
 from easydmp.dmpt.models import ExplicitBranch
+from .serializers import *
 
 
 class TemplateViewSet(ReadOnlyModelViewSet):
