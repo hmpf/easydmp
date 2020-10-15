@@ -16,6 +16,10 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls import url, include
 from django.contrib import admin
+from django.views.generic.base import RedirectView
+from django.urls import path
+
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from easydmp.site.views import Homepage
 from easydmp.site.views import LoginView
@@ -40,6 +44,9 @@ urlpatterns = [
 
     url(r'dmpt/', include('easydmp.dmpt.urls')),
 
+    path('api/', RedirectView.as_view(pattern_name='swagger-ui'), name='go-to-swagger-ui'),
+    path('api/schema/',SpectacularAPIView.as_view(), name='schema'),
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     url(r'^api/v1/', include('easydmp.site.api.urls', namespace='v1')),
 ]
 

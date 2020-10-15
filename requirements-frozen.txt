@@ -16,6 +16,7 @@ djangorestframework-jwt==1.11.0
 django-select2==6.3.1
 dj-database-url==0.5.0
 docutils==0.16
+drf-spectacular==0.9.14
 graphviz==0.13.2
 idna==2.8
 imagesize==1.1.0
