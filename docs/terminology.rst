@@ -31,7 +31,7 @@ Some terms, alphabetized.
        it may be hidden in a different branch.
 
    on_trunk question
-       A question that *must* be contemplated for a plan to be validi, unless it
+       A question that *must* be contemplated for a plan to be valid, unless it
        is in an optional section. It may be optional.
 
        The first question (and any optional section question) of a section is

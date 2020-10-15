@@ -41,10 +41,10 @@ Then reuse the field definitions in a subclass of MultiValueField.
 How to make the different types
 ===============================
 
-A simple Question like `date` consist of a proxy model inheriting from Question
-with an `input_type`, and a form for the `same input_type`. If it's a single
-field like in `date` that's it, but for a complex field like `daterange` you
-also need a widget.
+A simple Question like `date` consists of a proxy model inheriting from
+Question with an `input_type`, and a form for the same `input_type`. If it's
+a single field like in `date` that's it, but for a complex field like
+`daterange` you also need a widget.
 
 A formset like `cost` also has a proxy model inheriting from Question, but in
 addition to the form it also has a formset. Do note the base class:
@@ -73,7 +73,7 @@ given an instance of a question.
 Things that should be better
 ============================
 
-It would be better if the three INPUT_TYPE* constants were built up with
+It would be better if the three `INPUT_TYPE` constants were built up with
 a plugin-system instead of being kept up to date by hand. Each question-type
 could then have all its various components in the same module, and it would be
 more obvious how to write a new type. This would also allow optional 3rd party
