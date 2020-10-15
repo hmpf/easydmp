@@ -71,7 +71,7 @@ class GenerateRDA10:
     def _get_person_data(self, person, id_name='id'):
         if not person:
             return {}
-        email_address = person.username
+        email_address = person.email or person.username
         full_name = person.get_full_name() or email_address
         identifier = str(person.id)
         return {
