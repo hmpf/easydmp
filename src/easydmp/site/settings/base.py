@@ -208,6 +208,10 @@ ANONYMOUS_USER_NAME = None  # Turn off guardian's AnonymousUser
 
 X_FRAME_OPTIONS = 'ALLOW-FROM https://bibsys.no/'
 
+# Django-su
+
+SU_CUSTOM_LOGIN_ACTION = 'easydmp.auth.lib.su_login'
+
 # REST API
 
 REST_FRAMEWORK = {
