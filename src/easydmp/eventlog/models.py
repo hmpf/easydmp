@@ -3,10 +3,10 @@ from operator import or_
 from copy import deepcopy
 
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import JSONField
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils.timezone import now as tznow
-
-from jsonfield import JSONField as LegacyJSONField
 
 
 GFK_MAPPER = {
@@ -202,7 +202,7 @@ class EventLog(models.Model):
     action_object_object_id = models.TextField(blank=True, null=True,
                                                db_index=True)
 
-    data = LegacyJSONField(default=dict)
+    data = JSONField(default=dict, encoder=DjangoJSONEncoder)
     timestamp = models.DateTimeField(default=tznow, db_index=True)
 
     objects = EventLogManager.from_queryset(EventLogQuerySet)()

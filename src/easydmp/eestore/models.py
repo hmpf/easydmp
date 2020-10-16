@@ -1,8 +1,8 @@
 from django.conf import settings
+from django.contrib.postgres.fields import JSONField
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
-
-from jsonfield import JSONField as LegacyJSONField
 
 from .client import EEStoreServer, EEStoreRepo
 
@@ -119,7 +119,7 @@ class EEStoreCache(models.Model):
     pid = models.CharField(max_length=255, blank=True)
     remote_id = models.CharField(max_length=255)
 
-    data = LegacyJSONField(default=dict)
+    data = JSONField(default=dict, encoder=DjangoJSONEncoder)
     last_fetched = models.DateTimeField(blank=True, null=True)
 
     objects = EEStoreCacheManager()
