@@ -12,15 +12,15 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from easydmp.auth.api.v1.views import UserSerializer
 from easydmp.lib.api.pagination import ToggleablePageNumberPagination
 from easydmp.plan.models import Plan
-from easydmp.plan.models import SectionValidity
-from easydmp.plan.models import QuestionValidity
+from easydmp.plan.models import AnswerSet
+from easydmp.plan.models import Answer
 from easydmp.plan.utils import GenerateRDA10
 
 
 class SectionValiditySerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = SectionValidity
+        model = AnswerSet
         fields = [
             'id',
             'section',
@@ -32,7 +32,7 @@ class SectionValiditySerializer(serializers.ModelSerializer):
 class QuestionValiditySerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = QuestionValidity
+        model = Answer
         fields = [
             'id',
             'question',
