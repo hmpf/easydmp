@@ -11,7 +11,7 @@ from django.forms import model_to_dict
 from django.template.loader import render_to_string
 from django.utils.timezone import now as tznow
 
-from jsonfield import JSONField
+from jsonfield.fields import JSONField as LegacyJSONField
 
 # With postgres 9.4+, use this instead
 # from django.contrib.postgres.fields import JSONField
@@ -204,8 +204,8 @@ class Plan(DeletionMixin, ClonableModel):
     template = models.ForeignKey('dmpt.Template', models.CASCADE, related_name='plans')
     valid = models.NullBooleanField()
     last_validated = models.DateTimeField(blank=True, null=True)
-    data = JSONField(default={})
-    previous_data = JSONField(default={})
+    data = LegacyJSONField(default=dict)
+    previous_data = LegacyJSONField(default=dict)
     visited_sections = models.ManyToManyField('dmpt.Section', related_name='+', blank=True)
     generated_html = models.TextField(blank=True)
     search_data = models.TextField(null=True, blank=True)

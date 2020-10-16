@@ -5,7 +5,8 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-import jsonfield.fields
+
+from jsonfield.fields import JSONField as LegacyJSONField
 
 
 class Migration(migrations.Migration):
@@ -29,7 +30,7 @@ class Migration(migrations.Migration):
                 ('target_object_id', models.TextField(blank=True, db_index=True, null=True)),
                 ('action_object_content_type', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='action_object', to='contenttypes.ContentType')),
                 ('action_object_object_id', models.TextField(blank=True, db_index=True, null=True)),
-                ('data', jsonfield.fields.JSONField(default={})),
+                ('data', LegacyJSONField(default=dict)),
                 ('timestamp', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
             ],
             options={

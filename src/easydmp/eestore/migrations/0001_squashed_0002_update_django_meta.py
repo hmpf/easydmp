@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 import django.db.models.deletion
 import jsonfield.encoder
-import jsonfield.fields
+from jsonfield.fields import JSONField as LegacyJSONField
 
 
 class Migration(migrations.Migration):
@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                 ('uri', models.URLField(blank=True)),
                 ('pid', models.CharField(blank=True, max_length=255)),
                 ('remote_id', models.CharField(max_length=255)),
-                ('data', jsonfield.fields.JSONField(default={}, dump_kwargs={'cls': jsonfield.encoder.JSONEncoder, 'separators': (',', ':')}, load_kwargs={})),
+                ('data', LegacyJSONField(default=dict, dump_kwargs={'cls': jsonfield.encoder.JSONEncoder, 'separators': (',', ':')}, load_kwargs={})),
                 ('last_fetched', models.DateTimeField(blank=True, null=True)),
                 ('eestore_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='records', to='eestore.EEStoreType')),
                 ('source', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='records', to='eestore.EEStoreSource')),
