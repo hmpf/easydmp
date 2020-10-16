@@ -6,7 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.timezone import now as tznow
 
-from jsonfield import JSONField
+from jsonfield import JSONField as LegacyJSONField
 
 
 GFK_MAPPER = {
@@ -202,7 +202,7 @@ class EventLog(models.Model):
     action_object_object_id = models.TextField(blank=True, null=True,
                                                db_index=True)
 
-    data = JSONField(default={})
+    data = LegacyJSONField(default=dict)
     timestamp = models.DateTimeField(default=tznow, db_index=True)
 
     objects = EventLogManager.from_queryset(EventLogQuerySet)()
