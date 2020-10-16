@@ -5,16 +5,13 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import JSONField
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 from django.forms import model_to_dict
 from django.template.loader import render_to_string
 from django.utils.timezone import now as tznow
-
-from jsonfield.fields import JSONField as LegacyJSONField
-
-# With postgres 9.4+, use this instead
-# from django.contrib.postgres.fields import JSONField
 
 from easydmp.dmpt.forms import make_form
 from easydmp.dmpt.utils import DeletionMixin
@@ -204,8 +201,8 @@ class Plan(DeletionMixin, ClonableModel):
     template = models.ForeignKey('dmpt.Template', models.CASCADE, related_name='plans')
     valid = models.NullBooleanField()
     last_validated = models.DateTimeField(blank=True, null=True)
-    data = LegacyJSONField(default=dict)
-    previous_data = LegacyJSONField(default=dict)
+    data = JSONField(default=dict, encoder=DjangoJSONEncoder)
+    previous_data = JSONField(default=dict, encoder=DjangoJSONEncoder)
     visited_sections = models.ManyToManyField('dmpt.Section', related_name='+', blank=True)
     generated_html = models.TextField(blank=True)
     search_data = models.TextField(null=True, blank=True)
