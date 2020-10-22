@@ -1,28 +1,68 @@
-name: Python package
+name: Test django package
 
 on: [push, pull_request]
 
 jobs:
-  build:
-
+  tests:
+    name: "Python ${{ matrix.python-version }}"
     runs-on: ubuntu-latest
+    env:
+      USING_COVERAGE: '3.8'
+
     strategy:
       matrix:
         python-version: [3.8]
 
     steps:
     - uses: actions/checkout@v2
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+
+    - name: Set Environment Variables
+      run: |
+          echo "POSTGRES_DB=easydmp_db" >> $GITHUB_ENV
+          echo "POSTGRES_USER=easydmp" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=cdfgh6rt578gtvfhyj" >> $GITHUB_ENV
+
+    - name: Set up PostgreSQL
+      uses: harmon758/postgresql-action@v1
+      with:
+          postgresql db: $POSTGRES_DB
+          postgresql user: $POSTGRES_USER
+          postgresql password: $POSTGRES_PASSWORD
+
     - name: Install dependencies
       run: |
+        set -xe
+        python -VV
+        python -m site
         python -m pip install --upgrade pip "setuptools<46" wheel
-        pip install tox tox-gh-actions
+        python -m pip install --upgrade virtualenv tox tox-gh-actions coverage
+
     - name: Lint with flake8
       run: |
-        tox -e flake8
+        python -m tox -e flake8-critical
+
     - name: Test with tox
+      env:
+        POSTGRES: true
+        DMP_DATABASE_URL: postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost/$POSTGRES_DB
       run: |
-        tox
+        python -m tox
+        ls .cov*
+
+    - name: "Combine coverage"
+      run: |
+        set -xe
+        python -m coverage combine
+        python -m coverage xml
+      if: "contains(env.USING_COVERAGE, matrix.python-version)"
+
+    - name: "Upload coverage to Codecov"
+      if: "contains(env.USING_COVERAGE, matrix.python-version)"
+      uses: "codecov/codecov-action@v1"
+      with:
+        fail_ci_if_error: true

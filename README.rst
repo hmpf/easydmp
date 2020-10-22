@@ -2,7 +2,15 @@
 Easydmp Django Project
 ======================
 
-.. image:: https://github.com/hmpf/easydmp/workflows/Python%20package/badge.svg
+.. image:: https://github.com/hmpf/easydmp/workflows/Test%20django%20package/badge.svg
+
+.. image:: https://readthedocs.org/projects/easydmp/badge/?version=latest
+  :target: https://easydmp.readthedocs.io/en/latest/?badge=latest
+  :alt: Documentation Status
+
+.. image:: https://codecov.io/gh/hmpf/easydmp/branch/master/graph/badge.svg?token=7X5GP4NXHH
+   :target: https://codecov.io/gh/hmpf/easydmp
+
 
 This project has been designed to be installable via ``setup.py``.
 
