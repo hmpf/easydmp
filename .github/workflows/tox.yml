@@ -44,7 +44,7 @@ jobs:
 
     - name: Lint with flake8
       run: |
-        python -m tox -e flake8
+        python -m tox -e flake8-critical
 
     - name: Test with tox
       env:
