@@ -154,7 +154,7 @@ class HeavyPlanSerializer(LightPlanSerializer):
 
 class PlanViewSet(ReadOnlyModelViewSet):
     filter_class = PlanFilter
-    search_fields = ['=id', 'title', '=abbreviation']
+    search_fields = ['=id', 'title', '=abbreviation', 'search_data']
     serializer_class = HeavyPlanSerializer
     pagination_class = ToggleablePageNumberPagination
 
