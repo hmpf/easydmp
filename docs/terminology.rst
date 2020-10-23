@@ -4,6 +4,11 @@ Terminology
 
 Some terms, alphabetized.
 
+This list needs to cover the needs of both editors, template designers and
+EasyDMP developers (because maintaining three different lists is not feasible).
+Parts of the definitions can be quite technical and even describe
+implementation details.
+
 .. glossary::
 
    branching section
@@ -15,20 +20,20 @@ Some terms, alphabetized.
        plan.
 
    invitation
-       When an editor wants to allow others to edit or view their plans, they can
-       make an invitation. The invitation is done by sending an email with
+       When an editor wants to allow others to edit or view their plans, they
+       can make an invitation. The invitation is done by sending an email with
        a magical link. On visiting that link and clicking on the button there,
        access to the plan is granted.
 
    linear section
-       A section without any branches (except for a magical one if the section is
-       also optional.)
+       A section without any branches (except for a magical one if the section
+       is also optional.)
 
        Every question is on_trunk.
 
    on_branch question
-       A question that *may* never bee seen or contemplated by an editor, because
-       it may be hidden in a different branch.
+       A question that *may* never be seen or contemplated by an editor,
+       because it may be hidden in a different branch.
 
    on_trunk question
        A question that *must* be contemplated for a plan to be valid, unless it
@@ -45,28 +50,28 @@ Some terms, alphabetized.
    optional section
        A section that is designed to be optional and need not be answered.
 
-       It has a magical toggle question, that if answered with "No" will skip that
-       section.
+       It has a magical toggle question, that if answered with "No" will skip
+       that section.
 
        If it is not answered it will still count towards that plan being valid.
 
    optional section question
-       An optional section's magical toggle question. It has two possible
-       answers, "Yes", and "No". Answering "No" will skip the section.
-
-       It is the first question of a sections's questions and have a magical
-       position of "0". It will be automatically created when a section is
-       designated as "optional".
+       See `section toggle question`_
 
    plan
-       A named collection of question-answer pairs according to some template, and
-       some metadata.
+       A named collection of question-answer pairs according to some template,
+       and some metadata.
 
-       A plan is valid if its answers as checked against its template are valid.
+       A plan is valid if its answers as checked against its template are
+       valid.
+
+   planner
+       See `editor`_
 
    question
        A question that may be answered in a plan. A question has a type. Can be
-       optional. Can have multiple answers of the same type. Questions are ordered.
+       optional. Can have multiple answers of the same type. Questions are
+       ordered.
 
    required question
        The opposite of an optional question, this is the default. These nust
@@ -82,12 +87,12 @@ Some terms, alphabetized.
        A section is valid if their questions' answers are valid.
 
    required section
-       The opposite of an optional section. A section that must be seen and whose
-       questions must be answered. This is the default.
+       The opposite of an optional section. A section that must be seen and
+       whose questions must be answered. This is the default.
 
    skipped section
-       An optional section that has been skipped by a plan having answered it with
-       "No".
+       An optional section that has been skipped by a plan having answered it
+       with "No".
 
        Skipped sections are automatically valid.
 
@@ -99,10 +104,15 @@ Some terms, alphabetized.
       valid.
 
    template designer
-       A person that may dersign a template for editors to use.
+       A person that may design a template for editors to use.
 
-   toggle question
-       See "optional section question".
+   section toggle question
+       An optional section's magical toggle question. It has two possible
+       answers, "Yes", and "No". Answering "No" will skip the section.
+
+       Implementation detail: It is the first question of a sections's
+       questions and have a magical position of "0". It will be automatically
+       created when a section is designated as "optional".
 
    viewer
        A person that has read-only access to the plan.
