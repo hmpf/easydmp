@@ -1,5 +1,6 @@
 import logging
 from copy import deepcopy
+from typing import Any
 from uuid import uuid4
 
 from django.conf import settings
@@ -206,6 +207,7 @@ class Plan(DeletionMixin, ClonableModel):
     previous_data = JSONField(default={})
     visited_sections = models.ManyToManyField('dmpt.Section', related_name='+', blank=True)
     generated_html = models.TextField(blank=True)
+    search_data = models.TextField(null=True, blank=True)
     doi = models.URLField(
         blank=True,
         default='',
@@ -391,7 +393,27 @@ class Plan(DeletionMixin, ClonableModel):
         # Report if the plan was changed
         return any(changed)
 
+    def _search_data_in(self, obj: Any) -> str:
+        """
+        A string of all text data in the JSON object, space separated
+        """
+        ret = ""
+        if not obj:
+            return ret
+        if isinstance(obj, str):
+            ret += "{} ".format(obj)
+        if isinstance(obj, int):
+            ret += "{} ".format(obj)
+        if isinstance(obj, list):
+            ret += " ".join([self._search_data_in(i) for i in obj])
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                ret += self._search_data_in(k)
+                ret += self._search_data_in(v)
+        return ret
+
     def save(self, user=None, question=None, recalculate=False, clone=False, **kwargs):
+        self.search_data = self._search_data_in(self.data)
         if user:
             self.modified_by = user
         if not self.pk: # New, empty plan
