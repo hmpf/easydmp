@@ -15,6 +15,14 @@ Planned
 Unreleased
 ----------
 
+1.3.3
+-----
+
+* Tons of fixes to the test and test-system
+* Make plan data searchable in DRF (will run a migration)
+* Prepare API for v2
+* Use `drf-spectacular` for OpenAPI support
+
 1.3.2
 -----
 
