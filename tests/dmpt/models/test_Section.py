@@ -222,53 +222,56 @@ class TestOptionalSections(test.TestCase):
         self.assertEqual(2, section.questions.get(question='Bar').position)
 
     def test_optional_section_in_summary(self):
-        section0 = SectionFactory(template=self.template, position=1)
+        section0 = SectionFactory.build(template=self.template, position=1)
         section0.optional = True
         section0.save()
         q01 = Question(question='Foo', section=section0, position=1)
         q01.save()
         q02 = Question(question='Bar', section=section0, position=2)
         q02.save()
-        section1 = SectionFactory(template=self.template, position=2)
+        section1 = SectionFactory.build(template=self.template, position=2)
         section1.optional = False
         section1.save()
         Question(question='Foo', section=section1, position=1).save()
         Question(question='Bar', section=section1, position=2).save()
-        section2 = SectionFactory(template=self.template, position=3)
+        section2 = SectionFactory.build(template=self.template, position=3)
         section2.optional = True
+        section2.save()
         q21 = Question(question='Foo2', section=section2, position=1)
         q21.save()
         q22 = Question(question='Bar2', section=section2, position=2)
         q22.save()
 
         # get summary from data set of answers
-        summary = self.template.get_summary({str(section0.questions.all().first().pk): {"choice": "No"},
+        s0_firstq_pk = section0.questions.all().first().pk
+        s2_firstq_pk = section2.questions.all().first().pk
+        summary = self.template.get_summary({str(s0_firstq_pk): {"choice": "No"},
                                              str(q01.pk): {},
                                              str(q02.pk): {},
-                                             str(section2.questions.all().first().pk): {"choice": "Yes"},
+                                             str(s2_firstq_pk): {"choice": "Yes"},
                                              str(q21.pk): {},
                                              str(q22.pk): {},
                                              })
         self.assertEqual(1, len(summary[section0.title]['data']))
-        self.assertEqual('(Template designer please update)', summary[section0.title]['data'][1]['question'].question)
+        self.assertEqual('(Template designer please update)', summary[section0.title]['data'][s0_firstq_pk]['question'].question)
         self.assertEqual(2, len(summary[section1.title]['data']))
-        self.assertEqual(2, len(summary[section2.title]['data']))
+        self.assertEqual(3, len(summary[section2.title]['data']))
 
     def test_get_optional_section_question_in_optional_section(self):
-        section = SectionFactory.build(optional=True)
+        section = SectionFactory.build(template=self.template, optional=True)
         section.save()
         question = section.get_optional_section_question()
         self.assertEqual(question.position, 0)
         self.assertEqual(question.input_type, 'bool')
 
     def test_get_optional_section_question_in_normal_section(self):
-        section = SectionFactory.build(optional=False)
+        section = SectionFactory.build(template=self.template, optional=False)
         section.save()
         question = section.get_optional_section_question()
         self.assertEqual(question, None)
 
     def test_is_skipped_true(self):
-        section = SectionFactory.build(optional=True)
+        section = SectionFactory.build(template=self.template, optional=True)
         section.save()
         toggle_question = section.get_optional_section_question()
         data = {str(toggle_question.pk): {'choice': 'No'}}
@@ -276,7 +279,7 @@ class TestOptionalSections(test.TestCase):
         self.assertTrue(result)
 
     def test_is_skipped_when_not_answered_is_true(self):
-        section = SectionFactory.build(optional=True)
+        section = SectionFactory.build(template=self.template, optional=True)
         section.save()
         toggle_question = section.get_optional_section_question()
         data = {}
@@ -284,13 +287,13 @@ class TestOptionalSections(test.TestCase):
         self.assertTrue(result)
 
     def test_is_skipped_on_normal_section_is_false(self):
-        section = SectionFactory.build(optional=False)
+        section = SectionFactory.build(template=self.template, optional=False)
         section.save()
         result = section.is_skipped(None)
         self.assertFalse(result)
 
     def test_is_skipped_false(self):
-        section = SectionFactory.build(optional=True)
+        section = SectionFactory.build(template=self.template, optional=True)
         section.save()
         toggle_question = section.get_optional_section_question()
         data = {str(toggle_question.pk): {'choice': 'Yes'}}
