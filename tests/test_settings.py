@@ -17,7 +17,7 @@ INSTALLED_APPS = base_settings.INSTALLED_APPS + [
     'tests',
 ]
 
-DATABASE_URL = base_settings.getenv('DMP_DATABASE_URL', 'sqlite://:memory:')
+DATABASE_URL = base_settings.getenv('TEST_DATABASE_URL', 'sqlite://:memory:')
 DATABASES = {
     'default': dj_database_url.parse(DATABASE_URL)
 }
