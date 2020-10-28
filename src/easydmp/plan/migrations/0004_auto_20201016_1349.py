@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('dmpt', '0011_section_optional'),
-        ('plan', '0002_change_booleanquestion_answers'),
+        ('plan', '0003_plan_search_data'),
     ]
 
     operations = [
