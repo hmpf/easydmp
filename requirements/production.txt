@@ -1,4 +1,3 @@
--r ./django.txt
 -r ./base.txt
 python-dataporten-auth>=2.0
 social-auth-backend-b2access>=1.0
