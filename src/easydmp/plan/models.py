@@ -44,7 +44,7 @@ class AnswerHelper():
         self.current_choice = plan.data.get(self.question_id, {})
 
     def get_question_validity(self):
-        qv, _ = QuestionValidity.objects.get_or_create(
+        qv, _ = Answer.objects.get_or_create(
             plan=self.plan,
             question=self.question,
             defaults={'valid': False}
@@ -52,7 +52,7 @@ class AnswerHelper():
         return qv
 
     def get_section_validity(self):
-        sv, _ = SectionValidity.objects.get_or_create(
+        sv, _ = AnswerSet.objects.get_or_create(
             plan=self.plan,
             section=self.section,
             defaults={'valid': False}
@@ -143,9 +143,8 @@ class PlanQuerySet(models.QuerySet):
         return self.filter(accesses__user=user)
 
 
-class SectionValidity(ClonableModel):
-    # TODO: replace with AnswerSet
-    plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='section_validity')
+class AnswerSet(ClonableModel):
+    plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='answers')
     section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='+')
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
@@ -167,9 +166,11 @@ class SectionValidity(ClonableModel):
         return new
 
 
-class QuestionValidity(ClonableModel):
-    # TODO: replace with Answer, pointing to AnswerSet, not Plan directly
+class Answer(ClonableModel):
+    # TODO: remove in sync with linking to correct answersets, updating unique_together
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='question_validity')
+    # TODO: make non nullable later
+    answerset = models.ForeignKey(AnswerSet, models.CASCADE, related_name='answers', null=True)
     question = models.ForeignKey('dmpt.Question', models.CASCADE, related_name='+')
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
@@ -556,8 +557,8 @@ class Plan(DeletionMixin, ClonableModel):
         # TODO: To be changed to create_answersets
         svs = []
         for section in self.template.sections.all():
-            svs.append(SectionValidity(plan=self, section=section, valid=False))
-        SectionValidity.objects.bulk_create(svs)
+            svs.append(AnswerSet(plan=self, section=section, valid=False))
+        AnswerSet.objects.bulk_create(svs)
 
     def create_question_validities(self):
         # TODO: Use method on AnswerSet instead
@@ -565,8 +566,8 @@ class Plan(DeletionMixin, ClonableModel):
         sections = self.template.sections.all()
         for section in sections:
             for question in section.questions.all():
-                qvs.append(QuestionValidity(plan=self, question=question, valid=False))
-        QuestionValidity.objects.bulk_create(qvs)
+                qvs.append(Answer(plan=self, question=question, valid=False))
+        Answer.objects.bulk_create(qvs)
 
     def set_validity_of_sections(self, valids, invalids):
         # TODO: will work on answersets instead
@@ -575,12 +576,12 @@ class Plan(DeletionMixin, ClonableModel):
 
     def _set_sections_as_valid(self, *section_pks):
         # TODO: will work on answersets instead
-        qs = self.section_validity.filter(section_id__in=section_pks)
+        qs = self.answersets.filter(section_id__in=section_pks)
         qs.update(valid=True)
 
     def _set_sections_as_invalid(self, *section_pks):
         # TODO: will work on answersets instead
-        qs = self.section_validity.filter(section_id__in=section_pks)
+        qs = self.answersets.filter(section_id__in=section_pks)
         qs.update(valid=False)
 
     def set_validity_of_questions(self, valids, invalids):
@@ -589,17 +590,17 @@ class Plan(DeletionMixin, ClonableModel):
 
     def set_questions_as_valid(self, *question_pks):
         # TODO: Maybe turn into function?
-        qs = QuestionValidity.objects.filter(plan=self, question_id__in=question_pks)
+        qs = Answer.objects.filter(plan=self, question_id__in=question_pks)
         qs.update(valid=True)
 
     def set_questions_as_invalid(self, *question_pks):
         # TODO: Maybe turn into function?
-        qs = QuestionValidity.objects.filter(plan=self, question_id__in=question_pks)
+        qs = Answer.objects.filter(plan=self, question_id__in=question_pks)
         qs.update(valid=False)
 
     def copy_validations_from(self, oldplan):
         # TODO: Use answersets instead of section_validities
-        for sv in oldplan.section_validity.all():
+        for sv in oldplan.answersets.all():
             sv.clone(self)
         for qv in oldplan.question_validity.all():
             qv.clone(self)
@@ -616,12 +617,12 @@ class Plan(DeletionMixin, ClonableModel):
             LOG.error(error.format(self, self.pk))
             return False
         if recalculate:
-            for sv in self.section_validity.all():
+            for sv in self.answersets.all():
                 valids, invalids = sv.section.find_validity_of_questions(self.data)
                 self.set_validity_of_questions(valids, invalids)
             valids, invalids = self.template.find_validity_of_sections(self.data)
             self.set_validity_of_sections(valids, invalids)
-        if self.section_validity.filter(valid=True).count() == self.template.sections.count():
+        if self.answersets.filter(valid=True).count() == self.template.sections.count():
             return True
         return False
 
@@ -646,9 +647,9 @@ class Plan(DeletionMixin, ClonableModel):
     def get_summary(self, data=None):
         if not data:
             data = self.data.copy()
-        valid_sections = (SectionValidity.objects
-                  .filter(valid=True, plan=self)
-        )
+        valid_sections = (AnswerSet.objects
+                          .filter(valid=True, plan=self)
+                          )
         valid_ids = valid_sections.values_list('section__pk', flat=True)
         summary = self.template.get_summary(data, valid_ids)
         return summary
