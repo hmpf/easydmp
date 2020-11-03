@@ -21,7 +21,9 @@ See the :doc:`overview <overview>`.
    overview
    installation
    templates
+   api
    development
+   terminology
 
 
 
