@@ -14,6 +14,13 @@ def link_answer(apps, schema_editor):
         answer.save()
 
 
+def unlink_answer(apps, schema_editor):
+    Answer = apps.get_model('plan', 'Answer')
+    for answer in Answer.objects.all():
+        answer.answerset = None
+        answer.save()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -21,5 +28,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(link_answer),
+        migrations.RunPython(link_answer, reverse_code=unlink_answer),
     ]
