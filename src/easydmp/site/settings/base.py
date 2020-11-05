@@ -11,19 +11,10 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
-updir = os.path.dirname
-pathjoin = os.path.join
 
 import dj_database_url
 
-from ... import __version__ as VERSION
-
-
-def getenv(name, default=None):
-    value = os.getenv(name, default)
-    if isinstance(value, str):
-        value = value.strip()
-    return value
+from . import VERSION, updir, pathjoin, getenv, setup_logging, update_loglevels
 
 SECRET_KEY = getenv('SECRET_KEY', None)
 
@@ -185,56 +176,13 @@ STATICFILES_DIRS = [
 STATIC_ROOT = pathjoin(BASE_DIR, 'collected_static_files')
 
 # Default logging
-# Init logging by "import logging.config; logging.config.dictConfig(LOGGING)"
-LOGLEVEL = getenv('LOGLEVEL', 'info').upper()
+# Override log levels by ``update-loglevels``
 LOGGING_CONFIG = None
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse',
-        },
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-        'select_filter': {
-            '()': 'easydmp.lib.log.SQLFilter',
-            'keywords': ['SELECT'],
-        },
-    },
-    'handlers': {
-        'null': {
-            'class': 'logging.NullHandler',
-        },
-        'mail_admins': {
-            'level': 'ERROR',
-            'class': 'django.utils.log.AdminEmailHandler',
-            'include_html': True,
-        },
-        'console': {
-            'level': LOGLEVEL,
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['console', 'mail_admins'],
-            'level': 'INFO',
-        },
-        'easydmp': {
-            'handlers': ['console',],
-            'level': LOGLEVEL,
-            'propagate': False,
-        },
-        'django.db.backends': {
-            'handlers': ['console'],
-            'filters': ['select_filter'],
-            'level': LOGLEVEL,
-            'propagate': False,
-        },
-    },
-}
+LOGGING_MODULE = getenv('DJANGO_LOGGING_MODULE', None)
+if LOGGING_MODULE:
+    STARTUP_LOGGING = setup_logging(LOGGING_MODULE)
+
+
 SERVER_EMAIL = getenv('SERVER_EMAIL', 'root@localhost')
 
 # Auth
