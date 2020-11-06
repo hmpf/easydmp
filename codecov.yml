@@ -1,0 +1,15 @@
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+ignore:
+  - "manage.py"
+  - "**/apps.py"
+  - "**/wsgi.py"
+  - "tests/"
+  - "**/test_*.py"
