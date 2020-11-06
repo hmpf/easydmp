@@ -11,6 +11,9 @@ assert SECRET_KEY, 'Env "SECRET_KEY" not set'
 
 assert DATABASES.get('default', None), '"DATABASES" must be set'
 
+if not LOGGING_MODULE:
+    LOGGING = setup_logging('easydmp.site.logging.DEFAULT')
+
 try:
     DEBUG
 except NameError:
@@ -38,10 +41,6 @@ AUTHENTICATION_BACKENDS = [
     'dataporten.social.DataportenEmailOAuth2',
     'b2access.B2AccessOAuth2'
 ] + AUTHENTICATION_BACKENDS
-
-import logging.config
-logging.config.dictConfig(LOGGING)
-
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
