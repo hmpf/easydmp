@@ -9,8 +9,11 @@ def link_answer(apps, schema_editor):
     """
     Answer = apps.get_model('plan', 'Answer')
     AnswerSet = apps.get_model('plan', 'AnswerSet')
-    for answer in Answer.objects.all():
-        answer.answerset = AnswerSet.objects.get(plan=answer.plan)
+    for answer in Answer.objects.prefetch_related('question', 'question__section'):
+        answer.answerset = AnswerSet.objects.get(
+            plan=answer.plan,
+            section=answer.question.section
+        )
         answer.save()
 
 
@@ -25,6 +28,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('plan', '0005_auto_20201016_1539'),
+        ('dmpt', '0011_section_optional'),
     ]
 
     operations = [
