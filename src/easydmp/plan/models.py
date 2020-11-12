@@ -202,7 +202,7 @@ class Plan(DeletionMixin, ClonableModel):
     version = models.PositiveIntegerField(default=1)
     uuid = models.UUIDField(default=uuid4, editable=False)
     template = models.ForeignKey('dmpt.Template', models.CASCADE, related_name='plans')
-    valid = models.NullBooleanField()
+    valid = models.BooleanField(blank=True, null=True)
     last_validated = models.DateTimeField(blank=True, null=True)
     data = JSONField(default={})
     previous_data = JSONField(default={})
@@ -675,7 +675,7 @@ class PlanAccess(ClonableModel):
                              related_name='plan_accesses')
     plan = models.ForeignKey(Plan, models.CASCADE, related_name='accesses')
 
-    may_edit = models.NullBooleanField(blank=True, null=True)
+    may_edit = models.BooleanField(blank=True, null=True)
 
     class Meta:
         unique_together = ('user', 'plan')
