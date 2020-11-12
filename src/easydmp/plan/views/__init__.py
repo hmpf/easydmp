@@ -820,7 +820,7 @@ class GeneratedPlanPDFView(AbstractGeneratedPlanView):
         result = HTML(string=html_string).write_pdf()
         response = HttpResponse(content_type=self.content_type)
         response['Content-Disposition'] = 'inline; filename={}'.format(
-            request.GET.get('filename', '') or '{}.pdf'.format(self.object.pk))
+            request.GET.get('filename') or '{}.pdf'.format(self.object.pk))
         response['Content-Transfer-Encoding'] = 'binary'
         response.write(result)
         return response
