@@ -814,17 +814,13 @@ class GeneratedPlanPDFView(AbstractGeneratedPlanView):
 
     content_type = 'application/pdf'
 
-    def _filename(self):
-        if self.object.abbreviation:
-            return '{}.pdf'.format(self.object.abbreviation)
-        return 'plan.pdf'
-
     def get(self, request, *args, **kwargs):
         super().get(request, *args, **kwargs)
         html_string = render_to_string(GeneratedPlanHTMLView.template_name, self.get_context_data())
         result = HTML(string=html_string).write_pdf()
         response = HttpResponse(content_type=self.content_type)
-        response['Content-Disposition'] = 'inline; filename={}'.format(self._filename())
+        response['Content-Disposition'] = 'inline; filename={}'.format(
+            request.GET.get('filename', '') or '{}.pdf'.format(self.object.pk))
         response['Content-Transfer-Encoding'] = 'binary'
         response.write(result)
         return response
