@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import path
 from django.views.generic import RedirectView
 
 from .views import (
@@ -29,37 +29,30 @@ from .views.access import (
 )
 
 
-PLAN_RE = r'(?P<plan>\d+)'
-PLAN_PAGEROOT_RE = r'%s/' % PLAN_RE
-SECTION_RE = r'(?P<section>\d+)'
-SECTION_PAGEROOT_RE = r'%s/section/%s/' % (PLAN_RE, SECTION_RE)
-QUESTION_RE = r'(?P<question>\d+)'
-QUESTION_PAGEROOT_RE = r'^%s/%s/' % (PLAN_RE, QUESTION_RE)
-
 urlpatterns = [
-    url(r'^$', PlanListView.as_view(), name='plan_list'),
-    url(r'^start/$', ChooseTemplateForNewPlanView.as_view(), name='choose_template'),
-    url(r'^template/(?P<template_id>\d+)/$', StartPlanView.as_view(), name='create_plan'),
-    url(r'^new/$', RedirectView.as_view(url='/plan/start/'), name='new_plan'),
+    path('', PlanListView.as_view(), name='plan_list'),
+    path('start/', ChooseTemplateForNewPlanView.as_view(), name='choose_template'),
+    path('template/<int:template_id>/', StartPlanView.as_view(), name='create_plan'),
+    path('new/', RedirectView.as_view(url='/plan/start/'), name='new_plan'),
 
-    url(r'access/(?P<access>\d+)/update/$', UpdatePlanAccessView.as_view(), name='update_planaccess'),
-    url(r'access/(?P<access>\d+)/delete/$', DeletePlanAccessView.as_view(), name='leave_plan'),
-    url(PLAN_PAGEROOT_RE + 'share/$', PlanAccessView.as_view(), name='share_plan'),
+    path('access/<int:access>/update/', UpdatePlanAccessView.as_view(), name='update_planaccess'),
+    path('access/<int:access>/delete/', DeletePlanAccessView.as_view(), name='leave_plan'),
+    path('<int:plan>/share/', PlanAccessView.as_view(), name='share_plan'),
 
-    url(SECTION_PAGEROOT_RE + r'update/$', UpdateLinearSectionView.as_view(), name='answer_linear_section'),
-    url(SECTION_PAGEROOT_RE + r'$', SectionDetailView.as_view(), name='section_detail'),
-    url(PLAN_PAGEROOT_RE + 'update/$', UpdatePlanView.as_view(), name='update_plan'),
-    url(PLAN_PAGEROOT_RE + 'check/$', ValidatePlanView.as_view(), name='validate_plan'),
-    url(PLAN_PAGEROOT_RE + 'lock/$', LockPlanView.as_view(), name='lock_plan'),
-    url(PLAN_PAGEROOT_RE + 'publish/$', PublishPlanView.as_view(), name='publish_plan'),
-    url(PLAN_PAGEROOT_RE + 'unlock/$', CreateNewVersionPlanView.as_view(), name='unlock_plan'),
-    url(PLAN_PAGEROOT_RE + 'first/new/$', FirstQuestionView.as_view(), name='first_question'),
-    url(QUESTION_PAGEROOT_RE + r'new/$', NewQuestionView.as_view(), name='new_question'),
-    url(QUESTION_PAGEROOT_RE + r'comment/$', AddCommentView.as_view(), name='new_comment'),
-    url(PLAN_PAGEROOT_RE + r'$', PlanDetailView.as_view(), name='plan_detail'),
-    url(PLAN_PAGEROOT_RE + r'delete/$', DeletePlanView.as_view(), name='plan_delete'),
-    url(PLAN_PAGEROOT_RE + r'save-as/$', SaveAsPlanView.as_view(), name='plan_saveas'),
-    url(PLAN_PAGEROOT_RE + r'generated.txt$', GeneratedPlanPlainTextView.as_view(), name='generated_plan_text'),
-    url(PLAN_PAGEROOT_RE + r'generated.html$', GeneratedPlanHTMLView.as_view(), name='generated_plan_html'),
-    url(PLAN_PAGEROOT_RE + r'generated.pdf$', GeneratedPlanPDFView.as_view(), name='generated_plan_pdf'),
+    path('<int:plan>/section/<int:section>/update/', UpdateLinearSectionView.as_view(), name='answer_linear_section'),
+    path('<int:plan>/section/<int:section>/', SectionDetailView.as_view(), name='section_detail'),
+    path('<int:plan>/update/', UpdatePlanView.as_view(), name='update_plan'),
+    path('<int:plan>/check/', ValidatePlanView.as_view(), name='validate_plan'),
+    path('<int:plan>/lock/', LockPlanView.as_view(), name='lock_plan'),
+    path('<int:plan>/publish/', PublishPlanView.as_view(), name='publish_plan'),
+    path('<int:plan>/unlock/', CreateNewVersionPlanView.as_view(), name='unlock_plan'),
+    path('<int:plan>/first/new/', FirstQuestionView.as_view(), name='first_question'),
+    path('<int:plan>/<int:question>/new/', NewQuestionView.as_view(), name='new_question'),
+    path('<int:plan>/<int:question>/comment/', AddCommentView.as_view(), name='new_comment'),
+    path('<int:plan>/', PlanDetailView.as_view(), name='plan_detail'),
+    path('<int:plan>/delete/', DeletePlanView.as_view(), name='plan_delete'),
+    path('<int:plan>/save-as/', SaveAsPlanView.as_view(), name='plan_saveas'),
+    path('<int:plan>/generated.txt', GeneratedPlanPlainTextView.as_view(), name='generated_plan_text'),
+    path('<int:plan>/generated.html', GeneratedPlanHTMLView.as_view(), name='generated_plan_html'),
+    path('<int:plan>/generated.pdf', GeneratedPlanPDFView.as_view(), name='generated_plan_pdf'),
 ]
