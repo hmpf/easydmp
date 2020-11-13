@@ -3,7 +3,7 @@ from django.contrib import admin
 from easydmp.lib.admin import FakeBooleanFilter
 from easydmp.lib.admin import PublishedFilter
 
-from .models import Plan, PlanComment
+from .models import Plan
 from .models import PlanAccess
 
 
@@ -50,14 +50,6 @@ class PlanAdmin(admin.ModelAdmin):
             q.publish(request.user)
             self.message_user(request, 'Successfully published "{}"'.format(str(q)))
     publish.short_description = 'Publish plans'  # type: ignore
-
-
-@admin.register(PlanComment)
-class PlanCommentAdmin(admin.ModelAdmin):
-    list_display = ['plan', 'question', 'added_by', 'added']
-    list_filter = ['plan']
-    search_fields = ['plan__title', 'added_by__email', 'added_by__username',
-                     'question__question', 'question__label']
 
 
 @admin.register(PlanAccess)

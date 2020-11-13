@@ -690,12 +690,3 @@ class PlanAccess(ClonableModel):
     @property
     def access(self):
         return 'view and edit' if self.may_edit else 'view'
-
-
-class PlanComment(models.Model):
-    plan = models.ForeignKey(Plan, models.CASCADE, related_name='comments')
-    question = models.ForeignKey('dmpt.Question', models.CASCADE)
-    comment = models.TextField()
-    added = models.DateTimeField(auto_now_add=True)
-    added_by = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE,
-                                 related_name='plan_comments')

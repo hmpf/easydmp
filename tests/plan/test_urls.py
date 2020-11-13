@@ -16,7 +16,6 @@ URLS = {
 #     'leave_plan': {'public': False, 'kwargs': ('access',)},
     'first_question': {'public': False, 'kwargs': ('plan',)},
     'lock_plan': {'public': False, 'kwargs': ('plan',)},
-    'new_comment': {'public': False, 'kwargs': ('plan', 'question',)},
     'new_question': {'public': False, 'kwargs': ('plan', 'question',)},
     'plan_delete': {'public': False, 'kwargs': ('plan',)},
     'plan_detail': {'public': False, 'kwargs': ('plan',)},

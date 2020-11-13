@@ -8,7 +8,6 @@ from easydmp.lib.forms import FORM_CLASS
 from easydmp.dmpt.models import Template
 
 from .models import Plan
-from .models import PlanComment
 from .models import PlanAccess
 
 
@@ -153,9 +152,3 @@ class SaveAsPlanForm(CheckExistingTitleMixin, forms.ModelForm):
         if self.user:
             title = self.cleaned_data['title']
             self.is_valid_title(title, self.user, self.instance.template)
-
-
-class PlanCommentForm(forms.ModelForm):
-    class Meta:
-        model = PlanComment
-        fields = ['comment']
