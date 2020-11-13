@@ -6,10 +6,9 @@ from django.conf import settings
 from django.db import migrations, models
 import django.db.migrations.operations.special
 import django.db.models.deletion
-import jsonfield.encoder
-import jsonfield.fields
 import uuid
 
+from jsonfield.fields import JSONField as LegacyJSONField
 
 class Migration(migrations.Migration):
 
@@ -29,8 +28,8 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(help_text='This title will be used as the title of the generated\n        data management plan document. We recommend something that includes the\n        name of the project the plan is for, e.g., "Preliminary data plan for\n        &lt;project&gt;", "Revised data plan for &lt;project&gt;", etc.', max_length=255)),
                 ('abbreviation', models.CharField(blank=True, help_text='A short abbreviation of the plan title, for internal use. Not shown in the generated file.', max_length=8)),
                 ('version', models.PositiveIntegerField(default=1)),
-                ('data', jsonfield.fields.JSONField(default={}, dump_kwargs={'cls': jsonfield.encoder.JSONEncoder, 'separators': (',', ':')}, load_kwargs={})),
-                ('previous_data', jsonfield.fields.JSONField(default={}, dump_kwargs={'cls': jsonfield.encoder.JSONEncoder, 'separators': (',', ':')}, load_kwargs={})),
+                ('data', LegacyJSONField(default=dict)),
+                ('previous_data', LegacyJSONField(default=dict)),
                 ('added', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('added_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='added_plans', to=settings.AUTH_USER_MODEL)),
