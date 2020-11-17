@@ -14,7 +14,8 @@
               <li><a href="{% url 'plan_delete' plan=object.id %}"><img src="{% static 'icons/icon-delete.png' %}"/>Delete</a></li>
               <li><a href="{% url 'plan_saveas' plan=object.id %}"><img src="{% static 'icons/icon-duplicate.png' %}"/>Duplicate</a></li>
               {% endif %}
-              <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'icons/icon-export.png' %}"/>Export</a></li>
+              <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'icons/icon-export.png' %}"/>Export to HTML</a></li>
+              <li><a href="{% url 'generated_plan_pdf' plan=object.id %}"><img src="{% static 'icons/icon-export.png' %}"/>Export to PDF</a></li>
               <!--
               <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'icons/icon-print.png' %}"/>Print</a></li>
               -->

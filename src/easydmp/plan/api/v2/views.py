@@ -66,7 +66,7 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
         read_only=True,
     )
     generated_html_url = serializers.SerializerMethodField()
-
+    generated_pdf_url = serializers.SerializerMethodField()
     class Meta:
         model = Plan
         fields = [
@@ -78,6 +78,7 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
             'version',
             'template',
             'generated_html_url',
+            'generated_pdf_url',
             'valid',
             'last_validated',
             'added',
@@ -89,6 +90,11 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
     @extend_schema_field(OpenApiTypes.URI)
     def get_generated_html_url(self, obj):
         return reverse( 'generated_plan_html', kwargs={'plan': obj.id},
+                       request=self.context['request'])
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_generated_pdf_url(self, obj):
+        return reverse('generated_plan_pdf', kwargs={'plan': obj.id},
                        request=self.context['request'])
 
 
@@ -138,6 +144,7 @@ class HeavyPlanSerializer(LightPlanSerializer):
             'previous_data',
             'generated_html',
             'generated_html_url',
+            'generated_pdf_url',
             'valid',
             'last_validated',
             'doi',

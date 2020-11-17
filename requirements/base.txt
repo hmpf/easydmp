@@ -18,3 +18,4 @@ social-auth-core>=3.2.0
 Sphinx>=2.3.1
 whitenoise>=5.0.1
 drf-spectacular>=0.9.14
+WeasyPrint==52.1

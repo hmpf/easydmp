@@ -1,8 +1,9 @@
 from copy import deepcopy
 import logging
 
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
-from django.http import HttpResponseRedirect, Http404, HttpResponseServerError
+from django.http import HttpResponseRedirect, Http404, HttpResponseServerError, HttpResponse
 from django.shortcuts import redirect
 from django.views.generic import (
     CreateView,
@@ -12,6 +13,7 @@ from django.views.generic import (
     DeleteView,
     RedirectView,
 )
+from weasyprint import HTML
 
 from easydmp.lib.views.mixins import DeleteFormMixin
 from easydmp.dmpt.forms import make_form, NotesForm
@@ -807,12 +809,21 @@ class GeneratedPlanPlainTextView(AbstractGeneratedPlanView):
     content_type = 'text/plain; charset=UTF-8'
 
 
-# XXX: Remove
 class GeneratedPlanPDFView(AbstractGeneratedPlanView):
     "Generate canned PDF of a plan"
 
-    template_name = 'easydmp/plan/generated_plan.pdf'
-    content_type = 'text/plain'
+    content_type = 'application/pdf'
+
+    def get(self, request, *args, **kwargs):
+        super().get(request, *args, **kwargs)
+        html_string = render_to_string(GeneratedPlanHTMLView.template_name, self.get_context_data())
+        result = HTML(string=html_string).write_pdf()
+        response = HttpResponse(content_type=self.content_type)
+        response['Content-Disposition'] = 'inline; filename={}'.format(
+            request.GET.get('filename') or '{}.pdf'.format(self.object.pk))
+        response['Content-Transfer-Encoding'] = 'binary'
+        response.write(result)
+        return response
 
 
 class SectionDetailView(DetailView):
