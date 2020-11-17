@@ -40,6 +40,10 @@ class AnswerHelper():
         self.section_validity = self.get_section_validity()
         self.current_choice = plan.data.get(self.question_id, {})
 
+    def get_initial(self, data):
+        choice = data.get(self.question_id, {})
+        return choice
+
     def get_question_validity(self):
         qv, _ = Answer.objects.get_or_create(
             plan=self.plan,
