@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.test import TestCase
+from django.test import TestCase, tag, skipUnlessDBFeature
 from django.utils.timezone import now as tznow
 
 from guardian.utils import get_anonymous_user
@@ -40,6 +40,8 @@ class StatsTestCase(TestCase):
         }
         self.assertDictEqual(result, expected)
 
+    @tag('JSONField')
+    @skipUnlessDBFeature('has_jsonb_agg')
     def test_some_users_and_plans_some_stats(self):
         template = Template.objects.create(title='testtemplate')
         u1 = User.objects.create(username='testuser1', email='a@b.com')

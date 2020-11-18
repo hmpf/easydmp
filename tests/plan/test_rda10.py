@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django import test
+from django.test import tag, skipUnlessDBFeature
 
 from easydmp.auth.models import User
 from easydmp.dmpt.models import Template
@@ -8,6 +9,8 @@ from easydmp.plan.models import Plan
 from easydmp.plan.utils import GenerateRDA10
 
 
+@tag('JSONField')
+@skipUnlessDBFeature('has_jsonb_agg')
 class RdaTest(test.TestCase):
 
     def test_rda10_export(self):
