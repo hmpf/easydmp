@@ -1,4 +1,5 @@
 from django import test
+from django.test import tag, skipUnlessDBFeature
 from django.urls import reverse
 
 from easydmp.dmpt.models import Section, Question
@@ -40,6 +41,8 @@ def make_kwargs(args):
     return kwargs
 
 
+@tag('JSONField')
+@skipUnlessDBFeature('has_jsonb_agg')
 class AccessTestCase(test.TestCase):
 
     def setUp(self):

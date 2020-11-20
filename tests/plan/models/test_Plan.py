@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from django import test
+from django.test import tag, skipUnlessDBFeature
 
 from easydmp.auth.models import User
 from easydmp.dmpt.models import Template
@@ -9,6 +10,8 @@ from tests.dmpt.factories import TemplateFactory, SectionFactory
 from tests.plan.factories import PlanFactory
 
 
+@tag('JSONField')
+@skipUnlessDBFeature('has_jsonb_agg')
 class TestPlanValidation(test.TestCase):
 
     def setUp(self):
