@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import ugettext, ugettext_lazy as _
 
+from rest_framework.authtoken.admin import TokenAdmin
+
 from .models import User
 
 
@@ -17,3 +19,6 @@ class EasyDMPUserAdmin(UserAdmin):
                                        'groups',)}),
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
+
+
+TokenAdmin.raw_id_fields = ['user']
