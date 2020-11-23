@@ -15,6 +15,40 @@ Planned
 Unreleased
 ----------
 
+1.4.0
+-----
+
+New features:
+
+* Add API authentication by token
+* Export Plan to PDF
+
+Bugfixes:
+
+* Fix bug due to url arg now being int, not str
+
+On the way to better export to RDA DMP CS:
+
+* Rename SectionValidity to AnswerSet and QuestionValidity to Answer, in
+  preparation for repeated sections.
+
+Prepping for upgrade of Django:
+
+* Mark tests that need JSONField support
+* Change NullBooleanField to BooleanField(null=True)
+* Use contrib.postgres JSONField instead of 3rd party field
+* Replace url() with path()
+
+Cleanup:
+
+* Remove the model PlanComment (never in use)
+
+Developer QoL:
+
+* Read logging config from separate file
+* Add file to control codecov
+* Greatly improve the sphinx docs
+
 1.3.3
 -----
 
