@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'guardian',
     'corsheaders',
     'drf_spectacular',
+    'rest_framework.authtoken',
 
     'easydmp.auth.apps.EasyDMPAuthConfig',
     'easydmp.dmpt',
@@ -208,6 +209,7 @@ X_FRAME_OPTIONS = 'ALLOW-FROM https://bibsys.no/'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'easydmp.auth.authentication.TokenAuthentication',
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
