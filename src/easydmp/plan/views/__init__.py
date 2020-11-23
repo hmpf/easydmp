@@ -439,7 +439,9 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
         return kwargs
 
     def get_initial_for_answer(self, answer):
-        choice = self.plan.data.get(str(answer.question_id), {})
+        choice = answer.get_initial(self.plan.data)
+        if not choice:
+            choice = answer.get_initial(self.plan.previous_data)
         return choice
 
     def get_forms(self):
@@ -548,11 +550,9 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
         self.referer = request.META.get('HTTP_REFERER', None)
 
     def get_initial(self):
-        current_data = self.object.data or {}
-        previous_data = self.object.previous_data or {}
-        initial = current_data.get(self.question_pk, {})
+        initial = self.answer.get_initial(self.object.data)
         if not initial:
-            initial = previous_data.get(self.question_pk, {})
+            initial = self.answer.get_initial(self.object.previous_data)
         return initial
 
     def get_success_url(self):
