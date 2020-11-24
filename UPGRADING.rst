@@ -5,6 +5,31 @@ UPGRADING
 Normally, upgrading is just a matter of getting the new code and running
 ``python manage.py migrate``. Any exceptions will be listed here.
 
+1.3.3 -> 1.4.0, 1.4.1
+=====================
+
+When upgrading to 1.4.0: If the migration hangs after
+plan.0005_auto_20201016_1539 (during plan.0006_link_answer_to_answerset), fake
+the next migration::
+
+    $ python manage.py migrate --fake plan 0006_link_answer_to_answerset
+
+Version 1.4.1 has the management command ``migrate_question_validity_to_answer``
+that will do the migration for you
+manually::
+
+    $ python manage.py migrate_question_validity_to_answer NUM
+
+NUM (integer number) is how many plans you want to convert. It is slow, chatty,
+and written in a hurry, but can safely be interrupted and started again as many
+times as necessary. It works by converting the answers of a single plan at
+a time, so how long it will take depends on how many plans there are, and how
+many questions per plan.
+
+After all plans are converterted you can run the rest of the migrations::
+
+    $ python manage.py migrate plan
+
 0.25.0 -> 1.0.0
 ===============
 
