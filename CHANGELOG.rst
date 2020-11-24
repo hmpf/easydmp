@@ -15,6 +15,12 @@ Planned
 Unreleased
 ----------
 
+1.4.1
+-----
+
+The migration plan.0006_link_answer_to_answerset does not like some databases.
+If this holds for you, see UPGRADING.rst
+
 1.4.0
 -----
 
