@@ -18,8 +18,12 @@ Unreleased
 1.4.1
 -----
 
-The migration plan.0006_link_answer_to_answerset does not like some databases.
-If this holds for you, see UPGRADING.rst
+Step two of the JSONField-conversion that started in the previous
+version was done now. The final will happen no later than 1.5.0.
+
+The migration plan.0006_link_answer_to_answerset does not like
+some databases. It can time out if that happens, blocking the
+other migrations. If this holds for you, see UPGRADING.rst
 
 1.4.0
 -----
