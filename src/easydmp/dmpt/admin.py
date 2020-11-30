@@ -86,7 +86,7 @@ class TemplateMoreInfoFilter(admin.SimpleListFilter):
 
 @admin.register(Template)
 class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
-    list_display = ('id', 'version', 'title', 'is_published', 'is_retired',)
+    list_display = ('id', 'version', 'title', 'is_published', 'is_retired', 'export')
     list_display_links = ('title', 'version', 'id')
     date_hierarchy = 'published'
     set_permissions = ['use_template']
@@ -131,6 +131,12 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
     is_retired.short_description = 'Is retired'  # type: ignore
     is_retired.boolean = True  # type: ignore
 
+    def export(self, obj):
+        json_url = reverse('v2:template-export', kwargs={'pk': obj.pk})
+        html = '<a target="_blank" href="{}">JSON</a>'
+        return format_html(html, mark_safe(json_url))
+    export.short_description = 'Export'  # type: ignore
+    export.allow_tags = True  # type: ignore
 
     # actions
 

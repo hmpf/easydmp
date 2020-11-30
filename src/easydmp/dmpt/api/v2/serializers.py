@@ -7,6 +7,8 @@ from easydmp.dmpt.models import CannedAnswer
 from easydmp.dmpt.models import ExplicitBranch
 from easydmp.dmpt.forms import INPUT_TYPE_TO_FORMS
 
+from easydmp.eestore.models import EEStoreMount
+
 
 __all__ = [
     'TemplateSerializer',
