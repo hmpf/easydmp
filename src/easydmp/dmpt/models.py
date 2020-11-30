@@ -371,6 +371,11 @@ class TemplateGroupObjectPermission(GroupObjectPermissionBase):
                                        related_name='permissions_group')
 
 
+class SectionManager(models.Manager):
+    def get_by_natural_key(self, template, position, super_section=None):
+        return self.get(template=template, super_section=super_section, position=position)
+
+
 class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableModel):
     """A section of a :model:`dmpt.Template`.
 
@@ -409,6 +414,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     optional = models.BooleanField(default=False,
                                    help_text='True if this section is optional. The template designer needs to provide a wording to an automatically generated yes/no question at the start of the section.')
 
+    objects = SectionManager()
+
     class Meta:
         unique_together = (
             ('template', 'title'),
@@ -429,6 +436,9 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             elif do_section_question:
                 do_section_question.delete()
             super().save(*args, **kwargs)
+
+    def natural_key(self):
+        return (self.template, self.position, self.super_section)
 
     def _make_do_section_question(self):
         """
@@ -1060,6 +1070,12 @@ class ExplicitBranch(DeletionMixin, models.Model):
         return cls.MODERNIZED_CATEGORIES.get(category, category)
 
 
+class QuestionManager(models.Manager):
+
+    def get_by_natural_key(self, section, position):
+        return self.get(section=section, position=position)
+
+
 class Question(DeletionMixin, RenumberMixin, ClonableModel):
     """The database representation of a question
 
@@ -1100,6 +1116,8 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
     optional = models.BooleanField(default=False)
     optional_canned_text = models.TextField(blank=True)
 
+    objects = QuestionManager()
+
     class Meta:
         unique_together = ('section', 'position')
         ordering = ('section', 'position')
@@ -1122,6 +1140,9 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
                     "Only optional sections may have a question in position 0.",
                     code='invalid',
                 )
+
+    def natural_key(self):
+        return (self.section, self.position)
 
     @transaction.atomic
     def clone(self, section):
