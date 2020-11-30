@@ -1795,7 +1795,7 @@ class ExternalChoiceQuestion(ChoiceValidationMixin, EEStoreMixin, Question):
     """A non-branch-capable question answerable with a single choice
 
     The choices are fetched and cached from an EEStore via an
-    `easydmp.eestore.models.EEStorePluginMount`. This is used when there are
+    `easydmp.eestore.models.EEStoreMount`. This is used when there are
     too many for a drop down/radio field list.
     """
 
@@ -1821,7 +1821,7 @@ class ExternalChoiceNotListedQuestion(NotListedMixin, EEStoreMixin, Question):
     """A branch-capable question answerable with a single choice
 
     The choices are fetched and cached from an EEStore via an
-    `easydmp.eestore.models.EEStorePluginMount`. This is used when there are
+    `easydmp.eestore.models.EEStoreMount`. This is used when there are
     too many for a standard multiselect.
 
     If the user chooses "Not listed", which is a CannedAnswer, it is possible
@@ -1884,7 +1884,7 @@ class ExternalMultipleChoiceOneTextQuestion(EEStoreMixin, Question):
     """A non-branch-capable question answerable with multiple choices
 
     The choices are fetched and cached from an EEStore via an
-    `easydmp.eestore.models.EEStorePluginMount`. This is used when there are
+    `easydmp.eestore.models.EEStoreMount`. This is used when there are
     too many for a standard multiselect.
     """
 
@@ -1937,7 +1937,7 @@ class ExternalMultipleChoiceNotListedOneTextQuestion(NotListedMixin, EEStoreMixi
     """A branch-capable question answerable with multiple choices
 
     The choices are fetched and cached from an EEStore via an
-    `easydmp.eestore.models.EEStorePluginMount`. This is used when there are
+    `easydmp.eestore.models.EEStoreMount`. This is used when there are
     too many for a standard multiselect.
 
     If the user chooses "Not listed", which is a CannedAnswer, it is possible
