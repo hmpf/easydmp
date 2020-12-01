@@ -10,14 +10,15 @@ endpoint = sys.argv[0]
 token = sys.argv[1]
 dir = sys.argv[2]
 
-r = requests.get('{}/api/v1/plans'.format(endpoint))
+auth_headers = {'Authorization': 'Bearer {}'.format(token)}
+r = requests.get('{}/api/v1/plans'.format(endpoint), headers=auth_headers)
 r.raise_for_status()
 plans = r.json()
 for plan in plans:
     pdf_url = plan.get('generated_pdf_url')
     if not pdf_url:
         continue
-    pr = requests.get(pdf_url)
+    pr = requests.get(pdf_url, headers=auth_headers)
     pr.raise_for_status()
     d = pr.headers['Content-Disposition']
     fname = re.findall("filename=(.+)", d)[0]
