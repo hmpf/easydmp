@@ -15,9 +15,7 @@ r = requests.get('{}/api/v1/plans'.format(endpoint), headers=auth_headers)
 r.raise_for_status()
 plans = r.json()
 for plan in plans:
-    pdf_url = plan.get('generated_pdf_url')
-    if not pdf_url:
-        continue
+    pdf_url = plan['generated_pdf_url']
     pr = requests.get(pdf_url, headers=auth_headers)
     pr.raise_for_status()
     d = pr.headers['Content-Disposition']
