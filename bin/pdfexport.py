@@ -3,7 +3,7 @@ import sys
 import requests
 
 #
-# Standalone script to batch download all plans from a EasyDMP instance
+# Standalone script to batch download all plans from an EasyDMP instance
 #
 
 endpoint = sys.argv[0]
