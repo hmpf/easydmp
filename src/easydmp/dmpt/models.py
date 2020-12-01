@@ -408,7 +408,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     branching = models.BooleanField(default=False)
     optional = models.BooleanField(default=False,
                                    help_text='True if this section is optional. The template designer needs to provide a wording to an automatically generated yes/no question at the start of the section.')
-
+    repeatable = models.BooleanField(default=False,
+                                     help_text='True if this section is repeatable. This means a plan can have multiple answersets for this section.')
     class Meta:
         unique_together = (
             ('template', 'title'),
