@@ -13,6 +13,9 @@ from easydmp.site.views import logout_view
 from easydmp.site.views import PublicTemplateView
 
 
+CURRENT_SWAGGER_VERSION = 'swagger-ui-v1'
+
+
 urlpatterns = [
     path('admin/doc/', include('django.contrib.admindocs.urls')),
     path('admin/', admin.site.urls),
@@ -31,9 +34,12 @@ urlpatterns = [
 
     path('dmpt/', include('easydmp.dmpt.urls')),
 
-    path('api/', RedirectView.as_view(pattern_name='swagger-ui'), name='go-to-swagger-ui'),
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/', RedirectView.as_view(pattern_name=CURRENT_SWAGGER_VERSION)),
+    path('api/schema/', RedirectView.as_view(pattern_name=CURRENT_SWAGGER_VERSION)),
+    path('api/v1/schema/', SpectacularAPIView.as_view(api_version='v1'), name='schema-v1'),
+    path('api/v1/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema-v1'), name='swagger-ui-v1'),
+    path('api/v2/schema/', SpectacularAPIView.as_view(api_version='v2'), name='schema-v2'),
+    path('api/v2/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema-v2'), name='swagger-ui-v2'),
     path('api/v1/', include('easydmp.site.api.v1.urls', namespace='v1')),
     path('api/v2/', include('easydmp.site.api.v2.urls', namespace='v2')),
 ]
