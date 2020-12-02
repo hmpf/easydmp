@@ -1,3 +1,5 @@
+from django.http import HttpResponse
+
 from django_filters.rest_framework.filterset import FilterSet
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -8,6 +10,7 @@ from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.viewsets import ReadOnlyModelViewSet
+from weasyprint import HTML
 
 from easydmp.auth.api.v2.views import UserSerializer
 from easydmp.lib.api.pagination import ToggleablePageNumberPagination
@@ -202,4 +205,16 @@ class PlanViewSet(ReadOnlyModelViewSet):
         plan = self.get_object()
         blob = generate_pretty_exported_plan(plan, 'easydmp/plan/generated_plan.txt')
         response = Response(blob)
+        return response
+
+    @action(detail=True, methods=['get']) #, renderer_classes=[])
+    def export_pdf(self, request, pk=None, **kwargs):
+        plan = self.get_object()
+        blob = generate_pretty_exported_plan(plan, 'easydmp/plan/generated_plan.html')
+        result = HTML(string=blob).write_pdf()
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename={}'.format(
+            '{}.pdf'.format(plan.pk))
+        response['Content-Transfer-Encoding'] = 'binary'
+        response.write(result)
         return response
