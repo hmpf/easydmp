@@ -4,7 +4,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.fields import JSONField
-from rest_framework.renderers import JSONRenderer
+from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -14,6 +14,7 @@ from easydmp.lib.api.pagination import ToggleablePageNumberPagination
 from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
 from easydmp.plan.models import Answer
+from easydmp.plan.views import generate_pretty_exported_plan
 from easydmp.plan.utils import GenerateRDA10
 
 
@@ -183,3 +184,9 @@ class PlanViewSet(ReadOnlyModelViewSet):
         plan = self.get_object()
         rda = GenerateRDA10(plan)
         return Response(rda.get_dmp())
+
+    @action(detail=True, methods=['get'], renderer_classes=[StaticHTMLRenderer])
+    def export_html(self, request, pk=None, **kwargs):
+        plan = self.get_object()
+        blob = generate_pretty_exported_plan(plan, 'easydmp/plan/generated_plan.html')
+        return Response(blob)
