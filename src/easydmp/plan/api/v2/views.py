@@ -160,6 +160,12 @@ class HeavyPlanSerializer(LightPlanSerializer):
         ]
 
 
+class StaticPlaintextRenderer(StaticHTMLRenderer):
+    media_type = 'text/plain'
+    format = 'text'
+    charset = 'utf-8'
+
+
 class PlanViewSet(ReadOnlyModelViewSet):
     filter_class = PlanFilter
     search_fields = ['=id', 'title', '=abbreviation', 'search_data']
@@ -190,3 +196,10 @@ class PlanViewSet(ReadOnlyModelViewSet):
         plan = self.get_object()
         blob = generate_pretty_exported_plan(plan, 'easydmp/plan/generated_plan.html')
         return Response(blob)
+
+    @action(detail=True, methods=['get'], renderer_classes=[StaticPlaintextRenderer])
+    def export_text(self, request, pk=None, **kwargs):
+        plan = self.get_object()
+        blob = generate_pretty_exported_plan(plan, 'easydmp/plan/generated_plan.txt')
+        response = Response(blob)
+        return response
