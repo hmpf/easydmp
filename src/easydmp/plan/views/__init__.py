@@ -14,7 +14,9 @@ from django.views.generic import (
     RedirectView,
 )
 from weasyprint import HTML
+from rest_framework import exceptions as drf_exceptions
 
+from easydmp.auth.authentication import TokenAuthentication
 from easydmp.lib.views.mixins import DeleteFormMixin
 from easydmp.dmpt.forms import make_form, NotesForm
 from easydmp.dmpt.models import Question, Section, Template
@@ -753,6 +755,16 @@ class AbstractGeneratedPlanView(DetailView):
 
     def get_queryset(self):
         "Show published plans to the public, otherwise only viewable"
+        try:
+            result = TokenAuthentication().authenticate(self.request)
+            if result is not None:
+                user, _ = result
+        except drf_exceptions.AuthenticationFailed:
+            pass
+        else:
+            if user.is_active and user.is_superuser:
+                self.request.user = user
+                return self.model.objects.all()
         qs = self.model.objects.exclude(published=None)
         if self.request.user.is_authenticated:
             qs = qs | self.model.objects.viewable(self.request.user)
