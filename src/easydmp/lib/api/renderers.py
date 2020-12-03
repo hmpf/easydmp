@@ -1,4 +1,5 @@
-from rest_framework.renderers import BaseRenderer
+from rest_framework.renderers import BaseRenderer, StaticHTMLRenderer
+from weasyprint import HTML
 
 from easydmp.lib.graphviz import render_dotsource_to_bytes
 
@@ -12,6 +13,8 @@ __all__ = [
     'DotPNGRenderer',
     'DotSVGRenderer',
     'DotDOTRenderer',
+    'StaticPlaintextRenderer',
+    'HTML2PDFRenderer',
 ]
 
 
@@ -66,3 +69,15 @@ class DotSVGRenderer(DotMixin, SVGRenderer):
 
 class DotDOTRenderer(DotMixin, DOTRenderer):
     pass
+
+
+class StaticPlaintextRenderer(StaticHTMLRenderer):
+    media_type = 'text/plain'
+    format = 'txt'
+    charset = 'utf-8'
+
+
+class HTML2PDFRenderer(PDFRenderer):
+
+    def render(self, data, media_type=None, renderer_context=None):
+        return HTML(string=data).write_pdf()
