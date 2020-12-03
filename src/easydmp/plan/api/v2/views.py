@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from easydmp.auth.api.permissions import IsAuthenticatedAndActive
 from easydmp.auth.api.v2.views import UserSerializer
 from easydmp.lib.api.pagination import ToggleablePageNumberPagination
 from easydmp.lib.api.renderers  import StaticPlaintextRenderer, HTML2PDFRenderer
@@ -193,7 +194,8 @@ class PlanViewSet(ReadOnlyModelViewSet):
         rda = GenerateRDA10(plan)
         return Response(rda.get_dmp())
 
-    @action(detail=True, methods=['get'], renderer_classes=export_renderers)
+    @action(detail=True, methods=['get'], renderer_classes=export_renderers,
+            permission_classes=[IsAuthenticatedAndActive])
     def export(self, request, pk=None, format=None, **kwargs):
         # WTF: Makes "export/?format=txt" behave the same as "export.txt"
         if not format:
