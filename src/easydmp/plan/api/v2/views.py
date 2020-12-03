@@ -10,10 +10,10 @@ from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.viewsets import ReadOnlyModelViewSet
-from weasyprint import HTML
 
 from easydmp.auth.api.v2.views import UserSerializer
 from easydmp.lib.api.pagination import ToggleablePageNumberPagination
+from easydmp.lib.api.renderers  import StaticPlaintextRenderer, HTML2PDFRenderer
 from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
 from easydmp.plan.models import Answer
@@ -163,17 +163,16 @@ class HeavyPlanSerializer(LightPlanSerializer):
         ]
 
 
-class StaticPlaintextRenderer(StaticHTMLRenderer):
-    media_type = 'text/plain'
-    format = 'text'
-    charset = 'utf-8'
-
-
 class PlanViewSet(ReadOnlyModelViewSet):
     filter_class = PlanFilter
     search_fields = ['=id', 'title', '=abbreviation', 'search_data']
     serializer_class = HeavyPlanSerializer
     pagination_class = ToggleablePageNumberPagination
+    export_renderers = [
+        StaticHTMLRenderer,
+        StaticPlaintextRenderer,
+        HTML2PDFRenderer,
+    ]
 
 # 
 #     def get_serializer_class(self):
@@ -194,27 +193,18 @@ class PlanViewSet(ReadOnlyModelViewSet):
         rda = GenerateRDA10(plan)
         return Response(rda.get_dmp())
 
-    @action(detail=True, methods=['get'], renderer_classes=[StaticHTMLRenderer])
-    def export_html(self, request, pk=None, **kwargs):
+    @action(detail=True, methods=['get'], renderer_classes=export_renderers)
+    def export(self, request, pk=None, format=None, **kwargs):
+        # WTF: Makes "export/?format=txt" behave the same as "export.txt"
+        if not format:
+            get_format = request.GET.get('format', None)
+            if get_format in ('html', 'txt', 'pdf'):
+                format = get_format
+        template_name = 'easydmp/plan/generated_plan.html'
         plan = self.get_object()
-        blob = generate_pretty_exported_plan(plan, 'easydmp/plan/generated_plan.html')
-        return Response(blob)
-
-    @action(detail=True, methods=['get'], renderer_classes=[StaticPlaintextRenderer])
-    def export_text(self, request, pk=None, **kwargs):
-        plan = self.get_object()
-        blob = generate_pretty_exported_plan(plan, 'easydmp/plan/generated_plan.txt')
+        if format == 'txt':
+            template_name = 'easydmp/plan/generated_plan.txt'
+        blob = generate_pretty_exported_plan(plan, template_name)
         response = Response(blob)
-        return response
-
-    @action(detail=True, methods=['get']) #, renderer_classes=[])
-    def export_pdf(self, request, pk=None, **kwargs):
-        plan = self.get_object()
-        blob = generate_pretty_exported_plan(plan, 'easydmp/plan/generated_plan.html')
-        result = HTML(string=blob).write_pdf()
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'inline; filename={}'.format(
-            '{}.pdf'.format(plan.pk))
-        response['Content-Transfer-Encoding'] = 'binary'
-        response.write(result)
+        response['Content-Disposition'] = f'inline; filename=plan-{plan.pk}.{format}'
         return response
