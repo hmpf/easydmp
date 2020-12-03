@@ -99,7 +99,7 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
 
     @extend_schema_field(OpenApiTypes.URI)
     def get_generated_pdf_url(self, obj):
-        return reverse('generated_plan_pdf', kwargs={'plan': obj.id},
+        return reverse('v2:plan-export', kwargs={'pk': obj.id, 'format': 'pdf'},
                        request=self.context['request'])
 
 
