@@ -15,6 +15,7 @@ from guardian.shortcuts import get_objects_for_user, assign_perm
 
 from django.apps import apps
 from django.conf import settings
+from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db import transaction
@@ -457,6 +458,47 @@ class TemplateUserObjectPermission(UserObjectPermissionBase):
 class TemplateGroupObjectPermission(GroupObjectPermissionBase):
     content_object = models.ForeignKey(Template, on_delete=models.CASCADE,
                                        related_name='permissions_group')
+
+
+class TemplateImportMetadata(models.Model):
+    template = models.ForeignKey(Template, on_delete=models.CASCADE,
+                                 related_name='import_metadata')
+    origin = models.CharField(
+        max_length=255,
+        help_text='Where the template was imported from',
+    )
+    original_template_pk = models.IntegerField(
+        help_text='Copy of the original template\'s primary key',
+    )
+    originally_cloned_from = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text='Copy of the original template\'s "cloned_from"',
+    )
+    # Avoid having an import metadata model on all template dependents
+    mappings = JSONField(default=dict)
+
+    # metadata for the metadata
+    imported = models.DateTimeField(default=tznow)
+    # URL or method
+    imported_via = models.CharField(max_length=255, default='CLI')
+
+    class Meta:
+        verbose_name_plural = 'template import metadata'
+        indexes = [
+            models.Index(fields=['original_template_pk'],
+                         name='tim_lookup_original_idx')
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['origin', 'original_template_pk'],
+                                    name='tim_unique_template_per_origin_constraint')
+        ]
+
+    def __str__(self):
+        return f'Template #{self.original_template_pk} @ {self.origin}'
+
+    def natural_key(self):
+        return (self.origin, self.original_template_pk)
 
 
 class SectionManager(models.Manager):

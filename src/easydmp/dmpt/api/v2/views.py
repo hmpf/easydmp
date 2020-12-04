@@ -10,13 +10,13 @@ from easydmp.lib.api.renderers import DotPNGRenderer
 from easydmp.lib.api.renderers import DotDOTRenderer
 from easydmp.lib.api.renderers import DotSVGRenderer
 
-from easydmp.dmpt.export_template import ExportSerializer
+from easydmp.dmpt.export_template import ExportSerializer, serialize_template_export
 from easydmp.dmpt.models import Template
+from easydmp.dmpt.models import TemplateImportMetadata
 from easydmp.dmpt.models import Section
 from easydmp.dmpt.models import Question
 from easydmp.dmpt.models import CannedAnswer
 from easydmp.dmpt.models import ExplicitBranch
-from easydmp.dmpt.export_template import serialize_template_export
 from .serializers import *
 
 
@@ -30,6 +30,11 @@ class TemplateViewSet(ReadOnlyModelViewSet):
     def export(self, request, pk=None):
         serializer = serialize_template_export(pk)
         return Response(data=serializer.data)
+
+
+class TemplateImportMetadataViewSet(ReadOnlyModelViewSet):
+    queryset = TemplateImportMetadata.objects.all()
+    serializer_class = TemplateImportMetadataSerializer
 
 
 class SectionViewSet(ReadOnlyModelViewSet):
