@@ -1,4 +1,3 @@
-import datetime
 import re
 import sys
 import requests
@@ -7,24 +6,30 @@ import requests
 # Standalone script to batch download all plans from an EasyDMP instance
 #
 
+if len(sys.argv) < 4:
+    print('Usage: pdfexport <endpoint> <token> <directory> [from_date] [to_date]')
+    print('Time format: 2019-09-30T23:59:59.00Z')
+    exit(0)
+
 endpoint = sys.argv[1]
 token = sys.argv[2]
 dir = sys.argv[3]
 
 added_ts_format = '%Y-%m-%dT%H:%M:%S.%fZ'
-from_date = datetime.datetime.strptime(sys.argv[4], added_ts_format) if len(sys.argv) >= 5 else None
-to_date = datetime.datetime.strptime(sys.argv[5], added_ts_format) if len(sys.argv) >= 6 else None
+from_date = sys.argv[4] if len(sys.argv) >= 5 else None
+to_date = sys.argv[5] if len(sys.argv) >= 6 else None
 
 auth_headers = {'Authorization': 'Bearer {}'.format(token)}
-print('Getting plans from {}'.format(endpoint))
+query = '?'
 if from_date:
-    print('From date: {}'.format(from_date))
+    query += 'added__gt={}&'.format(from_date)
 if to_date:
-    print('To date: {}'.format(to_date))
-r = requests.get('{}/api/v2/plans'.format(endpoint), headers=auth_headers)
+    query += 'added__lt={}&'.format(to_date)
+url = '{}/api/v2/plans{}'.format(endpoint, query)
+print('Getting plans from {}, saving PDF to {}'.format(url, dir))
+r = requests.get(url, headers=auth_headers)
 r.raise_for_status()
 plans = r.json()
-print('Saving {} plans to {}'.format(len(plans), dir))
 for plan in plans:
     pdf_url = '{}/api/v2/plans/{}/export.pdf'.format(endpoint, plan['id'])
     pr = requests.get(pdf_url, headers=auth_headers)
