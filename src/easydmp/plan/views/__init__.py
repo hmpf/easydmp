@@ -733,6 +733,19 @@ class PlanDetailView(AbstractQuestionMixin, DetailView):
         return next
 
 
+def generate_pretty_exported_plan(plan, template_name):
+    editors = [access.user for access in
+               PlanAccess.objects.filter(plan=plan).filter(may_edit=True)]
+
+    context = plan.get_context_for_generated_text()
+    context['logs'] = EventLog.objects.any(plan)
+    context['reveal_questions'] = plan.template.reveal_questions
+    context['editors'] = ', '.join([str(ed) for ed in editors])
+    context['last_validated_ok'] = plan.last_validated if plan.valid else '-'
+
+    return render_to_string(template_name, context)
+
+
 class AbstractGeneratedPlanView(DetailView):
     model = Plan
     pk_url_kwarg = 'plan'
@@ -745,25 +758,21 @@ class AbstractGeneratedPlanView(DetailView):
             qs = qs | self.model.objects.viewable(self.request.user)
         return qs.distinct()
 
-    def get_context_data(self, **kwargs):
-        context = self.object.get_context_for_generated_text()
-        context.update(**kwargs)
-        context['logs'] = EventLog.objects.any(self.object)
-        context['reveal_questions'] = self.object.template.reveal_questions
-        context['editors'] = ', '.join([str(ed) for ed in self.get_editors()])
-        context['last_validated_ok'] = self.object.last_validated if self.object.valid else '-'
-        return super().get_context_data(**context)
+    def generate_exported_plan(self):
+        self.object = self.get_object()
+        template = self.get_template_names()[0]
+        self.export = generate_pretty_exported_plan(self.object, template)
 
-    def get(self, request, *args, **kwargs):
-        next = super().get(request, *args, **kwargs)
+    def log(self, request):
         template = '{timestamp} {actor} accessed generated version of {target}'
         log_event(request.user, 'access generated plan', target=self.object,
                   template=template)
-        return next
 
-    def get_editors(self):
-        return [access.user for access in
-                PlanAccess.objects.filter(plan=self.object).filter(may_edit=True).all()]
+    def get(self, request, *args, **kwargs):
+        self.generate_exported_plan()
+        self.log(request)
+        response = HttpResponse(self.export, content_type=self.content_type)
+        return response
 
 
 class GeneratedPlanHTMLView(AbstractGeneratedPlanView):
@@ -783,12 +792,13 @@ class GeneratedPlanPlainTextView(AbstractGeneratedPlanView):
 class GeneratedPlanPDFView(AbstractGeneratedPlanView):
     "Generate canned PDF of a plan"
 
+    template_name = 'easydmp/plan/generated_plan.html'
     content_type = 'application/pdf'
 
     def get(self, request, *args, **kwargs):
-        super().get(request, *args, **kwargs)
-        html_string = render_to_string(GeneratedPlanHTMLView.template_name, self.get_context_data())
-        result = HTML(string=html_string).write_pdf()
+        self.generate_exported_plan()
+        self.log(request)
+        result = HTML(string=self.export).write_pdf()
         response = HttpResponse(content_type=self.content_type)
         response['Content-Disposition'] = 'inline; filename={}'.format(
             request.GET.get('filename') or '{}.pdf'.format(self.object.pk))

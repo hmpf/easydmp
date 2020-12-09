@@ -15,6 +15,10 @@ Planned
 Unreleased
 ----------
 
+1.4.2
+-----
+PDF support in plan export.
+
 1.4.1
 -----
 
