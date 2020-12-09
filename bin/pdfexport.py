@@ -15,7 +15,6 @@ endpoint = sys.argv[1]
 token = sys.argv[2]
 dir = sys.argv[3]
 
-added_ts_format = '%Y-%m-%dT%H:%M:%S.%fZ'
 from_date = sys.argv[4] if len(sys.argv) >= 5 else None
 to_date = sys.argv[5] if len(sys.argv) >= 6 else None
 
