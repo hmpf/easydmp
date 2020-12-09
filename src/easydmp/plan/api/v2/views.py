@@ -94,7 +94,7 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
 
     @extend_schema_field(OpenApiTypes.URI)
     def get_generated_html_url(self, obj):
-        return reverse( 'generated_plan_html', kwargs={'plan': obj.id},
+        return reverse('v2:plan-export', kwargs={'pk': obj.id, 'format': 'html'},
                        request=self.context['request'])
 
     @extend_schema_field(OpenApiTypes.URI)
