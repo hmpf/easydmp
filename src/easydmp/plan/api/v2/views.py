@@ -199,7 +199,7 @@ class PlanViewSet(ReadOnlyModelViewSet):
     def export(self, request, pk=None, format=None, **kwargs):
         # WTF: Makes "export/?format=txt" behave the same as "export.txt"
         if not format:
-            get_format = request.GET.get('format', None)
+            get_format = request.GET.get('format', None) or 'html'
             if get_format in ('html', 'txt', 'pdf'):
                 format = get_format
         template_name = 'easydmp/plan/generated_plan.html'
