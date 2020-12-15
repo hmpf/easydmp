@@ -6,6 +6,7 @@ from django import test
 from easydmp.dmpt.flow import Transition, TransitionMap
 from easydmp.dmpt.models import Template, Section, Question
 from easydmp.dmpt.models import ExplicitBranch
+from easydmp.plan.models import AnswerSet, Plan, Answer
 
 from tests.dmpt.factories import (TemplateFactory, SectionFactory,
                                   QuestionFactory, ReasonQuestionFactory)
@@ -299,3 +300,50 @@ class TestOptionalSections(test.TestCase):
         data = {str(toggle_question.pk): {'choice': 'Yes'}}
         result = section.is_skipped(data)
         self.assertFalse(result)
+
+
+class TestRepeatableSections(test.TestCase):
+
+    def setUp(self):
+        self.template = TemplateFactory()
+
+    def test_model_repeatable_section(self):
+        plan = Plan(template=self.template)
+        plan.save()
+        section = SectionFactory.build(template=self.template, repeatable=True)
+        section.save()
+        q1 = Question(section=section, position=1)
+        q2 = Question(section=section, position=2)
+        q3 = Question(section=section, position=3)
+        q1.save()
+        q2.save()
+        q3.save()
+
+        as1 = AnswerSet(plan=plan, section=section)
+        as1.save()
+        a1_1 = Answer(answerset=as1, question=q1)
+        a1_2 = Answer(answerset=as1, question=q2)
+        a1_3 = Answer(answerset=as1, question=q3)
+        a1_1.save()
+        a1_2.save()
+        a1_3.save()
+
+        as2 = AnswerSet(plan=plan, section=section)
+        as2.save()
+        a2_1 = Answer(answerset=as1, question=q1)
+        a2_2 = Answer(answerset=as1, question=q2)
+        a2_3 = Answer(answerset=as1, question=q3)
+        a2_1.save()
+        a2_2.save()
+        a2_3.save()
+
+        as3 = AnswerSet(plan=plan, section=section)
+        as3.save()
+        a3_1 = Answer(answerset=as1, question=q1)
+        a3_2 = Answer(answerset=as1, question=q2)
+        a3_3 = Answer(answerset=as1, question=q3)
+        a3_1.save()
+        a3_2.save()
+        a3_3.save()
+
+        self.assertEqual(3, len(section.answersets))

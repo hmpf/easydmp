@@ -146,7 +146,7 @@ class PlanQuerySet(models.QuerySet):
 
 class AnswerSet(ClonableModel):
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='answersets')
-    section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='+')
+    section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='answersets')
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
 
