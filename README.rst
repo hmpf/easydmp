@@ -111,6 +111,12 @@ Setup and sync database
 
     $ python manage.py migrate
 
+Unit tests with a particular database (example)
+-----------------------------------------------
+
+::
+
+    $ TEST_DATABASE_URL=postgresql://easydmp:easydmp@localhost:5432/easydmp tox
 
 Running in development
 ======================
