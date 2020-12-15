@@ -150,9 +150,6 @@ class AnswerSet(ClonableModel):
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        unique_together = ('plan', 'section')
-
     def __str__(self):
         return 'section: {}, plan: {}, valid: {}'.format(
             self.section_id,
@@ -185,7 +182,7 @@ class Answer(ClonableModel):
         return new
 
     class Meta:
-        unique_together = ('plan', 'question')
+        unique_together = ('plan', 'question', 'answerset')
 
 
 class Plan(DeletionMixin, ClonableModel):
