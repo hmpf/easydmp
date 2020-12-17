@@ -23,6 +23,13 @@ class EEStoreType(models.Model):
         return self.name
 
 
+class EEStoreSourceQuerySet(models.QuerySet):
+
+    def lookup(self, colon_string):
+        eestore_type, name = colon_string.split(':')
+        return self.get(eestore_type=eestore_type, name=name)
+
+
 class EEStoreSource(models.Model):
     eestore_type = models.ForeignKey(
         EEStoreType,
@@ -30,6 +37,8 @@ class EEStoreSource(models.Model):
         related_name='sources',
     )
     name = models.CharField(max_length=64)
+
+    objects = EEStoreSourceQuerySet.as_manager()
 
     class Meta:
         db_table = 'easydmp_eestore_source'

@@ -17,6 +17,7 @@ from easydmp.lib.admin import SetPermissionsMixin
 from easydmp.lib import get_model_name
 
 from .models import Template
+from .models import TemplateImportMetadata
 from .models import Section
 from .models import ExplicitBranch
 from .models import Question
@@ -84,9 +85,23 @@ class TemplateMoreInfoFilter(admin.SimpleListFilter):
         return queryset
 
 
+class TemplateImportMetadataInline(admin.TabularInline):
+    model = TemplateImportMetadata
+    fk_name = 'template'
+    fields = ['origin', 'original_template_pk', 'originally_cloned_from', 'imported', 'imported_via']
+    extra = 0
+
+    def get_readonly_fields(self, request, obj=None):
+        return [f.name for f in self.model._meta.fields]
+
+    def has_add_permission(self, request, obj):
+        return False
+    has_change_permission = has_add_permission
+
+
 @admin.register(Template)
 class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
-    list_display = ('id', 'version', 'title', 'is_published', 'is_retired',)
+    list_display = ('id', 'version', 'title', 'is_published', 'is_retired', 'export')
     list_display_links = ('title', 'version', 'id')
     date_hierarchy = 'published'
     set_permissions = ['use_template']
@@ -97,6 +112,9 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
         'domain_specific',
         TemplateDescriptionFilter,
         TemplateMoreInfoFilter,
+    ]
+    inlines = [
+        TemplateImportMetadataInline,
     ]
     actions = [
         'new_version',
@@ -131,6 +149,12 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
     is_retired.short_description = 'Is retired'  # type: ignore
     is_retired.boolean = True  # type: ignore
 
+    def export(self, obj):
+        json_url = reverse('v2:template-export', kwargs={'pk': obj.pk})
+        html = '<a target="_blank" href="{}">JSON</a>'
+        return format_html(html, mark_safe(json_url))
+    export.short_description = 'Export'  # type: ignore
+    export.allow_tags = True  # type: ignore
 
     # actions
 

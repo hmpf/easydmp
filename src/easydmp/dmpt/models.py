@@ -6,6 +6,7 @@ from textwrap import fill
 from typing import Text, Any, TypedDict, MutableMapping, Type, Dict, Tuple
 from uuid import uuid4
 import logging
+import socket
 
 import graphviz as gv  # noqa
 from guardian.models import UserObjectPermissionBase
@@ -14,6 +15,7 @@ from guardian.shortcuts import get_objects_for_user, assign_perm
 
 from django.apps import apps
 from django.conf import settings
+from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db import transaction
@@ -30,7 +32,7 @@ from .utils import RenumberMixin
 from .utils import print_url
 from .utils import render_from_string
 
-from easydmp.eestore.models import EEStoreCache
+from easydmp.eestore.models import EEStoreCache, EEStoreMount
 from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file, render_dotsource_to_bytes
 from easydmp.lib.models import ModifiedTimestampModel, ClonableModel
 from easydmp.lib import pprint_list
@@ -140,6 +142,86 @@ def get_answered_questions(questions, answers):
     return Question.objects.filter(pk__in=result)
 
 
+# Why not just use socket.getfqdn? Well, it's *very* complicated.
+# What you get differs between OSes, distros and sysadmin practice
+# and "localhost" and private addresses are useless for what we need.
+def _get_net_info(name=''):
+    """Attempt to get all public ip-addresses and fqdns for localhost
+
+    Returns two lists: one of fqdns and one of ips
+    """
+    name = name.strip()
+    if not name or name == '0.0.0.0':
+        name = socket.gethostname()
+    try:
+        addrs = socket.getaddrinfo(name, None, 0, socket.SOCK_DGRAM, 0,
+                                   socket.AI_CANONNAME)
+    except socket.error:
+        return None
+
+    fqdns = list()
+    ips = list()
+    for addr in addrs:
+        ip = addr[4][0]
+        fqdn = addr[3]
+        if fqdn:
+            fqdns.append(fqdn)
+        if ip:
+            ips.append(ip)
+    return fqdns, ips
+
+
+def get_origin(origin=''):
+    """Try to find a decent value for export "origin"
+
+    From most to least explicit.
+    """
+    if origin:
+        return origin
+    settings_origin = getattr(settings, 'EASYDMP_ORIGIN', None)
+    if settings_origin:
+        return settings_origin
+    # No explicit origin given
+    # YAGNI? in case of no connection/no fqdn/public ip:
+    # hash of secret key? uuid4?
+    fqdns, ips = _get_net_info()
+    if fqdns:
+        return fqdns[0]
+    return ips[0]
+
+
+def create_template_export_obj(template):
+    """
+    Create an amalgamation of all objects involved in a single template
+
+    Suitable for instanciating non-model drf serializers.
+    """
+    class Obj:
+        pass
+    obj = Obj()
+    obj.comment = ''  # Empty by default
+
+    easydmp = Obj()
+    easydmp.version = settings.VERSION
+    easydmp.origin = get_origin()
+    easydmp.input_types = sorted(INPUT_TYPES)
+
+    obj.easydmp = easydmp
+    obj.template = template
+    obj.sections = template.sections.all()
+
+    questions = template.questions.all()
+    obj.questions = template.questions.all()
+    obj.explicit_branches = ExplicitBranch.objects.filter(current_question__in=questions)
+    obj.canned_answers = CannedAnswer.objects.filter(question__in=questions)
+    obj.eestore_mounts = EEStoreMount.objects.filter(question__in=questions)
+
+    return obj
+
+
+# models, querysets, managers
+
+
 class TemplateQuerySet(models.QuerySet):
 
     def publicly_available(self):
@@ -203,6 +285,9 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
             return '{} v{}'.format(self.title, self.version)
         return self.title
 
+    def create_export_object(self):
+        return create_template_export_obj(self)
+
     @transaction.atomic
     def _clone(self, title, version, keep_permissions=True):
         """Clone the template and give it <title> and <version>
@@ -260,6 +345,10 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         """Renumber section positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
         sections = self.sections.order_by('position')
         self._renumber_positions(sections)
+
+    @property
+    def input_types_in_use(self):
+        return sorted(set(self.questions.values_list('input_type', flat=True)))
 
     # START: Template movement helpers
 
@@ -369,6 +458,47 @@ class TemplateUserObjectPermission(UserObjectPermissionBase):
 class TemplateGroupObjectPermission(GroupObjectPermissionBase):
     content_object = models.ForeignKey(Template, on_delete=models.CASCADE,
                                        related_name='permissions_group')
+
+
+class TemplateImportMetadata(models.Model):
+    template = models.ForeignKey(Template, on_delete=models.CASCADE,
+                                 related_name='import_metadata')
+    origin = models.CharField(
+        max_length=255,
+        help_text='Where the template was imported from',
+    )
+    original_template_pk = models.IntegerField(
+        help_text='Copy of the original template\'s primary key',
+    )
+    originally_cloned_from = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text='Copy of the original template\'s "cloned_from"',
+    )
+    # Avoid having an import metadata model on all template dependents
+    mappings = JSONField(default=dict)
+
+    # metadata for the metadata
+    imported = models.DateTimeField(default=tznow)
+    # URL or method
+    imported_via = models.CharField(max_length=255, default='CLI')
+
+    class Meta:
+        verbose_name_plural = 'template import metadata'
+        indexes = [
+            models.Index(fields=['original_template_pk'],
+                         name='tim_lookup_original_idx')
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['origin', 'original_template_pk'],
+                                    name='tim_unique_template_per_origin_constraint')
+        ]
+
+    def __str__(self):
+        return f'Template #{self.original_template_pk} @ {self.origin}'
+
+    def natural_key(self):
+        return (self.origin, self.original_template_pk)
 
 
 class SectionManager(models.Manager):
