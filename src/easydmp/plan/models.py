@@ -145,10 +145,15 @@ class PlanQuerySet(models.QuerySet):
 
 
 class AnswerSet(ClonableModel):
+    """
+    A user's set of answers to a Section
+    """
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='answersets')
     section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='+')
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
+    # The user's answers, represented as a Question PK keyed dict in JSON.
+    data = JSONField(default=dict, encoder=DjangoJSONEncoder)
 
     class Meta:
         unique_together = ('plan', 'section')
@@ -168,6 +173,10 @@ class AnswerSet(ClonableModel):
 
 
 class Answer(ClonableModel):
+    """
+    An Answer contains metadata about an answer, such has validity. The actual answer the user gave is aggregated in
+    AnswerSet.
+    """
     # TODO: remove in sync with linking to correct answersets, updating unique_together
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='question_validity')
     # TODO: make non nullable later
