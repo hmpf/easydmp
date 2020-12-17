@@ -171,6 +171,12 @@ class AnswerSet(ClonableModel):
         new.save()
         return new
 
+    def validate(self):
+        """
+        Validates the answers and persists the validity state
+        """
+        valids, invalids = self.section.find_validity_of_questions(self.data)
+
 
 class Answer(ClonableModel):
     """
