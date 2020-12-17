@@ -4,7 +4,8 @@ from collections import OrderedDict
 from django import test
 
 from easydmp.dmpt.flow import Transition, TransitionMap
-from easydmp.dmpt.models import Template, Section, Question
+from easydmp.dmpt.models import Template, Section, Question, ShortFreetextQuestion, BooleanQuestion, \
+    PositiveIntegerQuestion
 from easydmp.dmpt.models import ExplicitBranch
 from easydmp.plan.models import AnswerSet, Plan, Answer
 
@@ -312,9 +313,9 @@ class TestRepeatableSections(test.TestCase):
         plan.save()
         section = SectionFactory.build(template=self.template, repeatable=True)
         section.save()
-        q1 = Question(section=section, position=1)
-        q2 = Question(section=section, position=2)
-        q3 = Question(section=section, position=3)
+        q1 = ShortFreetextQuestion(section=section, position=1)
+        q2 = BooleanQuestion(section=section, position=2)
+        q3 = PositiveIntegerQuestion(section=section, position=3)
         q1.save()
         q2.save()
         q3.save()
@@ -347,3 +348,5 @@ class TestRepeatableSections(test.TestCase):
         a3_3.save()
 
         self.assertCountEqual([as1.id, as2.id, as3.id], [a.id for a in section.answersets.all()])
+
+        # TODO when plan data is "decentralized", add some data and validate
