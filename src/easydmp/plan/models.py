@@ -172,14 +172,20 @@ class AnswerSet(ClonableModel):
         new.save()
         return new
 
-    def validate(self, timestamp:datetime = None) -> bool:
+    def validate(self, timestamp: datetime = None, _data: dict = None) -> bool:
         """
-        Validates the answers and persists the validity state. Returns validity
+        Validates the answers and persists the validity state on this as well as on related Answers.
+        (If _data is not given, use data on this.) It is legal to pass a superset of the data required to validate
+        the questions belonging to this. For example, pass the entire data dict for a plan.
+
+        Returns validity.
         """
-        valids, invalids = self.section.find_validity_of_questions(self.data)
+        # TODO We plan to stop passing _data when the data is already being stored on the AnswerSet
+        data = _data or self.data
+        valids, invalids = self.section.find_validity_of_questions(data)
         self.set_validity_of_answers(valids, invalids)
         self.last_validated = timestamp or tznow()
-        self.valid = not invalids and len(valids) == len(self.data)
+        self.valid = not invalids
         self.save()
         return self.valid
 
@@ -604,35 +610,6 @@ class Plan(DeletionMixin, ClonableModel):
                 qvs.append(Answer(plan=self, question=question, valid=False))
         Answer.objects.bulk_create(qvs)
 
-    def set_validity_of_sections(self, valids, invalids):
-        # TODO: will work on answersets instead
-        self._set_sections_as_valid(*valids)
-        self._set_sections_as_invalid(*invalids)
-
-    def _set_sections_as_valid(self, *section_pks):
-        # TODO: will work on answersets instead
-        qs = self.answersets.filter(section_id__in=section_pks)
-        qs.update(valid=True)
-
-    def _set_sections_as_invalid(self, *section_pks):
-        # TODO: will work on answersets instead
-        qs = self.answersets.filter(section_id__in=section_pks)
-        qs.update(valid=False)
-
-    def set_validity_of_questions(self, valids, invalids):
-        self.set_questions_as_valid(*valids)
-        self.set_questions_as_invalid(*invalids)
-
-    def set_questions_as_valid(self, *question_pks):
-        # TODO: Maybe turn into function?
-        qs = Answer.objects.filter(plan=self, question_id__in=question_pks)
-        qs.update(valid=True)
-
-    def set_questions_as_invalid(self, *question_pks):
-        # TODO: Maybe turn into function?
-        qs = Answer.objects.filter(plan=self, question_id__in=question_pks)
-        qs.update(valid=False)
-
     def copy_validations_from(self, oldplan):
         # TODO: Use answersets instead of section_validities
         for sv in oldplan.answersets.all():
@@ -640,7 +617,7 @@ class Plan(DeletionMixin, ClonableModel):
         for qv in oldplan.question_validity.all():
             qv.clone(self)
 
-    def validate_data(self, recalculate=True):
+    def validate_data(self, recalculate: bool = True) -> bool:
         wrong_pks = [str(pk) for pk in self.template.list_unknown_questions(self.data)]
         if wrong_pks:
             error = 'The self {} contains nonsense data: template has no questions for: {}'
@@ -653,15 +630,12 @@ class Plan(DeletionMixin, ClonableModel):
             return False
         if recalculate:
             for sv in self.answersets.all():
-                valids, invalids = sv.section.find_validity_of_questions(self.data)
-                self.set_validity_of_questions(valids, invalids)
-            valids, invalids = self.template.find_validity_of_sections(self.data)
-            self.set_validity_of_sections(valids, invalids)
+                sv.validate(_data=self.data)
         if self.answersets.filter(valid=True).count() == self.template.sections.count():
             return True
         return False
 
-    def validate(self, user, recalculate=False, commit=True, timestamp=None):
+    def validate(self, user: Any, recalculate: bool = False, commit: bool = True, timestamp: datetime = None) -> None:
         timestamp = timestamp if timestamp else tznow()
         valid = self.validate_data(recalculate)
         self.valid = valid

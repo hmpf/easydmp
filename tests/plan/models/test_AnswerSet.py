@@ -75,3 +75,24 @@ class TestAnswerSetValidation(test.TestCase):
         # TODO Hanne how is this valid answer for a PositiveIntegerQuestion:
         self.assertTrue(Answer.objects.get(pk=a3.pk).valid)
         self.assertFalse(as1.valid)
+
+    def test_validate_answerset_pass_data(self):
+        as1 = AnswerSet(plan=self.plan, section=self.section, valid=False)
+        as1.save()
+        a1, a2, a3 = self._add_answers(as1)
+        as1.save()
+        as1.validate(_data={
+            str(self.q1.id): {
+                "choice": None,
+                "notes": "n1"
+            },
+            str(self.q2.id): {
+                "choice": None,
+                "notes": "n2"
+            },
+            str(self.q3.id): {
+                "choice": None,
+                "notes": "n3"
+            }
+        })
+        self.assertFalse(as1.valid)
