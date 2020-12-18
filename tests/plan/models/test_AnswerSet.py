@@ -7,7 +7,7 @@ from tests.dmpt.factories import TemplateFactory, SectionFactory
 
 class TestAnswerSet(test.TestCase):
 
-    def test_answerset_data(self):
+    def test_validate_answerset_data(self):
         template = TemplateFactory()
         plan = Plan(template=template, added_by_id=1, modified_by_id=1, valid=False)
         plan.save()
@@ -41,3 +41,8 @@ class TestAnswerSet(test.TestCase):
         a1_1.save()
         a1_2.save()
         a1_3.save()
+
+        as1.validate()
+        self.assertTrue(a1_1.valid)
+        self.assertTrue(a1_2.valid)
+        self.assertFalse(a1_3.valid)

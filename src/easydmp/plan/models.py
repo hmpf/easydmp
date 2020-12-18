@@ -1,6 +1,7 @@
 import logging
 from copy import deepcopy
-from typing import Any
+from datetime import datetime
+from typing import Any, Set
 from uuid import uuid4
 
 from django.conf import settings
@@ -171,11 +172,29 @@ class AnswerSet(ClonableModel):
         new.save()
         return new
 
-    def validate(self):
+    def validate(self, timestamp:datetime = None) -> bool:
         """
-        Validates the answers and persists the validity state
+        Validates the answers and persists the validity state. Returns validity
         """
         valids, invalids = self.section.find_validity_of_questions(self.data)
+        self.set_validity_of_answers(valids, invalids)
+        self.last_validated = timestamp or tznow()
+        self.valid = not invalids and len(valids) == len(self.data)
+        self.save()
+        return self.valid
+
+    def set_validity_of_answers(self, valids: Set[int], invalids: Set[int]) -> None:
+        """
+        Update the corresponding Answers of this with validities/invalidities given by the passed Question pks
+        """
+        for answer in self.answers.all():
+            if answer.question.pk in valids:
+                answer.valid = True
+            elif answer.question.pk in invalids:
+                answer.valid = False
+            else:
+                raise ValueError('No question for answer {} in validation'.format(answer.pk))
+            answer.save()
 
 
 class Answer(ClonableModel):
