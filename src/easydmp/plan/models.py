@@ -1,7 +1,7 @@
 import logging
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Set
+from typing import Any, Set, Dict
 from uuid import uuid4
 
 from django.conf import settings
@@ -172,7 +172,7 @@ class AnswerSet(ClonableModel):
         new.save()
         return new
 
-    def validate(self, timestamp: datetime = None, _data: dict = None) -> bool:
+    def validate(self, timestamp: datetime = None, _data: Dict = None) -> bool:
         """
         Validates the answers and persists the validity state on this as well as on related Answers.
         (If _data is not given, use data on this.) It is legal to pass a superset of the data required to validate

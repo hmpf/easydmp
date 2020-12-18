@@ -878,7 +878,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                 texts.append(answer)
         return texts
 
-    def find_validity_of_questions(self, data: dict) -> Tuple[Set[int], Set[int]]:
+    def find_validity_of_questions(self, data: Dict) -> Tuple[Set[int], Set[int]]:
         """
         The sets of pks of Questions for which the given answer data is valid/invalid.
         """
@@ -1332,7 +1332,7 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         choicedict = data.get(str(self.pk), {})
         return choicedict.get('choice', None)
 
-    def validate_data(self, data: dict) -> bool:
+    def validate_data(self, data: Dict) -> bool:
         """
         True if the the given data contains a valid answer for this.
         """
