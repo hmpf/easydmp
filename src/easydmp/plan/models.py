@@ -205,7 +205,7 @@ class AnswerSet(ClonableModel):
 
 class Answer(ClonableModel):
     """
-    An Answer contains metadata about an answer, such has validity. The actual answer the user gave is aggregated in
+    An Answer contains metadata about an answer, such as validity. The actual answer the user gave is aggregated in
     AnswerSet.
     """
     # TODO: remove in sync with linking to correct answersets, updating unique_together
