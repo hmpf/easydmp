@@ -91,6 +91,33 @@ class TestAnswerSetValidation(test.TestCase):
         self.assertFalse(Answer.objects.get(pk=a3.pk).valid)
         self.assertFalse(as1.valid)
 
+    def test_validate_answerset_data_superset(self):
+        as1 = AnswerSet(plan=self.plan, section=self.section, valid=False, data={
+            str(self.q1.id): {
+                "choice": "foo",
+                "notes": "n1"
+            },
+            str(self.q2.id): {
+                "choice": "Yes",
+                "notes": "n2"
+            },
+            str(self.q3.id): {
+                "choice": 1,
+                "notes": "n3"
+            },
+            "999": {
+                "choice": "hmmm",
+                "notes": "hmm"
+            }
+        })
+        as1.save()
+        a1, a2, a3 = self._add_answers(as1)
+        as1.validate()
+        self.assertTrue(Answer.objects.get(pk=a1.pk).valid)
+        self.assertTrue(Answer.objects.get(pk=a2.pk).valid)
+        self.assertTrue(Answer.objects.get(pk=a3.pk).valid)
+        self.assertTrue(as1.valid)
+
     def test_validate_answerset_pass_data(self):
         as1 = AnswerSet(plan=self.plan, section=self.section, valid=False)
         as1.save()
