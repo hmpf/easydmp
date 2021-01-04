@@ -91,6 +91,32 @@ class TestAnswerSetValidation(test.TestCase):
         self.assertFalse(Answer.objects.get(pk=a3.pk).valid)
         self.assertFalse(as1.valid)
 
+    def test_validate_answerset_bogus_answer(self):
+        as1 = AnswerSet(plan=self.plan, section=self.section, valid=False, data={
+            str(self.q1.id): {
+                "choice": None,
+                "notes": "n1"
+            },
+            str(self.q2.id): {
+                "choice": None,
+                "notes": "n2"
+            },
+            str(self.q3.id): {
+                "choice": "bogus",
+                "notes": "n3"
+            }
+        })
+        as1.save()
+        a1, a2, a3 = self._add_answers(as1)
+        s_bogus = SectionFactory.build(template=self.template)
+        s_bogus.save()
+        q_bogus = BooleanQuestion(section=s_bogus, position=10)
+        q_bogus.save()
+        a_bogus = Answer(answerset=as1, question=q_bogus, plan=self.plan, valid=False)
+        a_bogus.save()
+        with self.assertRaisesRegex(ValueError, 'No question for answer .* in validation'):
+            as1.validate()
+
     def test_validate_answerset_data_superset(self):
         as1 = AnswerSet(plan=self.plan, section=self.section, valid=False, data={
             str(self.q1.id): {
