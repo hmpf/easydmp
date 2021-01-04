@@ -137,4 +137,7 @@ class TestAnswerSetValidation(test.TestCase):
                 "notes": "n3"
             }
         })
+        self.assertFalse(Answer.objects.get(pk=a1.pk).valid)
+        self.assertFalse(Answer.objects.get(pk=a2.pk).valid)
+        self.assertFalse(Answer.objects.get(pk=a3.pk).valid)
         self.assertFalse(as1.valid)
