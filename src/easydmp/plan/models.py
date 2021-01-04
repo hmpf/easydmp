@@ -629,8 +629,8 @@ class Plan(DeletionMixin, ClonableModel):
             LOG.error(error.format(self, self.pk))
             return False
         if recalculate:
-            for sv in self.answersets.all():
-                sv.validate(_data=self.data)
+            for answerset in self.answersets.all():
+                answerset.validate(_data=self.data)
         if self.answersets.filter(valid=True).count() == self.template.sections.count():
             return True
         return False
