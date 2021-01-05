@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Set, Dict
+from typing import Any, Set, Dict, TYPE_CHECKING
 from uuid import uuid4
 
 from django.conf import settings
