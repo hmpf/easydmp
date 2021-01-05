@@ -21,7 +21,7 @@ from easydmp.lib.models import ClonableModel
 
 from .utils import purge_answer
 from .utils import get_editors_for_plan
-
+from ..auth.models import User
 
 LOG = logging.getLogger(__name__)
 GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
@@ -635,7 +635,7 @@ class Plan(DeletionMixin, ClonableModel):
             return True
         return False
 
-    def validate(self, user: Any, recalculate: bool = False, commit: bool = True, timestamp: datetime = None) -> None:
+    def validate(self, user: User, recalculate: bool = False, commit: bool = True, timestamp: datetime = None) -> None:
         timestamp = timestamp if timestamp else tznow()
         valid = self.validate_data(recalculate)
         self.valid = valid
