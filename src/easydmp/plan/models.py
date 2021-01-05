@@ -21,7 +21,9 @@ from easydmp.lib.models import ClonableModel
 
 from .utils import purge_answer
 from .utils import get_editors_for_plan
-from ..auth.models import User
+
+if TYPE_CHECKING:
+    from easydmp.auth.models import User
 
 LOG = logging.getLogger(__name__)
 GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
