@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_static %}
+{% block object-tools-items %}
+
+    {% if request.user.has_superpowers %}<li>
+        <a href="{% url 'admin:dmpt-template-import' %}" class="grp-state-focus addlink">Import</a>
+    </li>{% endif %}
+    {{ block.super }}
+
+{% endblock %}
