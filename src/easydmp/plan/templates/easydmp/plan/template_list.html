@@ -13,7 +13,7 @@
               <th>Version</th>
               <th>Description</th>
               <th></th>
-              {% if request.user.is_superuser %}
+              {% if request.user.has_superpowers %}
               <th>Published</th>
               <th>Retired</th>
               {% endif %}
@@ -28,7 +28,7 @@
                 {% if object.more_info %}<a href="{{ object.more_info }}">More info</a>{% endif %}
             </td>
             <td><a class="btn btn-primary"href="{% url 'create_plan' template_id=object.id %}">Use</a></td>
-              {% if request.user.is_superuser %}
+              {% if request.user.has_superpowers %}
               <th>{{ object.published|default:"No" }}</th>
               <th>{{ object.retired|default:"No" }}</th>
               {% endif %}

@@ -39,7 +39,7 @@
         </div>
       </div>
       {% endif %}
-      {% if user.is_superuser %}
+      {% if user.has_superpowers %}
       <div class="superuser path">
         <h4>{% for q in path %}
           <span>
