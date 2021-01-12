@@ -8,6 +8,7 @@ from django.utils.timezone import now as tznow
 
 from rest_framework.exceptions import ParseError
 from rest_framework.parsers import JSONParser
+from rest_framework import serializers
 
 from easydmp.dmpt.export_template import ExportSerializer
 from easydmp.dmpt.models import (Template, CannedAnswer, Question, Section,
@@ -33,6 +34,11 @@ class TemplateImportError(ValueError):
 
 class TemplateImportWarning(UserWarning):
     pass
+
+
+class ImportSerializer(serializers.Serializer):
+    url = serializers.URLField(max_length=255, required=True)
+    new_title = serializers.CharField(max_length=255, required=False)
 
 
 def _prep_model_dict(model_dict):
@@ -101,8 +107,8 @@ def deserialize_template_export(export_json) -> dict:
     raise TemplateImportError("Template export is malformed")
 
 
-def _get_free_title(template_dict, origin):
-    title = template_dict.pop('title')
+def _get_available_title(template_dict, origin):
+    title = template_dict['title']
     orig_pk = template_dict['id']
     if not Template.objects.filter(title=title).exists():
         return title
@@ -116,11 +122,12 @@ def _get_free_title(template_dict, origin):
 
 
 @transaction.atomic
-def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
+def _create_imported_template(export_dict, origin, title='', via=DEFAULT_VIA):
     via = via if via else DEFAULT_VIA
     template_dict = export_dict['template']
     original_title = template_dict['title']
-    title = _get_free_title(template_dict, origin)
+    title = title if title else _get_available_title(template_dict, origin)
+    template_dict.pop('title', None)
     original_template_pk = template_dict.pop('id')
     existing_tim = TemplateImportMetadata.objects.filter(
         origin=origin,
@@ -250,7 +257,7 @@ def _create_imported_eestore_mounts(export_dict, mappings):
     # EEStoreMount doesn't need to leave a mapping due to natural keys
 
 
-def import_serialized_export(export_dict, origin='', via=DEFAULT_VIA):
+def import_serialized_export(export_dict, origin='', title='', via=DEFAULT_VIA):
     if not export_dict:
         raise TemplateImportError("Template export file was empty, cannot import")
 
@@ -275,7 +282,7 @@ def import_serialized_export(export_dict, origin='', via=DEFAULT_VIA):
         'eestore_mounts': {},
     }
     with transaction.atomic():
-        tim = _create_imported_template(export_dict, chosen_origin, via)
+        tim = _create_imported_template(export_dict, chosen_origin, title, via)
         mappings = _create_imported_sections(export_dict, tim)
         if mappings is None:
             tim.mappings = empty_mapping
