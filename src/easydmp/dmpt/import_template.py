@@ -14,7 +14,7 @@ from easydmp.dmpt.models import TemplateImportMetadata, INPUT_TYPES
 from easydmp.eestore.models import EEStoreSource, EEStoreType, EEStoreMount
 
 
-class ImportError(ValueError):
+class TemplateImportError(ValueError):
     pass
 
 
@@ -29,7 +29,7 @@ def _check_missing_input_types(template_dict):
     input_types_needed = template_dict.pop('input_types_in_use')
     missing_input_types = set(input_types_needed) - set(INPUT_TYPES)
     if missing_input_types:
-        raise ImportError(
+        raise TemplateImportError(
             f'The imported template is incompatible with this EasyDMP installation: '
             'The following input types are missing: {missing_input_types}'
         )
@@ -55,14 +55,14 @@ def _check_missing_eestore_types_and_sources(eestore_mounts):
             pass
     missing_types = types - types_found
     if missing_types:
-        raise ImportError(
+        raise TemplateImportError(
             f'The imported template is incompatible with this EasyDMP installation: '
             'The following eestore types are missing: {missing_types}'
         )
 
     missing_sources = sources - sources_found
     if missing_sources:
-        raise ImportError(
+        raise TemplateImportError(
             f'The imported template is incompatible with this EasyDMP installation: '
             'The following eestore sources are missing: {missing_sources}'
         )
@@ -71,10 +71,12 @@ def _check_missing_eestore_types_and_sources(eestore_mounts):
 def deserialize_template_export(export_json) -> dict:
     stream = io.BytesIO(export_json)
     data = JSONParser().parse(stream)
+    if not data:
+        raise TemplateImportError("Template export is empty")
     serializer = ExportSerializer(data=data)
     if serializer.is_valid():
         return data
-    return {}
+    raise TemplateImportError("Template export is malformed")
 
 
 def _get_free_title(template_dict, origin):
@@ -200,7 +202,8 @@ def _create_imported_eestore_mounts(export_dict, mappings):
 
 
 def import_serialized_export(export_dict, origin=''):
-    assert export_dict
+    if not export_dict:
+        raise TemplateImportError("Template export file was empty, cannot import")
 
     easydmp_dict = export_dict['easydmp']
     chosen_origin = origin or easydmp_dict.get('origin') or get_origin(origin)

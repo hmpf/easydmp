@@ -5,7 +5,11 @@ from uuid import uuid4
 
 from django.core.management.base import BaseCommand, CommandError
 
-from easydmp.dmpt.import_template import deserialize_template_export, import_serialized_export
+from easydmp.dmpt.import_template import (
+    deserialize_template_export,
+    import_serialized_export,
+    TemplateImportError
+)
 
 
 class Command(BaseCommand):
@@ -24,6 +28,15 @@ class Command(BaseCommand):
 
         raw_blob = filename.read()
         filename.close()
-        serialized_dict = deserialize_template_export(raw_blob)
-        template = import_serialized_export(serialized_dict, origin=origin)
-        self.stdout.write(f'Successfuly imported "{template}", origin set to "{origin}"')
+        try:
+            serialized_dict = deserialize_template_export(raw_blob)
+        except TemplateImportError as e:
+            self.stderr.write(f"{e}, cannot import")
+            sys.exit(1)
+        try:
+            template = import_serialized_export(serialized_dict, origin=origin)
+        except TemplateImportError as e:
+            self.stderr.write(str(e))
+            sys.exit(1)
+        else:
+            self.stdout.write(f'Successfuly imported "{template}", origin set to "{origin}"')
