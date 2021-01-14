@@ -36,8 +36,7 @@ class EasyDMPSerializer(serializers.Serializer):
 class TemplateExportSerializer(serializers.ModelSerializer):
     input_types_in_use = serializers.ListField(
         child=serializers.SlugField(allow_blank=False),
-        allow_empty=False,
-        min_length=1,
+        allow_empty=True,
     )
 
     class Meta:
