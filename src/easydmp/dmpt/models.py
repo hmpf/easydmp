@@ -3,7 +3,7 @@ from copy import deepcopy
 import os
 from pathlib import Path
 from textwrap import fill
-from typing import Text, Any, TypedDict, MutableMapping, Type, Dict, Tuple
+from typing import Text, Any, TypedDict, MutableMapping, Type, Dict, Tuple, Set
 from uuid import uuid4
 import logging
 import socket
@@ -878,7 +878,10 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
                 texts.append(answer)
         return texts
 
-    def find_validity_of_questions(self, data):
+    def find_validity_of_questions(self, data: Dict) -> Tuple[Set[int], Set[int]]:
+        """
+        The sets of pks of Questions for which the given answer data is valid/invalid.
+        """
         questions = self.questions.all()
         valids = set(questions.filter(optional=True).values_list('pk', flat=True))
         if not data:
@@ -1329,7 +1332,10 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
         choicedict = data.get(str(self.pk), {})
         return choicedict.get('choice', None)
 
-    def validate_data(self, data):
+    def validate_data(self, data: Dict) -> bool:
+        """
+        True if the the given data contains a valid answer for this.
+        """
         if not data:
             return False
         choice = data.get(str(self.pk), None)
