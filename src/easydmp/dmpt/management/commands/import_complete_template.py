@@ -34,9 +34,9 @@ class Command(BaseCommand):
             self.stderr.write(f"{e}, cannot import")
             sys.exit(1)
         try:
-            template = import_serialized_export(serialized_dict, origin=origin)
+            tim = import_serialized_export(serialized_dict, origin=origin)
         except TemplateImportError as e:
             self.stderr.write(str(e))
             sys.exit(1)
         else:
-            self.stdout.write(f'Successfuly imported "{template}", origin set to "{origin}"')
+            self.stdout.write(f'Successfully imported "{tim.template}", origin set to "{origin}"')

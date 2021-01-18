@@ -1,20 +1,37 @@
 import io
 from uuid import uuid4
+import warnings
 
 from django.conf import settings
-from django.db import transaction
+from django.db import transaction, DatabaseError
 from django.utils.timezone import now as tznow
 
+from rest_framework.exceptions import ParseError
 from rest_framework.parsers import JSONParser
 
 from easydmp.dmpt.export_template import ExportSerializer
 from easydmp.dmpt.models import (Template, CannedAnswer, Question, Section,
-                                 ExplicitBranch, get_origin)
+                                 ExplicitBranch, TemplateImportMetadata,
+                                 get_origin)
 from easydmp.dmpt.models import TemplateImportMetadata, INPUT_TYPES
 from easydmp.eestore.models import EEStoreSource, EEStoreType, EEStoreMount
 
 
+__all__ = [
+    'TemplateImportError',
+    'deserialize_template_export',
+    'import_serialized_export',
+]
+
+
+DEFAULT_VIA = TemplateImportMetadata.DEFAULT_VIA
+
+
 class TemplateImportError(ValueError):
+    pass
+
+
+class TemplateImportWarning(UserWarning):
     pass
 
 
@@ -69,8 +86,13 @@ def _check_missing_eestore_types_and_sources(eestore_mounts):
 
 
 def deserialize_template_export(export_json) -> dict:
+    if isinstance(export_json, str):
+        export_json = export_json.encode('utf-8')
     stream = io.BytesIO(export_json)
-    data = JSONParser().parse(stream)
+    try:
+        data = JSONParser().parse(stream)
+    except ParseError:
+        raise TemplateImportError('Template export is not JSON')
     if not data:
         raise TemplateImportError("Template export is empty")
     serializer = ExportSerializer(data=data)
@@ -93,21 +115,38 @@ def _get_free_title(template_dict, origin):
     return f'{changed_title2}, {uuid4()}'
 
 
-def _create_imported_template(export_dict, origin, via='CLI'):
+@transaction.atomic
+def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
+    via = via if via else DEFAULT_VIA
     template_dict = export_dict['template']
+    original_title = template_dict['title']
     title = _get_free_title(template_dict, origin)
     original_template_pk = template_dict.pop('id')
+    existing_tim = TemplateImportMetadata.objects.filter(
+        origin=origin,
+        original_template_pk=original_template_pk
+    )
+    if existing_tim.exists():
+        error_msg = (f'Template "{original_title}" #{original_template_pk} '
+                     f'has been imported from "{origin}" before, '
+                     'will not re-import')
+        raise TemplateImportError(error_msg)
+    # Ensure the import is not auto-published
+    template_dict.pop('published', None)
     imported_template = Template.objects.create(
         title=title,
         **_prep_model_dict(template_dict)
     )
-    tim = TemplateImportMetadata.objects.create(
-        template=imported_template,
-        origin=origin,
-        original_template_pk=original_template_pk,
-        originally_cloned_from=template_dict.get('cloned_from'),
-        imported_via=via,
-    )
+    try:
+        tim = TemplateImportMetadata.objects.create(
+            template=imported_template,
+            origin=origin,
+            original_template_pk=original_template_pk,
+            originally_cloned_from=template_dict.get('cloned_from'),
+            imported_via=via,
+        )
+    except DatabaseError as e:
+        raise TemplateImportError(f'{e} Cannot import')
     return tim
 
 
@@ -117,11 +156,14 @@ def _create_imported_template(export_dict, origin, via='CLI'):
 # That way lies madness. Don't.
 
 
+@transaction.atomic
 def _create_imported_sections(export_dict, tim):
-    mappings = dict()
     section_list = export_dict['sections']
-    mappings['sections'] = dict()
-    super_section_map = dict()
+    if not section_list:
+        warnings.warn(TemplateImportWarning('This template lacks sections and questions'))
+        return
+    mappings = {'sections': {}}
+    super_section_map = {}
     for section_dict in section_list:
         orig_id = section_dict.pop('id')
         section_dict.pop('template')
@@ -140,8 +182,12 @@ def _create_imported_sections(export_dict, tim):
     return mappings
 
 
+@transaction.atomic
 def _create_imported_questions(export_dict, mappings):
     question_list = export_dict['questions']
+    if not question_list:
+        warnings.warn(TemplateImportWarning('This template lacks questions'))
+        return
     mappings['questions'] = dict()
     for question_dict in question_list:
         orig_id = question_dict.pop('id')
@@ -154,6 +200,7 @@ def _create_imported_questions(export_dict, mappings):
     return mappings
 
 
+@transaction.atomic
 def _create_imported_explicit_branches(export_dict, mappings):
     explicit_branch_list = export_dict['explicit_branches']
     mappings['explicit_branches'] = dict()
@@ -170,6 +217,7 @@ def _create_imported_explicit_branches(export_dict, mappings):
     return mappings
 
 
+@transaction.atomic
 def _create_imported_canned_answers(export_dict, mappings):
     canned_answer_list = export_dict['canned_answers']
     mappings['canned_answers'] = dict()
@@ -186,6 +234,7 @@ def _create_imported_canned_answers(export_dict, mappings):
     return mappings
 
 
+@transaction.atomic
 def _create_imported_eestore_mounts(export_dict, mappings):
     eestore_mount_list = export_dict['eestore_mounts']
     for eestore_mount_dict in eestore_mount_list:
@@ -201,7 +250,7 @@ def _create_imported_eestore_mounts(export_dict, mappings):
     # EEStoreMount doesn't need to leave a mapping due to natural keys
 
 
-def import_serialized_export(export_dict, origin=''):
+def import_serialized_export(export_dict, origin='', via=DEFAULT_VIA):
     if not export_dict:
         raise TemplateImportError("Template export file was empty, cannot import")
 
@@ -218,10 +267,25 @@ def import_serialized_export(export_dict, origin=''):
     _check_missing_input_types(template_dict)
     _check_missing_eestore_types_and_sources(eestore_mounts)
 
+    empty_mapping = {
+        'sections': {},
+        'questions': {},
+        'explicit_branches': {},
+        'canned_answers': {},
+        'eestore_mounts': {},
+    }
     with transaction.atomic():
-        tim = _create_imported_template(export_dict, chosen_origin)
+        tim = _create_imported_template(export_dict, chosen_origin, via)
         mappings = _create_imported_sections(export_dict, tim)
+        if mappings is None:
+            tim.mappings = empty_mapping
+            tim.save()
+            return tim
         mappings = _create_imported_questions(export_dict, mappings)
+        if mappings is None:
+            tim.mappings = empty_mapping + mappings
+            tim.save()
+            return tim
         mappings = _create_imported_explicit_branches(export_dict, mappings)
         mappings = _create_imported_canned_answers(export_dict, mappings)
         _create_imported_eestore_mounts(export_dict, mappings)
@@ -229,4 +293,4 @@ def import_serialized_export(export_dict, origin=''):
         # Finally, store the mappings. JSON, keys are converts to str
         tim.mappings = mappings
         tim.save()
-        return tim.template
+        return tim

@@ -461,6 +461,8 @@ class TemplateGroupObjectPermission(GroupObjectPermissionBase):
 
 
 class TemplateImportMetadata(models.Model):
+    DEFAULT_VIA = 'CLI'
+
     template = models.ForeignKey(Template, on_delete=models.CASCADE,
                                  related_name='import_metadata')
     origin = models.CharField(
@@ -481,7 +483,7 @@ class TemplateImportMetadata(models.Model):
     # metadata for the metadata
     imported = models.DateTimeField(default=tznow)
     # URL or method
-    imported_via = models.CharField(max_length=255, default='CLI')
+    imported_via = models.CharField(max_length=255, default=DEFAULT_VIA)
 
     class Meta:
         verbose_name_plural = 'template import metadata'
