@@ -208,7 +208,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         return get_sections_for_user(request.user)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'template' and not request.user.is_superuser:
+        if db_field.name == 'template' and not request.user.has_superpowers:
             templates = get_templates_for_user(request.user)
             kwargs["queryset"] = templates
         if db_field.name == 'super_section':
@@ -249,7 +249,7 @@ class QuestionExplicitBranchInline(admin.StackedInline):
     raw_id_fields = ['next_question']
 
     def get_readonly_fields(self, request, obj=None):
-        if request.user.is_superuser:
+        if request.user.has_superpowers:
             return ()
         return [f.name for f in self.model._meta.fields]
 
@@ -384,7 +384,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         readonly = ('cloned_from', 'cloned_when')
-        if request.user.is_superuser:
+        if request.user.has_superpowers:
             return readonly
         return readonly + ('on_trunk',)
 
@@ -403,7 +403,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
             return None
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'section' and not request.user.is_superuser:
+        if db_field.name == 'section' and not request.user.has_superpowers:
             sections = get_sections_for_user(request.user)
             kwargs["queryset"] = sections
         return super().formfield_for_foreignkey(db_field, request, **kwargs)

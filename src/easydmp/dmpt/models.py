@@ -228,7 +228,7 @@ class TemplateQuerySet(models.QuerySet):
         return self.filter(published__isnull=False, retired__isnull=True)
 
     def has_access(self, user):
-        if user.is_superuser:
+        if user.has_superpowers:
             return self.all()
         guardian_access = get_objects_for_user(user, 'dmpt.use_template')
         qs = self.publicly_available() | guardian_access

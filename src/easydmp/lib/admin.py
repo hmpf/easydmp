@@ -38,7 +38,7 @@ class SetPermissionsMixin:
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        if request.user.is_superuser:
+        if request.user.has_superpowers:
             return
         if not change:
             default_permissions = generate_default_permission_strings(
@@ -58,7 +58,7 @@ class ObjectPermissionModelAdmin(GuardedModelAdminMixin, admin.ModelAdmin):
         the set of this and the previous queryset.
         """
         qs = admin.ModelAdmin.get_queryset(self, request)
-        if request.user.is_superuser:
+        if request.user.has_superpowers:
             return qs
 
         # Run an explicit filter for the queryset, if any
