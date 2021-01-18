@@ -8,12 +8,10 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    replaces = [('eestore', '0001_squashed_0002_update_django_meta'), ('eestore', '0002_convert_to_jsonb')]
-
     initial = True
 
     dependencies = [
-        ('dmpt', '0001_squashed_0031_improve_cloning'),
+        ('dmpt', '0001_squashed_0011_section_optional'),
     ]
 
     operations = [
