@@ -1,7 +1,18 @@
+from typing import List
+
 from django.core.management import BaseCommand
 
-from easydmp.plan.models import Plan
+from easydmp.dmpt.models import Question
+from easydmp.plan.models import Plan, AnswerSet
 
+
+def handle_plan(plan: Plan, delete: bool):
+    for k, d in plan.data:
+        question = Question.objects.get(pk=int(k))
+        answerset = AnswerSet.get(section=question.section)
+        answerset.data[k] = d
+        if delete:
+            del plan.data[k]
 
 class Command(BaseCommand):
     help = "Distribute answer data from Plan to appropriate AnswerSet"
@@ -9,6 +20,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('-p', '--plan', nargs='*', type=int, default=[],
                             help='Plans to process (id). Default is all plans.')
+        parser.add_argument('-d', '--delete', type=bool, default=False,
+                            help='Whether to delete the answer data from Plan after it has been written to AnswerSet. Default is false.')
 
     def handle(self, *args, **options):
         plan_ids = options['plan']
@@ -16,4 +29,5 @@ class Command(BaseCommand):
             plans = Plan.objects.filter(pk__in=plan_ids)
         else:
             plans = Plan.objects.all()
-        
+        for plan in plans:
+            handle_plan(plan, options['delete'])

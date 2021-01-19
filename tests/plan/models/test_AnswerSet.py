@@ -1,6 +1,7 @@
 from django import test
 
 from easydmp.dmpt.models import ShortFreetextQuestion, BooleanQuestion, PositiveIntegerQuestion
+from easydmp.plan.management.commands.move_answer_data_to_answerset import handle_plan
 from easydmp.plan.models import Plan, AnswerSet, Answer
 from tests.dmpt.factories import TemplateFactory, SectionFactory
 
@@ -153,3 +154,22 @@ class TestAnswerSetValidation(test.TestCase):
         self.assertFalse(Answer.objects.get(pk=a2.pk).valid)
         self.assertFalse(Answer.objects.get(pk=a3.pk).valid)
         self.assertFalse(as1.valid)
+
+    def test_move_answer_data_to_answerset(self):
+        as1 = AnswerSet(plan=self.plan, section=self.section, valid=False)
+        self.plan.data = {
+            str(self.q1.id): {
+                "choice": "foo",
+                "notes": "n1"
+            },
+            str(self.q2.id): {
+                "choice": "Yes",
+                "notes": "n2"
+            },
+            str(self.q3.id): {
+                "choice": 1,
+                "notes": "n3"
+            }
+        }
+        handle_plan(self.plan, False)
+        self.assertEqual()
