@@ -157,7 +157,7 @@ def _get_net_info(name=''):
         addrs = socket.getaddrinfo(name, None, 0, socket.SOCK_DGRAM, 0,
                                    socket.AI_CANONNAME)
     except socket.error:
-        return None
+        return None, None
 
     fqdns = list()
     ips = list()
@@ -187,8 +187,9 @@ def get_origin(origin=''):
     fqdns, ips = _get_net_info()
     if fqdns:
         return fqdns[0]
-    return ips[0]
-
+    if ips:
+        return ips[0]
+    return 'n/a'
 
 def create_template_export_obj(template):
     """
