@@ -7,12 +7,14 @@ from easydmp.plan.models import Plan, AnswerSet
 
 
 def handle_plan(plan: Plan, delete: bool):
-    for k, d in plan.data:
+    for k, d in dict(plan.data).items():
         question = Question.objects.get(pk=int(k))
-        answerset = AnswerSet.get(section=question.section)
+        answerset = AnswerSet.objects.get(section=question.section)
         answerset.data[k] = d
+        answerset.save()
         if delete:
             del plan.data[k]
+            plan.save()
 
 class Command(BaseCommand):
     help = "Distribute answer data from Plan to appropriate AnswerSet"
