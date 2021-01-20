@@ -1,7 +1,7 @@
 from django import test
 
 from easydmp.dmpt.models import ShortFreetextQuestion, BooleanQuestion, PositiveIntegerQuestion
-from easydmp.plan.management.commands.move_answer_data_to_answerset import handle_plan
+from easydmp.lib.upgrade.management.commands.move_answer_data_to_answerset import handle_plan
 from easydmp.plan.models import Plan, AnswerSet, Answer
 from tests.dmpt.factories import TemplateFactory, SectionFactory
 
