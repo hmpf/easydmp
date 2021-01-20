@@ -5,6 +5,9 @@ from django.core.management import BaseCommand
 from easydmp.dmpt.models import Question
 from easydmp.plan.models import Plan, AnswerSet
 
+#
+# This was part of a refactor to change ownership of answer data, and may be deleted later.
+#
 
 def handle_plan(plan: Plan, delete: bool):
     for k, d in dict(plan.data).items():
