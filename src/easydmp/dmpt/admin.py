@@ -452,7 +452,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     save_on_top = True
     fieldsets = (
         (None, {
-            'fields': ('input_type', 'section', 'position',
+            'fields': ('input_type', 'section', 'position', 'label',
                        'question', 'on_trunk', 'optional', 'help_text',
                        'framing_text', 'comment',),
         }),
