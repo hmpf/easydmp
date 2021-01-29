@@ -25,7 +25,7 @@ class Command(BaseCommand):
     help = "Distribute answer data from Plan to appropriate AnswerSet"
 
     def add_arguments(self, parser):
-        parser.add_argument('-p', '--plan', nargs='*', type=int, default=[],
+        parser.add_argument('-p', '--plans', nargs='*', type=int, default=[],
                             help='Plans to process (id). Default is no plans. Overrides --allplans if set.')
         parser.add_argument('-a', '--allplans', type=bool, default=False,
                             help='Whether to process all plans. Default is false')
@@ -33,7 +33,7 @@ class Command(BaseCommand):
                             help='Whether to delete the answer data from Plan after it has been written to AnswerSet. Default is false. The command is idempotent only if this is false.')
 
     def handle(self, *args, **options):
-        plan_ids = options['plan']
+        plan_ids = options['plans']
         do_all_plans = options['allplans']
         plans = []
         if plan_ids:
