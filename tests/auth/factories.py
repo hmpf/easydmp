@@ -8,13 +8,20 @@ __all__ = [
 ]
 
 
-class UserFactory(factory.django.DjangoModelFactory):
-    usertype = 'default'
+class BaseUserFactory(factory.django.DjangoModelFactory):
     username = factory.Faker('name')
     password = 'password'
     is_active = True
     is_superuser = False
     is_staff = False
+    email = factory.Faker('email')
+
+    class Meta:
+        model = User
+
+
+class UserFactory(BaseUserFactory):
+    usertype = 'default'
 
     class Meta:
         model = User
@@ -37,3 +44,23 @@ class UserFactory(factory.django.DjangoModelFactory):
         kwargs.pop('usertype', None)
         username = kwargs.pop('username')
         return manager.create_user(username, **kwargs)
+
+
+class SuperUserFactory(BaseUserFactory):
+    is_superuser = True
+    is_staff = True
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        manager = cls._get_manager(model_class)
+        return manager.create_superuser(**kwargs)
+
+
+class TemplateDesignerFactory(BaseUserFactory):
+    is_superuser = False
+    is_staff = True
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        manager = cls._get_manager(model_class)
+        return manager.create_user(**kwargs)

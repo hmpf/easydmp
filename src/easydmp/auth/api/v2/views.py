@@ -30,7 +30,7 @@ class AuthorizeJSONWebTokenSerializer(VerificationBaseSerializer):
 
     def authorized_usernames(self):
         usernames = list(getattr(self, 'AUTHORIZED', []))
-        superusers = User.objects.filter(is_superuser=True).values_list('username', flat=True)
+        superusers = User.objects.have_superpowers().values_list('username', flat=True)
         usernames.extend(superusers)
         return usernames
 

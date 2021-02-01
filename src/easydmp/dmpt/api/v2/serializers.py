@@ -1,15 +1,19 @@
 from rest_framework import serializers
 
 from easydmp.dmpt.models import Template
+from easydmp.dmpt.models import TemplateImportMetadata
 from easydmp.dmpt.models import Section
 from easydmp.dmpt.models import Question
 from easydmp.dmpt.models import CannedAnswer
 from easydmp.dmpt.models import ExplicitBranch
 from easydmp.dmpt.forms import INPUT_TYPE_TO_FORMS
 
+from easydmp.eestore.models import EEStoreMount
+
 
 __all__ = [
     'TemplateSerializer',
+    'TemplateImportMetadataSerializer',
     'SectionSerializer',
     'LightQuestionSerializer',
     'HeavyQuestionSerializer',
@@ -30,6 +34,7 @@ class TemplateSerializer(serializers.HyperlinkedModelSerializer):
             'id',
             'url',
             'title',
+            'import_metadata',
             'abbreviation',
             'description',
             'more_info',
@@ -38,6 +43,23 @@ class TemplateSerializer(serializers.HyperlinkedModelSerializer):
             'created',
             'published',
             'retired',
+        ]
+
+
+class TemplateImportMetadataSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = TemplateImportMetadata
+        fields = [
+            'url',
+            'pk',
+            'origin',
+            'original_template_pk',
+            'originally_cloned_from',
+            'imported',
+            'imported_via',
+            'template',
+            'mappings',
         ]
 
 

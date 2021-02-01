@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
+import warnings
+
 from django.contrib import admin
-from django.core.exceptions import ValidationError
-from django.urls import reverse
+from django.contrib import messages
+from django.core.exceptions import ValidationError, PermissionDenied
+from django import forms
+from django.template.response import TemplateResponse
+from django.http.response import HttpResponseRedirect
+from django.urls import reverse, path
 from django.utils.html import format_html, mark_safe
 
 from guardian.admin import GuardedModelAdmin
@@ -9,6 +15,7 @@ from guardian.shortcuts import assign_perm
 from guardian.shortcuts import get_objects_for_user
 
 from easydmp.eestore.models import EEStoreMount
+from easydmp.eventlog.utils import log_event
 from easydmp.lib.admin import FakeBooleanFilter
 from easydmp.lib.admin import PublishedFilter
 from easydmp.lib.admin import RetiredFilter
@@ -16,7 +23,9 @@ from easydmp.lib.admin import ObjectPermissionModelAdmin
 from easydmp.lib.admin import SetPermissionsMixin
 from easydmp.lib import get_model_name
 
+from .import_template import deserialize_template_export, import_serialized_export, TemplateImportError
 from .models import Template
+from .models import TemplateImportMetadata
 from .models import Section
 from .models import ExplicitBranch
 from .models import Question
@@ -52,6 +61,10 @@ def get_canned_answers_for_user(user):
     return CannedAnswer.objects.filter(question__in=questions)
 
 
+class TemplateImportForm(forms.Form):
+    template_export_file = forms.FileField()
+
+
 class TemplateDescriptionFilter(admin.SimpleListFilter):
     title = 'has description'
     parameter_name = 'has_description'
@@ -84,9 +97,23 @@ class TemplateMoreInfoFilter(admin.SimpleListFilter):
         return queryset
 
 
+class TemplateImportMetadataInline(admin.TabularInline):
+    model = TemplateImportMetadata
+    fk_name = 'template'
+    fields = ['origin', 'original_template_pk', 'originally_cloned_from', 'imported', 'imported_via']
+    extra = 0
+
+    def get_readonly_fields(self, request, obj=None):
+        return [f.name for f in self.model._meta.fields]
+
+    def has_add_permission(self, request, obj):
+        return False
+    has_change_permission = has_add_permission
+
+
 @admin.register(Template)
 class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
-    list_display = ('id', 'version', 'title', 'is_published', 'is_retired',)
+    list_display = ('id', 'version', 'title', 'is_published', 'is_retired', 'export')
     list_display_links = ('title', 'version', 'id')
     date_hierarchy = 'published'
     set_permissions = ['use_template']
@@ -97,6 +124,9 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
         'domain_specific',
         TemplateDescriptionFilter,
         TemplateMoreInfoFilter,
+    ]
+    inlines = [
+        TemplateImportMetadataInline,
     ]
     actions = [
         'new_version',
@@ -113,6 +143,79 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
             'classes': ('collapse',),
         }),
     )
+
+    # extra buttons on changelist
+
+    def import_template(self, request):
+        if not request.user.has_superpowers:
+            raise PermissionDenied
+        request.current_app = self.admin_site.name
+        opts = self.model._meta
+        if request.method == 'POST':
+            template_export = request.FILES['template_export_file']
+            form = TemplateImportForm(request.POST, request.FILES)
+            if form.is_valid():
+                template_export_file = request.FILES['template_export_file']
+                template_export_jsonblob = template_export_file.read()
+                url_on_error = reverse('%s:%s-%s-import' % (
+                                        self.admin_site.name,
+                                        opts.app_label, opts.model_name))
+                try:
+                    serialized_dict = deserialize_template_export(template_export_jsonblob)
+                except TemplateImportError as e:
+                    error_msg = f'{e}, cannot import'
+                    messages.error(request, error_msg)
+                    return HttpResponseRedirect(url_on_error)
+
+                try:
+                    with warnings.catch_warnings(record=True) as w:
+                        tim = import_serialized_export(serialized_dict, via='admin')
+                        if w:
+                            messages.warning(request, w[-1].message)
+                except TemplateImportError as e:
+                    messages.error(request, str(e))
+                    return HttpResponseRedirect(url_on_error)
+                template = tim.template
+                msg = f'Template "{template}" successfully imported.'
+                messages.success(request, msg)
+                log_event(request.user, 'import', target=template,
+                          timestamp=tim.imported,
+                          template=msg[:-1])
+                # for admin.LogEntry
+                change_message = {'added': {}}
+                self.log_change(request, template, change_message)
+                return HttpResponseRedirect(
+                    reverse(
+                        '%s:%s_%s_changelist' % (
+                            self.admin_site.name,
+                            opts.app_label,
+                            opts.model_name,
+                        ),
+                    )
+                )
+        else:
+            form = TemplateImportForm()
+
+        fieldsets = [(None, {'fields': list(form.base_fields)})]
+        adminForm = admin.helpers.AdminForm(form, fieldsets, {})
+        context = {
+            'title': 'Import template',
+            'adminForm': adminForm,
+            'form': form,
+            'opts': opts,
+            **self.admin_site.each_context(request),
+        }
+        return TemplateResponse(request, 'admin/dmpt/template/import_form.html', context)
+
+    # extra urls
+
+    def get_urls(self):
+        urls = super().get_urls()
+        import_urls = [
+            path('import/', self.admin_site.admin_view(self.import_template),
+                 name='dmpt-template-import')
+        ]
+        return import_urls + urls
 
     # displays
 
@@ -131,6 +234,12 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
     is_retired.short_description = 'Is retired'  # type: ignore
     is_retired.boolean = True  # type: ignore
 
+    def export(self, obj):
+        json_url = reverse('v2:template-export', kwargs={'pk': obj.pk})
+        html = '<a target="_blank" href="{}">JSON</a>'
+        return format_html(html, mark_safe(json_url))
+    export.short_description = 'Export'  # type: ignore
+    export.allow_tags = True  # type: ignore
 
     # actions
 
@@ -184,7 +293,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
         return get_sections_for_user(request.user)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'template' and not request.user.is_superuser:
+        if db_field.name == 'template' and not request.user.has_superpowers:
             templates = get_templates_for_user(request.user)
             kwargs["queryset"] = templates
         if db_field.name == 'super_section':
@@ -225,7 +334,7 @@ class QuestionExplicitBranchInline(admin.StackedInline):
     raw_id_fields = ['next_question']
 
     def get_readonly_fields(self, request, obj=None):
-        if request.user.is_superuser:
+        if request.user.has_superpowers:
             return ()
         return [f.name for f in self.model._meta.fields]
 
@@ -343,7 +452,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
     save_on_top = True
     fieldsets = (
         (None, {
-            'fields': ('input_type', 'section', 'position',
+            'fields': ('input_type', 'section', 'position', 'label',
                        'question', 'on_trunk', 'optional', 'help_text',
                        'framing_text', 'comment',),
         }),
@@ -360,7 +469,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         readonly = ('cloned_from', 'cloned_when')
-        if request.user.is_superuser:
+        if request.user.has_superpowers:
             return readonly
         return readonly + ('on_trunk',)
 
@@ -379,7 +488,7 @@ class QuestionAdmin(ObjectPermissionModelAdmin):
             return None
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'section' and not request.user.is_superuser:
+        if db_field.name == 'section' and not request.user.has_superpowers:
             sections = get_sections_for_user(request.user)
             kwargs["queryset"] = sections
         return super().formfield_for_foreignkey(db_field, request, **kwargs)

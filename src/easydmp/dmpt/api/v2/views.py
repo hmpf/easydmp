@@ -1,14 +1,18 @@
 from rest_framework.decorators import action
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema
 
 from easydmp.lib.api.renderers import DotPDFRenderer
 from easydmp.lib.api.renderers import DotPNGRenderer
 from easydmp.lib.api.renderers import DotDOTRenderer
 from easydmp.lib.api.renderers import DotSVGRenderer
 
+from easydmp.dmpt.export_template import ExportSerializer, serialize_template_export
 from easydmp.dmpt.models import Template
+from easydmp.dmpt.models import TemplateImportMetadata
 from easydmp.dmpt.models import Section
 from easydmp.dmpt.models import Question
 from easydmp.dmpt.models import CannedAnswer
@@ -20,6 +24,17 @@ class TemplateViewSet(ReadOnlyModelViewSet):
     queryset = Template.objects.all()
     serializer_class = TemplateSerializer
     search_fields = ['title']
+
+    @extend_schema(responses=ExportSerializer)
+    @action(detail=True, methods=['get'], renderer_classes=[JSONRenderer])
+    def export(self, request, pk=None):
+        serializer = serialize_template_export(pk)
+        return Response(data=serializer.data)
+
+
+class TemplateImportMetadataViewSet(ReadOnlyModelViewSet):
+    queryset = TemplateImportMetadata.objects.all()
+    serializer_class = TemplateImportMetadataSerializer
 
 
 class SectionViewSet(ReadOnlyModelViewSet):
