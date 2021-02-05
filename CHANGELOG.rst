@@ -15,6 +15,29 @@ Planned
 Unreleased
 ----------
 
+1.5.0
+-----
+
+Big new features:
+
+* Export of templates, via CLI, admin, API
+* Import of templates, via CLI, admin
+
+Small new features:
+
+* CLI script to batch export plans to PDF
+
+Bugfixes:
+
+* Regression: It was not possible to add/change Question.label in the admin.
+  Thx, frafra!
+
+Paperwork:
+
+* New way to update/freeze dependencies
+* Final step of JSONField-conversion: Remove traces of squashed migrations
+* New management command to ease development of support for RDA DMP CS
+
 1.4.2
 -----
 PDF support in plan export.
