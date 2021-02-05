@@ -11,10 +11,8 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    replaces = [('plan', '0007_auto_20201111_1411'), ('plan', '0008_convert_to_jsonb'), ('plan', '0009_modernize_NullBooleanField'), ('plan', '0010_delete_plancomment')]
-
     dependencies = [
-        ('plan', '0006_link_answer_to_answerset'),
+        ('plan', '0001_squashed_0005_auto_20201016_1539'),
     ]
 
     operations = [
@@ -22,8 +20,5 @@ class Migration(migrations.Migration):
             model_name='answerset',
             name='plan',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='answersets', to='plan.Plan'),
-        ),
-        migrations.DeleteModel(
-            name='PlanComment',
         ),
     ]
