@@ -23,7 +23,7 @@ Release checklist
 #. Write something sensible in ``CHANGELOG.rst``. The summary for the
    changelog can be copied and adjusted from ::
 
-        $ git log --format="* %B" v1.3.1..HEAD
+        $ git log --format="* %B" <previous version tag>..HEAD
 
    Full details can be had via ``git log``, so strive for readability and
    highlights in the changelog.

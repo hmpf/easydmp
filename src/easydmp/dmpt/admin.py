@@ -276,7 +276,7 @@ class SectionAdmin(ObjectPermissionModelAdmin):
     ]
     fieldsets = (
         (None, {
-            'fields': ('template', 'title', 'position', 'branching',
+            'fields': ('template', 'title', 'position', 'label', 'branching',
                        'optional', 'introductory_text', 'comment'),
         }),
         ('Super section', {

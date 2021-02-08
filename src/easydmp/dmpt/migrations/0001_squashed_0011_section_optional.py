@@ -9,8 +9,6 @@ import easydmp.dmpt.utils
 
 class Migration(migrations.Migration):
 
-    replaces = [('dmpt', '0001_squashed_0031_improve_cloning'), ('dmpt', '0002_add_ExplicitBranch_model'), ('dmpt', '0003_alter_section_unique_together'), ('dmpt', '0004_noop'), ('dmpt', '0005_noop'), ('dmpt', '0006_remove_old_flow'), ('dmpt', '0007_template_reveal_questions'), ('dmpt', '0008_noop_add_input_type'), ('dmpt', '0009_storageforecastquestion'), ('dmpt', '0010_rename_obligatory_to_on_trunk'), ('dmpt', '0011_section_optional')]
-
     initial = True
 
     dependencies = [

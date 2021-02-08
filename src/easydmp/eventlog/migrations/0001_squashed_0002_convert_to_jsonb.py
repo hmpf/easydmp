@@ -9,8 +9,6 @@ import django.utils.timezone
 
 class Migration(migrations.Migration):
 
-    replaces = [('eventlog', '0001_initial'), ('eventlog', '0002_convert_to_jsonb')]
-
     initial = True
 
     dependencies = [

@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('plan', '0001_squashed_0024_cleanup_plan_editor_groups'),
+        ('plan', '0001_squashed_0005_auto_20201016_1539'),
     ]
 
     operations = [
