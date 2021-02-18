@@ -9,6 +9,8 @@ from .models import User
 
 @admin.register(User)
 class EasyDMPUserAdmin(UserAdmin):
+    change_form_template = "admin/auth/user/change_form.html"  # For Django-su
+    change_list_template = "admin/auth/user/change_list.html"  # For Django-su
     date_hierarchy = 'date_joined'
     list_display = ('username', 'email', 'full_name', 'is_staff')
     search_fields = ('username', 'full_name', 'email')
