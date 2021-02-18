@@ -11,7 +11,7 @@ from easydmp.dmpt.admin import TemplateAdmin
 from easydmp.dmpt.export_template import ExportSerializer
 from easydmp.dmpt.models import Template, TemplateImportMetadata
 
-from tests.auth.factories import SuperUserFactory
+from tests.auth.factories import SuperuserFactory
 from tests.dmpt.factories import *
 
 VERSION = 'blbl'
@@ -30,7 +30,7 @@ def create_minimum_template():
 class TestImportTemplate(DjangoTestCase):
 
     def setUp(self):
-        self.superuser = SuperUserFactory()
+        self.superuser = SuperuserFactory()
         self.client = Client()
         self.admin = TemplateAdmin(model=Template, admin_site=AdminSite())
         self.template = create_minimum_template()
