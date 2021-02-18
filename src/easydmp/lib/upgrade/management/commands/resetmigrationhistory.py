@@ -3,6 +3,11 @@ from django.db import DEFAULT_DB_ALIAS, connections
 from django.db.migrations.recorder import MigrationRecorder
 
 
+# TODO:
+# * check that all migrations have been applied, or halt
+# * nice to have: fake-reapply the migrations (with an args toggle)
+
+
 class Command(BaseCommand):
     help = "Reset migration history by emptying the django_migrations table"
 
@@ -23,9 +28,6 @@ class Command(BaseCommand):
 
         # Get the django_migrations table wrapper
         recorder = MigrationRecorder(connection)
-
-        # Store existing state
-        ordered_state = recorder.migration_qs.values_list('app', 'name').order_by('applied')
 
         # Truncate the table
         recorder.flush()
