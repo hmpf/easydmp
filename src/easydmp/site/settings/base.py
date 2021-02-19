@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'easydmp.invitation',
     'easydmp.eestore',
     'easydmp.eventlog',
+    'easydmp.lib',
     'easydmp.lib.upgrade',
 ]
 

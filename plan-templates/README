@@ -1,0 +1,5 @@
+This directory contains templates useful for development of EasyDMP.
+
+Import with:
+
+    $ python manage.py import_complete_template <filename>
