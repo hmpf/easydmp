@@ -77,7 +77,7 @@ class CannedAnswerExportSerializer(serializers.ModelSerializer):
 
 class EEStoreMountExportSerializer(serializers.ModelSerializer):
     question = serializers.PrimaryKeyRelatedField(
-        many=False, queryset=Question.objects.all()
+        many=False, read_only=True,
     )
     eestore_type = serializers.StringRelatedField(many=False, read_only=True)
     sources = serializers.StringRelatedField(many=True, read_only=True)
