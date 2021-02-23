@@ -11,8 +11,9 @@ from django.urls import reverse, path
 from django.utils.html import format_html, mark_safe
 
 from guardian.admin import GuardedModelAdmin
-from guardian.shortcuts import get_objects_for_user
+from guardian.shortcuts import get_objects_for_user, assign_perm
 
+from easydmp.auth.utils import set_user_object_permissions
 from easydmp.eestore.models import EEStoreMount
 from easydmp.eventlog.utils import log_event
 from easydmp.lib.admin import FakeBooleanFilter
@@ -189,8 +190,12 @@ class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
     # extra buttons on changelist
 
     def import_template(self, request):
-        if not request.user.has_superpowers:
+        # authorization
+        user = request.user
+        if not (user.has_superpowers or user.has_perm('dmpt.add_template')):
             raise PermissionDenied
+
+        # code
         request.current_app = self.admin_site.name
         opts = self.model._meta
         if request.method == 'POST':
@@ -217,15 +222,26 @@ class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
                 except TemplateImportError as e:
                     messages.error(request, str(e))
                     return HttpResponseRedirect(url_on_error)
-                template = tim.template
-                msg = f'Template "{template}" successfully imported.'
+                msg = f'Template "{tim.template}" successfully imported.'
                 messages.success(request, msg)
-                log_event(request.user, 'import', target=template,
+                log_event(request.user, 'import', target=tim.template,
                           timestamp=tim.imported,
                           template=msg[:-1])
                 # for admin.LogEntry
-                change_message = {'added': {}}
-                self.log_change(request, template, change_message)
+                self.log_change(request, tim.template, {'added': {}})
+                if not request.user.has_superpowers:
+                    extra_permissions = getattr(self, 'set_permissions', [])
+                    # TD's may view and use the imported template regardless
+                    assign_perm('view_template', request.user, tim.template)
+                    for perm in extra_permissions:
+                        assign_perm(perm, request.user, tim.template)
+                    template = tim.template
+                    # TD's may work on a copy of a locked import
+                    if template.locked:
+                        template = template.private_copy()
+                        # for admin.LogEntry
+                        self.log_change(request, template, {'added': {}})
+                    set_user_object_permissions(request.user, template, extra_permissions)
                 return HttpResponseRedirect(
                     reverse(
                         '%s:%s_%s_changelist' % (
