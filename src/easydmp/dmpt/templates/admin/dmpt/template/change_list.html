@@ -2,7 +2,7 @@
 {% load i18n static %}
 {% block object-tools-items %}
 
-    {% if request.user.has_superpowers %}<li>
+    {% if request.user.has_superpowers or perms.dmpt.add_template %}<li>
         <a href="{% url 'admin:dmpt-template-import' %}" class="grp-state-focus addlink">Import</a>
     </li>{% endif %}
     {{ block.super }}

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from guardian.admin import GuardedModelAdminMixin
+from guardian.admin import GuardedModelAdmin
 from guardian.shortcuts import get_objects_for_user
 
 from easydmp.auth.utils import set_user_object_permissions
@@ -47,7 +47,7 @@ class LockedFilter(FakeBooleanFilter):
     parameter_name = 'locked'
 
 
-class ObjectPermissionModelAdmin(GuardedModelAdminMixin, admin.ModelAdmin):
+class ObjectPermissionModelAdmin(GuardedModelAdmin):
 
     def get_queryset(self, request):
         """Limit queryset only to objects with change permission.
@@ -55,7 +55,7 @@ class ObjectPermissionModelAdmin(GuardedModelAdminMixin, admin.ModelAdmin):
         If the optional method ``get_limited_queryset()`` is defined, return
         the set of this and the previous queryset.
         """
-        qs = admin.ModelAdmin.get_queryset(self, request)
+        qs = super().get_queryset(request)
         if request.user.has_superpowers:
             return qs
 
@@ -69,11 +69,13 @@ class ObjectPermissionModelAdmin(GuardedModelAdminMixin, admin.ModelAdmin):
         if getattr(self, 'has_object_permissions', False):  # Avoid a db call
             model_name = get_model_name(self.model)
             app_label = self.model._meta.app_label
-            permission_name = 'change_{}'.format(model_name)
+            view_permission = f'{app_label}.view_{model_name}'
+            change_permission = f'{app_label}.change_{model_name}'
             perm_qs = get_objects_for_user(
                 request.user,
-                '{}.{}'.format(app_label, permission_name),
+                [view_permission, change_permission],
                 klass=qs,
+                any_perm=True,
                 accept_global_perms=False,
             )
 
