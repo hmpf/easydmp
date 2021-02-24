@@ -351,6 +351,13 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
     def input_types_in_use(self):
         return sorted(set(self.questions.values_list('input_type', flat=True)))
 
+    @property
+    def is_readonly(self):
+        return self.published or self.retired
+
+    def in_use(self):
+        return self.plans.exists()
+
     # START: Template movement helpers
 
     @property
@@ -574,6 +581,13 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
 
     def natural_key(self):
         return (self.template, self.position, self.super_section)
+
+    @property
+    def is_readonly(self):
+        return self.template.is_readonly
+
+    def in_use(self):
+        return self.template.plans.exists()
 
     def _make_do_section_question(self):
         """
@@ -1281,6 +1295,13 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
 
     def natural_key(self):
         return (self.section, self.position)
+
+    @property
+    def is_readonly(self):
+        return self.section.is_readonly
+
+    def in_use(self):
+        return self.section.template.plans.exists()
 
     @transaction.atomic
     def clone(self, section):
