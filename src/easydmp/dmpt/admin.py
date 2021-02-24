@@ -61,6 +61,28 @@ def get_canned_answers_for_user(user):
     return CannedAnswer.objects.filter(question__in=questions)
 
 
+class TemplateAuthMixin:
+    message_cannot_delete = ('The {} cannot be deleted because it is'
+                             ' in use by one or more plans.')
+
+    def has_change_permission(self, request, obj=None):
+        if obj and obj.is_readonly:
+            return False
+        return super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.is_readonly:
+            if obj.in_use():
+                model = get_model_name(obj)
+                self.message_user(
+                    request, 
+                    self.message_cannot_delete.format(model),
+                    level=messages.WARNING
+                )
+                return False
+        return super().has_delete_permission(request, obj)
+
+
 class TemplateImportForm(forms.Form):
     template_export_file = forms.FileField()
 
@@ -106,13 +128,15 @@ class TemplateImportMetadataInline(admin.TabularInline):
     def get_readonly_fields(self, request, obj=None):
         return [f.name for f in self.model._meta.fields]
 
-    def has_add_permission(self, request, obj):
+    def has_add_permission(self, request):
         return False
-    has_change_permission = has_add_permission
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Template)
-class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
+class TemplateAdmin(TemplateAuthMixin, SetPermissionsMixin, ObjectPermissionModelAdmin):
     list_display = ('id', 'version', 'title', 'is_published', 'is_retired', 'export')
     list_display_links = ('title', 'version', 'id')
     date_hierarchy = 'published'
@@ -255,7 +279,7 @@ class TemplateAdmin(SetPermissionsMixin, ObjectPermissionModelAdmin):
 
 
 @admin.register(Section)
-class SectionAdmin(ObjectPermissionModelAdmin):
+class SectionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
     list_display = (
         'template',
         'position',
@@ -413,7 +437,7 @@ class QuestionSectionFilter(admin.SimpleListFilter):
 
 
 @admin.register(Question)
-class QuestionAdmin(ObjectPermissionModelAdmin):
+class QuestionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
     list_display = (
         'position',
         'id',
