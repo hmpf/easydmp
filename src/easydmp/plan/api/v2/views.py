@@ -56,6 +56,7 @@ class PlanFilter(FilterSet):
             'locked': ['lt', 'gt', 'lte', 'gte'],
             'published': ['lt', 'gt', 'lte', 'gte'],
             'template': ['exact'],
+            'valid': ['exact'],
         }
 
 
