@@ -42,6 +42,7 @@ class TestOrderedSectionsMethod(test.TestCase):
         section = SectionFactory(template=self.template, position=1)
         result = section.ordered_sections()
         self.assertEqual(result, [section])
+        self.assertEqual(self.template.ordered_sections(), [section])
 
     def test_subsections_returns_all_sections_in_flat_list(self):
         top_section = SectionFactory(template=self.template, position=1)
@@ -52,6 +53,7 @@ class TestOrderedSectionsMethod(test.TestCase):
         subsubsection1 = SectionFactory(template=self.template, super_section=subsection1, section_depth=3, position=1)
         result = top_section.ordered_sections()
         self.assertEqual(result, [top_section, subsection1, subsubsection1, subsection2])
+        self.assertEqual(self.template.ordered_sections(), [top_section, subsection1, subsubsection1, subsection2])
 
 
 class TestNextSectionMethods(test.TestCase):
