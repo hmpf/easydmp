@@ -1,66 +1,33 @@
 import factory
 
+from easydmp.auth import factories
 from easydmp.auth.models import User
 
 
 __all__ = [
     'UserFactory',
+    'SuperuserFactory',
+    'TemplateDesignerFactory',
 ]
 
 
-class BaseUserFactory(factory.django.DjangoModelFactory):
-    username = factory.Faker('name')
+class TestUserFactoryMixin(factory.django.DjangoModelFactory):
+    username = factory.Faker('user_name')
     password = 'password'
-    is_active = True
-    is_superuser = False
-    is_staff = False
     email = factory.Faker('email')
 
     class Meta:
         model = User
+        django_get_or_create = ("username",)
 
 
-class UserFactory(BaseUserFactory):
-    usertype = 'default'
-
-    class Meta:
-        model = User
-
-    class Params:
-        superuser = factory.Trait(
-            usertype='superuser',
-            is_superuser=True,
-            is_staff=True,
-        )
-        template_designer = factory.Trait(
-            usertype='template_designer',
-            is_superuser=False,
-            is_staff=True,
-        )
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        manager = cls._get_manager(model_class)
-        kwargs.pop('usertype', None)
-        username = kwargs.pop('username')
-        return manager.create_user(username, **kwargs)
+class UserFactory(TestUserFactoryMixin, factories.UserFactory):
+    pass
 
 
-class SuperUserFactory(BaseUserFactory):
-    is_superuser = True
-    is_staff = True
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        manager = cls._get_manager(model_class)
-        return manager.create_superuser(**kwargs)
+class SuperuserFactory(TestUserFactoryMixin, factories.SuperuserFactory):
+    pass
 
 
-class TemplateDesignerFactory(BaseUserFactory):
-    is_superuser = False
-    is_staff = True
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        manager = cls._get_manager(model_class)
-        return manager.create_user(**kwargs)
+class TemplateDesignerFactory(TestUserFactoryMixin, factories.TemplateDesignerUserFactory):
+    pass

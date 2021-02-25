@@ -1,0 +1,85 @@
+{
+  "comment": "",
+  "easydmp": {
+    "version": "1.5.0",
+    "origin": "examples",
+    "input_types": [
+      "bool",
+      "choice",
+      "date",
+      "daterange",
+      "extchoicenotlisted",
+      "externalchoice",
+      "externalmultichoiceonetext",
+      "extmultichoicenotlistedonetext",
+      "multichoiceonetext",
+      "multidmptypedreasononetext",
+      "multinamedurlonetext",
+      "multirdacostonetext",
+      "namedurl",
+      "positiveinteger",
+      "reason",
+      "shortfreetext",
+      "storageforecast"
+    ]
+  },
+  "template": {
+    "id": 2,
+    "modified": "2019-05-09T07:48:23.210125Z",
+    "cloned_from": null,
+    "cloned_when": null,
+    "title": "Single unnamed linear section example",
+    "abbreviation": "",
+    "description": "",
+    "more_info": "",
+    "domain_specific": false,
+    "reveal_questions": false,
+    "version": 1,
+    "created": "2018-09-27T09:08:13.677000Z",
+    "published": null,
+    "retired": null,
+    "input_types_in_use": [
+      "reason"
+    ]
+  },
+  "sections": [
+    {
+      "id": 5,
+      "modified": "2019-03-07T13:08:16.013905Z",
+      "cloned_from": null,
+      "cloned_when": null,
+      "template": 2,
+      "label": "",
+      "title": "",
+      "position": 1,
+      "introductory_text": "This is the only and unnamed section of this template.",
+      "comment": "",
+      "super_section": null,
+      "section_depth": 1,
+      "branching": false,
+      "optional": false,
+      "repeatable": false
+    }
+  ],
+  "questions": [
+    {
+      "id": 15,
+      "cloned_from": null,
+      "cloned_when": null,
+      "input_type": "reason",
+      "section": 5,
+      "position": 1,
+      "label": "",
+      "question": "Plese write something:",
+      "help_text": "",
+      "framing_text": "",
+      "comment": "",
+      "on_trunk": true,
+      "optional": false,
+      "optional_canned_text": ""
+    }
+  ],
+  "explicit_branches": [],
+  "canned_answers": [],
+  "eestore_mounts": []
+}

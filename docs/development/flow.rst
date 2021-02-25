@@ -11,7 +11,7 @@ play.
 Visualizing flow
 ================
 
-With ``graphviz``, the devfixtures, and the dependencies in
+With ``graphviz``, the example templates, and the dependencies in
 ``requirements/dev.txt`` installed, it is possible to generate a flow chart for
 a section.
 
