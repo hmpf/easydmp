@@ -317,6 +317,9 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         self.clone_sections(new)
         if keep_permissions:
             copy_permissions(self, new)
+
+        for import_metadata in self.import_metadata.all():
+            import_metadata.clone(new)
         return new
 
     def clone_sections(self, new):
@@ -488,7 +491,7 @@ class TemplateGroupObjectPermission(GroupObjectPermissionBase):
                                        related_name='permissions_group')
 
 
-class TemplateImportMetadata(models.Model):
+class TemplateImportMetadata(ClonableModel):
     DEFAULT_VIA = 'CLI'
 
     template = models.ForeignKey(Template, on_delete=models.CASCADE,
@@ -523,16 +526,48 @@ class TemplateImportMetadata(models.Model):
             models.Index(fields=['original_template_pk'],
                          name='tim_lookup_original_idx')
         ]
-        constraints = [
-            models.UniqueConstraint(fields=['origin', 'original_template_pk'],
-                                    name='tim_unique_template_per_origin_constraint')
-        ]
 
     def __str__(self):
         return f'Template #{self.original_template_pk} @ {self.origin}'
 
     def natural_key(self):
         return (self.origin, self.original_template_pk)
+
+    def _clone(self, template):
+        new = self.get_copy()
+        new.template = template
+        new.set_cloned_from(self)
+        new.save()
+        return new
+
+    def _clone_update_submapping(self, qs, mapping_name):
+        submapping = self.mappings.get(mapping_name, {})
+        new_submapping = {}
+        for orig_id, new_id in submapping.items():
+            obj = qs.get(cloned_from=new_id)
+            new_submapping[orig_id] = obj.id
+        self.mappings[mapping_name] = new_submapping
+
+    @transaction.atomic
+    def _clone_update_all_submappings(self):
+        self._clone_update_submapping(self.template.sections, 'sections')
+        self._clone_update_submapping(self.template.questions, 'questions')
+        self._clone_update_submapping(
+            CannedAnswer.objects.filter(question__in=self.template.questions),
+            'canned_answers',
+        )
+        self._clone_update_submapping(
+            ExplicitBranch.objects.filter(current_question__in=self.template.questions),
+            'explicit_branches',
+        )
+        self.save()
+
+    @transaction.atomic
+    def clone(self, template):
+        "Make a complete copy of the import metadata and put it on <template>"
+        new = self._clone(template)
+        new._clone_update_all_submappings()
+        return new
 
 
 class SectionManager(models.Manager):

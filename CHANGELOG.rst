@@ -27,6 +27,10 @@ Small new features:
 * Allow HTML in Question.comment, Question.help_text, Section.comment,
   Section.introductory_text
 
+Bugfixes:
+
+* Also clone import metadata when cloning a template
+
 1.6.0
 -----
 
