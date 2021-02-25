@@ -6,14 +6,9 @@ Release checklist
 
 #. Ensure that the commit message of any commit that changes the
    database starts with "Migrate:". Rebase if necessary.
-#. If we have a commit with migrate, migrate the change to the
-   devfixtures database and create new devfixtures with ::
-
-        $ manage.py dumpdata auth.Group easydmp_auth dmpt eestore \
-        --format json --indent 1 --natural-foreign --natural-primary \
-        > devfixtures.json
-
-   then commit the devfixtures, preferrably in a separate commit.
+#. If there is any commit that migrates anything in the ``dmpt``-app,
+   migrate the change to a database which has the example templates
+   loaded, export the templates and include them in a commit.
 #. Rebase branches that are to be included on master, and merge them
    with ``--no-ff``. Strive to avoid octopus merges.
 #. Ensure we're on the master branch.
