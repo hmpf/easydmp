@@ -381,7 +381,7 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
 
     def generate_canned_text(self, data: Data):
         texts = []
-        for section in self.sections.order_by('position'):
+        for section in self.ordered_sections():
             canned_text = section.generate_canned_text(data)
             section_dict = model_to_dict(section, exclude=('_state', '_template_cache'))
             section_dict['introductory_text'] = mark_safe(section_dict['introductory_text'])
@@ -391,10 +391,19 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
             })
         return texts
 
+    def ordered_sections(self) -> list:
+        "Order sections with subsections in a flat list"
+
+        sections = self.sections
+        result = []
+        for section in sections.filter(super_section=None).order_by('position'):
+            result.extend(section.ordered_sections())
+        return result
+
     def get_summary(self, data: Data, valid_section_ids: Tuple = ()) -> OrderedDict:
         summary = OrderedDict()
         data = deepcopy(data)  # 1/2 Make absolutely sure we're working on a copy
-        for section in self.sections.order_by('position'):
+        for section in self.ordered_sections():
             optional_section_chosen = True
             section_summary = OrderedDict()
             for question in section.find_minimal_path(data):
@@ -588,6 +597,19 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
 
     def in_use(self):
         return self.template.plans.exists()
+
+    def ordered_sections(self) -> list:
+        "Order sections with subsections in a flat list"
+
+        result = [self]
+        try:
+            sections = list(self.subsections.order_by('position'))
+        except AttributeError:
+            return result
+
+        for section in sections:
+            result.extend(section.ordered_sections())
+        return result
 
     def _make_do_section_question(self):
         """
