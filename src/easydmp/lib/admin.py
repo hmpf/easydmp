@@ -7,6 +7,15 @@ from easydmp.auth.utils import set_user_object_permissions
 from easydmp.lib import get_model_name
 
 
+__all__ = [
+    'FakeBooleanFilter',
+    'PublishedFilter',
+    'RetiredFilter',
+    'ObjectPermissionModelAdmin',
+    'SetObjectPermissionModelAdmin',
+]
+
+
 class FakeBooleanFilter(admin.SimpleListFilter):
 
     def lookups(self, request, _model_admin):
@@ -31,15 +40,6 @@ class PublishedFilter(FakeBooleanFilter):
 class RetiredFilter(FakeBooleanFilter):
     title = 'retired'
     parameter_name = 'retired'
-
-
-class SetPermissionsMixin:
-
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
-        if not change:
-            extra_permissions = getattr(self, 'set_permissions', [])
-            set_user_object_permissions(request.user, obj, extra_permissions)
 
 
 class ObjectPermissionModelAdmin(GuardedModelAdminMixin, admin.ModelAdmin):
@@ -75,3 +75,12 @@ class ObjectPermissionModelAdmin(GuardedModelAdminMixin, admin.ModelAdmin):
         qs = perm_qs | limit_qs
 
         return qs.distinct()
+
+
+class SetObjectPermissionModelAdmin(ObjectPermissionModelAdmin):
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if not change:
+            extra_permissions = getattr(self, 'set_permissions', [])
+            set_user_object_permissions(request.user, obj, extra_permissions)

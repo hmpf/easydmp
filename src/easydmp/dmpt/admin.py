@@ -19,7 +19,7 @@ from easydmp.lib.admin import FakeBooleanFilter
 from easydmp.lib.admin import PublishedFilter
 from easydmp.lib.admin import RetiredFilter
 from easydmp.lib.admin import ObjectPermissionModelAdmin
-from easydmp.lib.admin import SetPermissionsMixin
+from easydmp.lib.admin import SetObjectPermissionModelAdmin
 from easydmp.lib import get_model_name
 
 from .import_template import deserialize_template_export, import_serialized_export, TemplateImportError
@@ -135,7 +135,7 @@ class TemplateImportMetadataInline(admin.TabularInline):
 
 
 @admin.register(Template)
-class TemplateAdmin(TemplateAuthMixin, SetPermissionsMixin, ObjectPermissionModelAdmin):
+class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
     list_display = ('id', 'version', 'title', 'is_published', 'is_retired', 'export')
     list_display_links = ('title', 'version', 'id')
     date_hierarchy = 'published'
