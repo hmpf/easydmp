@@ -159,6 +159,7 @@ class AnswerSet(ClonableModel):
     last_validated = models.DateTimeField(auto_now=True)
     # The user's answers, represented as a Question PK keyed dict in JSON.
     data = JSONField(default=dict, encoder=DjangoJSONEncoder)
+    previous_data = JSONField(default=dict, encoder=DjangoJSONEncoder)
 
     class Meta:
         unique_together = ('plan', 'section')
