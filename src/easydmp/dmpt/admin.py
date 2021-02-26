@@ -11,7 +11,6 @@ from django.urls import reverse, path
 from django.utils.html import format_html, mark_safe
 
 from guardian.admin import GuardedModelAdmin
-from guardian.shortcuts import assign_perm
 from guardian.shortcuts import get_objects_for_user
 
 from easydmp.eestore.models import EEStoreMount
