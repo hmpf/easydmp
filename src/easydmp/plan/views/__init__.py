@@ -21,7 +21,7 @@ from easydmp.dmpt.models import Question, Section, Template
 from easydmp.eventlog.models import EventLog
 from easydmp.eventlog.utils import log_event
 
-from ..models import AnswerHelper, PlanAccess
+from ..models import AnswerHelper, PlanAccess, AnswerSet
 from ..models import Plan
 from ..forms import ConfirmForm
 from ..forms import SaveAsPlanForm
@@ -88,6 +88,13 @@ class PlanAccessViewMixin:
         return super().get_queryset().viewable(self.request.user)
 
 
+class AnswersetAccessViewMixin:
+
+    def get_queryset(self):
+        plans = Plan.objects.viewable(self.request.user)
+        return super().get_queryset().filter(plan__in=plans)
+
+
 class AbstractPlanViewMixin:
 
     def get_form_kwargs(self):
@@ -150,11 +157,14 @@ class StartPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
     def get_success_url(self):
         kwargs = {'plan': self.object.pk}
         first_question = self.object.get_first_question()
+        first_section = first_question.section
+        answerset = self.object.answersets.get(section=first_section)
         if first_question.section.branching:
             kwargs['question'] = first_question.pk
             success_urlname = 'new_question'
         else:
-            kwargs['section'] = first_question.section.pk
+            kwargs['section'] = first_section.pk
+            kwargs['answerset'] = answerset.pk
             success_urlname = 'answer_linear_section'
         return reverse(success_urlname, kwargs=kwargs)
 
@@ -330,23 +340,32 @@ class CreateNewVersionPlanView(PlanAccessViewMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
-class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
+class UpdateLinearSectionView(AnswersetAccessViewMixin, DetailView):
     template_name = 'easydmp/plan/plan_section_update.html'
-    model = Plan
-    pk_url_kwarg = 'plan'
+    model = AnswerSet
+    pk_url_kwarg = 'answerset'
+    viewname = 'answer_linear_section'
+    branching_viewname = 'new_question'
     __LOG = logging.getLogger('{}.{}'.format(__name__, 'UpdateLinearSectionView'))
+
+    def check_and_get_kwargs(self, request):
+        self.answerset = super().get_object()
+        self.plan = self.answerset.plan
+        correct_plan = self.plan.pk == self.kwargs['plan']
+        self.section = self.answerset.section
+        correct_section = self.section.pk == self.kwargs['section']
+        viewable = self.plan.may_view(request.user)
+        self.editable = self.plan.may_edit(request.user)
+        if not all((correct_plan, correct_section, viewable)):
+            raise Http404
 
     def dispatch(self, request, *args, **kwargs):
         error_message_404 = "This Section cannot be edited in one go"
-        self.section_pk = kwargs['section']
-        # Check that the section is not branching
-        try:
-            self.section = (
-                Section.objects
-                    .prefetch_related('questions')
-                    .get(branching=False, pk=self.section_pk)
-            )
-        except Section.DoesNotExist:
+        self.check_and_get_kwargs(request)
+
+        # Chcek that the section is not branching
+        # Explicit check
+        if self.section.branching:
             # TODO: Jump to first question of section with NewQuestionView
             raise Http404(error_message_404)
         self.questions = (
@@ -354,50 +373,65 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
             .filter(on_trunk=True)
             .order_by('position')
         )
-        # Check that all questions are on_trunk
+        # Implicit check: all questions must be on_trunk
         if self.section.questions.count() != self.questions.count():
             # TODO: Jump to first question of section with NewQuestionView
-            # Not a linear section
             raise Http404(error_message_404)
+
         self.prev_section = self.section.get_prev_section()
         self.next_section = self.section.get_next_section()
         self.modified_by = request.user
-        self.plan_pk = kwargs[self.pk_url_kwarg]
-        self.plan = self.get_object()
+        self.plan_pk = self.plan.pk
         self.object = self.plan
-        self.answers = [AnswerHelper(question, self.plan) for question in self.questions]
+        self.answers = [AnswerHelper(question, self.plan, self.answerset) for question in self.questions]
         template = '{timestamp} {actor} accessed {action_object} of {target}'
         log_event(request.user, 'access', target=self.plan,
                   object=self.section, template=template)
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        default_kwargs = {'plan': self.plan_pk}
+        minimal_kwargs = {'plan': self.plan_pk}
         if 'save' in self.request.POST:
-            if self.next_section and self.next_section.branching:
-                kwargs=dict(question=self.next_section.first_question.pk, **default_kwargs)
-                viewname = 'new_question'
-            else:
-                kwargs = dict(section=self.section.pk, **default_kwargs)
-                viewname = 'answer_linear_section'
+            kwargs = dict(
+                section=self.section.pk,
+                answerset=self.answerset.pk,
+                **minimal_kwargs,
+            )
+            viewname = self.viewname
             return reverse(viewname, kwargs=kwargs)
         if 'next' in self.request.POST and self.next_section:
-            if self.next_section and self.next_section.branching:
-                kwargs=dict(question=self.next_section.first_question.pk, **default_kwargs)
-                viewname = 'new_question'
+            answerset = self.answerset.get_answersets_for_section(self.next_section).first()
+            if self.next_section.branching:
+                kwargs=dict(
+                    question=self.next_section.first_question.pk,
+                    **minimal_kwargs,
+                )
+                viewname = self.branching_viewname
             else:
-                kwargs = dict(section=self.next_section.pk, **default_kwargs)
-                viewname = 'answer_linear_section'
+                kwargs = dict(
+                    section=self.next_section.pk,
+                    answerset=answerset.pk,
+                    **minimal_kwargs,
+                )
+                viewname = self.viewname
             return reverse(viewname, kwargs=kwargs)
         if 'prev' in self.request.POST and self.prev_section:
+            answerset = self.answerset.get_answersets_for_section(self.prev_section).last()
             if self.prev_section.branching:
-                kwargs=dict(question=self.prev_section.last_question.pk, **default_kwargs)
-                viewname = 'new_question'
+                kwargs=dict(
+                    question=self.prev_section.last_question.pk,
+                    **minimal_kwargs,
+                )
+                viewname = self.branching_viewname
             else:
-                kwargs = dict(section=self.prev_section.pk, **default_kwargs)
-                viewname = 'answer_linear_section'
+                kwargs = dict(
+                    section=self.prev_section.pk,
+                    answerset=answerset.pk,
+                    **minimal_kwargs,
+                )
+                viewname = self.viewname
             return reverse(viewname, kwargs=kwargs)
-        return reverse('plan_detail', kwargs={'plan': self.plan_pk})
+        return reverse('plan_detail', kwargs=minimal_kwargs)
 
     def get(self, _request, *args, **kwargs):
         forms = self.get_forms()
@@ -470,6 +504,7 @@ class UpdateLinearSectionView(PlanAccessViewMixin, DetailView):
         context = {}
         context.update(**super().get_context_data(**kwargs))
         context['section'] = self.section
+        context['answerset'] = self.answerset
         context['prev_section'] = self.prev_section
         context['next_section'] = self.next_section
         context['section_progress'] = get_section_progress(self.plan, self.section)

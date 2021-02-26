@@ -169,6 +169,14 @@ class AnswerSet(ClonableModel):
             self.plan_id,
             self.valid)
 
+    def get_answersets_for_section(self, section):
+        try:
+            answersets = self.__class__.objects.filter(plan=self.plan, section=section)
+        except self.__class__.DoesNotExist:
+            AnswerSet.objects.create(plan=self.plan, section=section, valid=False)
+            answersets = self.__class__.objects.filter(plan=self.plan, section=section)
+        return answersets
+
     @transaction.atomic
     def clone(self, plan):
         new = self.__class__(plan=plan, section=self.section, valid=self.valid,
