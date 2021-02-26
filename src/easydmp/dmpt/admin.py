@@ -270,11 +270,13 @@ class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
         for q in queryset.all():
             q.new_version()
     new_version.short_description = 'Create new version'  # type: ignore
+    new_version.allowed_permissions = ('add',)  # type: ignore
 
     def private_copy(self, request, queryset):
         for q in queryset.all():
             q.private_copy()
     private_copy.short_description = 'Make a private copy'  # type: ignore
+    private_copy.allowed_permissions = ('add',)  # type: ignore
 
 
 @admin.register(Section)
