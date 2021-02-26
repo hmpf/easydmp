@@ -199,6 +199,18 @@ class AnswerSet(ClonableModel):
         new.save()
         return new
 
+    def initialize_answers(self):
+        plan = self.plan
+        answers = []
+        for question in self.section.questions.all():
+            answers.append(Answer(
+                plan=plan,  # will eventually be unneccessary
+                question=question,
+                answerset=self,
+                valid=False
+            ))
+        Answer.objects.bulk_create(answers)
+
     def validate(self, timestamp: datetime = None, _data: Dict = None) -> bool:
         """
         Validates the answers and persists the validity state on this as well as on related Answers.
@@ -493,8 +505,7 @@ class Plan(DeletionMixin, ClonableModel):
         if not self.pk: # New, empty plan
             super().save(**kwargs)
             if not clone:
-                self.create_section_validities()
-                self.create_question_validities()
+                self.initialize_starting_answersets()
                 self.set_adder_as_editor()
             LOG.info('Created plan "%s" (%i)', self, self.pk)
             template = '{timestamp} {actor} created {target}'
@@ -534,7 +545,7 @@ class Plan(DeletionMixin, ClonableModel):
             modified_by=user,
         )
         new.save(clone=True)
-        new.copy_validations_from(self)
+        new.clone_answersets(self)
         if keep_users:
             editors = set(self.get_editors())
             for editor in editors:
@@ -551,7 +562,7 @@ class Plan(DeletionMixin, ClonableModel):
         new.id = None
         new.set_cloned_from(self)
         new.save(clone=True)
-        new.copy_validations_from(self)
+        new.clone_answersets(self)
         new.copy_users_from(self)
         return new
 
@@ -619,6 +630,18 @@ class Plan(DeletionMixin, ClonableModel):
             log_event(user, 'publish', target=self, timestamp=timestamp,
                       template=template)
 
+    @transaction.atomic
+    def initialize_starting_answersets(self):
+        for section in self.template.sections.all():
+            self.create_answerset(section)
+
+    @transaction.atomic
+    def create_answerset(self, section):
+        "Create another answerset for a specific section"
+        a = AnswerSet.objects.create(plan=self, section=section, valid=False)
+        a.initialize_answers()
+        return a
+
     # Template traversal
 
     def get_first_question(self):
@@ -626,28 +649,9 @@ class Plan(DeletionMixin, ClonableModel):
 
     # Validation
 
-    def create_section_validities(self):
-        # TODO: To be changed to create_answersets
-        svs = []
-        for section in self.template.sections.all():
-            svs.append(AnswerSet(plan=self, section=section, valid=False))
-        AnswerSet.objects.bulk_create(svs)
-
-    def create_question_validities(self):
-        # TODO: Use method on AnswerSet instead
-        qvs = []
-        sections = self.template.sections.all()
-        for section in sections:
-            for question in section.questions.all():
-                qvs.append(Answer(plan=self, question=question, valid=False))
-        Answer.objects.bulk_create(qvs)
-
-    def copy_validations_from(self, oldplan):
-        # TODO: Use answersets instead of section_validities
-        for sv in oldplan.answersets.all():
-            sv.clone(self)
-        for qv in oldplan.question_validity.all():
-            qv.clone(self)
+    def clone_answersets(self, oldplan):
+        for answerset in oldplan.answersets.all():
+            answerset.clone(self)
 
     def validate_data(self, recalculate: bool = True) -> bool:
         wrong_pks = [str(pk) for pk in self.template.list_unknown_questions(self.data)]
