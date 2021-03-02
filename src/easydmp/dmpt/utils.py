@@ -109,17 +109,18 @@ def get_origin(origin=''):
 # Migration utilities
 
 
-def register_question_type(qtype, apps, _):
+def register_question_type(qtype, allow_notes, apps, _):
     """Add a question type slug to the question type table
 
     Use with partial:
 
-    myfunc = partial(register_question_type, 'mytype')
+    myfunc = partial(register_question_type, 'mytype', True)
 
     Migrations using this are elidable.
     """
+    assert allow_notes in (True, False), "allow_notes must be either True or False"
     QuestionType = apps.get_model('dmpt', 'QuestionType')
-    QuestionType.objects.get_or_create(id=qtype)
+    QuestionType.objects.get_or_create(id=qtype, allow_notes=allow_notes)
 
 
 # Reordering utility functions

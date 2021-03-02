@@ -15,6 +15,11 @@ Planned
 Unreleased
 ----------
 
+Small new feature:
+
+* Make it possible to show or hide the notes field per question, instead of
+  hardcoding it per input type.
+
 Bugfixes:
 
 * Ensure that validation of email questions doesn't wind up in debugging-mode,

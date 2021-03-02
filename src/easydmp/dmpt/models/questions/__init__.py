@@ -170,7 +170,6 @@ class DateRangeQuestion(NoCheckMixin, SaveMixin, Question):
 class ReasonQuestion(IsSetValidationMixin, PrimitiveTypeMixin, SaveMixin, Question):
     "A non-branch-capable question answerable with plaintext"
     TYPE = 'reason'
-    has_notes = False
 
     class Meta:
         proxy = True
@@ -179,7 +178,6 @@ class ReasonQuestion(IsSetValidationMixin, PrimitiveTypeMixin, SaveMixin, Questi
 class ShortFreetextQuestion(IsSetValidationMixin, PrimitiveTypeMixin, SaveMixin, Question):
     "A non-branch-capable question answerable with plaintext"
     TYPE = 'shortfreetext'
-    has_notes = False
 
     class Meta:
         proxy = True

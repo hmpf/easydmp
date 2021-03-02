@@ -744,8 +744,8 @@ class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMo
     fieldsets = (
         (None, {
             'fields': ('input_type', 'section', 'position', 'label',
-                       'question', 'on_trunk', 'optional', 'help_text',
-                       'framing_text', 'comment',),
+                       'question', 'has_notes', 'on_trunk', 'optional',
+                       'help_text', 'framing_text', 'comment',),
         }),
         ('Options for optional questions', {
             'fields': ('optional_canned_text',),

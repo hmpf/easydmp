@@ -89,6 +89,8 @@ class SaveMixin:
         if not self.input_type_id == self.TYPE:
             qt, _ = QuestionType.objects.get_or_create(id=self.TYPE)
             self.input_type = qt
+        if self.has_notes is None:
+            self.has_notes = self.input_type.allow_notes
         super().save(*args, **kwargs)
 
 

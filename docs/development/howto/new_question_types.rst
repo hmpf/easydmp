@@ -52,6 +52,13 @@ AbstractNodeFormSet has a lot of extras to make the formset behave like
 a question form. It is also always necessary to make a widget for combining all
 the fields in the form.
 
+The field ``input_type`` on Question is a ``QuestionType``-model, pointing to
+a table of registered types. This model has two fields. In addition to the
+id, which is the same as the string-name, there is a boolean field ``allow_notes``
+that by default is True. This controls the default value for ``has_notes`` on
+a question. If `has_notes` isn't explicitly set to anything on saving the
+question, it will be set to whatever the ``QuestionType``'s ``allow_notes`` is.
+
 Gluing it all together
 ======================
 
@@ -78,7 +85,7 @@ that adds a row to the QuestionType-table:
 
     from easydmp.dmpt.utils import register_question_type
 
-    register_mytype_type = partial(register_question_type, 'mytype')
+    register_mytype_type = partial(register_question_type, 'mytype', True)
 
 
     class Migration(migrations.Migration):
@@ -87,6 +94,10 @@ that adds a row to the QuestionType-table:
             ..
             migrations.RunPython(register_mytype_type, migrations.RunPython.noop),
         ]
+
+
+The last argument to ``partial()`` must be either True (allow notes by default)
+or False (do not allow notes by default).
 
 Things that should be better
 ============================

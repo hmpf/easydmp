@@ -1395,6 +1395,7 @@ class ExplicitBranch(DeletionMixin, models.Model):
 class QuestionType(models.Model):
     MAX_LENGTH = 32
     id = models.CharField(max_length=MAX_LENGTH, primary_key=True)
+    allow_notes = models.BooleanField(default=True)
 
     def __str__(self):
         return self.id
@@ -1428,7 +1429,6 @@ class Question(DeletionMixin, ClonableModel):
     INPUT_TYPE_IDS = INPUT_TYPES.keys()
     INPUT_TYPE_CHOICES = zip(INPUT_TYPE_IDS, INPUT_TYPE_IDS)
     branching_possible = False
-    has_notes = True
 
     input_type = models.ForeignKey(QuestionType, on_delete=models.CASCADE)
     section = models.ForeignKey(Section, on_delete=models.CASCADE,
@@ -1442,6 +1442,7 @@ class Question(DeletionMixin, ClonableModel):
     help_text = models.TextField(blank=True)
     framing_text = models.TextField(blank=True)
     comment = models.TextField(blank=True, null=True)
+    has_notes = models.BooleanField(null=True, blank=True, default=None)
     on_trunk = models.BooleanField(default=True)
     optional = models.BooleanField(default=False)
     optional_canned_text = models.TextField(blank=True)
@@ -1466,6 +1467,9 @@ class Question(DeletionMixin, ClonableModel):
         return self.question
 
     def clean(self):
+        # Set has_notes to the default if omitted
+        if self.has_notes == None:
+            self.has_notes = self.input_type.allow_notes
         # Only an optional section can have a question in position 0
         if self.position == 0:
             optional_section = getattr(self.section, 'optional', False)
