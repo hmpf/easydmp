@@ -3,8 +3,8 @@ CHANGELOG
 =========
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_)
-as of v0.10. Prior to v0.10, named tags per feature, named tag plus date per
-feature or commit hashes were used.
+as of v0.10. Prior to v0.10, annotated tags per feature, annotated tags plus
+date per feature, or commit hashes were used.
 
 Planned
 -------
@@ -14,6 +14,42 @@ Planned
 
 Unreleased
 ----------
+
+* Template Designers can import templates
+
+1.6.0
+-----
+
+Small new features:
+
+* Template Designers can now make new versions of their templates as well as
+  making private copies of them.
+* Published templates are readonly in the admin for *everyone*
+* The batch plan export CLI script is updated due to end user feedback: instead
+  of exporting every single plan it can be limited to plans of a specific
+  template, as well as only validated plans.
+* Change how setup of a new site is done, + devfixtures
+
+  There's now a separate management command for loading a fresh database with
+  standardized data, ``setup``.
+
+Bugfixes:
+
+* Regression: It was not possible to add/change Section.label or Question.label
+  in the admin. Thx, frafra!
+* Importing templates using the EEStore didn't work due to overzealous
+  validation
+
+Paperwork:
+
+* Hopefully the final needed database change for supporting repeatable sections
+* The plan export script now uses ``argparse``, for more detailed help.
+* A new management command ``resetmigrationhistory`` to empty the
+  ``django_migrations``-table so that ``--fake --fake-initial`` can be run,
+  that does not involve manually typing in SQL commands. Only run when all
+  migrations are up to date.
+
+Do remember to run ``migrate``.
 
 1.5.0
 -----
@@ -26,11 +62,6 @@ Big new features:
 Small new features:
 
 * CLI script to batch export plans to PDF
-
-Bugfixes:
-
-* Regression: It was not possible to add/change Question.label in the admin.
-  Thx, frafra!
 
 Paperwork:
 
