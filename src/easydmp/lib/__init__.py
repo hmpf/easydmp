@@ -2,8 +2,9 @@ from django.utils.timezone import now as utcnow
 
 
 __all__ = [
-    'pprint_list',
+    'get_model_name',
     'iso_epoch',
+    'pprint_list',
 ]
 
 
@@ -24,10 +25,3 @@ def utc_epoch(utc_datetime=None):
 
 def get_model_name(model):
     return model._meta.model_name
-
-
-def generate_default_permission_strings(model_name):
-    perms = []
-    for perm in ('add', 'change', 'delete'):
-        perms.append('{}_{}'.format(perm, model_name))
-    return perms

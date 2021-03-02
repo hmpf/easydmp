@@ -11,7 +11,6 @@ from django.urls import reverse, path
 from django.utils.html import format_html, mark_safe
 
 from guardian.admin import GuardedModelAdmin
-from guardian.shortcuts import assign_perm
 from guardian.shortcuts import get_objects_for_user
 
 from easydmp.eestore.models import EEStoreMount
@@ -20,7 +19,7 @@ from easydmp.lib.admin import FakeBooleanFilter
 from easydmp.lib.admin import PublishedFilter
 from easydmp.lib.admin import RetiredFilter
 from easydmp.lib.admin import ObjectPermissionModelAdmin
-from easydmp.lib.admin import SetPermissionsMixin
+from easydmp.lib.admin import SetObjectPermissionModelAdmin
 from easydmp.lib import get_model_name
 
 from .import_template import deserialize_template_export, import_serialized_export, TemplateImportError
@@ -136,7 +135,7 @@ class TemplateImportMetadataInline(admin.TabularInline):
 
 
 @admin.register(Template)
-class TemplateAdmin(TemplateAuthMixin, SetPermissionsMixin, ObjectPermissionModelAdmin):
+class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
     list_display = ('id', 'version', 'title', 'is_published', 'is_retired', 'export')
     list_display_links = ('title', 'version', 'id')
     date_hierarchy = 'published'
@@ -271,11 +270,13 @@ class TemplateAdmin(TemplateAuthMixin, SetPermissionsMixin, ObjectPermissionMode
         for q in queryset.all():
             q.new_version()
     new_version.short_description = 'Create new version'  # type: ignore
+    new_version.allowed_permissions = ('add',)  # type: ignore
 
     def private_copy(self, request, queryset):
         for q in queryset.all():
             q.private_copy()
     private_copy.short_description = 'Make a private copy'  # type: ignore
+    private_copy.allowed_permissions = ('add',)  # type: ignore
 
 
 @admin.register(Section)

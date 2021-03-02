@@ -1,11 +1,19 @@
 from django.contrib import admin
 
 from guardian.admin import GuardedModelAdminMixin
-from guardian.shortcuts import assign_perm
 from guardian.shortcuts import get_objects_for_user
 
+from easydmp.auth.utils import set_user_object_permissions
 from easydmp.lib import get_model_name
-from easydmp.lib import generate_default_permission_strings
+
+
+__all__ = [
+    'FakeBooleanFilter',
+    'PublishedFilter',
+    'RetiredFilter',
+    'ObjectPermissionModelAdmin',
+    'SetObjectPermissionModelAdmin',
+]
 
 
 class FakeBooleanFilter(admin.SimpleListFilter):
@@ -32,21 +40,6 @@ class PublishedFilter(FakeBooleanFilter):
 class RetiredFilter(FakeBooleanFilter):
     title = 'retired'
     parameter_name = 'retired'
-
-
-class SetPermissionsMixin:
-
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
-        if request.user.has_superpowers:
-            return
-        if not change:
-            default_permissions = generate_default_permission_strings(
-                get_model_name(self.model)
-            )
-            permissions = default_permissions + getattr(self, 'set_permissions', [])
-            for perm in permissions:
-                assign_perm(perm, request.user, obj)
 
 
 class ObjectPermissionModelAdmin(GuardedModelAdminMixin, admin.ModelAdmin):
@@ -82,3 +75,12 @@ class ObjectPermissionModelAdmin(GuardedModelAdminMixin, admin.ModelAdmin):
         qs = perm_qs | limit_qs
 
         return qs.distinct()
+
+
+class SetObjectPermissionModelAdmin(ObjectPermissionModelAdmin):
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if not change:
+            extra_permissions = getattr(self, 'set_permissions', [])
+            set_user_object_permissions(request.user, obj, extra_permissions)
