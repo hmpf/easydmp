@@ -33,8 +33,8 @@
         </button>
         <div class="collapse in" id="collapsible_section_metadata" aria-expanded="true">
           <div class="section-info-wrap">
-            <div class="section-introduction">{{ section.introductory_text }}</div>
-            <div class="section-comment">{{ section.comment }}</div>
+            <div class="section-introduction">{{ section.introductory_text|safe }}</div>
+            <div class="section-comment">{{ section.comment|safe }}</div>
           </div>
         </div>
       </div>
