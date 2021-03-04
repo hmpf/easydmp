@@ -26,7 +26,9 @@ from .widgets import Select2MultipleWidget
 
 
 class TemplateForm(forms.ModelForm):
-    template_type = forms.ModelChoiceField(queryset=Template.objects.exclude(published=None))
+    template_type = forms.ModelChoiceField(
+        queryset=Template.objects.filter(retired=None).exclude(published=None)
+    )
 
     class Meta:
         model = Template

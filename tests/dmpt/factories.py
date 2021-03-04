@@ -1,3 +1,5 @@
+import datetime
+
 from django.utils.timezone import now as utcnow
 
 import factory
@@ -29,6 +31,8 @@ __all__ = [
 def create_smallest_template(published=None):
     if published is True:
         published = utcnow()
+    elif published is not isinstance(published, datetime.datetime):
+        published = None
     t = TemplateFactory(published=published)
     s = SectionFactory(template=t)
     q = QuestionFactory(section=s, input_type='int')
@@ -42,6 +46,9 @@ class TemplateFactory(factory.django.DjangoModelFactory):
 
     title = factory.Faker('sentence', nb_words=6)
     description = factory.Faker('sentence', nb_words=20)
+    published = None
+    retired = None
+    locked = None
 
 
 class SectionFactory(factory.django.DjangoModelFactory):

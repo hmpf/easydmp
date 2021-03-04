@@ -41,6 +41,7 @@ class TemplateSerializer(serializers.HyperlinkedModelSerializer):
             'reveal_questions',
             'version',
             'created',
+            'locked',
             'published',
             'retired',
         ]

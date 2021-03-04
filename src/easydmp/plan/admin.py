@@ -1,15 +1,11 @@
 from django.contrib import admin
 
 from easydmp.lib.admin import FakeBooleanFilter
+from easydmp.lib.admin import LockedFilter
 from easydmp.lib.admin import PublishedFilter
 
 from .models import Plan
 from .models import PlanAccess
-
-
-class LockedFilter(FakeBooleanFilter):
-    title = 'Locked'
-    parameter_name = 'locked'
 
 
 @admin.register(Plan)

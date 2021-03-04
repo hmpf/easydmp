@@ -257,11 +257,15 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
     created = models.DateTimeField(auto_now_add=True)
     published = models.DateTimeField(
         blank=True, null=True,
-        help_text='Date when the template is publically available, and set read-only.'
+        help_text='Date when the template was made publically available.'
     )
     retired = models.DateTimeField(
         blank=True, null=True,
         help_text='Date after which the template should no longer be used.',
+    )
+    locked = models.DateTimeField(
+        blank=True, null=True,
+        help_text='Date when the template was set read-only.',
     )
 
     objects = TemplateQuerySet.as_manager()
@@ -279,6 +283,11 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         if self.version > 1:
             title = '{} v{}'.format(title, self.version)
         return title
+
+    def save(self, *args, **kwargs):
+        if self.published:
+            self.locked = self.published
+        super().save(*args, **kwargs)
 
     @property
     def title_with_version(self):
@@ -300,6 +309,8 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         new.title = title
         new.version = version
         new.published = None
+        new.retired = None
+        new.locked = None
         new.set_cloned_from(self)
         new.save()
 
@@ -353,7 +364,7 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
 
     @property
     def is_readonly(self):
-        return self.published or self.retired
+        return self.locked
 
     def in_use(self):
         return self.plans.exists()
@@ -493,6 +504,10 @@ class TemplateImportMetadata(models.Model):
         blank=True,
         null=True,
         help_text='Copy of the original template\'s "cloned_from"',
+    )
+    originally_published = models.DateTimeField(
+        blank=True, null=True,
+        help_text='Copy of the original template\'s "published"'
     )
     # Avoid having an import metadata model on all template dependents
     mappings = JSONField(default=dict)
