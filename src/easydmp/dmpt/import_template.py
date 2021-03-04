@@ -132,7 +132,7 @@ def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
                      'will not re-import')
         raise TemplateImportError(error_msg)
     # Ensure the import is not auto-published
-    template_dict.pop('published', None)
+    published = template_dict.pop('published', None)
     imported_template = Template.objects.create(
         title=title,
         **_prep_model_dict(template_dict)
@@ -143,6 +143,7 @@ def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
             origin=origin,
             original_template_pk=original_template_pk,
             originally_cloned_from=template_dict.get('cloned_from'),
+            originally_published=published,
             imported_via=via,
         )
     except DatabaseError as e:

@@ -42,6 +42,11 @@ class RetiredFilter(FakeBooleanFilter):
     parameter_name = 'retired'
 
 
+class LockedFilter(FakeBooleanFilter):
+    title = 'locked'
+    parameter_name = 'locked'
+
+
 class ObjectPermissionModelAdmin(GuardedModelAdminMixin, admin.ModelAdmin):
 
     def get_queryset(self, request):

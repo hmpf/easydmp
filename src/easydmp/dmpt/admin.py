@@ -18,6 +18,7 @@ from easydmp.eventlog.utils import log_event
 from easydmp.lib.admin import FakeBooleanFilter
 from easydmp.lib.admin import PublishedFilter
 from easydmp.lib.admin import RetiredFilter
+from easydmp.lib.admin import LockedFilter
 from easydmp.lib.admin import ObjectPermissionModelAdmin
 from easydmp.lib.admin import SetObjectPermissionModelAdmin
 from easydmp.lib import get_model_name
@@ -118,10 +119,26 @@ class TemplateMoreInfoFilter(admin.SimpleListFilter):
         return queryset
 
 
+class ImportedFilter(admin.SimpleListFilter):
+    title = 'imported'
+    parameter_name = 'imported'
+
+    def lookups(self, request, model_admin):
+        return (('yes', 'Yes'), ('no', 'No'))
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'yes':
+            queryset = queryset.exclude(import_metadata=None)
+        elif value == 'no':
+            queryset = queryset.filter(import_metadata=None)
+        return queryset
+
+
 class TemplateImportMetadataInline(admin.TabularInline):
     model = TemplateImportMetadata
     fk_name = 'template'
-    fields = ['origin', 'original_template_pk', 'originally_cloned_from', 'imported', 'imported_via']
+    fields = ['origin', 'original_template_pk', 'originally_cloned_from', 'originally_published', 'imported', 'imported_via']
     extra = 0
 
     def get_readonly_fields(self, request, obj=None):
@@ -136,14 +153,16 @@ class TemplateImportMetadataInline(admin.TabularInline):
 
 @admin.register(Template)
 class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
-    list_display = ('id', 'version', 'title', 'is_published', 'is_retired', 'export')
+    list_display = ('id', 'version', 'title', 'is_locked', 'is_published', 'is_retired', 'is_imported', 'export')
     list_display_links = ('title', 'version', 'id')
     date_hierarchy = 'published'
     set_permissions = ['use_template']
     has_object_permissions = True
     list_filter = [
+        LockedFilter,
         PublishedFilter,
         RetiredFilter,
+        ImportedFilter,
         'domain_specific',
         TemplateDescriptionFilter,
         TemplateMoreInfoFilter,
@@ -159,7 +178,7 @@ class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
         (None, {
             'fields': ('title', 'abbreviation', 'version', 'description',
                        'more_info', 'reveal_questions', 'domain_specific',
-                       'published', 'retired'),
+                       'locked', 'published', 'retired'),
         }),
         ('Advanced', {
             'fields': ('cloned_from', 'cloned_when',),
@@ -242,6 +261,13 @@ class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
 
     # displays
 
+    def is_locked(self, obj):
+        if obj.locked:
+            return True
+        return False
+    is_locked.short_description = 'Is locked'  # type: ignore
+    is_locked.boolean = True  # type: ignore
+
     def is_published(self, obj):
         if obj.published:
             return True
@@ -249,13 +275,19 @@ class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
     is_published.short_description = 'Is published'  # type: ignore
     is_published.boolean = True  # type: ignore
 
-
     def is_retired(self, obj):
         if obj.retired:
             return True
         return False
     is_retired.short_description = 'Is retired'  # type: ignore
     is_retired.boolean = True  # type: ignore
+
+    def is_imported(self, obj):
+        if obj.import_metadata.exists():
+            return True
+        return False
+    is_imported.short_description = 'Is imported'  # type: ignore
+    is_imported.boolean = True  # type: ignore
 
     def export(self, obj):
         json_url = reverse('v2:template-export', kwargs={'pk': obj.pk})
