@@ -17,6 +17,14 @@ Unreleased
 
 * Template Designers can import templates
 
+For 1.7.0
+---------
+
+Small new features:
+
+* Allow HTML in Question.comment, Question.help_text, Section.comment,
+  Section.introductory_text
+
 1.6.0
 -----
 
