@@ -22,6 +22,8 @@ For 1.7.0
 
 Small new features:
 
+* Templates can now be locked (made read only) in addition to published (made
+  public).
 * Allow HTML in Question.comment, Question.help_text, Section.comment,
   Section.introductory_text
 
