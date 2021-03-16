@@ -482,11 +482,13 @@ class AbstractQuestionMixin(PlanAccessViewMixin):
         Prevents multiple database-queries to fetch known data.
         """
         self.plan_pk = self.kwargs.get('plan')
-        self.plan = (Plan.objects
+        plans = (Plan.objects
             .select_related('template')
-            .prefetch_related('template__sections')
-            .get(id=self.plan_pk)
-        )
+            .prefetch_related('template__sections'))
+        try:
+            self.plan = plans.get(id=self.plan_pk)
+        except Plan.DoesNotExist:
+            raise Http404(f'Plan {self.plan_pk} does not exist. Invalid id?')
         self.template = self.plan.template
 
     def dispatch(self, request, *args, **kwargs):
