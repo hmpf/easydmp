@@ -511,7 +511,7 @@ class AbstractQuestionMixin(PlanAccessViewMixin):
                 .get(pk=question_pk, section__in=sections)
             )
         except Question.DoesNotExist as e:
-            raise ValueError("Unknown question id: {}".format(question_pk))
+            raise Http404(f"Unknown question id: {question_pk}")
         question = question.get_instance()
         return question
 
