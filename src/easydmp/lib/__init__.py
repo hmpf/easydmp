@@ -1,5 +1,6 @@
 from django.utils.timezone import now as utcnow
 
+default_app_config = 'easydmp.lib.apps.EasyDMPSiteConfig'
 
 __all__ = [
     'get_model_name',
