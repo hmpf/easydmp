@@ -1,1 +1,1 @@
-default_app_config = 'easydmp.eventlog.apps.EventLogConfig'
+default_app_config = 'easydmp.eventlog.apps.EasyDMPEventLogConfig'

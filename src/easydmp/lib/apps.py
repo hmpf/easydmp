@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class EasyDMPUpgradeConfig(AppConfig):
+class EasyDMPSiteConfig(AppConfig):
     name = 'easydmp.lib'
     label = 'easydmp_lib'

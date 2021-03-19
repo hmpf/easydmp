@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 
-class EventLogConfig(AppConfig):
+class EasyDMPEventLogConfig(AppConfig):
     name = 'easydmp.eventlog'
 
     def ready(self):
