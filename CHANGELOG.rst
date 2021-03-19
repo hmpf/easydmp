@@ -15,13 +15,12 @@ Planned
 Unreleased
 ----------
 
-* Template Designers can import templates
-
-For 1.7.0
----------
+1.7.0
+-----
 
 Small new features:
 
+* Template Designers can import templates
 * Templates can now be locked (made read only) in addition to published (made
   public).
 * Allow HTML in Question.comment, Question.help_text, Section.comment,
@@ -29,7 +28,14 @@ Small new features:
 
 Bugfixes:
 
+* Trying to access a link to a plan containing a non-existing plan id or
+  question id will now always end up with a "404 Not Found" instead of
+  sometimes a "500 Server Error".
 * Also clone import metadata when cloning a template
+
+Paperwork:
+
+* Support running on Django 3.1 and prepare for running on Django 3.2
 
 1.6.0
 -----
