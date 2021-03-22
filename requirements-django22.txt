@@ -29,7 +29,9 @@ cffi==1.14.3
 chardet==3.0.4
     # via requests
 cryptography==3.3.2
-    # via social-auth-core
+    # via
+    #   pyjwt
+    #   social-auth-core
 cssselect2==0.4.1
     # via
     #   cairosvg
@@ -64,17 +66,19 @@ django==2.2.17
     #   django-guardian
     #   django-select2
     #   djangorestframework
+    #   drf-jwt
     #   drf-spectacular
-djangorestframework-jwt==1.11.0
-    # via -r requirements/base.txt
 djangorestframework==3.12.2
     # via
     #   -r requirements/base.txt
+    #   drf-jwt
     #   drf-spectacular
 docutils==0.16
     # via
     #   -r requirements/base.txt
     #   sphinx
+drf-jwt==1.18.0
+    # via -r requirements/base.txt
 drf-spectacular==0.11.0
     # via -r requirements/base.txt
 factory-boy==3.2.0
@@ -113,9 +117,9 @@ pycparser==2.20
     # via cffi
 pygments==2.7.2
     # via sphinx
-pyjwt==1.7.1
+pyjwt[crypto]==1.7.1
     # via
-    #   djangorestframework-jwt
+    #   drf-jwt
     #   social-auth-core
 pyparsing==2.4.7
     # via packaging
