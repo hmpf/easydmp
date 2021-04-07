@@ -1,3 +1,4 @@
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.renderers import BaseRenderer, StaticHTMLRenderer
 from weasyprint import HTML
 
@@ -77,7 +78,10 @@ class StaticPlaintextRenderer(StaticHTMLRenderer):
     charset = 'utf-8'
 
 
-class HTML2PDFRenderer(PDFRenderer):
+class HTML2PDFRenderer(PDFRenderer, StaticHTMLRenderer):
 
     def render(self, data, media_type=None, renderer_context=None):
+        response = renderer_context.get('response', None)
+        if response and response.exception:
+            data = super().render(data, media_type, renderer_context)
         return HTML(string=data).write_pdf()
