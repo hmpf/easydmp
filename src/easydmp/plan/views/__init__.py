@@ -2,7 +2,7 @@ from copy import deepcopy
 import logging
 
 from django.template.loader import render_to_string
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy, NoReverseMatch
 from django.http import HttpResponseRedirect, Http404, HttpResponseServerError, HttpResponse
 from django.shortcuts import redirect
 from django.views.generic import (
@@ -878,7 +878,14 @@ class SectionDetailView(DetailView):
                 plan=self.plan.pk
             )
 
-        return redirect('plan_detail', kwargs={'plan': self.plan.pk})
+        try:
+            return redirect('plan_detail', kwargs={'plan': self.plan.pk})
+        except NoReverseMatch:
+            # This shouldn't happen unless a plan has been deleted behind our
+            # backs or something
+            LOG.warn('Failed accessing plan %i details while in that plan. Race condition? (User %s)',
+                    self.plan, request.user)
+            raise Http404
 
     def next(self):
         "Generate link to next page"
