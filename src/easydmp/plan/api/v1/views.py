@@ -93,8 +93,8 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
         many=False,
         read_only=True,
     )
-    section_validity = SectionValiditySerializer(many=True, read_only=True)
-    question_validity = QuestionValiditySerializer(many=True, read_only=True)
+    section_validity = SectionValiditySerializer(many=True, read_only=True, source='answersets')
+    question_validity = QuestionValiditySerializer(many=True, read_only=True, source='answers')
 
     class Meta:
         model = Plan
@@ -129,7 +129,7 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
 
     @extend_schema_field(OpenApiTypes.URI)
     def get_generated_html_url(self, obj):
-        return reverse( 'generated_plan_html', kwargs={'plan': obj.id},
+        return reverse('generated_plan_html', kwargs={'plan': obj.id},
                        request=self.context['request'])
 
     @extend_schema_field(OpenApiTypes.URI)

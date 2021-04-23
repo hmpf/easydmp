@@ -478,19 +478,13 @@ class UpdateLinearSectionView(AnswersetAccessViewMixin, DetailView):
             kwargs['data'] = self.request.POST
         return kwargs
 
-    def get_initial_for_answer(self, answer):
-        choice = answer.get_initial(self.plan.data)
-        if not choice:
-            choice = answer.get_initial(self.plan.previous_data)
-        return choice
-
     def get_forms(self):
         form_kwargs = self.get_form_kwargs()
         form_kwargs.pop('prefix', None)
         forms = []
         for answer in self.answers:
             prefix = 'q{}'.format(answer.question_id)
-            initial = self.get_initial_for_answer(answer)
+            initial = answer.get_initial()
             form = answer.get_form(initial=initial, **form_kwargs)
             notesform = NotesForm(initial=initial, prefix=prefix, **form_kwargs)
             forms.append({
@@ -525,7 +519,7 @@ class AbstractQuestionMixin(PlanAccessViewMixin):
         self.plan_pk = self.kwargs.get('plan')
         plans = (Plan.objects
             .select_related('template')
-            .prefetch_related('template__sections'))
+            .prefetch_related('template__sections', 'answersets'))
         try:
             self.plan = plans.get(id=self.plan_pk)
         except Plan.DoesNotExist:

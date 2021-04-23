@@ -33,51 +33,68 @@ GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
 class AnswerHelper():
     "Helper-class combining a Question and a Plan"
 
-    def __init__(self, question, plan):
+    def __init__(self, question, plan, answerset):
         self.question = question.get_instance()
         self.plan = plan
+        self.answerset = answerset
+        self.answer = self.set_answer()
         # IMPORTANT: json casts ints to string as keys in dicts, so use strings
         self.question_id = str(self.question.pk)
         self.has_notes = self.question.has_notes
         self.section = self.question.section
-        self.question_validity = self.get_question_validity()
-        self.section_validity = self.get_section_validity()
         self.current_choice = plan.data.get(self.question_id, {})
 
-    def get_initial(self, data):
-        choice = data.get(self.question_id, {})
+    # TODO: change to only look at Answerset.data when Plan.data is gone
+    def get_choice(self, datamodel):
+        choice = datamodel.data.get(self.question_id, {})
+        if not choice:
+            choice = datamodel.previous_data.get(self.question_id, {})
         return choice
 
-    def get_question_validity(self):
+    # TODO: replace with self.get_choice when Plan no longer has data-attribute
+    def get_initial(self):
+        choice = self.get_choice(self.answerset)
+        if not choice:
+            choice = self.get_choice(self.plan)
+        return choice
+
+    def set_answer(self):
         qv, _ = Answer.objects.get_or_create(
             plan=self.plan,
             question=self.question,
+            answerset=self.answerset,
             defaults={'valid': False}
         )
         return qv
-
-    def get_section_validity(self):
-        sv, _ = AnswerSet.objects.get_or_create(
-            plan=self.plan,
-            section=self.section,
-            defaults={'valid': False}
-        )
-        return sv
 
     def get_form(self, **form_kwargs):
         form = make_form(self.question, **form_kwargs)
         return form
 
+    # TODO: remove when Plan no longer has data-attribute
+    def _save_in_plan(self, choice, saved_by):
+        self.plan.previous_data[self.question_id] = self.current_choice
+        self.plan.data[self.question_id] = choice
+        self.plan.save(user=saved_by, question=self.question)
+
+    # TODO: remove when Plan no longer has data-attribute
+    def _new_has_answer(self):
+        return self.answerset.data.get(self.question_id, False)
+
     def save_choice(self, choice, saved_by):
         LOG.debug('save_choice: q%s/p%s: Answer: previous %s current %s',
                   self.question_id, self.plan.pk, self.current_choice, choice)
+        if not self._new_has_answer():
+            self.answerset.update_answer(self.question_id, choice)
         if self.current_choice != choice:
             LOG.debug('save_choice: q%s/p%s: saving changes',
                       self.question_id, self.plan.pk)
             self.plan.modified_by = saved_by
-            self.plan.previous_data[self.question_id] = self.current_choice
-            self.plan.data[self.question_id] = choice
-            self.plan.save(user=saved_by, question=self.question)
+            self.answerset.update_answer(self.question_id, choice)
+            # TODO: uncomment when Plan no longer has data-attribute
+            # self.plan.save(user=saved_by)
+            # TODO: remove when Plan no longer has data-attribute
+            self._save_in_plan(choice, saved_by)
             self.set_valid()
             if choice:
                 new_condition = choice.get('choice', None)
@@ -90,26 +107,26 @@ class AnswerHelper():
         return False
 
     def set_valid(self):
-        if not self.question_validity.valid:
+        if not self.answer.valid:
             LOG.debug('set_valid: q%s/p%s',
                       self.question_id, self.plan.pk)
-            self.question_validity.valid = True
-            self.question_validity.save()
-            if not self.section_validity.valid and self.section.validate_data(self.plan.data):
+            self.answer.valid = True
+            self.answer.save()
+            if not self.answerset.valid and self.section.validate_data(self.answerset.data):
                 LOG.debug('set_valid: q%s/p%s: section %',
                           self.question_id, self.plan.pk, self.section.pk)
-                self.section_validity.valid = True
-                self.section_validity.save()
+                self.answerset.valid = True
+                self.answerset.save()
 
     def set_invalid(self):
-        if self.question_validity.valid:
+        if self.answer.valid:
             LOG.debug('set_invalid: q%s/p%s', self.question_id, self.plan.pk)
-            self.question_validity.valid = False
-            self.question_validity.save()
+            self.answer.valid = False
+            self.answer.save()
             LOG.debug('set_invalid: q%s/p%s: section %',
                       self.question_id, self.plan.pk, self.section.pk)
-            self.section_validity.valid = False
-            self.section_validity.save()
+            self.answerset.valid = False
+            self.answerset.save()
 
 
 class PlanQuerySet(models.QuerySet):
@@ -153,7 +170,7 @@ class AnswerSet(ClonableModel):
     A user's set of answers to a Section
     """
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='answersets')
-    section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='+')
+    section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='answersets')
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
     # The user's answers, represented as a Question PK keyed dict in JSON.
@@ -176,6 +193,19 @@ class AnswerSet(ClonableModel):
             AnswerSet.objects.create(plan=self.plan, section=section, valid=False)
             answersets = self.__class__.objects.filter(plan=self.plan, section=section)
         return answersets
+
+    @transaction.atomic
+    def update_answer(self, question_id, choice):
+        previous_choice = self.data.get(str(question_id), None)
+        if previous_choice:
+            self.previous_data[question_id] = previous_choice
+        self.data[str(question_id)] = choice
+        self.answers.update_or_create(
+            question_id=int(question_id),
+            plan_id=self.plan_id,  # TODO: remove when Plan.data goes
+            defaults={'valid': True}
+        )
+        self.save()
 
     @transaction.atomic
     def clone(self, plan):
@@ -249,7 +279,7 @@ class Answer(ClonableModel):
     AnswerSet.
     """
     # TODO: remove in sync with linking to correct answersets, updating unique_together
-    plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='question_validity')
+    plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='answers')
     # TODO: make non nullable later
     answerset = models.ForeignKey(AnswerSet, models.CASCADE, related_name='answers', null=True)
     question = models.ForeignKey('dmpt.Question', models.CASCADE, related_name='+')

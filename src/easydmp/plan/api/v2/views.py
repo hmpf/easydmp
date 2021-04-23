@@ -22,30 +22,6 @@ from easydmp.plan.views import generate_pretty_exported_plan
 from easydmp.plan.utils import GenerateRDA10
 
 
-class LightSectionValiditySerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = AnswerSet
-        fields = [
-            'id',
-            'section',
-            'valid',
-            'last_validated',
-        ]
-
-
-class LightQuestionValiditySerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Answer
-        fields = [
-            'id',
-            'question',
-            'valid',
-            'last_validated',
-        ]
-
-
 class PlanFilter(FilterSet):
 
     class Meta:
@@ -131,8 +107,6 @@ class HeavyPlanSerializer(LightPlanSerializer):
         many=False,
         read_only=True,
     )
-    section_validity = LightSectionValiditySerializer(many=True, read_only=True)
-    question_validity = LightQuestionValiditySerializer(many=True, read_only=True)
 
     class Meta:
         model = Plan
@@ -144,8 +118,8 @@ class HeavyPlanSerializer(LightPlanSerializer):
             'abbreviation',
             'version',
             'template',
-            'section_validity',
-            'question_validity',
+            'answersets',
+            'answers',
             'data',
             'previous_data',
             'generated_html',
@@ -176,7 +150,7 @@ class PlanViewSet(ReadOnlyModelViewSet):
         HTML2PDFRenderer,
     ]
 
-# 
+#
 #     def get_serializer_class(self):
 #         if self.action == 'retrieve':
 #             return HeavyPlanSerializer
