@@ -60,7 +60,7 @@
                           </div>
                           {% endif %}
                           {% if request.user|may_edit_plan:object and not object.locked %}
-                          {# <p class="actions"><a href="{% url 'new_question' plan=object.id question=question_pk %}">Edit</a></p>  #}
+                          {# <p class="actions"><a href="{% url 'answer_question' plan=object.id question=question_pk %}">Edit</a></p>  #}
                           {% endif %}
                       </dd>
                     </dl>

@@ -45,7 +45,7 @@ class AnswerHelper():
         self.section = self.question.section
         self.current_choice = plan.data.get(self.question_id, {})
 
-    # TODO: change to only look at Answerset.data when Plan.data is gone
+    # TODO: change to only look at AnswerSet.data when Plan.data is gone
     def get_choice(self, datamodel):
         choice = datamodel.data.get(self.question_id, {})
         if not choice:

@@ -88,10 +88,10 @@ class PlanAccessViewMixin:
         return super().get_queryset().viewable(self.request.user)
 
 
-class AnswersetAccessViewMixin:
+class AnswerSetAccessViewMixin:
 
     def get_queryset(self):
-        plans = Plan.objects.viewable(self.request.user)
+        plans = Plan.objects.editable(self.request.user)
         return super().get_queryset().filter(plan__in=plans)
 
 
@@ -161,7 +161,7 @@ class StartPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
         answerset = self.object.answersets.get(section=first_section)
         if first_question.section.branching:
             kwargs['question'] = first_question.pk
-            success_urlname = 'new_question'
+            success_urlname = 'answer_question'
         else:
             kwargs['section'] = first_section.pk
             kwargs['answerset'] = answerset.pk
@@ -340,13 +340,13 @@ class CreateNewVersionPlanView(PlanAccessViewMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
-class UpdateLinearSectionView(AnswersetAccessViewMixin, DetailView):
-    template_name = 'easydmp/plan/plan_section_update.html'
+class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
+    template_name = 'easydmp/plan/answer_linear_section_form.html'
     model = AnswerSet
     pk_url_kwarg = 'answerset'
     viewname = 'answer_linear_section'
-    branching_viewname = 'new_question'
-    __LOG = logging.getLogger('{}.{}'.format(__name__, 'UpdateLinearSectionView'))
+    branching_viewname = 'answer_question'
+    __LOG = logging.getLogger('{}.{}'.format(__name__, 'AnswerLinearSectionView'))
 
     def check_and_get_kwargs(self, request):
         self.answerset = super().get_object()
@@ -366,7 +366,7 @@ class UpdateLinearSectionView(AnswersetAccessViewMixin, DetailView):
         # Chcek that the section is not branching
         # Explicit check
         if self.section.branching:
-            # TODO: Jump to first question of section with NewQuestionView
+            # TODO: Jump to first question of section with AnswerQuestionView
             raise Http404(error_message_404)
         self.questions = (
             self.section.questions
@@ -375,7 +375,7 @@ class UpdateLinearSectionView(AnswersetAccessViewMixin, DetailView):
         )
         # Implicit check: all questions must be on_trunk
         if self.section.questions.count() != self.questions.count():
-            # TODO: Jump to first question of section with NewQuestionView
+            # TODO: Jump to first question of section with AnswerQuestionView
             raise Http404(error_message_404)
 
         self.prev_section = self.section.get_prev_section()
@@ -509,9 +509,16 @@ class UpdateLinearSectionView(AnswersetAccessViewMixin, DetailView):
         return self.post(*args, **kwargs)
 
 
-class AbstractQuestionMixin(PlanAccessViewMixin):
+class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
+    "Answer a Question"
 
-    def preload(self, **kwargs):
+    model = AnswerSet
+    template_name = 'easydmp/plan/answer_question_form.html'
+    pk_url_kwarg = 'answerset'
+    fields = ('plan_name', 'data')
+    __LOG = logging.getLogger('{}.{}'.format(__name__, 'AnswerQuestionView'))
+
+    def check_and_get_kwargs(self):
         """Store frequently used values as early as possible
 
         Prevents multiple database-queries to fetch known data.
@@ -524,17 +531,19 @@ class AbstractQuestionMixin(PlanAccessViewMixin):
             self.plan = plans.get(id=self.plan_pk)
         except Plan.DoesNotExist:
             raise Http404(f'Plan {self.plan_pk} does not exist. Invalid id?')
+
         self.template = self.plan.template
+        self.answerset = super().get_object()
+        self.question_pk = self.kwargs.get('question')
+        self.question = self._get_question()
+        self.answer = AnswerHelper(self.question, self.plan, self.answerset)
+        self.section = self.question.section
+        self.prev_section = self.section.get_prev_section()
+        self.next_section = self.section.get_next_section()
 
     def dispatch(self, request, *args, **kwargs):
-        self.preload(**kwargs)
+        self.check_and_get_kwargs()
         return super().dispatch(request, *args, **kwargs)
-
-    def get_question_pk(self):
-        return self.question_pk
-
-    def get_question(self):
-        return self.question
 
     def _get_question(self):
         question_pk = self.question_pk
@@ -549,39 +558,6 @@ class AbstractQuestionMixin(PlanAccessViewMixin):
             raise Http404(f"Unknown question id: {question_pk}")
         question = question.get_instance()
         return question
-
-    def get_plan_pk(self):
-        return self.plan_pk
-
-    def get_plan(self):
-        return self.plan
-
-    def get_template(self):
-        return self.template
-
-
-class NewQuestionView(AbstractQuestionMixin, UpdateView):
-    "Answer a Question"
-
-    model = Plan
-    template_name = 'easydmp/plan/state_form.html'
-    pk_url_kwarg = 'plan'
-    fields = ('plan_name', 'data')
-    __LOG = logging.getLogger('{}.{}'.format(__name__, 'NewQuestionView'))
-
-    def get_queryset(self):
-        qs = super().get_queryset().editable(self.request.user)
-        return qs.filter(pk=self.get_plan_pk())
-
-    def preload(self, **kwargs):
-        super().preload(**kwargs)
-
-        self.queryset = self.get_queryset()
-
-        self.question_pk = self.kwargs.get('question')
-        self.question = self._get_question()
-        self.answer = AnswerHelper(self.question, self.plan)
-        self.section = self.question.section
 
     def set_referer(self, request):
         self.referer = request.META.get('HTTP_REFERER', None)
@@ -598,29 +574,28 @@ class NewQuestionView(AbstractQuestionMixin, UpdateView):
         kwargs = {'plan': self.object.pk}
 
         if 'summary' in self.request.POST:
-            LOG.debug('NewQuestionView: Going to summary')
+            self.__LOG.debug('Going to summary')
             return reverse('plan_detail', kwargs=kwargs)
         elif 'prev' in self.request.POST:
             prev_question = question.get_prev_question(self.object.data)
-            LOG.debug('NewQuestionView: Prev question found: "%s"', prev_question)
+            self.__LOG.debug('Prev question found: "%s"', prev_question)
             kwargs['question'] = prev_question.pk
         elif 'next' in self.request.POST:
             next_question = question.get_next_question(current_data)
-            LOG.debug('NewQuestionView: Next question found: "%s"', next_question)
+            self.__LOG.debug('Next question found: "%s"', next_question)
             if not next_question:
                 # Finished answering all questions
-                LOG.debug('NewQuestionView: No next question, going to summary')
+                self.__LOG.debug('No next question, going to summary')
                 return reverse('plan_detail', kwargs=kwargs)
             kwargs['question'] = next_question.pk
         else:
             kwargs['question'] = question.pk
 
         # Go to next on 'next', prev on 'prev', stay on same page otherwise
-        LOG.debug('NewQuestionView: Going to question "%s"', kwargs['question'])
-        return reverse('new_question', kwargs=kwargs)
+        self.__LOG.debug('AnswerQuestionView: Going to question "%s"', kwargs['question'])
+        return reverse('answer_question', kwargs=kwargs)
 
     def get_context_data(self, **kwargs):
-        template = self.template
         question = self.question
         section = self.section
         path = section.questions.order_by('position')
@@ -717,7 +692,7 @@ class FirstQuestionView(PlanAccessViewMixin, RedirectView):
         plan = Plan.objects.get(pk=plan_pk)
         question_pk = plan.get_first_question().pk
         url = reverse(
-            'new_question',
+            'answer_question',
             kwargs={'plan': plan_pk, 'question': question_pk}
         )
         return url
@@ -747,7 +722,7 @@ class PlanListView(ListView):
         return next
 
 
-class PlanDetailView(AbstractQuestionMixin, DetailView):
+class PlanDetailView(PlanAccessViewMixin, DetailView):
     "Show an overview of a plan"
     model = Plan
     pk_url_kwarg = 'plan'
@@ -908,7 +883,7 @@ class SectionDetailView(DetailView):
         # Redirect to first question if any
         if self.editable:
             return redirect(
-                'new_question',
+                'answer_question',
                 question=question.pk,
                 plan=self.plan.pk
             )
@@ -932,7 +907,7 @@ class SectionDetailView(DetailView):
                 # Has questions
                 if question:
                     return reverse(
-                        'new_question',
+                        'answer_question',
                         kwargs={'question': question.pk, 'plan': plan_pk }
                     )
                 # Empty section
@@ -952,7 +927,7 @@ class SectionDetailView(DetailView):
                 # Has questions
                 if question:
                     return reverse(
-                        'new_question',
+                        'answer_question',
                         kwargs={'question': question.pk, 'plan': plan_pk }
                     )
                 # Empty section

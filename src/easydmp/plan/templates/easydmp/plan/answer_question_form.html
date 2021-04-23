@@ -43,7 +43,7 @@
       <div class="superuser path">
         <h4>{% for q in path %}
           <span>
-            {% if question_pk != q.pk %}<a href="{% url 'new_question' plan=object.pk question=q.pk %}">{{ q }}</a>
+            {% if question_pk != q.pk %}<a href="{% url 'answer_question' plan=object.pk question=q.pk %}">{{ q }}</a>
             {% else %}
             {% if question_pk == q.pk %}<strong class="current">{{ q }}</strong>{% else %}{{ q }}{% endif %}
             {% endif %}
