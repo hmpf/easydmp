@@ -755,7 +755,7 @@ class PlanDetailView(AbstractQuestionMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = {
-            'output': self.object.get_summary(),
+            'output': self.object.get_nested_summary(),
             'plan': self.object,
             'template': self.object.template,
         }

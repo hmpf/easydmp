@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, Set, Dict, TYPE_CHECKING
@@ -729,17 +730,69 @@ class Plan(DeletionMixin, ClonableModel):
         summary = self.template.get_summary(data, valid_ids)
         return summary
 
-    def get_canned_text(self, data=None):
+    def get_nested_summary(self, data=None):
+        """Generate a summary of all question/answer pairs in all sections
+
+        This assumes that each question may be answered more than once,
+        basically: sections may be answered more than once.
+        """
+        if not data:
+            data = self.data
+        data = deepcopy(data)  # Make absolutely sure we're working on a copy
+        summary = OrderedDict()
+        valid_section_ids = (AnswerSet.objects
+                     .filter(valid=True, plan=self)
+                     .values_list('section__pk', flat=True))
+        for section in self.template.ordered_sections():
+            is_valid = True if section.id in valid_section_ids else False
+            answersets = self.answersets.filter(section=section)
+            num_answersets = answersets.count()
+            meta_summary = section.get_meta_summary(valid=is_valid, num_answersets=num_answersets)
+            answer_blocks = []
+            for answerset in answersets.order_by('pk'):
+                data_summary = section.get_data_summary(answerset.data)
+                answer_blocks.append({
+                    'answerset': answerset.pk,
+                    'data': data_summary,
+                })
+            summary[meta_summary['full_title']] = {
+                'answersets': answer_blocks,
+                'section': meta_summary,
+            }
+        return summary
+
+    def get_flat_canned_text(self, data=None):
         if not data:
             data = self.data.copy()
         return self.template.generate_canned_text(data)
+
+    def get_nested_canned_text(self, data=None):
+        texts = []
+        if not data:
+            data = self.data.copy()
+        for section in self.template.ordered_sections():
+            answersets = self.answersets.filter(section=section)
+            num_answersets = answersets.count()
+            meta_summary = section.get_meta_summary(num_answersets=num_answersets)
+            answer_blocks = []
+            for answerset in answersets.order_by('pk'):
+                canned_text = section.generate_canned_text(data)
+                answer_blocks.append({
+                    'answerset': answerset.pk,
+                    'text': canned_text,
+                })
+            texts.append({
+                'section': meta_summary,
+                'answersets': answer_blocks,
+            })
+        return texts
 
     def get_context_for_generated_text(self):
         data = self.data.copy()
         return {
             'data': data,
-            'output': self.get_summary(data),
-            'text': self.get_canned_text(data),
+            'output': self.get_nested_summary(data),
+            'text': self.get_nested_canned_text(data),
             'plan': self,
             'template': self.template,
         }

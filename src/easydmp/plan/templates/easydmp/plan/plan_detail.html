@@ -25,47 +25,52 @@
         </div>
         {% if output.items %}
         <div class="dmpsummary">
-            {% for section_title, sectiondata in output.items %}
-            <div class="section section_depth_{{ sectiondata.section.depth }} " id="section-{{ sectiondata.section.pk }}">
+            {% for section_title, sectiondata in output.items %}{% with section_metadata=sectiondata.section answersets=sectiondata.answersets %}
+            <div class="section section_depth_{{ section_metadata.depth }} " id="section-{{ section_metadata.pk }}">
                 {% if section_title %}
-                <h3 class="section_title"><a href="{% url 'section_detail' section=sectiondata.section.pk plan=object.id %}">{{ sectiondata.section.full_title }}{% show_checkmark sectiondata.section.valid %}</a></h3>
-                <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#section-{{ sectiondata.section.pk }} .content-wrap" aria-expanded="false" aria-controls="collapseExample">
+                <h3 class="section_title"><a href="{% url 'section_detail' section=section_metadata.pk plan=object.id %}">{{ section_metadata.full_title }}{% show_checkmark section_metadata.valid %}</a></h3>
+                <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#section-{{ section_metadata.pk }} .content-wrap" aria-expanded="false" aria-controls="collapseExample">
                 <span class="caret"></span>
                 </button>
                 <div class="content-wrap collapse" aria-expanded="false" style="height: 0px;">
                 {% else %}
                 <div>
                 {% endif %}
-                  {% if sectiondata.section.may_edit_all %}
-                  <a href="{% url 'answer_linear_section' section=sectiondata.section.pk plan=object.id %}">Edit all</a>
+                  {% if section_metadata.introductory_text %}
+                  <div class="section_introduction">{{ section_metadata.introductory_text }}</div>
                   {% endif %}
-                  {% if sectiondata.section.introductory_text %}
-                  <div class="section_introduction">{{ sectiondata.section.introductory_text }}</div>
+                  {% if section_metadata.comment %}
+                  <div class="section_comment"><td colspan="3">{{ section_metadata.comment }}</div>
                   {% endif %}
-                  {% if sectiondata.section.comment %}
-                  <div class="section_comment"><td colspan="3">{{ sectiondata.section.comment }}</div>
-                  {% endif %}
-                  {% if sectiondata.data %}
-                  {% for question_pk, value in sectiondata.data.items %}
-                  <dl class="questionrow">
-                    <dt class="question">{{ value.question }}{% if not value.question.optional %}<span class="asteriskField">*</span>{% endif %}</dt>
-                    <dd class="answer">{{ value.answer|default_if_none:"" }}
-                        {% if value.notes %}<br />
-                        <div class="notes">
-                            <b>Notes:</b>
-                            {{ value.notes }}
-                        </div>
-                        {% endif %}
-                        {% if request.user|may_edit_plan:object and not object.locked %}
-                    <p class="actions"><a href="{% url 'new_question' plan=object.id question=question_pk %}">Edit</a></p>
-                        {% endif %}
-                    </dd>
-                  </dl>
+                  {% if not section_metadata.is_empty %}
+                  {% for answerset in answersets %}
+                  <br />
+                  <div class="answerset">
+                    {% if section_metadata.may_edit_all %}
+                    <a href="{% url 'answer_linear_section' section=section_metadata.pk plan=object.id answerset=answerset.answerset %}">Edit all</a>
+                    {% endif %}
+                    {% for question_pk, value in answerset.data.items %}
+                    <dl class="questionrow">
+                      <dt class="question">{{ value.question }}{% if not value.question.optional %}<span class="asteriskField">*</span>{% endif %}</dt>
+                      <dd class="answer">{{ value.answer|default_if_none:"" }}
+                          {% if value.notes %}<br />
+                          <div class="notes">
+                              <b>Notes:</b>
+                              {{ value.notes }}
+                          </div>
+                          {% endif %}
+                          {% if request.user|may_edit_plan:object and not object.locked %}
+                          {# <p class="actions"><a href="{% url 'new_question' plan=object.id question=question_pk %}">Edit</a></p>  #}
+                          {% endif %}
+                      </dd>
+                    </dl>
                   {% endfor %}
+                  </div>
+                  {% endfor %} {# / answerset #}
                   {% endif %}
                 </div>
             </div>
-            {% endfor %}
+            {% endwith %}{% endfor %}
         </div>
         {% else %}
         <p>No questions answered. <a href="{% url 'first_question' plan=object.id %}">Start here</a>.</p>
