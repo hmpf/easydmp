@@ -1,5 +1,6 @@
 {% extends "easydmp/plan/base.html" %}
 {% load static %}
+{% load plan_tags %}
 {% block title %}
 {{ block.super }}, Plan - {{ object.title|capfirst }} V{{object.version }}{% endblock %}
 {% block content %}
@@ -10,7 +11,7 @@
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
         <div id="summary_header">
-            <h2>{{ object.title|capfirst }} V{{object.version }} {% if object.valid %} ✅{% endif %}</h2>
+            <h2>{{ object.title|capfirst }} V{{object.version }}{% show_checkmark object.valid %}</h2>
           <div class="actions dropdown">
             <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapseExample" aria-controls="collapseExample">
                 <span class="caret"></span>
@@ -27,7 +28,7 @@
             {% for section_title, sectiondata in output.items %}
             <div class="section section_depth_{{ sectiondata.section.depth }} " id="section-{{ sectiondata.section.pk }}">
                 {% if section_title %}
-                <h3 class="section_title"><a href="{% url 'section_detail' section=sectiondata.section.pk plan=object.id %}">{{ sectiondata.section.full_title }}{% if sectiondata.section.valid %}  ✅{% endif %}</a></h3>
+                <h3 class="section_title"><a href="{% url 'section_detail' section=sectiondata.section.pk plan=object.id %}">{{ sectiondata.section.full_title }}{% show_checkmark sectiondata.section.valid %}</a></h3>
                 <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#section-{{ sectiondata.section.pk }} .content-wrap" aria-expanded="false" aria-controls="collapseExample">
                 <span class="caret"></span>
                 </button>

@@ -54,6 +54,14 @@ input[type="search"] {
  border-radius: 3px;
 }
 
+.checkmark {
+    visibility: hidden;
+}
+.checkmark::after {
+    content: '✅';
+    visibility: visible;
+}
+
 header .navbar {
     margin-bottom: 0;
 }
