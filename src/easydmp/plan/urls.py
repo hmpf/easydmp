@@ -20,6 +20,7 @@ from .views import (
     GeneratedPlanPlainTextView,
     GeneratedPlanHTMLView,
     GeneratedPlanPDFView,
+    RedirectToAnswerQuestionView,
 )
 from .views.access import (
     PlanAccessView,
@@ -40,7 +41,8 @@ urlpatterns = [
 
     path('<int:plan>/section/<int:section>:<int:answerset>/update/', AnswerLinearSectionView.as_view(), name='answer_linear_section'),
     path('<int:plan>/section/<int:section>/', SectionDetailView.as_view(), name='section_detail'),
-    path('<int:plan>/<int:question>/new/', AnswerQuestionView.as_view(), name='answer_question'),
+    path('<int:plan>/question/<int:question>:<int:answerset>/update/', AnswerQuestionView.as_view(), name='answer_question'),
+    path('<int:plan>/<int:question>/new/', RedirectToAnswerQuestionView.as_view(), name='redirect_to_answer_question'),
     path('<int:plan>/update/', UpdatePlanView.as_view(), name='update_plan'),
     path('<int:plan>/check/', ValidatePlanView.as_view(), name='validate_plan'),
     path('<int:plan>/lock/', LockPlanView.as_view(), name='lock_plan'),

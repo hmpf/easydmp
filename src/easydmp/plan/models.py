@@ -52,6 +52,9 @@ class AnswerHelper():
             choice = datamodel.previous_data.get(self.question_id, {})
         return choice
 
+    def get_current_data(self):
+        return self.answerset.data if self.answerset.data else self.plan.data
+
     # TODO: replace with self.get_choice when Plan no longer has data-attribute
     def get_initial(self):
         choice = self.get_choice(self.answerset)
@@ -187,14 +190,6 @@ class AnswerSet(ClonableModel):
             self.plan_id,
             self.valid)
 
-    def get_answersets_for_section(self, section):
-        try:
-            answersets = self.__class__.objects.filter(plan=self.plan, section=section)
-        except self.__class__.DoesNotExist:
-            AnswerSet.objects.create(plan=self.plan, section=section, valid=False)
-            answersets = self.__class__.objects.filter(plan=self.plan, section=section)
-        return answersets
-
     @transaction.atomic
     def update_answer(self, question_id, choice):
         previous_choice = self.data.get(str(question_id), None)
@@ -207,6 +202,14 @@ class AnswerSet(ClonableModel):
             defaults={'valid': True}
         )
         self.save()
+
+    def get_answersets_for_section(self, section):
+        try:
+            answersets = self.__class__.objects.filter(plan=self.plan, section=section)
+        except self.__class__.DoesNotExist:
+            AnswerSet.objects.create(plan=self.plan, section=section, valid=False)
+            answersets = self.__class__.objects.filter(plan=self.plan, section=section)
+        return answersets
 
     @transaction.atomic
     def clone(self, plan):

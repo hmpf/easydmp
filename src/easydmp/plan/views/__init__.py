@@ -155,16 +155,15 @@ class StartPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
         return HttpResponseServerError()
 
     def get_success_url(self):
-        kwargs = {'plan': self.object.pk}
         first_question = self.object.get_first_question()
         first_section = first_question.section
         answerset = self.object.answersets.get(section=first_section)
+        kwargs = {'plan': self.object.pk, 'answerset': answerset.pk}
         if first_question.section.branching:
             kwargs['question'] = first_question.pk
             success_urlname = 'answer_question'
         else:
             kwargs['section'] = first_section.pk
-            kwargs['answerset'] = answerset.pk
             success_urlname = 'answer_linear_section'
         return reverse(success_urlname, kwargs=kwargs)
 
@@ -431,6 +430,7 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
                 )
                 viewname = self.viewname
             return reverse(viewname, kwargs=kwargs)
+        # Summary
         return reverse('plan_detail', kwargs=minimal_kwargs)
 
     def get(self, _request, *args, **kwargs):
@@ -509,6 +509,27 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
         return self.post(*args, **kwargs)
 
 
+class RedirectToAnswerQuestionView(RedirectView):
+    permanent = True
+    pattern_name = 'answer_question'
+
+    def get_redirect_url(self, *args, **kwargs):
+        plan_pk = kwargs['plan']
+        try:
+            plan = Plan.objects.get(id=plan_pk)
+        except Plan.DoesNotExist:
+            raise Http404
+        question_pk = kwargs['question']
+        try:
+           question = Question.objects.get(id=question_pk)
+        except Question.DoesNotExist:
+            raise Http404
+        answersets = plan.answersets.filter(section=question.section)
+        answerset = answersets.order_by('pk').first()
+        kwargs['answerset'] = int(answerset.pk)
+        return super().get_redirect_url(*args, **kwargs)
+
+
 class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
     "Answer a Question"
 
@@ -563,42 +584,64 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         self.referer = request.META.get('HTTP_REFERER', None)
 
     def get_initial(self):
-        initial = self.answer.get_initial(self.object.data)
-        if not initial:
-            initial = self.answer.get_initial(self.object.previous_data)
-        return initial
+        return self.answer.get_initial()
+
+    def get_summary_url(self):
+        return reverse('plan_detail', kwargs={'plan': self.plan.pk})
+
+    def get_url(self, question, answerset):
+        kwargs = {
+            'plan': self.plan.pk,
+            'question': question.pk,
+            'answerset': answerset.pk,
+        }
+        self.__LOG.debug('Going to question "%s"', kwargs['question'])
+        return reverse('answer_question', kwargs=kwargs)
+
+    def get_next_url(self, data):
+        plan_kwargs = {'plan': self.plan.pk}
+        next_question = self.question.get_next_question(data)
+        self.__LOG.debug('Next question found: "%s"', next_question)
+        if not next_question:
+            # Finished answering all questions
+            self.__LOG.debug('No next question, going to summary')
+            return self.get_summary_url()
+        answerset = self.answerset
+        if next_question.section != self.section:
+            answersets = self.answerset.get_answersets_for_section(next_question.section)
+            answerset = answersets.first()
+        return self.get_url(next_question, answerset)
+
+    def get_prev_url(self, data):
+        prev_question = self.question.get_prev_question(data)
+        self.__LOG.debug('Prev question found: "%s"', prev_question)
+        if not prev_question:
+            # Clicked prev on very first question
+            self.__LOG.debug('No prev question, going to summary')
+            return self.get_summary_url()
+        answerset = self.answerset
+        if prev_question.section != self.section:
+            answersets = self.answerset.get_answersets_for_section(prev_question.section)
+            answerset = answersets.last()
+        return self.get_url(prev_question, answerset)
 
     def get_success_url(self):
-        question = self.question
-        current_data = self.object.data
-        kwargs = {'plan': self.object.pk}
-
+        current_data = self.answer.get_current_data()
         if 'summary' in self.request.POST:
             self.__LOG.debug('Going to summary')
-            return reverse('plan_detail', kwargs=kwargs)
-        elif 'prev' in self.request.POST:
-            prev_question = question.get_prev_question(self.object.data)
-            self.__LOG.debug('Prev question found: "%s"', prev_question)
-            kwargs['question'] = prev_question.pk
-        elif 'next' in self.request.POST:
-            next_question = question.get_next_question(current_data)
-            self.__LOG.debug('Next question found: "%s"', next_question)
-            if not next_question:
-                # Finished answering all questions
-                self.__LOG.debug('No next question, going to summary')
-                return reverse('plan_detail', kwargs=kwargs)
-            kwargs['question'] = next_question.pk
-        else:
-            kwargs['question'] = question.pk
-
-        # Go to next on 'next', prev on 'prev', stay on same page otherwise
-        self.__LOG.debug('AnswerQuestionView: Going to question "%s"', kwargs['question'])
-        return reverse('answer_question', kwargs=kwargs)
+            return self.get_summary_url()
+        if 'prev' in self.request.POST:
+            return self.get_prev_url(current_data)
+        if 'next' in self.request.POST:
+            return self.get_next_url(current_data)
+        # Stay on same page if not explicitly going elsewhere
+        return self.get_url(self.question, self.answerset)
 
     def get_context_data(self, **kwargs):
         question = self.question
         section = self.section
         path = section.questions.order_by('position')
+        kwargs['plan'] = self.plan
         kwargs['path'] = path
         kwargs['question'] = question
         kwargs['question_pk'] = question.pk
@@ -613,7 +656,7 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         num_questions_so_far = len(question.get_all_preceding_questions())
         kwargs['progress'] = progress(num_questions_so_far, num_questions)
         kwargs['referrer'] = self.referer  # Not a typo! From the http header
-        kwargs['section_progress'] = get_section_progress(self.object, section)
+        kwargs['section_progress'] = get_section_progress(self.plan, section)
         return super().get_context_data(**kwargs)
 
     def get_notesform(self, **_):
@@ -634,18 +677,16 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         return form
 
     def get(self, request, *args, **kwargs):
-        self.object = self.get_object()
         self.set_referer(request)
-        self.__LOG.debug('GET-ing q%s/p%s', self.question_pk, self.object.pk)
+        self.__LOG.debug('GET-ing q%s/p%s', self.question_pk, self.plan.pk)
         template = '{timestamp} {actor} accessed {action_object} of {target}'
-        log_event(request.user, 'access', target=self.object,
+        log_event(request.user, 'access', target=self.plan,
                   object=self.question, template=template)
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
         self.set_referer(request)
-        self.__LOG.debug('POST-ing q%s/p%s', self.question_pk, self.object.pk)
+        self.__LOG.debug('POST-ing q%s/p%s', self.question_pk, self.plan.pk)
         form = self.get_form()
         notesform = self.get_notesform()
         if form.is_valid() and notesform.is_valid():
@@ -655,30 +696,30 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
             return self.form_invalid(form, notesform)
 
     def form_valid(self, form, notesform):
-        self.__LOG.debug('form_valid: q%s/p%s: valid', self.question_pk, self.object.pk)
+        self.__LOG.debug('form_valid: q%s/p%s: valid', self.question_pk, self.plan.pk)
         notes = notesform.cleaned_data.get('notes', '')
         choice = form.serialize()
         choice['notes'] = notes
         changed_condition = self.answer.save_choice(choice, self.request.user)
-        self.object = self.get_object()  # Refresh
+        self.plan = self.get_object().plan  # Refresh
         if changed_condition:
             self.__LOG.debug('form_valid: q%s/p%s: change saved',
-                             self.question_pk, self.object.pk)
+                             self.question_pk, self.plan.pk)
             if self.question.branching_possible:
                 self.__LOG.debug('form_valid: q%s/p%s: checking for unreachable answers',
-                                 self.question_pk, self.object.pk)
-                changed = self.object.hide_unreachable_answers_after(self.question)
+                                 self.question_pk, self.plan.pk)
+                changed = self.plan.hide_unreachable_answers_after(self.question)
                 if changed:
-                    self.object.quiet_save()
+                    self.plan.quiet_save()
         else:
-            self.__LOG.debug('form_valid: q%s/p%s: condition not changed', self.question.pk, self.object.pk)
+            self.__LOG.debug('form_valid: q%s/p%s: condition not changed', self.question.pk, self.plan.pk)
         template = '{timestamp} {actor} updated {action_object} of {target}'
-        log_event(self.request.user, 'update', target=self.object,
+        log_event(self.request.user, 'update', target=self.plan,
                   object=self.question, template=template)
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form, notesform):
-        self.__LOG.debug('q%s/p%s: INvalid', self.question_pk, self.object.pk)
+        self.__LOG.debug('q%s/p%s: INvalid', self.question_pk, self.plan.pk)
         self.answer.set_invalid()
         return self.render_to_response(
             self.get_context_data(form=form, notesform=notesform))

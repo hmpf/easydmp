@@ -911,7 +911,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                          .filter(questions__isnull=False)
                          .order_by('position'))
         if next_sections.exists():
-            return next_sections[0]
+            return next_sections.first()
         return None
 
     def get_all_prev_sections(self):
