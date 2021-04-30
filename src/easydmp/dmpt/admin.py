@@ -62,6 +62,15 @@ def get_canned_answers_for_user(user):
     return CannedAnswer.objects.filter(question__in=questions)
 
 
+class AdminConvenienceMixin:
+    def get_viewname(self, viewname):
+        admin = self.admin_site.name
+        app_label = self.model._meta.app_label
+        model_name = self.model._meta.model_name
+        viewname = viewname
+        return f'{admin}:{app_label}_{model_name}_{viewname}'
+
+
 class TemplateAuthMixin:
     message_cannot_delete = ('The {} cannot be deleted because it is'
                              ' in use by one or more plans.')
@@ -153,7 +162,7 @@ class TemplateImportMetadataInline(admin.TabularInline):
 
 
 @admin.register(Template)
-class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
+class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissionModelAdmin):
     list_display = ('id', 'version', 'title', 'is_locked', 'is_published', 'is_retired', 'is_imported', 'export')
     list_display_links = ('title', 'version', 'id')
     date_hierarchy = 'published'
@@ -197,16 +206,13 @@ class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
 
         # code
         request.current_app = self.admin_site.name
-        opts = self.model._meta
         if request.method == 'POST':
             template_export = request.FILES['template_export_file']
             form = TemplateImportForm(request.POST, request.FILES)
             if form.is_valid():
                 template_export_file = request.FILES['template_export_file']
                 template_export_jsonblob = template_export_file.read()
-                url_on_error = reverse('%s:%s-%s-import' % (
-                                        self.admin_site.name,
-                                        opts.app_label, opts.model_name))
+                url_on_error = reverse(self.get_viewname('import'))
                 try:
                     serialized_dict = deserialize_template_export(template_export_jsonblob)
                 except TemplateImportError as e:
@@ -243,13 +249,7 @@ class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
                         self.log_change(request, template, {'added': {}})
                     set_user_object_permissions(request.user, template, extra_permissions)
                 return HttpResponseRedirect(
-                    reverse(
-                        '%s:%s_%s_changelist' % (
-                            self.admin_site.name,
-                            opts.app_label,
-                            opts.model_name,
-                        ),
-                    )
+                    reverse(self.get_viewname('changelist'))
                 )
         else:
             form = TemplateImportForm()
@@ -260,7 +260,7 @@ class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
             'title': 'Import template',
             'adminForm': adminForm,
             'form': form,
-            'opts': opts,
+            'opts': self.model._meta,
             **self.admin_site.each_context(request),
         }
         return TemplateResponse(request, 'admin/dmpt/template/import_form.html', context)
@@ -271,7 +271,7 @@ class TemplateAdmin(TemplateAuthMixin, SetObjectPermissionModelAdmin):
         urls = super().get_urls()
         import_urls = [
             path('import/', self.admin_site.admin_view(self.import_template),
-                 name='dmpt-template-import')
+                 name='dmpt_template_import')
         ]
         return import_urls + urls
 

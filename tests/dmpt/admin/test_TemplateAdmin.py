@@ -41,7 +41,7 @@ class TestImportTemplate(DjangoTestCase):
 
     def test_import_template_should_create_template(self):
         self.client.force_login(self.superuser)
-        url = reverse('admin:dmpt-template-import')
+        url = reverse('admin:dmpt_template_import')
         response = self.client.post(url, {'template_export_file': self.template_export_file})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Template.objects.count(), 2)
