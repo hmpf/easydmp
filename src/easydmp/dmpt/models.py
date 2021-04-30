@@ -28,9 +28,10 @@ from django.utils.timezone import now as tznow
 from .errors import TemplateDesignError
 from .flow import Transition, TransitionMap, dfs_paths
 from .utils import DeletionMixin
-from .utils import RenumberMixin
 from .utils import print_url
 from .utils import render_from_string
+from .utils import RenumberMixin
+from .utils import SectionPositionUtils
 
 from easydmp.eestore.models import EEStoreCache, EEStoreMount
 from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file, render_dotsource_to_bytes
@@ -270,6 +271,8 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
 
     objects = TemplateQuerySet.as_manager()
 
+    orderable_manager = 'sections'
+
     class Meta:
         unique_together = ('version', 'title')
         permissions = (
@@ -393,6 +396,20 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
 
     # END: Template movement helpers
 
+    def ordered_sections(self) -> list:
+        "Order sections with subsections in a flat list"
+
+        result = SectionPositionUtils.ordered_template_sections(self)
+        return result
+
+    def reorder_sections(self):
+        """Renumber section positions
+
+        An order with gaps like (1, 2, 7, 12) becomes (1, 2, 3, 4)
+        Nested orders are flattened, so (1, 2, (1, 2)) becomes (1, 2, 3, 4)
+        """
+        self._renumber_positions(self.ordered_sections())
+
     def generate_canned_text(self, data: Data):
         texts = []
         for section in self.ordered_sections():
@@ -404,15 +421,6 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
                 'text': canned_text,
             })
         return texts
-
-    def ordered_sections(self) -> list:
-        "Order sections with subsections in a flat list"
-
-        sections = self.sections
-        result = []
-        for section in sections.filter(super_section=None).order_by('position'):
-            result.extend(section.ordered_sections())
-        return result
 
     def get_summary(self, data: Data, valid_section_ids: Tuple = ()) -> OrderedDict:
         summary = OrderedDict()
@@ -602,6 +610,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
     position = models.PositiveIntegerField(
         default=1,
         help_text='A specific position may only occur once per template',
+        editable=False,
     )
     introductory_text = models.TextField(blank=True)
     comment = models.TextField(blank=True)
@@ -617,6 +626,8 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
 
     objects = SectionManager()
 
+    orderable_manager = 'subsections'
+
     class Meta:
         unique_together = (
             ('template', 'title'),
@@ -628,6 +639,7 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
+            # Toggle the existence of an optional question according to self.optional
             do_section_question = BooleanQuestion.objects.filter(section=self, position=0)
             if self.optional:
                 if not do_section_question:
@@ -647,19 +659,6 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
 
     def in_use(self):
         return self.template.plans.exists()
-
-    def ordered_sections(self) -> list:
-        "Order sections with subsections in a flat list"
-
-        result = [self]
-        try:
-            sections = list(self.subsections.order_by('position'))
-        except AttributeError:
-            return result
-
-        for section in sections:
-            result.extend(section.ordered_sections())
-        return result
 
     def _make_do_section_question(self):
         """
@@ -723,6 +722,34 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
         for old, new in ca_mapping.items():
             new.transition = eb_mapping[old.transition]
             new.save()
+
+    def ordered_sections(self) -> list:
+        "Order sections with subsections in a flat list"
+
+        result = SectionPositionUtils.ordered_section_subsections(self)
+        return result
+
+    def get_order(self):
+        manager = self.template.sections
+        SectionPositionUtils.get_order(manager, pk_list, startpos)
+
+    def get_next_position(self):
+        manager = self.template.sections
+        return SectionPositionUtils.get_next_position(manager)
+
+    def set_order(self, pk_list):
+        queryset = self.template.sections.all()
+        startpos = self.get_next_position()
+        SectionPositionUtils._set_order(queryset, pk_list, startpos)
+        SectionPositionUtils._set_order(queryset, pk_list)
+
+    def reorder_sections(self):
+        """Renumber section positions
+
+        An order with gaps like (1, 2, 7, 12) becomes (1, 2, 3, 4)
+        Nested orders are flattened, so (1, 2, (1, 2)) becomes (1, 2, 3, 4)
+        """
+        self.template.reorder_sections()
 
     def renumber_positions(self):
         """Renumber question positions so that all are adajcent

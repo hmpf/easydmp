@@ -360,7 +360,10 @@ class SectionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
             'classes': ('collapse',),
         }),
     )
+    readonly_fields = ['position']
     _model_slug = 'section'
+
+    # overrides
 
     def get_limited_queryset(self, request):
         return get_sections_for_user(request.user)
@@ -372,6 +375,12 @@ class SectionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
         if db_field.name == 'super_section':
             kwargs["queryset"] = self.get_queryset(request)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            position = obj.get_next_position()
+            obj.position = position
+        super().save_model(request, obj, form, change)
 
     # display fields
 

@@ -1,6 +1,10 @@
 from django.contrib.admin.utils import NestedObjects
 from django.db import router
 from django.db import transaction
+from django.db.models import (
+    ExpressionWrapper, IntegerField, Max, Value,
+)
+from django.db.models.functions import Coalesce
 from django.template import engines
 from django.utils.encoding import force_text
 from django.utils.html import format_html, escape
@@ -34,6 +38,72 @@ def print_url(urldict):
     name = name if name else url
     format = '<a href="{}">{}</a>'
     return format_html(format, url, escape(name))
+
+
+# Reordering utility functions
+# Needed in migrations so cannot only be model methods :/
+
+
+class PositionUtils:
+
+    @classmethod
+    def get_next_position(cls, queryset):
+        "Get next unused position for queryset"
+        result = queryset.aggregate(position_max=Coalesce(
+            ExpressionWrapper(Max('position') + Value(1), output_field=IntegerField()),
+            Value(1)
+        ))
+        return result['position_max']
+
+    @classmethod
+    def _set_order(cls, qs, pk_list, start=1):
+        assert qs.count() >= len(pk_list), "More pk's than objects to change"
+        Model = qs.model
+        qs.bulk_update(
+            [Model(pk=pk, position=pos) for pos, pk in enumerate(pk_list, start)],
+            ['position']
+        )
+
+    @classmethod
+    def set_order(cls, queryset, pk_list):
+        # This assumes positions are unique. Override otherwise
+        # First: get first unusued position and reorder starting with that one
+        # This prevents triggering an IntegrityError (for duplicate positions)
+        startpos = cls.get_next_position(queryset)
+        cls._set_order(queryset, pk_list, startpos)
+        # Then: Renumber positions, starting from 1, for debugging readability
+        cls._set_order(queryset, pk_list)
+
+    @classmethod
+    def get_order(self, queryset):
+        # This assumes positions are unique. Override otherwise
+        return [obj.pk for obj in queryset.order_by('position')]
+
+
+class SectionPositionUtils(PositionUtils):
+
+    @classmethod
+    def ordered_section_subsections(cls, section):
+        result = [section]
+        try:
+            sections = list(section.subsections.order_by('position'))
+        except AttributeError:
+            return result
+
+        for section in sections:
+            result.extend(cls.ordered_section_subsections(section))
+        return result
+
+    @classmethod
+    def ordered_template_sections(cls, template):
+        sections = template.sections
+        result = []
+        for section in sections.filter(super_section=None).order_by('position'):
+            result.extend(cls.ordered_section_subsections(section))
+        return result
+
+
+# Model mixins
 
 
 class DeletionMixin:
@@ -74,13 +144,28 @@ class DeletionMixin:
 
 
 class RenumberMixin:
+    orderable_manager: str
+
+    def get_orderable_manager(self):
+        return getattr(self, self.orderable_manager)
+
+    def get_next_position(self):
+        manager = self.get_orderable_manager()
+        return PositionUtils.get_next_position(manager)
+
+    def set_order(self, pk_list):
+        manager = self.get_orderable_manager()
+        return PositionUtils.set_order(manager.all(), pk_list)
+
+    def get_order(self):
+        manager = self.get_orderable_manager()
+        return PositionUtils.get_order(manager)
 
     def _renumber_positions(self, objects):
         """Renumber positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)
 
-        <objects> must already be sorted by position.
+        Assumes <objects> are in the correct order already.
         """
-        for i, obj in enumerate(objects, 1):
-            obj.position = i
-            obj.save()
+        pk_list = [obj.pk for obj in objects]
+        self.set_order(pk_list)
     _renumber_positions.alters_data = True  # type: ignore
