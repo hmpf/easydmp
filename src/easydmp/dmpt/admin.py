@@ -31,6 +31,7 @@ from .models import Section
 from .models import ExplicitBranch
 from .models import Question
 from .models import CannedAnswer
+from .positioning import Move
 
 """
 The admin is simplified for non-superusers. Branching sections are disallowed,
@@ -69,6 +70,103 @@ class AdminConvenienceMixin:
         model_name = self.model._meta.model_name
         viewname = viewname
         return f'{admin}:{app_label}_{model_name}_{viewname}'
+
+    def get_change_url(self, pk):
+        viewname = self.get_viewname('change')
+        return reverse(viewname, args=[pk])
+
+
+class BaseOrderingInline(admin.TabularInline):
+    """
+    The following attributes must be set on subclasses:
+
+    * model: the model that is ordered
+    * fk_name: the foreign key on the model that points to the parent
+    * movement_view: the name of the view that reorders the queryset
+    * verbose_name_plural: should be something like "MODELNAME ordering", to
+      separate it from any other subclasses of InlineModelAdmin
+
+    The following methods must be set on subclasses:
+
+    * get_order: a method that calls a method on the parent to get the current
+      order of objects. It takes an instance of ``parent`` as its sole argument.
+
+    You may override:
+
+    * ordering_fieldname: the field that holds the order, by default "position"
+    * item: a method that prints a human readable summary of the object to be
+      ordered, by default ``str(obj)``
+
+    If you extend an BaseOrderingInline to work as a normal inline, you should
+    probably also override the following:
+
+    * readonly_fields: ordering_fieldname needs to be in here if it is in fields
+    * fields: must contain "movement", for the movement buttons
+    * extra
+    * can_delete
+    * show_change_link
+    * has_add_permission: in a normal BaseOrderingInline this is always False
+    """
+    ordering_fieldname: str = 'position'
+    ordering = [ordering_fieldname]
+    fields = ('movement', ordering_fieldname, 'item')
+    extra = 0
+    readonly_fields = fields
+    can_delete = False
+    show_change_link = True
+
+    def get_order(self, parent):
+        raise NotImplementedError
+
+    def item(self, obj):
+        return str(obj)
+
+    def get_parent(self, obj):
+        return getattr(obj, self.fk_name)
+
+    def _get_button_link(self, obj, movement):
+        opts = self.model._meta
+        parent = self.get_parent(obj)
+        kwargs = {'parent_pk': parent.pk, 'pk': obj.pk, 'movement': movement.value}
+        return reverse(
+            self.movement_view_pattern % (self.admin_site.name, opts.app_label),
+            kwargs=kwargs
+        )
+
+    def has_add_permission(self, request, _=None):
+        return False
+
+    @mark_safe
+    def movement(self, obj):
+        buttons = {
+            Move.UP: {'active': True, 'icon': '⭡'},
+            Move.TOP: {'active': True, 'icon': '⭱'},
+            Move.DOWN: {'active': True, 'icon': '⭣'},
+            Move.BOTTOM: {'active': True, 'icon': '⭳'},
+        }
+        parent = self.get_parent(obj)
+        order = self.get_order(parent)
+        obj_index = order.index(obj.pk)
+        # Deactivate invalid movement directions
+        if obj_index == 0:
+            buttons[Move.UP]['active'] = False
+            buttons[Move.TOP]['active'] = False
+        if obj_index == len(order) - 1:
+            buttons[Move.DOWN]['active'] = False
+            buttons[Move.BOTTOM]['active'] = False
+        # Build html, this should maybe be a template or widget
+        button_html = []
+        icon_html_template = '<span class="{button}">{icon}</span>'
+        for button, data in buttons.items():
+            icon = data['icon']
+            icon_html = icon_html_template.format(button=button, icon=icon)
+            if data['active']:
+                link = self._get_button_link(obj, button)
+                html = f'<a href="{link}" title="{button}"><button type="button" class="button move">' + icon_html + '</button></a>'
+            else:
+                html = f'<button type="button" class="button move" disabled>{icon}</button>'
+            button_html.append(html)
+        return ' '.join(button_html)
 
 
 class TemplateAuthMixin:
@@ -161,6 +259,25 @@ class TemplateImportMetadataInline(admin.TabularInline):
         return False
 
 
+class SectionOrderingInline(BaseOrderingInline):
+    model = Section
+    fk_name = 'template'
+    fields = ('movement', 'position', 'section_depth', 'item')
+    readonly_fields = fields
+    movement_view_pattern = '%s:%s-template-section-reorder'
+    verbose_name_plural = "Section ordering"
+
+    def get_order(self, parent):
+        return parent.get_section_order()
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(super_section=None)
+
+    def item(self, obj):
+        return obj.full_title()
+
+
 @admin.register(Template)
 class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissionModelAdmin):
     list_display = ('id', 'version', 'title', 'is_locked', 'is_published', 'is_retired', 'is_imported', 'export')
@@ -178,6 +295,7 @@ class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissio
         TemplateMoreInfoFilter,
     ]
     inlines = [
+        SectionOrderingInline,
         TemplateImportMetadataInline,
     ]
     actions = [
@@ -195,6 +313,23 @@ class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissio
             'classes': ('collapse',),
         }),
     )
+
+    class Media:
+        css = {
+            "all": ("/static/admin/movement.css",)
+        }
+
+    # Section reordering supermagic
+
+    def reorder_sections(self, request, parent_pk, pk, movement):
+        url = self.get_change_url(parent_pk)
+        parent = self.model.objects.get(pk=parent_pk)
+        try:
+            parent.reorder_sections(pk, movement)
+        except ValueError as e:
+            self.message_user(request, str(e), level=messages.WARNING)
+            return HttpResponseRedirect(url)
+        return HttpResponseRedirect(url)
 
     # extra buttons on changelist
 
@@ -269,11 +404,14 @@ class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissio
 
     def get_urls(self):
         urls = super().get_urls()
-        import_urls = [
+        extra_urls = [
+            path('<int:parent_pk>/section/<int:pk>/<str:movement>/',
+                 self.admin_site.admin_view(self.reorder_sections),
+                 name='dmpt-template-section-reorder'),
             path('import/', self.admin_site.admin_view(self.import_template),
                  name='dmpt_template_import')
         ]
-        return import_urls + urls
+        return extra_urls + urls
 
     # displays
 
@@ -327,8 +465,36 @@ class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissio
     private_copy.allowed_permissions = ('add',)  # type: ignore
 
 
+class SubsectionOrderingInline(BaseOrderingInline):
+    model = Section
+    fk_name = 'super_section'
+    fields = ('movement', 'position', 'section_depth', 'item')
+    readonly_fields = fields
+    movement_view_pattern = '%s:%s-section-section-reorder'
+    verbose_name_plural = "Subsection ordering"
+
+    def get_order(self, parent):
+        return parent.get_section_order()
+
+    def item(self, obj):
+        return obj.full_title()
+
+
+class QuestionOrderingInline(BaseOrderingInline):
+    model = Question
+    fk_name = 'section'
+    movement_view_pattern = '%s:%s-section-question-reorder'
+    verbose_name_plural = "Question ordering"
+
+    def get_order(self, parent):
+        return parent.get_question_order()
+
+    def item(self, obj):
+        return str(obj)
+
+
 @admin.register(Section)
-class SectionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
+class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionModelAdmin):
     list_display = (
         'template',
         'position',
@@ -339,10 +505,7 @@ class SectionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
     )
     list_display_links = ('template', 'section_depth', 'id', 'position')
     list_filter = ('branching', 'template', 'optional')
-    actions = [
-        'increment_position',
-        'decrement_position',
-    ]
+    ordering = ('template', 'position',)
     search_fields = [
         '=id',
         'title',
@@ -360,10 +523,38 @@ class SectionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
             'classes': ('collapse',),
         }),
     )
+    inlines = [SubsectionOrderingInline, QuestionOrderingInline]
     readonly_fields = ['position']
     _model_slug = 'section'
 
-    # overrides
+    class Media:
+        css = {
+            "all": ("/static/admin/movement.css",)
+        }
+
+    # Reordering supermagic
+
+    def reorder_sections(self, request, parent_pk, pk, movement):
+        url = self.get_change_url(parent_pk)
+        parent = self.model.objects.get(pk=parent_pk)
+        try:
+            parent.reorder_sections(pk, movement)
+        except ValueError as e:
+            self.message_user(request, str(e), level=messages.WARNING)
+            return HttpResponseRedirect(url)
+        return HttpResponseRedirect(url)
+
+    def reorder_questions(self, request, parent_pk, pk, movement):
+        url = self.get_change_url(parent_pk)
+        parent = self.model.objects.get(pk=parent_pk)
+        try:
+            parent.reorder_questions(pk, movement)
+        except ValueError as error:
+            self.message_user(str(error), level=messages.WARNING)
+            return HttpResponseRedirect(url)
+        return HttpResponseRedirect(url)
+
+    # Overrides
 
     def get_limited_queryset(self, request):
         return get_sections_for_user(request.user)
@@ -382,6 +573,20 @@ class SectionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
             obj.position = position
         super().save_model(request, obj, form, change)
 
+    # extra urls
+
+    def get_urls(self):
+        urls = super().get_urls()
+        extra_urls = [
+            path('<int:parent_pk>/section/<int:pk>/<str:movement>/',
+                 self.admin_site.admin_view(self.reorder_sections),
+                 name='dmpt-section-section-reorder'),
+            path('<int:parent_pk>/question/<int:pk>/<str:movement>/',
+                 self.admin_site.admin_view(self.reorder_questions),
+                 name='dmpt-section-question-reorder'),
+        ]
+        return extra_urls + urls
+
     # display fields
 
     def graph_pdf(self, obj):
@@ -390,24 +595,6 @@ class SectionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
         return format_html(html, mark_safe(pdf_url))
     graph_pdf.short_description = 'Graph'  # type: ignore
     graph_pdf.allow_tags = True  # type: ignore
-
-    # actions
-
-    def increment_position(self, request, queryset):
-        for q in queryset.order_by('-position'):
-            q.position += 1
-            q.save()
-    increment_position.short_description = 'Increment position by 1'  # type: ignore
-
-    def decrement_position(self, request, queryset):
-        qs = queryset.order_by('position')
-        if not qs.exists():
-            return
-        if qs[0].position > 1:
-            for q in qs:
-                q.position -= 1
-                q.save()
-    decrement_position.short_description = 'Decrement position by 1'  # type: ignore
 
 
 class QuestionExplicitBranchInline(admin.StackedInline):
@@ -424,7 +611,14 @@ class QuestionExplicitBranchInline(admin.StackedInline):
 class QuestionCannedAnswerInline(admin.StackedInline):
     model = CannedAnswer
     raw_id_fields = ['transition']
-    readonly_fields = ('cloned_from', 'cloned_when')
+    readonly_fields = ('position', 'cloned_from', 'cloned_when')
+    ordering = ['position']
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            position = obj.get_next_position()
+            obj.position = position
+        super().save_model(request, obj, form, change)
 
 
 class QuestionEEStoreMountInline(admin.StackedInline):
@@ -494,8 +688,18 @@ class QuestionSectionFilter(admin.SimpleListFilter):
         return queryset
 
 
+class QuestionCannedAnswerOrderingInline(BaseOrderingInline):
+    model = CannedAnswer
+    fk_name = 'question'
+    movement_view_pattern = '%s:%s-question-cannedanswer-reorder'
+    verbose_name_plural = "Canned answer ordering"
+
+    def get_order(self, parent):
+        return parent.get_canned_answer_order()
+
+
 @admin.register(Question)
-class QuestionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
+class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionModelAdmin):
     list_display = (
         'position',
         'id',
@@ -515,8 +719,6 @@ class QuestionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
     ]
     actions = [
         'toggle_on_trunk',
-        'increment_position',
-        'decrement_position',
     ]
     list_filter = [
         'on_trunk',
@@ -528,6 +730,7 @@ class QuestionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
     ]
     inlines = [
         QuestionCannedAnswerInline,
+        QuestionCannedAnswerOrderingInline,
         QuestionExplicitBranchInline,
         QuestionEEStoreMountInline,
     ]
@@ -548,6 +751,25 @@ class QuestionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
         }),
     )
     _model_slug = 'question'
+
+    class Media:
+        css = {
+            "all": ("/static/admin/movement.css",)
+        }
+
+    # Reordering supermagic
+
+    def reorder_canned_answers(self, request, parent_pk, pk, movement):
+        url = self.get_change_url(parent_pk)
+        parent = self.model.objects.get(pk=parent_pk)
+        try:
+            parent.reorder_canned_answers(pk, movement)
+        except ValueError as error:
+            self.message_user(str(error), level=messages.WARNING)
+            return HttpResponseRedirect(url)
+        return HttpResponseRedirect(url)
+
+    # overrides
 
     def get_readonly_fields(self, request, obj=None):
         readonly = ('cloned_from', 'cloned_when')
@@ -575,6 +797,17 @@ class QuestionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
             kwargs["queryset"] = sections
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+    # extra urls
+
+    def get_urls(self):
+        urls = super().get_urls()
+        extra_urls = [
+            path('<int:parent_pk>/canned-answer/<int:pk>/<str:movement>/',
+                 self.admin_site.admin_view(self.reorder_canned_answers),
+                 name='dmpt-question-cannedanswer-reorder'),
+        ]
+        return extra_urls + urls
+
     # display fields
 
     def get_mount(self, obj):
@@ -589,22 +822,6 @@ class QuestionAdmin(TemplateAuthMixin, ObjectPermissionModelAdmin):
             q.on_trunk = not q.on_trunk
             q.save()
     toggle_on_trunk.short_description = 'Toggle whether on trunk'  # type: ignore
-
-    def increment_position(self, request, queryset):
-        for q in queryset.order_by('-position'):
-            q.position += 1
-            q.save()
-    increment_position.short_description = 'Increment position by 1'  # type: ignore
-
-    def decrement_position(self, request, queryset):
-        qs = queryset.order_by('position')
-        if not qs.exists():
-            return
-        if qs[0].position > 1:
-            for q in qs:
-                q.position -= 1
-                q.save()
-    decrement_position.short_description = 'Decrement position by 1'  # type: ignore
 
 
 @admin.register(ExplicitBranch)
