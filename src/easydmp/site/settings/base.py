@@ -27,7 +27,6 @@ BASE_DIR = updir(updir(updir(SITE_DIR)))
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [

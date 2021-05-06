@@ -23,6 +23,8 @@ DATABASES = {
 }
 del DATABASE_URL
 
+DEFAULT_AUTO_FIELD = base_settings.DEFAULT_AUTO_FIELD
+
 TEMPLATES = base_settings.TEMPLATES
 
 LOGIN_URL = base_settings.LOGIN_URL
