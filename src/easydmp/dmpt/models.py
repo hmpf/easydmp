@@ -28,10 +28,12 @@ from django.utils.timezone import now as tznow
 from .errors import TemplateDesignError
 from .flow import Transition, TransitionMap, dfs_paths
 from .utils import DeletionMixin
+from .utils import PositionUtils
 from .utils import print_url
 from .utils import render_from_string
-from .utils import RenumberMixin
+from .utils import _reorder_dependent_models
 from .utils import SectionPositionUtils
+from .positioning import Move, get_new_index, flat_reorder
 
 from easydmp.eestore.models import EEStoreCache, EEStoreMount
 from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file, render_dotsource_to_bytes
@@ -244,7 +246,7 @@ class TemplateQuerySet(models.QuerySet):
         )
 
 
-class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableModel):
+class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
     title = models.CharField(max_length=255)
     abbreviation = models.CharField(max_length=8, blank=True)
     description = models.TextField(blank=True)
@@ -359,11 +361,6 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
         )
         return self.clone(title=new_title, version=self.version)
 
-    def renumber_positions(self):
-        """Renumber section positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
-        sections = self.sections.order_by('position')
-        self._renumber_positions(sections)
-
     @property
     def input_types_in_use(self):
         return sorted(set(self.questions.values_list('input_type', flat=True)))
@@ -396,19 +393,52 @@ class Template(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMod
 
     # END: Template movement helpers
 
+    # START: (re)ordering sections
+
     def ordered_sections(self) -> list:
         "Order sections with subsections in a flat list"
 
         result = SectionPositionUtils.ordered_template_sections(self)
         return result
 
-    def reorder_sections(self):
+    def ordered_section_pks(self) -> list:
+        sections = self.ordered_sections()
+        return [obj.pk for obj in sections]
+
+    def get_section_order(self):
+        "Get a list of the pk's of topmost sections, in order"
+        queryset = self.sections.filter(super_section=None)
+        return SectionPositionUtils.get_order(queryset)
+
+    def get_next_section_position(self):
+        return SectionPositionUtils.get_next_position(self.sections)
+
+    def set_section_order(self, pk_list):
+        queryset = self.sections.all()
+        SectionPositionUtils.set_order(queryset, pk_list)
+
+    def reorder_sections(self, pk, movement):
+        # Find immediate new location
+        order = self.get_section_order()
+        new_index = get_new_index(movement, order, pk)
+        # Map new location to full order
+        swap_with = order[new_index]
+        full_order = self.ordered_section_pks()
+        new_index = full_order.index(swap_with)
+        # Reorder
+        new_order = flat_reorder(full_order, pk, new_index)
+        self.set_section_order(new_order)
+        self.renumber_section_positions()
+
+    def renumber_section_positions(self):
         """Renumber section positions
 
         An order with gaps like (1, 2, 7, 12) becomes (1, 2, 3, 4)
         Nested orders are flattened, so (1, 2, (1, 2)) becomes (1, 2, 3, 4)
         """
-        self._renumber_positions(self.ordered_sections())
+        PositionUtils.renumber_positions(self.sections, self.ordered_sections())
+
+    # END: (re)ordering sections
 
     def generate_canned_text(self, data: Data):
         texts = []
@@ -583,7 +613,7 @@ class SectionManager(models.Manager):
         return self.get(template=template, super_section=super_section, position=position)
 
 
-class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableModel):
+class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
     """A section of a :model:`dmpt.Template`.
 
     **Attributes**
@@ -723,41 +753,74 @@ class Section(DeletionMixin, RenumberMixin, ModifiedTimestampModel, ClonableMode
             new.transition = eb_mapping[old.transition]
             new.save()
 
+    # START: (re)ordering sections
+
     def ordered_sections(self) -> list:
         "Order sections with subsections in a flat list"
 
         result = SectionPositionUtils.ordered_section_subsections(self)
         return result
 
-    def get_order(self):
-        manager = self.template.sections
-        SectionPositionUtils.get_order(manager, pk_list, startpos)
+    def ordered_section_pks(self) -> list:
+        sections = self.ordered_sections()
+        return [obj.pk for obj in sections]
 
-    def get_next_position(self):
-        manager = self.template.sections
-        return SectionPositionUtils.get_next_position(manager)
+    def get_section_order(self):
+        "Get a list of the pk's of topmost subsections, in order"
+        queryset = self.subsections
+        return SectionPositionUtils.get_order(queryset)
 
-    def set_order(self, pk_list):
-        queryset = self.template.sections.all()
-        startpos = self.get_next_position()
-        SectionPositionUtils._set_order(queryset, pk_list, startpos)
-        SectionPositionUtils._set_order(queryset, pk_list)
+    def get_next_section_position(self):
+        return self.template.get_next_section_position()
 
-    def reorder_sections(self):
+    def set_section_order(self, pk_list):
+        self.template.set_section_order(pk_list)
+
+    def reorder_sections(self, pk, movement):
+        # Find immediate new location
+        order = self.get_section_order()
+        new_index = get_new_index(movement, order, pk)
+        # Map new location to full order
+        full_order = self.template.ordered_section_pks()
+        swap_with = order[new_index]
+        new_index = full_order.index(swap_with)
+        # Reorder
+        new_order = flat_reorder(full_order, pk, new_index)
+        self.template.set_section_order(new_order)
+        self.template.renumber_section_positions()
+
+    def renumber_section_positions(self):
         """Renumber section positions
 
         An order with gaps like (1, 2, 7, 12) becomes (1, 2, 3, 4)
         Nested orders are flattened, so (1, 2, (1, 2)) becomes (1, 2, 3, 4)
         """
-        self.template.reorder_sections()
+        self.template.renumber_section_positions()
 
-    def renumber_positions(self):
+    # END: (re)ordering sections
+
+    # START: (re)ordering questions
+
+    def get_question_order(self):
+        "Get a list of the pk's of questions, in order"
+        return PositionUtils.get_order(self.questions)
+
+    def set_question_order(self, pk_list):
+        PositionUtils.set_order(self.questions, pk_list)
+
+    def reorder_questions(self, pk, movement):
+        _reorder_dependent_models(pk, movement, self.get_question_order,
+                                  self.set_question_order)
+
+    def renumber_question_positions(self):
         """Renumber question positions so that all are adajcent
 
         Eg. (1, 2, 7, 12) becomes (1, 2, 3, 4).
         """
         questions = self.questions.order_by('position')
-        self._renumber_positions(questions)
+        PositionUtils.renumber_positions(self.questions, questions)
+
+    # END: (re)ordering questions
 
     # START: Section movement helpers
     #
@@ -1327,7 +1390,7 @@ class QuestionManager(models.Manager):
         return self.get(section=section, position=position)
 
 
-class Question(DeletionMixin, RenumberMixin, ClonableModel):
+class Question(DeletionMixin, ClonableModel):
     """The database representation of a question
 
     Questions come in many subtypes, stored in `input_type`.
@@ -1415,11 +1478,26 @@ class Question(DeletionMixin, RenumberMixin, ClonableModel):
             self.eestore.clone(new)
         return new
 
-    def renumber_positions(self):
+    # Start: re(ordering) canned answers
+
+    def set_canned_answer_order(self, pk_list):
+        return PositionUtils.set_order(self.canned_answers, pk_list)
+
+    def get_canned_answer_order(self):
+        manager = self.canned_answers
+        return PositionUtils.get_order(manager)
+
+    def reorder_canned_answers(self, pk, movement):
+        _reorder_dependent_models(pk, movement, self.get_canned_answer_order,
+                                  self.set_canned_answer_order)
+
+    def renumber_canned_answers_positions(self):
         """Renumber canned answer positions so that eg. (1, 2, 7, 12) becomes (1, 2, 3, 4)"""
         cas = self.canned_answers.order_by('position', 'pk')
         if cas.count() > 1:
-            self._renumber_positions(cas)
+            PositionUtils.renumber_positions(self.canned_answers, cas)
+
+    # END: re(ordering) canned answers
 
     def is_valid(self):
         raise NotImplementedError

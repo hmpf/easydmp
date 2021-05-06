@@ -1,13 +1,63 @@
-from datetime import date
-from collections import OrderedDict
-
 from django import test
 
-from easydmp.dmpt.models import Template, Question
+from easydmp.dmpt.models import Question
 from easydmp.dmpt.models import ExplicitBranch
+from easydmp.dmpt.positioning import Move
 
 from tests.dmpt.factories import (TemplateFactory, SectionFactory,
                                   QuestionFactory, ReasonQuestionFactory)
+
+
+class TestOrderingSection(test.TestCase):
+
+    def setUp(self):
+        self.template = TemplateFactory()
+
+    def test_no_subsections_returns_section_in_list(self):
+        section = SectionFactory(template=self.template, position=1)
+        result = section.ordered_sections()
+        self.assertEqual(result, [section])
+        self.assertEqual(self.template.ordered_sections(), [section])
+
+    def test_subsections_returns_all_sections_in_flat_list(self):
+        top_section = SectionFactory(template=self.template, position=1)
+        subsection1 = SectionFactory(template=self.template, super_section=top_section, section_depth=2, position=5)
+        subsection2 = SectionFactory(template=self.template, super_section=top_section, section_depth=2, position=25)
+        result = top_section.ordered_sections()
+        self.assertEqual(result, [top_section, subsection1, subsection2])
+        subsubsection1 = SectionFactory(template=self.template, super_section=subsection1, section_depth=3, position=10)
+        result = top_section.ordered_sections()
+        self.assertEqual(result, [top_section, subsection1, subsubsection1, subsection2])
+        self.assertEqual(self.template.ordered_sections(), [top_section, subsection1, subsubsection1, subsection2])
+
+
+class TestReorderSections(test.TestCase):
+
+    def test_reorder_sections_from_section(self):
+        template = TemplateFactory()
+        top_section = SectionFactory(template=template, position=1)
+        subsection1 = SectionFactory(template=template, super_section=top_section, section_depth=2, position=2)
+        subsection2 = SectionFactory(template=template, super_section=top_section, section_depth=2, position=3)
+        current_order = top_section.template.ordered_section_pks()
+        top_section.reorder_sections(subsection1.pk, Move.DOWN)
+        new_order = top_section.template.ordered_section_pks()
+        self.assertNotEqual(current_order, new_order)
+        self.assertEqual(new_order, [top_section.pk, subsection2.pk, subsection1.pk])
+
+
+class TestReorderQuestions(test.TestCase):
+
+    def test_reorder_questions(self):
+        template = TemplateFactory()
+        section = SectionFactory(template=template, position=1)
+        q1 = ReasonQuestionFactory(section=section)
+        q2 = ReasonQuestionFactory(section=section)
+        q3 = ReasonQuestionFactory(section=section)
+        current_order = [obj.pk for obj in section.questions.order_by('position')]
+        section.reorder_questions(q2.pk, Move.TOP)
+        new_order = [obj.pk for obj in section.questions.order_by('position')]
+        self.assertNotEqual(current_order, new_order)
+        self.assertEqual(new_order, [q2.pk, q1.pk, q3.pk])
 
 
 class TestMiscSectionMethods(test.TestCase):
@@ -173,7 +223,7 @@ class TestPrevSectionMethods(test.TestCase):
 
     def test_get_last_answered_question_no_oblig_questions(self):
         section = SectionFactory(template=self.template, position=1)
-        q2 = QuestionFactory(section=section, on_trunk=False)
+        QuestionFactory(section=section, on_trunk=False)
         result = section.get_last_answered_question({})
         self.assertIsNone(result)
 
@@ -182,8 +232,8 @@ class TestPrevSectionMethods(test.TestCase):
         # since an "answer" is only defined for Question subclasses
         section = SectionFactory(template=self.template, position=1)
         q1 = ReasonQuestionFactory(section=section, on_trunk=True, position=1)
-        q2 = ReasonQuestionFactory(section=section, on_trunk=True, position=2)
-        q3 = ReasonQuestionFactory(section=section, on_trunk=True, position=3)
+        ReasonQuestionFactory(section=section, on_trunk=True, position=2)
+        ReasonQuestionFactory(section=section, on_trunk=True, position=3)
         answers = {
             str(q1.id): 'foo',
         }
