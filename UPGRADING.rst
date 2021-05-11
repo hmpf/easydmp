@@ -5,6 +5,13 @@ UPGRADING
 Normally, upgrading is just a matter of getting the new code and running
 ``python manage.py migrate``. Any exceptions will be listed here.
 
+1.7.0 -> 1.8.0
+==============
+
+This version removes the endpoints ``/api/v1/jwt/authorize/`` (and
+``/api/v2/jwt/authorize/``), which was meant to be used for a user to
+masquerade as another user. It never worked correctly.
+
 1.3.3 -> 1.4.0, 1.4.1
 =====================
 
