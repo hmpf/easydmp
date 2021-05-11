@@ -15,6 +15,27 @@ Planned
 Unreleased
 ----------
 
+* Drop support for Django 2.2
+
+1.8.0
+-----
+
+See UPGRADING.rst.
+
+Incompatible changes:
+
+* JWT: Due to supporting the new Django LTS (3.2) it was necessary to upgrade
+  the jwt library used by the API. However, the existing JWT library did not
+  support the new LTS, so it was necessary to switch to a newer, still
+  developed fork. This fork has a slightly different API and has its own way of
+  doing masquerading. The existing masquerading endpoint ``authorize`` has been
+  dropped.
+
+Paperwork:
+
+* Official support for Django 3.2 LTS. This will be the last minor version to
+  support Django 2.2.
+
 1.7.0
 -----
 
