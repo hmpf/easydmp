@@ -659,10 +659,10 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
     orderable_manager = 'subsections'
 
     class Meta:
-        unique_together = (
-            ('template', 'title'),
-            ('template', 'super_section', 'position'),
-        )
+        constraints = [
+             models.UniqueConstraint(fields=('template', 'title'), name='dmpt_section_unique_title_per_template'),
+             models.UniqueConstraint(fields=('template', 'position'), name='dmpt_section_unique_position_per_template'),
+        ]
 
     def __str__(self):
         return '{}: {}'.format(self.template.title, self.full_title())
