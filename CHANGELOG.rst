@@ -31,8 +31,14 @@ Incompatible changes:
   doing masquerading. The existing masquerading endpoint ``authorize`` has been
   dropped.
 
+Bugfixes:
+
+* Prevent server error on unauthorized access to pdf
+
 Paperwork:
 
+* Improve how the validity checkmark is done. Now it is CSS-styleable.
+* Log a "cannot ever happen" bug that nevertheless has happened
 * Official support for Django 3.2 LTS. This will be the last minor version to
   support Django 2.2.
 
