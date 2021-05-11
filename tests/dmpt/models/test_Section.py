@@ -74,8 +74,8 @@ class TestMiscSectionMethods(test.TestCase):
         # Because of (template, position) being UNIQUE, it is best to create
         # the topmost section first
         grandparent = SectionFactory(template=self.template, position=1)
-        parent = SectionFactory(template=self.template, super_section=grandparent, position=1)
-        section = SectionFactory(template=self.template, super_section=parent, position=1)
+        parent = SectionFactory(template=self.template, super_section=grandparent, position=2)
+        section = SectionFactory(template=self.template, super_section=parent, position=3)
         result = section.get_topmost_section()
         self.assertEqual(result, grandparent)
         result = parent.get_topmost_section()
