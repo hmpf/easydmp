@@ -117,7 +117,7 @@ psycopg2==2.8.6
     # via -r requirements/base.txt
 pycparser==2.20
     # via cffi
-pygments==2.7.2
+pygments==2.7.4
     # via sphinx
 pyjwt[crypto]==1.7.1
     # via
