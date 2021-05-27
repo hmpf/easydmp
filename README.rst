@@ -101,8 +101,11 @@ Install requirements
 ::
 
     $ cd easydmp
-    $ pip install -r requirements.txt
+    $ pip install -r requirements-frozen.txt
 
+This will get you the latest officially supported Django version and EasyDMP's
+other dependencies. For other versions, see the other ``requirements-*.txt``
+files.
 
 Setup and sync database
 -----------------------
