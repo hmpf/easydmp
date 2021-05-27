@@ -28,8 +28,20 @@ Incompatible changes:
   the jwt library used by the API. However, the existing JWT library did not
   support the new LTS, so it was necessary to switch to a newer, still
   developed fork. This fork has a slightly different API and has its own way of
-  doing masquerading. The existing masquerading endpoint ``authorize`` has been
-  dropped.
+  doing masquerading. The existing, non-documented masquerading endpoint
+  ``authorize`` has been dropped.
+
+Big new features:
+
+* Much easier to reorder sections, questions, canned answers in a template,
+  both in admin and manually. It is now no longer possible to set position
+  directly. A valid position is generated for you on first save.
+* Sections now nest properly. Nesting (via the ``section_depth`` and
+  ``super_section`` attributes) was once upon a time added in order to organize
+  the branching H2020 template. Reordering them via admin was very clunky, and
+  the uniqueness constraint that ensured each section had a unique position per
+  *template* was removed to make it easier. The admin UI for reordering has now
+  been improved enough that the constraint can be reintroduced.
 
 Bugfixes:
 
