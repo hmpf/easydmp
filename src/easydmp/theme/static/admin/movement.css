@@ -1,0 +1,14 @@
+button.move {
+    font-weight: 900;
+    font-size: 150%;
+    background-color: #417690;
+}
+
+
+button.move a:link, button.move a:visited {
+    color: white;
+}
+
+button.move:active,  button.move:hover, button.move:focus {
+    background-color: #205067;
+}
