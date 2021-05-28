@@ -8,9 +8,10 @@ from easydmp.dmpt.models import Template
 from easydmp.plan.models import Plan
 from easydmp.plan.utils import GenerateRDA10
 
+from tests import has_sufficient_json_support
 
 @tag('JSONField')
-@skipUnlessDBFeature('has_jsonb_agg')
+@skipUnlessDBFeature(*has_sufficient_json_support)
 class RdaTest(test.TestCase):
 
     def test_rda10_export(self):

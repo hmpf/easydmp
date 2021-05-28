@@ -10,6 +10,8 @@ from easydmp.dmpt.models import Template
 from easydmp.plan.models import Plan
 from easydmp.lib.stats import stats
 
+from tests import has_sufficient_json_support
+
 
 class StatsTestCase(TestCase):
 
@@ -41,7 +43,7 @@ class StatsTestCase(TestCase):
         self.assertDictEqual(result, expected)
 
     @tag('JSONField')
-    @skipUnlessDBFeature('has_jsonb_agg')
+    @skipUnlessDBFeature(*has_sufficient_json_support)
     def test_some_users_and_plans_some_stats(self):
         template = Template.objects.create(title='testtemplate')
         u1 = User.objects.create(username='testuser1', email='a@b.com')

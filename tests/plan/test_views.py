@@ -5,13 +5,14 @@ from django.test import tag, skipUnlessDBFeature
 from django.urls import reverse
 from django.utils.timezone import now as utcnow
 
+from tests import has_sufficient_json_support
 from tests.dmpt.factories import create_smallest_template
 from tests.plan.factories import PlanFactory
 from tests.auth.factories import UserFactory
 
 
 @tag('JSONField')
-@skipUnlessDBFeature('has_jsonb_agg')
+@skipUnlessDBFeature(*has_sufficient_json_support)
 class GeneratedViewTestCase(test.TestCase):
 
     def setUp(self):

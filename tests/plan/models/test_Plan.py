@@ -6,12 +6,13 @@ from django.test import tag, skipUnlessDBFeature
 from easydmp.auth.models import User
 from easydmp.dmpt.models import Template
 from easydmp.plan.models import Plan
+from tests import has_sufficient_json_support
 from tests.dmpt.factories import TemplateFactory, SectionFactory
 from tests.plan.factories import PlanFactory
 
 
 @tag('JSONField')
-@skipUnlessDBFeature('has_jsonb_agg')
+@skipUnlessDBFeature(*has_sufficient_json_support)
 class TestPlanValidation(test.TestCase):
 
     def setUp(self):

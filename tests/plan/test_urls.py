@@ -5,6 +5,7 @@ from django.urls import reverse
 from easydmp.dmpt.models import Section, Question
 from easydmp.plan.models import Plan
 
+from tests import has_sufficient_json_support
 from tests.dmpt.factories import create_smallest_template
 from tests.plan.factories import PlanFactory
 from tests.auth.factories import UserFactory
@@ -42,7 +43,7 @@ def make_kwargs(args):
 
 
 @tag('JSONField')
-@skipUnlessDBFeature('has_jsonb_agg')
+@skipUnlessDBFeature(*has_sufficient_json_support)
 class AccessTestCase(test.TestCase):
 
     def setUp(self):
