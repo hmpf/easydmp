@@ -56,7 +56,7 @@ django-guardian==2.3.0
     # via -r requirements/base.txt
 django-select2==7.6.1
     # via -r requirements/base.txt
-django==2.2.17
+django==3.2.4
     # via
     #   -r requirements/django22.txt
     #   django-appconf
