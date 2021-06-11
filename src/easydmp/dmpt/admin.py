@@ -569,7 +569,7 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
 
     def save_model(self, request, obj, form, change):
         if not change:
-            position = obj.get_next_position()
+            position = obj.get_next_section_position()
             obj.position = position
         super().save_model(request, obj, form, change)
 
