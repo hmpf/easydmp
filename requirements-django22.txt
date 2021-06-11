@@ -56,7 +56,7 @@ django-guardian==2.3.0
     # via -r requirements/base.txt
 django-select2==7.6.1
     # via -r requirements/base.txt
-django==2.2.17
+django==2.2.24
     # via
     #   -r requirements/django22.txt
     #   django-appconf
@@ -83,9 +83,7 @@ drf-spectacular==0.11.0
 factory-boy==3.2.0
     # via -r requirements/base.txt
 faker==8.3.0
-    # via
-    #   -r requirements/forced-upgrade.txt
-    #   factory-boy
+    # via factory-boy
 graphviz==0.16
     # via -r requirements/base.txt
 html5lib==1.1
@@ -108,7 +106,7 @@ oauthlib==3.1.0
     #   social-auth-core
 packaging==20.4
     # via sphinx
-pillow==8.1.2
+pillow==8.2.0
     # via
     #   cairosvg
     #   weasyprint
@@ -198,7 +196,7 @@ tinycss2==1.1.0
     #   weasyprint
 uritemplate==3.0.1
     # via drf-spectacular
-urllib3==1.26.4
+urllib3==1.26.5
     # via requests
 weasyprint==52.1
     # via -r requirements/base.txt
