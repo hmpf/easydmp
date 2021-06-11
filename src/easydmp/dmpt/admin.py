@@ -524,7 +524,7 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
         }),
     )
     inlines = [SubsectionOrderingInline, QuestionOrderingInline]
-    readonly_fields = ['position']
+    readonly_fields = ['cloned_from', 'cloned_when', 'position']
     _model_slug = 'section'
 
     class Media:
