@@ -1478,6 +1478,10 @@ class Question(DeletionMixin, ClonableModel):
             self.eestore.clone(new)
         return new
 
+
+    def get_next_question_position(self):
+        return PositionUtils.get_next_position(self.section.questions)
+
     # Start: re(ordering) canned answers
 
     def set_canned_answer_order(self, pk_list):

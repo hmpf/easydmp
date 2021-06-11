@@ -717,6 +717,7 @@ class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMo
         'question',
         'section__title',
     ]
+    readonly_fields = ['cloned_from', 'cloned_when', 'position']
     actions = [
         'toggle_on_trunk',
     ]
@@ -772,10 +773,9 @@ class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMo
     # overrides
 
     def get_readonly_fields(self, request, obj=None):
-        readonly = ('cloned_from', 'cloned_when')
-        if request.user.has_superpowers:
-            return readonly
-        return readonly + ('on_trunk',)
+        if not request.user.has_superpowers:
+            return self.readonly_fields + ['on_trunk']
+        return self.readonly_fields
 
     def get_queryset(self, request):
         return get_questions_for_user(request.user)
@@ -796,6 +796,12 @@ class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMo
             sections = get_sections_for_user(request.user)
             kwargs["queryset"] = sections
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            position = obj.get_next_question_position()
+            obj.position = position
+        super().save_model(request, obj, form, change)
 
     # extra urls
 
