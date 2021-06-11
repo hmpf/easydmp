@@ -17,6 +17,16 @@ Unreleased
 
 * Drop support for Django 2.2
 
+1.8.1
+-----
+
+Admin bugfix/QoL improvements release
+
+- Fix bug that prevented the creation of new sections
+- Made section cloning information read only
+- Made questions auto-increment position on first save, just like sections and
+  canned answers
+
 1.8.0
 -----
 
