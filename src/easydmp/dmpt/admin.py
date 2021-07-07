@@ -504,7 +504,7 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
         'graph_pdf',
     )
     list_display_links = ('template', 'section_depth', 'id', 'position')
-    list_filter = ('branching', 'template', 'optional')
+    list_filter = ('branching', 'template', 'optional', 'repeatable')
     ordering = ('template', 'position',)
     search_fields = [
         '=id',
@@ -513,7 +513,7 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
     fieldsets = (
         (None, {
             'fields': ('template', 'title', 'position', 'label', 'branching',
-                       'optional', 'introductory_text', 'comment'),
+                       'optional', 'repeatable', 'introductory_text', 'comment'),
         }),
         ('Super section', {
             'fields': ('super_section', 'section_depth'),
