@@ -173,22 +173,36 @@ class AnswerSet(ClonableModel):
     """
     A user's set of answers to a Section
     """
+    identifier = models.CharField(max_length=120, blank=True, default='1')
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='answersets')
     section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='answersets')
-    valid = models.BooleanField()
+    valid = models.BooleanField(default=False)
     last_validated = models.DateTimeField(auto_now=True)
     # The user's answers, represented as a Question PK keyed dict in JSON.
     data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
     previous_data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
 
     class Meta:
-        unique_together = ('plan', 'section')
+        constraints = [
+            models.UniqueConstraint(fields=('plan', 'section', 'identifier'),
+                                    name='plan_answerset_unique_identifiers')
+        ]
 
     def __str__(self):
-        return 'section: {}, plan: {}, valid: {}'.format(
+        return '{}, section: {}, plan: {}, valid: {}'.format(
+            self.identifier,
             self.section_id,
             self.plan_id,
             self.valid)
+
+    def save(self, *args, **kwargs):
+        if not self.identifier:
+            self.identifier = self.generate_next_identifier()
+        super().save(*args, **kwargs)
+
+    def generate_next_identifier(self):
+        count = self.__class__.objects.filter(plan=self.plan, section=self.section).count()
+        return str(count + 1)
 
     @transaction.atomic
     def update_answer(self, question_id, choice):
