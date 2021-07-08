@@ -1,13 +1,10 @@
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 
 from .client import EEStoreServer, EEStoreRepo
 
-# With postgres 9.4+, use this instead
-# from django.contrib.postgres.fields import JSONField
 
 EESTORE_API_ROOT = 'https://eestore.paas2.uninett.no/api'
 
@@ -128,7 +125,7 @@ class EEStoreCache(models.Model):
     pid = models.CharField(max_length=255, blank=True)
     remote_id = models.CharField(max_length=255)
 
-    data = JSONField(default=dict, encoder=DjangoJSONEncoder)
+    data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
     last_fetched = models.DateTimeField(blank=True, null=True)
 
     objects = EEStoreCacheManager()

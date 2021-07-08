@@ -8,7 +8,6 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
@@ -158,8 +157,8 @@ class AnswerSet(ClonableModel):
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
     # The user's answers, represented as a Question PK keyed dict in JSON.
-    data = JSONField(default=dict, encoder=DjangoJSONEncoder)
-    previous_data = JSONField(default=dict, encoder=DjangoJSONEncoder)
+    data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
+    previous_data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
 
     class Meta:
         unique_together = ('plan', 'section')
@@ -250,8 +249,8 @@ class Plan(DeletionMixin, ClonableModel):
     template = models.ForeignKey('dmpt.Template', models.CASCADE, related_name='plans')
     valid = models.BooleanField(blank=True, null=True)
     last_validated = models.DateTimeField(blank=True, null=True)
-    data = JSONField(default=dict, encoder=DjangoJSONEncoder)
-    previous_data = JSONField(default=dict, encoder=DjangoJSONEncoder)
+    data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
+    previous_data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
     visited_sections = models.ManyToManyField('dmpt.Section', related_name='+', blank=True)
     generated_html = models.TextField(blank=True)
     search_data = models.TextField(null=True, blank=True)

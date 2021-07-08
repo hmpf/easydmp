@@ -15,8 +15,8 @@ from guardian.shortcuts import get_objects_for_user, assign_perm
 
 from django.apps import apps
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 from django.forms import model_to_dict
@@ -551,7 +551,7 @@ class TemplateImportMetadata(ClonableModel):
         help_text='Copy of the original template\'s "published"'
     )
     # Avoid having an import metadata model on all template dependents
-    mappings = JSONField(default=dict)
+    mappings = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
 
     # metadata for the metadata
     imported = models.DateTimeField(default=tznow)
