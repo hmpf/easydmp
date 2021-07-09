@@ -19,6 +19,7 @@ from django.utils.timezone import now as tznow
 from easydmp.dmpt.forms import make_form
 from easydmp.dmpt.utils import DeletionMixin
 from easydmp.eventlog.utils import log_event
+from easydmp.lib import dump_obj_to_searchable_string
 from easydmp.lib.models import ClonableModel
 
 from .utils import purge_answer
@@ -43,24 +44,19 @@ class AnswerHelper():
         self.question_id = str(self.question.pk)
         self.has_notes = self.question.has_notes
         self.section = self.question.section
-        self.current_choice = plan.data.get(self.question_id, {})
+        self.current_choice = answerset.data.get(self.question_id, {})
 
-    # TODO: change to only look at AnswerSet.data when Plan.data is gone
-    def get_choice(self, datamodel):
-        choice = datamodel.data.get(self.question_id, {})
+    def get_choice(self):
+        choice = self.answerset.data.get(self.question_id, {})
         if not choice:
-            choice = datamodel.previous_data.get(self.question_id, {})
+            choice = self.answerset.previous_data.get(self.question_id, {})
         return choice
 
     def get_current_data(self):
-        return self.answerset.data if self.answerset.data else self.plan.data
+        return self.answerset.data if self.answerset.data else {}
 
-    # TODO: replace with self.get_choice when Plan no longer has data-attribute
     def get_initial(self):
-        choice = self.get_choice(self.answerset)
-        if not choice:
-            choice = self.get_choice(self.plan)
-        return choice
+        return self.get_choice()
 
     def set_answer(self):
         qv, _ = Answer.objects.get_or_create(
@@ -75,30 +71,15 @@ class AnswerHelper():
         form = make_form(self.question, **form_kwargs)
         return form
 
-    # TODO: remove when Plan no longer has data-attribute
-    def _save_in_plan(self, choice, saved_by):
-        self.plan.previous_data[self.question_id] = self.current_choice
-        self.plan.data[self.question_id] = choice
-        self.plan.save(user=saved_by, question=self.question)
-
-    # TODO: remove when Plan no longer has data-attribute
-    def _new_has_answer(self):
-        return self.answerset.data.get(self.question_id, False)
-
     def save_choice(self, choice, saved_by):
         LOG.debug('save_choice: q%s/p%s: Answer: previous %s current %s',
                   self.question_id, self.plan.pk, self.current_choice, choice)
-        if not self._new_has_answer():
-            self.answerset.update_answer(self.question_id, choice)
         if self.current_choice != choice:
             LOG.debug('save_choice: q%s/p%s: saving changes',
                       self.question_id, self.plan.pk)
             self.plan.modified_by = saved_by
             self.answerset.update_answer(self.question_id, choice)
-            # TODO: uncomment when Plan no longer has data-attribute
-            # self.plan.save(user=saved_by)
-            # TODO: remove when Plan no longer has data-attribute
-            self._save_in_plan(choice, saved_by)
+            self.plan.save(user=saved_by)
             self.set_valid()
             if choice:
                 new_condition = choice.get('choice', None)
@@ -131,42 +112,6 @@ class AnswerHelper():
                       self.question_id, self.plan.pk, self.section.pk)
             self.answerset.valid = False
             self.answerset.save()
-
-
-class PlanQuerySet(models.QuerySet):
-
-    def purge_answer(self, question_pk, purged_by=None):
-        qs = self.all()
-        for plan in qs:
-            purge_answer(plan, question_pk, purged_by)
-
-    def locked(self):
-        return self.filter(locked__isnull=False)
-
-    def unlocked(self):
-        return self.filter(locked__isnull=True)
-
-    def published(self):
-        return self.filter(published__isnull=False)
-
-    def unpublished(self):
-        return self.filter(published__isnull=True)
-
-    def valid(self):
-        return self.filter(valid=True)
-
-    def invalid(self):
-        return self.exclude(valid=True)
-
-    def editable(self, user, superpowers=True):
-        if superpowers and user.has_superpowers:
-            return self.all()
-        return self.filter(accesses__user=user, accesses__may_edit=True)
-
-    def viewable(self, user, superpowers=True):
-        if superpowers and user.has_superpowers:
-            return self.all()
-        return self.filter(accesses__user=user)
 
 
 class AnswerSet(ClonableModel):
@@ -204,18 +149,29 @@ class AnswerSet(ClonableModel):
         count = self.__class__.objects.filter(plan=self.plan, section=self.section).count()
         return str(count + 1)
 
+    @property
+    def is_empty(self):
+        return bool(self.data)
+
+    def get_answer(self, question_id):
+        return self.data.get(str(question_id), {})
+
     @transaction.atomic
     def update_answer(self, question_id, choice):
-        previous_choice = self.data.get(str(question_id), None)
+        lookup_question_id = str(question_id)
+        previous_choice = self.data.get(lookup_question_id, None)
         if previous_choice:
-            self.previous_data[question_id] = previous_choice
-        self.data[str(question_id)] = choice
+            self.previous_data[lookup_question_id] = previous_choice
+        self.data[lookup_question_id] = choice
         self.answers.update_or_create(
             question_id=int(question_id),
-            plan_id=self.plan_id,  # TODO: remove when Plan.data goes
+            plan_id=self.plan_id,  # XXX: Plan.data
             defaults={'valid': True}
         )
         self.save()
+
+    def get_choice(self, question_id):
+        return self.get_answer(question_id).get('choice', None)
 
     def get_answersets_for_section(self, section):
         try:
@@ -259,17 +215,13 @@ class AnswerSet(ClonableModel):
             ))
         Answer.objects.bulk_create(answers)
 
-    def validate(self, timestamp: datetime = None, _data: Dict = None) -> bool:
+    def validate(self, timestamp: datetime = None) -> bool:
         """
         Validates the answers and persists the validity state on this as well as on related Answers.
-        (If _data is not given, use data on this.) It is legal to pass a superset of the data required to validate
-        the questions belonging to this. For example, pass the entire data dict for a plan.
 
         Returns validity.
         """
-        # TODO We plan to stop passing _data when the data is already being stored on the AnswerSet
-        data = _data or self.data
-        valids, invalids, _ = self.section.find_validity_of_questions(data)
+        valids, invalids, _ = self.section.find_validity_of_questions(self.data)
         self.set_validity_of_answers(valids, invalids)
         self.last_validated = timestamp or tznow()
         self.valid = not invalids
@@ -318,6 +270,42 @@ class Answer(ClonableModel):
 
     class Meta:
         unique_together = ('plan', 'question')
+
+
+class PlanQuerySet(models.QuerySet):
+
+    def purge_answer(self, question_pk, purged_by=None):
+        qs = self.all()
+        for plan in qs:
+            purge_answer(plan, question_pk, purged_by)
+
+    def locked(self):
+        return self.filter(locked__isnull=False)
+
+    def unlocked(self):
+        return self.filter(locked__isnull=True)
+
+    def published(self):
+        return self.filter(published__isnull=False)
+
+    def unpublished(self):
+        return self.filter(published__isnull=True)
+
+    def valid(self):
+        return self.filter(valid=True)
+
+    def invalid(self):
+        return self.exclude(valid=True)
+
+    def editable(self, user, superpowers=True):
+        if superpowers and user.has_superpowers:
+            return self.all()
+        return self.filter(accesses__user=user, accesses__may_edit=True)
+
+    def viewable(self, user, superpowers=True):
+        if superpowers and user.has_superpowers:
+            return self.all()
+        return self.filter(accesses__user=user)
 
 
 class Plan(DeletionMixin, ClonableModel):
@@ -373,6 +361,29 @@ class Plan(DeletionMixin, ClonableModel):
     def logprint(self):
         return 'Plan #{}: {}'.format(self.pk, self.title)
 
+    @property
+    def total_answers(self):
+        return [answerset.data for answerset in self.answersets.all()]
+
+    @property
+    def num_total_answers(self):
+        if not self.answersets.exists():
+            return 0
+        return sum(len(data) for data in self.total_answers)
+
+    def question_ids_answered(self):
+        out = set()
+        for data in self.total_answers:
+            out.update(map(int, data.keys()))
+        return out
+
+    @property
+    def is_empty(self):
+        if not self.answersets.exists():
+            return True
+        return not any(bool(answerset.data)
+                       for answerset in self.answersets.all())
+
     # Access
     # TODO: Replace with django-guardian?
 
@@ -420,14 +431,15 @@ class Plan(DeletionMixin, ClonableModel):
         for pa in oldplan.accesses.all():
             pa.clone(self)
 
-    def delete_answers(self, question_ids, commit=True):
+    def delete_answers(self, question_ids, answerset, commit=True):
         deleted = set()
         for question_id in question_ids:
             str_id = str(question_id)
-            if str_id in self.data:
-                self.previous_data[str_id] = self.data.pop(str_id)
+            if str_id in answerset.data:
+                answerset.previous_data[str_id] = answerset.data.pop(str_id)
                 deleted.add(question_id)
         if commit:
+            answerset.save()
             self.quiet_save()
         LOG.debug('delete_answers: %s', deleted)
         return deleted
@@ -447,7 +459,7 @@ class Plan(DeletionMixin, ClonableModel):
             return
         super().save(**kwargs)
 
-    def hide_unreachable_answers_after(self, question):
+    def hide_unreachable_answers_after(self, question, answerset):
         """Hide any answers unreachable after this question
 
         First collects all questions as per branching after this question or
@@ -462,7 +474,7 @@ class Plan(DeletionMixin, ClonableModel):
             return False
         # Find any questions touched by branching
         if question.position == 0:  # optional section!
-            next_question = question.get_next_question(self.data, in_section=True)
+            next_question = question.get_next_question(answerset.data, in_section=True)
         else:
             next_question = question.get_next_on_trunk()
         between = tuple(question.section
@@ -480,7 +492,7 @@ class Plan(DeletionMixin, ClonableModel):
         # Collect visible questions
         show = set()
         while question != next_question:
-            question = question.get_next_question(self.data, in_section=True)
+            question = question.get_next_question(answerset.data, in_section=True)
             if question is None:
                 # No more questions/last of section
                 break
@@ -498,7 +510,7 @@ class Plan(DeletionMixin, ClonableModel):
 
     def hide_unreachable_answers(self, section_qs=None):
         """Hide all unreachable answers of a plan or section"""
-        if not self.data:
+        if self.is_empty:
             return
         all_sections = self.template.sections.filter(
             branching=True,
@@ -510,7 +522,7 @@ class Plan(DeletionMixin, ClonableModel):
         # Only work on a subset of relevant sections
         if section_qs:
             all_sections = all_sections.intersection(section_qs).distinct()
-        answer_ids = set([int(key) for key in self.data.keys()])
+        answer_ids = self.question_ids_answered()
         for section in all_sections.order_by('position'):
             questions = section.questions.filter(on_trunk=True).order_by('position')
             # Skip unanswered sections so they don't show up in the report
@@ -519,38 +531,20 @@ class Plan(DeletionMixin, ClonableModel):
             LOG.debug('hide_unreachable_answers: Section "%s" (%s)', section,
                       section.id)
             # Go, go, go
-            for question in questions:
-                changed.add(self.hide_unreachable_answers_after(question))
+            for answerset in self.answersets.filter(section=section):
+                for question in questions:
+                    changed.add(self.hide_unreachable_answers_after(question, answerset))
         if any(changed):
             # One save per plan
             self.quiet_save()
         # Report if the plan was changed
         return any(changed)
 
-    def _search_data_in(self, obj: Any) -> str:
-        """
-        A string of all text data in the JSON object, space separated
-        """
-        ret = ""
-        if not obj:
-            return ret
-        if isinstance(obj, str):
-            ret += "{} ".format(obj)
-        if isinstance(obj, int):
-            ret += "{} ".format(obj)
-        if isinstance(obj, list):
-            ret += " ".join([self._search_data_in(i) for i in obj])
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                ret += self._search_data_in(k)
-                ret += self._search_data_in(v)
-        return ret
-
     def save(self, user=None, question=None, recalculate=False, clone=False, **kwargs):
-        self.search_data = self._search_data_in(self.data)
+        self.search_data = dump_obj_to_searchable_string(self.total_answers)
         if user:
             self.modified_by = user
-        if not self.pk: # New, empty plan
+        if not self.pk:  # New, empty plan
             super().save(**kwargs)
             if not clone:
                 self.initialize_starting_answersets()
@@ -587,6 +581,7 @@ class Plan(DeletionMixin, ClonableModel):
             title=title,
             abbreviation=abbreviation,
             template=self.template,
+            # XXX: Plan.data
             data=self.data,
             previous_data=self.previous_data,
             added_by=user,
@@ -702,22 +697,25 @@ class Plan(DeletionMixin, ClonableModel):
             answerset.clone(self)
 
     def validate_data(self, recalculate: bool = True) -> bool:
-        wrong_pks = [str(pk) for pk in self.template.list_unknown_questions(self.data)]
+        qids = self.question_ids_answered()
+        wrong_pks = [str(pk) for pk in self.template.list_unknown_questions(qids)]
         if wrong_pks:
-            error = 'The self {} contains nonsense data: template has no questions for: {}'
+            error = 'The plan {} contains nonsense data: template has no questions for: {}'
             selfstr = '{} ({}), template {} ({})'.format(self, self.pk, self.template, self.pk)
             LOG.error(error.format(selfstr, ' '.join(wrong_pks)))
             return False
-        if not self.data:
-            error = 'The self {} ({}) has no data: invalid'
+        if self.is_empty:
+            error = 'The plan {} ({}) has no data: invalid'
             LOG.error(error.format(self, self.pk))
             return False
         if recalculate:
             for answerset in self.answersets.all():
-                answerset.validate(_data=self.data)
-        if self.answersets.filter(valid=True).count() == self.template.sections.count():
-            return True
-        return False
+                answerset.validate()
+        # All answersets of all sections must be valid for a plan to be valid
+        for section in self.template.sections.all():
+            if self.answersets.filter(section=section, valid=False).exists():
+                return False
+        return True
 
     def validate(self, user: User, recalculate: bool = False, commit: bool = True, timestamp: datetime = None) -> None:
         timestamp = timestamp if timestamp else tznow()
@@ -737,25 +735,12 @@ class Plan(DeletionMixin, ClonableModel):
         context = self.get_context_for_generated_text()
         return render_to_string(GENERATED_HTML_TEMPLATE, context)
 
-    def get_summary(self, data=None):
-        if not data:
-            data = self.data.copy()
-        valid_sections = (AnswerSet.objects
-                          .filter(valid=True, plan=self)
-                          )
-        valid_ids = valid_sections.values_list('section__pk', flat=True)
-        summary = self.template.get_summary(data, valid_ids)
-        return summary
-
-    def get_nested_summary(self, data=None):
+    def get_nested_summary(self):
         """Generate a summary of all question/answer pairs in all sections
 
         This assumes that each question may be answered more than once,
         basically: sections may be answered more than once.
         """
-        if not data:
-            data = self.data
-        data = deepcopy(data)  # Make absolutely sure we're working on a copy
         summary = OrderedDict()
         valid_section_ids = (AnswerSet.objects
                      .filter(valid=True, plan=self)
@@ -778,22 +763,15 @@ class Plan(DeletionMixin, ClonableModel):
             }
         return summary
 
-    def get_flat_canned_text(self, data=None):
-        if not data:
-            data = self.data.copy()
-        return self.template.generate_canned_text(data)
-
-    def get_nested_canned_text(self, data=None):
+    def get_nested_canned_text(self):
         texts = []
-        if not data:
-            data = self.data.copy()
         for section in self.template.ordered_sections():
             answersets = self.answersets.filter(section=section)
             num_answersets = answersets.count()
             meta_summary = section.get_meta_summary(num_answersets=num_answersets)
             answer_blocks = []
             for answerset in answersets.order_by('pk'):
-                canned_text = section.generate_canned_text(data)
+                canned_text = section.generate_canned_text(answerset.data)
                 answer_blocks.append({
                     'answerset': answerset.pk,
                     'text': canned_text,
@@ -805,11 +783,10 @@ class Plan(DeletionMixin, ClonableModel):
         return texts
 
     def get_context_for_generated_text(self):
-        data = self.data.copy()
         return {
-            'data': data,
-            'output': self.get_nested_summary(data),
-            'text': self.get_nested_canned_text(data),
+            'data': self.total_answers,
+            'output': self.get_nested_summary(),
+            'text': self.get_nested_canned_text(),
             'plan': self,
             'template': self.template,
         }

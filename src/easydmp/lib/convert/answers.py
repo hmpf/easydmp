@@ -49,19 +49,23 @@ def convert_plan_answers(func, question_ids, plans, verbose=True):
     func_name = func.__name__
     LOG.info('About to convert plan answers, conversion "%s"', func_name)
     for plan in plans:
-        change = False
+        plan_change = False
         if verbose: print('Processing plan {}'.format(plan.id))
-        data = plan.data.copy()
-        new_data = func(data, question_ids, verbose)
-        if data != new_data:
-            plan.data = new_data
-            change = True
-        previous_data = plan.previous_data.copy()
-        new_previous_data = func(previous_data, question_ids, verbose)
-        if previous_data != new_previous_data:
-            plan.previous_data = new_previous_data
-            change = True
-        if change:
-            plan.save()
+        for answerset in plan.answersets:
+            change = False
+            data = answerset.data.copy()
+            new_data = func(data, question_ids, verbose)
+            if data != new_data:
+                answerset.data = new_data
+                change = True
+            previous_data = answerset.previous_data.copy()
+            new_previous_data = func(previous_data, question_ids, verbose)
+            if previous_data != new_previous_data:
+                answerset.previous_data = new_previous_data
+                change = True
+            if change:
+                answerset.save()
+                plan_change = True
+        if plan_change:
             if verbose: print('Saved changes to plan {}'.format(plan.id))
             LOG.info('Successfully converted answers of plan %s', plan.id)

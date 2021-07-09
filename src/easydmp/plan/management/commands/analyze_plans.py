@@ -22,32 +22,51 @@ class Command(BaseCommand):
         plan_qs, template_qs, section_qs = select_plans(
             plan_ids, template_ids, section_ids
         )
-
         if not plan_qs:
             self.stderr.write('No plans match all criteria, aborting')
             return
+
+        self.stdout.write('To analyze:')
+        self.stdout.write(f'\t{plan_qs.count()} plans')
+        if template_qs.exists():
+            self.stdout.write(f'\t{template_qs.count()} templates')
+        if section_qs.exists():
+            self.stdout.write(f'\t{section_qs.count()} sections')
+        self.stdout.write()
 
         section_ids = [s.id for s in section_qs]
         empty = True
         for plan in plan_qs:
             report = []
+            answers = []
+            total_answers = plan.num_total_answers
             report.append('{} ({}), total answers: {}'.format(
-                plan.title, plan.id, len(plan.data.keys()))
+                plan.title, plan.id, total_answers)
             )
-            answered_in_section = None
-            answer_ids = set([int(key) for key in plan.data.keys()])
-            for section in plan.template.sections.filter(id__in=section_ids):
+            answered_in_answerset = None
+            for section in (
+                    plan.template.sections
+                    .order_by('position').filter(id__in=section_ids)
+                ):
                 question_ids = section.questions.values_list('id', flat=True)
-                answered_in_section = set(tuple(question_ids)) & answer_ids
                 report.append(
-                    '\tSection has {} questions'.format(question_ids.count())
+                    f'\tSection {section.position} ({section.id}) has '
+                    f'{question_ids.count()} questions'
                 )
-                report.append('\tAnswered in section {} ({}): {}'.format(
-                    section.position, section.id, answered_in_section
-                ))
-            if not answered_in_section:
-                continue
-            empty = False
+                for answerset in plan.answersets.filter(section=section):
+                    answer_ids = set(map(int, answerset.data.keys()))
+                    if answer_ids:
+                        assert False, answer_ids
+                    answered_in_answerset = set(tuple(question_ids)) & answer_ids
+                    report.append('\tAnswerset "{}": {}'.format(
+                        answerset.identifier,
+                        answered_in_answerset
+                    ))
+                    report.append('')
+                if not answered_in_answerset:
+                    continue
+                empty = False
+                report.append('')
             self.stdout.write('\n'.join(report))
             self.stdout.write('')
 

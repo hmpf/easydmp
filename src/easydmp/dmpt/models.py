@@ -1070,6 +1070,51 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 texts.append(answer)
         return texts
 
+    def get_data_summary(self, data: Data):
+        data = deepcopy(data)  # 1/2 Make absolutely sure we're working on a copy
+        data_summary = OrderedDict()
+        optional_section_chosen = True
+        for question in self.find_minimal_path(data):
+            value: Dict[str, Any] = {}
+            question = question.get_instance()
+            answer = data.get(str(question.pk), None)
+            if not answer or answer.get('choice', None) is None:
+                value['answer'] = None
+            else:
+                value['answer'] = question.pprint_html(answer)
+            # 2/2 Otherwise this might edit the actual data in memory!
+            # Mutable types strike back..
+            value['question'] = question
+            if answer and self.get_optional_section_question() == question and answer.get('choice',
+                                                                                             None) == 'No':
+                optional_section_chosen = False
+            if not self.get_optional_section_question() == question and not optional_section_chosen:
+                continue
+            data_summary[question.pk] = value
+        return data_summary
+
+    def get_meta_summary(self, **kwargs):
+        "Serialize a section, suitable for using in an HTML template"
+
+        has_questions = self.questions.exists()
+        may_edit_all = has_questions and not self.branching
+        summary_dict = {
+            'has_questions': has_questions,
+            'may_edit_all': may_edit_all,
+            'depth': self.section_depth,
+            'label': self.label,
+            'branching': self.branching,
+            'title': self.title,
+            'section': self,
+            'full_title': self.full_title(),
+            'pk': self.pk,
+            'first_question': self.first_question,
+            'introductory_text': mark_safe(self.introductory_text),
+            'comment': mark_safe(self.comment),
+        }
+        summary_dict.update(**kwargs)
+        return summary_dict
+
     def find_validity_of_questions(self, data: Dict) -> Tuple[Set[int], Set[int], Set[int]]:
         """
         The sets of pks of Questions for which the given answer data is valid/invalid.

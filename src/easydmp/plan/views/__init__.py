@@ -448,7 +448,7 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
             return self.forms_invalid(forms)
 
     def forms_valid(self, forms):
-        prev_data = deepcopy(self.plan.data)
+        prev_data = deepcopy(self.answerset.data)
         for question in forms:
             answer = question['answer']
             form = question['form']
@@ -464,7 +464,7 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
             else:
                 self.__LOG.debug('form_valid: q%s/p%s: condition not changed',
                                  answer.question_id, self.object.pk)
-        if prev_data != self.plan.data:
+        if prev_data != self.answerset.data:
             self.plan.modified_by = self.request.user
             self.plan.save(user=self.request.user)
         return HttpResponseRedirect(self.get_success_url())

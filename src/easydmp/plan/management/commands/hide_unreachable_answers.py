@@ -45,12 +45,11 @@ class Command(BaseCommand):
                 return
 
         for plan in plan_qs:
-            self.stdout.write('{} ({}), answers: {}'.format(plan.title, plan.id, len(plan.data.keys())))
+            total_answers = plan.num_total_answers
+            self.stdout.write(f'{plan.title} ({plan.id}), answers: {total_answers}')
             changed = plan.hide_unreachable_answers(section_qs=section_qs)
             if not changed:
-                self.stdout.write('{} ({}) not touched'.format(
-                                  plan.title, plan.id))
+                self.stdout.write(f'{plan.title} ({plan.id}) not touched')
             else:
-                self.stdout.write('{} ({}) CHANGED'.format(
-                                  plan.title, plan.id))
+                self.stdout.write(f'{plan.title} ({plan.id}) CHANGED')
             self.stdout.write('')
