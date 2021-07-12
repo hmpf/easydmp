@@ -169,10 +169,25 @@ class AnswerSet(ClonableModel):
             self.plan_id,
             self.valid)
 
+    @transaction.atomic
     def clone(self, plan):
         new = self.__class__(plan=plan, section=self.section, valid=self.valid,
                              last_validated=self.last_validated)
         new.set_cloned_from(self)
+        new.save()
+        # clone answers
+        answermapping = {}
+        for answer in self.answers.all():
+            new_answer = answer.clone(plan=new.plan, answerset=new)
+            answermapping[str(answer.pk)] = str(new_answer.pk)
+        # clone data
+        if self.data:
+            for key, value in self.data.items():
+                new.data[answermapping[key]] = value
+        # clone previous_data
+        if self.previous_data:
+            for key, value in self.previous_data.items():
+                new.previous_data[answermapping[key]] = value
         new.save()
         return new
 
@@ -220,10 +235,14 @@ class Answer(ClonableModel):
     valid = models.BooleanField()
     last_validated = models.DateTimeField(auto_now=True)
 
-    def clone(self, plan):
-        new = self.__class__(plan=plan, question=self.question,
-                             valid=self.valid,
-                             last_validated=self.last_validated)
+    def clone(self, plan, answerset):
+        new = self.__class__(
+             plan=plan,  # XXX: Plan.data
+             question=self.question,
+             answerset=answerset,
+             valid=self.valid,
+             last_validated=self.last_validated,
+        )
         new.set_cloned_from(self)
         new.save()
         return new
