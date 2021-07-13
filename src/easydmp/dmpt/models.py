@@ -504,7 +504,7 @@ class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         valids = set(self.sections.filter(questions__optional=True).values_list('pk', flat=True))
         if not data:
             invalids = set(self.sections.values_list('pk', flat=True))
-            return (valids, invalids)
+            return (valids, invalids - valids)
         invalids = set()
         for section in self.sections.all():
             if section.validate_data(data):
@@ -1059,15 +1059,16 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 texts.append(answer)
         return texts
 
-    def find_validity_of_questions(self, data: Dict) -> Tuple[Set[int], Set[int]]:
+    def find_validity_of_questions(self, data: Dict) -> Tuple[Set[int], Set[int], Set[int]]:
         """
         The sets of pks of Questions for which the given answer data is valid/invalid.
         """
+        hidden = set()
         questions = self.questions.all()
         valids = set(questions.filter(optional=True).values_list('pk', flat=True))
         if not data:
             invalids = questions.filter(optional=False)
-            return (valids, set(invalids.values_list('pk', flat=True)))
+            return (valids, set(invalids.values_list('pk', flat=True)), hidden)
         invalids = set()
         for question in questions:
             question = question.get_instance()
@@ -1081,7 +1082,11 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 valids.add(question.pk)
             else:
                 invalids.add(question.pk)
-        return (valids, invalids)
+        # Ignore answers in hidden branches
+        if self.branching and self.is_valid_path(map(int, data.keys())):
+            hidden = invalids
+            invalids = set()
+        return (valids, invalids, hidden)
 
     def validate_data(self, data):
         if not data:
@@ -1091,12 +1096,9 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         # Toggle question == 'No' makes the section valid
         if self.is_skipped(data):
             return True
-        valids, invalids = self.find_validity_of_questions(data)
+        valids, invalids, _ = self.find_validity_of_questions(data)
         if not invalids:
             return True
-        for path in self.find_all_paths():
-            if valids == set(path):
-                return True
         return False
 
     def find_minimal_path(self, data: Data=None):
@@ -1119,6 +1121,12 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 path = path[:-1]
             paths.append(tuple(path))
         return paths
+
+    def is_valid_path(self, path) -> bool:
+        paths = self.find_all_paths()
+        if tuple(path) in paths:
+            return True
+        return False
 
     def generate_transition_map(self, pk=True, start=None, end=None):
         assert isinstance(start, (type(None), int, Question))

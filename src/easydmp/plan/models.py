@@ -201,7 +201,7 @@ class AnswerSet(ClonableModel):
         """
         # TODO We plan to stop passing _data when the data is already being stored on the AnswerSet
         data = _data or self.data
-        valids, invalids = self.section.find_validity_of_questions(data)
+        valids, invalids, _ = self.section.find_validity_of_questions(data)
         self.set_validity_of_answers(valids, invalids)
         self.last_validated = timestamp or tznow()
         self.valid = not invalids
@@ -218,7 +218,8 @@ class AnswerSet(ClonableModel):
             elif answer.question.pk in invalids:
                 answer.valid = False
             else:
-                raise ValueError('No question for answer {} in validation'.format(answer.pk))
+                # answers hidden by a branch, so validity is irrelevant
+                continue
             answer.save()
 
 

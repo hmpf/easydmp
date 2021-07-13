@@ -101,8 +101,8 @@ class TestAnswerSetValidation(test.TestCase):
         q_bogus.save()
         a_bogus = Answer(answerset=as1, question=q_bogus, plan=self.plan, valid=False)
         a_bogus.save()
-        with self.assertRaisesRegex(ValueError, 'No question for answer .* in validation'):
-            as1.validate()
+        # No answer exists for q_bogus
+        self.assertFalse(as1.validate())
 
     def test_validate_answerset_data_superset(self):
         as1 = AnswerSet(plan=self.plan, section=self.section, valid=False, data={
