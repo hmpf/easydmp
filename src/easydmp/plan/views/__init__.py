@@ -708,7 +708,7 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
             if self.question.branching_possible:
                 self.__LOG.debug('form_valid: q%s/p%s: checking for unreachable answers',
                                  self.question_pk, self.plan.pk)
-                changed = self.plan.hide_unreachable_answers_after(self.question)
+                changed = self.answerset.hide_unreachable_answers_after(self.question)
                 if changed:
                     self.plan.quiet_save()
         else:

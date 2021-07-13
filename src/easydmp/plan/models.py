@@ -181,6 +181,67 @@ class AnswerSet(ClonableModel):
             answersets = self.__class__.objects.filter(plan=self.plan, section=section)
         return answersets
 
+    def delete_answers(self, question_ids, commit=True):
+        deleted = set()
+        for question_id in question_ids:
+            str_id = str(question_id)
+            if str_id in self.data:
+                self.previous_data[str_id] = self.data.pop(str_id)
+                deleted.add(question_id)
+        if commit:
+            self.save()
+        LOG.debug('delete_answers: %s', deleted)
+        return deleted
+
+    def hide_unreachable_answers_after(self, question):
+        """Hide any answers unreachable after this question
+
+        First collects all questions as per branching after this question or
+        until either the next on_trunk question or the final question in the
+        section. Then calculates all visible questions by walking forward.
+        Finally hides the invisible questions (all minus visible).
+
+        Returns whether anything was changed.
+        """
+        question = question.get_instance()
+        if not question.branching_possible:
+            return False
+        # Find any questions touched by branching
+        if question.position == 0:  # optional section!
+            next_question = question.get_next_question(self.data, in_section=True)
+        else:
+            next_question = question.get_next_on_trunk()
+        between = tuple(question.section
+                   .questions_between(question, next_question)
+                   .values_list('id', flat=True))
+        if not between:
+            # Adjacent obligatories, no branch
+            return False
+        LOG.debug(
+            'hide_unreachable_answers_after: between "%s" and %s: %s',
+            question,
+            '"{}"'.format(next_question) if next_question else 'end',
+            between
+        )
+        # Collect visible questions
+        show = set()
+        while question != next_question:
+            question = question.get_next_question(self.data, in_section=True)
+            if question is None:
+                # No more questions/last of section
+                break
+            if question.on_trunk:
+                # Found next on_trunk question
+                break
+            show.add(question.id)
+        # Hide invisible questions
+        delete = set(between) - show
+        hidden = self.delete_answers(delete)
+        LOG.info('hide_unreachable_answers_after: Hide %s, show %s',
+                 hidden or None, show or None)
+        # Report whether a save is necessary
+        return bool(hidden) or bool(show)
+
     @transaction.atomic
     def clone(self, plan):
         new = self.__class__(plan=plan, section=self.section, valid=self.valid,
@@ -431,19 +492,6 @@ class Plan(DeletionMixin, ClonableModel):
         for pa in oldplan.accesses.all():
             pa.clone(self)
 
-    def delete_answers(self, question_ids, answerset, commit=True):
-        deleted = set()
-        for question_id in question_ids:
-            str_id = str(question_id)
-            if str_id in answerset.data:
-                answerset.previous_data[str_id] = answerset.data.pop(str_id)
-                deleted.add(question_id)
-        if commit:
-            answerset.save()
-            self.quiet_save()
-        LOG.debug('delete_answers: %s', deleted)
-        return deleted
-
     def quiet_save(self, **kwargs):
         """Save without logging
 
@@ -458,55 +506,6 @@ class Plan(DeletionMixin, ClonableModel):
             # Not for first save
             return
         super().save(**kwargs)
-
-    def hide_unreachable_answers_after(self, question, answerset):
-        """Hide any answers unreachable after this question
-
-        First collects all questions as per branching after this question or
-        until either the next on_trunk question or the final question in the
-        section. Then calculates all visible questions by walking forward.
-        Finally hides the invisible questions (all minus visible).
-
-        Returns whether anything was changed.
-        """
-        question = question.get_instance()
-        if not question.branching_possible:
-            return False
-        # Find any questions touched by branching
-        if question.position == 0:  # optional section!
-            next_question = question.get_next_question(answerset.data, in_section=True)
-        else:
-            next_question = question.get_next_on_trunk()
-        between = tuple(question.section
-                   .questions_between(question, next_question)
-                   .values_list('id', flat=True))
-        if not between:
-            # Adjacent obligatories, no branch
-            return False
-        LOG.debug(
-            'hide_unreachable_answers_after: between "%s" and %s: %s',
-            question,
-            '"{}"'.format(next_question) if next_question else 'end',
-            between
-        )
-        # Collect visible questions
-        show = set()
-        while question != next_question:
-            question = question.get_next_question(answerset.data, in_section=True)
-            if question is None:
-                # No more questions/last of section
-                break
-            if question.on_trunk:
-                # Found next on_trunk question
-                break
-            show.add(question.id)
-        # Hide invisible questions
-        delete = set(between) - show
-        hidden = self.delete_answers(delete, commit=False)
-        LOG.info('hide_unreachable_answers_after: Hide %s, show %s',
-                 hidden or None, show or None)
-        # Report whether a save is necessary
-        return bool(hidden) or bool(show)
 
     def hide_unreachable_answers(self, section_qs=None):
         """Hide all unreachable answers of a plan or section"""
@@ -533,10 +532,7 @@ class Plan(DeletionMixin, ClonableModel):
             # Go, go, go
             for answerset in self.answersets.filter(section=section):
                 for question in questions:
-                    changed.add(self.hide_unreachable_answers_after(question, answerset))
-        if any(changed):
-            # One save per plan
-            self.quiet_save()
+                    changed.add(self.answerset.hide_unreachable_answers_after(question))
         # Report if the plan was changed
         return any(changed)
 
