@@ -36,7 +36,7 @@
                 {% else %}
                 <div>
                 {% endif %}
-                  {% if sectiondata.data and not sectiondata.section.section.branching %}
+                  {% if sectiondata.section.may_edit_all %}
                   <a href="{% url 'answer_linear_section' section=sectiondata.section.pk plan=object.id %}">Edit all</a>
                   {% endif %}
                   {% if sectiondata.section.introductory_text %}
