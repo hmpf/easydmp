@@ -232,6 +232,9 @@ def create_template_export_obj(template):
 
 class TemplateQuerySet(models.QuerySet):
 
+    def is_not_empty(self):
+        return self.filter(sections__questions__isnull=False).distinct()
+
     def publicly_available(self):
         return self.filter(published__isnull=False, retired__isnull=True)
 
@@ -297,6 +300,10 @@ class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         if self.published:
             self.locked = self.published
         super().save(*args, **kwargs)
+
+    @property
+    def is_empty(self):
+        return not self.questions.exists()
 
     @property
     def title_with_version(self):

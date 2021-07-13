@@ -78,7 +78,8 @@ class ChooseTemplateForNewPlanView(ListView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        return super().get_queryset().has_access(self.request.user)
+        non_empty_templates = super().get_queryset().is_not_empty()
+        return non_empty_templates.has_access(self.request.user)
 
 
 class PlanAccessViewMixin:
@@ -116,10 +117,15 @@ class StartPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
     form_class = StartPlanForm
 
     def get_template(self):
+        tid = self.kwargs.get('template_id')
         try:
-            return Template.objects.get(id=self.kwargs.get('template_id'))
+            template = Template.objects.get(id=tid)
         except Template.DoesNotExist:
             raise Http404("Template not found")
+        if template.is_empty:
+            LOG.warn('Accessing an empty template: %i', tid)
+            raise Http404("Template not found")
+        return template
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
