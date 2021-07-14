@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from copy import deepcopy
+from datetime import date
 import os
 from pathlib import Path
 from textwrap import fill
@@ -24,6 +25,8 @@ from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.utils.timezone import now as tznow
+
+from easydmp.constants import NotSet
 
 from .errors import TemplateDesignError
 from .flow import Transition, TransitionMap, dfs_paths
@@ -76,6 +79,7 @@ CONDITION_FIELD_LENGTH = 255
 AnswerNote = Text
 AnswerChoice = Any
 Data = MutableMapping[str, dict]
+
 
 class AnswerStruct(TypedDict):
     choice: Any
@@ -1290,11 +1294,9 @@ class SimpleFramingTextMixin:
         choice = str(choice)
         return self.frame_canned_answer(choice, frame)  # type: ignore
 
-    def validate_choice(self, data):
-        choice = data.get('choice', None)
-        if choice or self.optional:
-            return True
-        return False
+
+class PrimitiveTypeMixin(NoCheckMixin, SimpleFramingTextMixin):
+    pass
 
 
 class ExplicitBranchQuerySet(models.QuerySet):
@@ -1514,6 +1516,13 @@ class Question(DeletionMixin, ClonableModel):
     # END: re(ordering) canned answers
 
     def is_valid(self):
+        """Check that the question has been created properly
+
+        That is: if it needs data in extra tables beyond Question, or
+        information external to the system, in order to validate an answer.
+
+        For any primitive type (str, int, dates), this is a noop.
+        """
         raise NotImplementedError
 
     def legend(self):
@@ -1566,7 +1575,8 @@ class Question(DeletionMixin, ClonableModel):
         """
         pass
 
-    def validate_choice(self, data: Data):
+    def validate_choice(self, data: Data) -> bool:
+        "Validate the input data as dependent on the input type"
         raise NotImplementedError
 
     def get_optional_canned_answer(self):
@@ -1909,7 +1919,7 @@ class Question(DeletionMixin, ClonableModel):
         return mark_safe(result)
 
 
-class ChoiceValidationMixin():
+class ChoiceValidationMixin:
 
     def validate_choice(self, data):
         choice = data.get('choice', None)
@@ -1920,7 +1930,16 @@ class ChoiceValidationMixin():
         return False
 
 
-class NotListedMixin():
+class IsSetValidationMixin:
+
+    def validate_choice(self, data):
+        choice = data.get('choice', NotSet)
+        if choice or self.optional:
+            return True
+        return False
+
+
+class NotListedMixin:
 
     def _serialize_condition(self, answer):
         choice = answer.get('choice', {})
@@ -2088,7 +2107,7 @@ class DateRangeQuestion(NoCheckMixin, Question):
         return False
 
 
-class ReasonQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
+class ReasonQuestion(IsSetValidationMixin, PrimitiveTypeMixin, Question):
     "A non-branch-capable question answerable with plaintext"
     has_notes = False
 
@@ -2100,7 +2119,7 @@ class ReasonQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
         super().save(*args, **kwargs)
 
 
-class ShortFreetextQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
+class ShortFreetextQuestion(IsSetValidationMixin, PrimitiveTypeMixin, Question):
     "A non-branch-capable question answerable with plaintext"
     has_notes = False
 
@@ -2112,7 +2131,7 @@ class ShortFreetextQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
         super().save(*args, **kwargs)
 
 
-class PositiveIntegerQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
+class PositiveIntegerQuestion(PrimitiveTypeMixin, Question):
     "A non-branch-capable question answerable with a positive integer"
 
     class Meta:
@@ -2122,8 +2141,18 @@ class PositiveIntegerQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
         self.input_type = 'positiveinteger'
         super().save(*args, **kwargs)
 
+    def validate_choice(self, data: Data) -> bool:
+        answer = data.get('choice', NotSet)
+        if self.optional and answer is NotSet:
+            return True
+        try:
+            value = int(answer)
+        except (ValueError, TypeError):
+            return False
+        return value >= 0
 
-class DateQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
+
+class DateQuestion(PrimitiveTypeMixin, Question):
     """A non-branch-capable question answerable with an iso date
 
     Stored format: "YYYY-mm-dd"
@@ -2135,6 +2164,16 @@ class DateQuestion(NoCheckMixin, SimpleFramingTextMixin, Question):
     def save(self, *args, **kwargs):
         self.input_type = 'date'
         super().save(*args, **kwargs)
+
+    def validate_choice(self, data: Data) -> bool:
+        answer = data.get('choice', NotSet)
+        if self.optional and answer is NotSet:
+            return True
+        try:
+            value = date.fromisoformat(answer)
+        except ValueError:
+            return False
+        return True
 
 
 class EEStoreMixin:

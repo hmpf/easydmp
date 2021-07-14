@@ -73,8 +73,7 @@ class TestAnswerSetValidation(test.TestCase):
         as1.validate()
         self.assertFalse(Answer.objects.get(pk=a1.pk).valid)
         self.assertFalse(Answer.objects.get(pk=a2.pk).valid)
-        # TODO Hanne how is this valid answer for a PositiveIntegerQuestion:
-        self.assertTrue(Answer.objects.get(pk=a3.pk).valid)
+        self.assertFalse(Answer.objects.get(pk=a3.pk).valid)
         self.assertFalse(as1.valid)
 
     def test_validate_answerset_data_subset(self):
