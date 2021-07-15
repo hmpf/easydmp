@@ -15,6 +15,44 @@ Planned
 Unreleased
 ----------
 
+1.9.0
+-----
+
+This release has very little that has visibly changed for the end users but
+there are some enormous incompatible changes in the database. DO NOT FORGET TO
+MIGRATE and take a backup before you do.
+
+The migrations are numerous and heavy. They have been optimized for speed, but
+they might take a while.
+
+This release is the biggest, scariest, step in supporting repeatable sections,
+that means that a section can be answered more than once.
+
+Incompatible changes:
+
+* Stop storing answers on Plan.data/Plan.previous_data, store them on the
+  AnswerSet instead. The fields still exist but will be dropped in a future
+  release.
+
+Big new features:
+
+* Move answers to AnswerSets, with all the needed reshuffling of validation
+  logic, storage logic and traversal logic that implies.
+
+Small new features:
+
+* Allow setting a section as "repeatable" in the admin. This is for testing and
+  does not effect anything yet.
+* Hide the "Edit all"-link where it is pointless
+
+Bugfixes:
+
+* Validation for branching sections works better
+* AnswerSets are now cloned correctly
+
+Paperwork:
+
+* Switch to Django's non-postgres specific JSONField-implementation
 * Drop support for Django 2.2
 
 1.8.1
