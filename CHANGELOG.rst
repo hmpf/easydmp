@@ -15,6 +15,11 @@ Planned
 Unreleased
 ----------
 
+1.9.1
+-----
+
+Obligatory big release "oops"
+
 1.9.0
 -----
 
