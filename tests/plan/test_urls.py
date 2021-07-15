@@ -3,7 +3,7 @@ from django.test import tag, skipUnlessDBFeature
 from django.urls import reverse
 
 from easydmp.dmpt.models import Section, Question
-from easydmp.plan.models import Plan
+from easydmp.plan.models import Plan, AnswerSet
 
 from tests import has_sufficient_json_support
 from tests.dmpt.factories import create_smallest_template
@@ -18,7 +18,7 @@ URLS = {
 #     'leave_plan': {'public': False, 'kwargs': ('access',)},
     'first_question': {'public': False, 'kwargs': ('plan',)},
     'lock_plan': {'public': False, 'kwargs': ('plan',)},
-    'new_question': {'public': False, 'kwargs': ('plan', 'question',)},
+    'answer_question': {'public': False, 'kwargs': ('plan', 'question', 'answerset')},
     'plan_delete': {'public': False, 'kwargs': ('plan',)},
     'plan_detail': {'public': False, 'kwargs': ('plan',)},
     'plan_saveas': {'public': False, 'kwargs': ('plan',)},
@@ -39,6 +39,8 @@ def make_kwargs(args):
         kwargs['question'] = Question.objects.get().pk
     if 'section' in args:
         kwargs['section'] = Section.objects.get().pk
+    if 'answerset' in args:
+        kwargs['answerset'] = AnswerSet.objects.get().pk
     return kwargs
 
 

@@ -1,18 +1,19 @@
 from django.contrib.auth import get_user_model
 
 
-def purge_answer(plan, question_pk, purged_by=None):
-    "Delete and return the answer for the specified plan and question id"
+def purge_answer(answerset, question_pk, purged_by=None):
+    "Delete and return the answer for the specified answerset and question id"
 
-    data = plan.data
+    data = answerset.data
     data.pop(question_pk, None)
-    prevdata = plan.previous_data
+    prevdata = answerset.previous_data
     prevdata.pop(question_pk, None)
-    plan.data = data
-    plan.previous_data = prevdata
+    answerset.data = data
+    answerset.previous_data = prevdata
+    answerset.save()
     if purged_by:
-        plan.modified_by = purged_by
-    plan.save(user=purged_by)
+        answerset.plan.modified_by = purged_by
+    answerset.plan.save(user=purged_by)
     return {'data': data, 'previous_data': prevdata}
 
 
@@ -48,7 +49,7 @@ def select_plans(plan_ids=(), template_ids=(), section_ids=()):
     plan_qs = Plan.objects.exclude(data={})
     template_qs = Template.objects.all()
     if template_ids:
-        template_qs = Template.objects.filter(template_id__in=template_ids)
+        template_qs = Template.objects.filter(id__in=template_ids)
     section_qs = Section.objects.all()
     if section_ids:
         section_qs = Section.objects.filter(id__in=section_ids)
@@ -164,20 +165,21 @@ class GenerateRDA10:
         return {}
 
     def get_cost(self):
-        if not self.plan.data:
+        if self.plan.is_empty:
             return {}
-        cost_question_ids = (self.plan.template.questions
-                            .filter(input_type='multirdacostonetext')
-                            .values_list('id', flat=True))
+        cost_question_pairs = (self.plan.template.questions
+                               .filter(input_type='multirdacostonetext')
+                               .values_list('id', 'section'))
         cost_list = []
-        for qid in cost_question_ids:
+        for qid, section in cost_question_pairs:
             qid = str(qid)
-            # XXX: get the choice in a better way
-            costs = self.plan.data.get(str(qid), {}).get('choice', [])
-            # Hide unset fields
-            for cost in costs:
-                filtered_cost = {k: v for k, v in cost.items() if v}
-                cost_list.append(filtered_cost)
+            answersets = self.plan.answersets.filter(section=section)
+            for answerset in answersets:
+                costs = answerset.get_choice(qid) or []
+                # Hide unset fields
+                for cost in costs:
+                    filtered_cost = {k: v for k, v in cost.items() if v}
+                    cost_list.append(filtered_cost)
         return {'cost': cost_list}
 
 

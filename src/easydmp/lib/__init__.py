@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.utils.timezone import now as utcnow
 
 default_app_config = 'easydmp.lib.apps.EasyDMPSiteConfig'
@@ -26,3 +28,28 @@ def utc_epoch(utc_datetime=None):
 
 def get_model_name(model):
     return model._meta.model_name
+
+
+# Why not just do str(obj)?
+# Because this strips syntactic {[]} but retains them anywhere else
+def dump_obj_to_searchable_string(obj):
+    '''Dump anything readable in obj to a string
+
+    This makes it possible to use string lookups and regular expessions on the
+    obj.'''
+    if not obj:
+        return ''
+    if isinstance(obj, str):
+        return obj
+    if isinstance(obj, datetime):
+        # Support ISO8601 both with and without T
+        return str(datetime) + ' ' + datetime.isoformat()
+    if isinstance(obj, dict):
+        out = []
+        for k, v in obj.items():
+            out.append(dump_obj_to_searchable_string(k))
+            out.append(dump_obj_to_searchable_string(v))
+        return ' '.join(out)
+    if isinstance(obj, (list, tuple)):
+        return ' '.join([dump_obj_to_searchable_string(i) for i in obj])
+    return str(obj)

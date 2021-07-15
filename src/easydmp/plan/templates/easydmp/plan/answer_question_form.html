@@ -13,11 +13,11 @@
 
     <div id="editplan_header" class="top-wrap">
         <div>
-            <h2>{{ object.template }}: {{ object|truncatechars:40 }}</h2>
+            <h2>{{ plan.template }}: {{ plan|truncatechars:40 }}</h2>
         </div>
 
       <div class="btn-group">
-        <div class="wrap"><span class='caret'></span><a class="summary-link" href="{% url 'plan_detail' plan=object.pk %}">Go to plan summary</a></div>
+        <div class="wrap"><span class='caret'></span><a class="summary-link" href="{% url 'plan_detail' plan=plan.pk %}">Go to plan summary</a></div>
       </div>
       <div class="col-lg-12 savetxt">Your answers are saved every time you press "prev" or "next"</div>
     </div>
@@ -43,7 +43,7 @@
       <div class="superuser path">
         <h4>{% for q in path %}
           <span>
-            {% if question_pk != q.pk %}<a href="{% url 'new_question' plan=object.pk question=q.pk %}">{{ q }}</a>
+            {% if question_pk != q.pk %}<a href="{% url 'answer_question' plan=plan.pk question=q.pk answerset=answerset.pk %}">{{ q }}</a>
             {% else %}
             {% if question_pk == q.pk %}<strong class="current">{{ q }}</strong>{% else %}{{ q }}{% endif %}
             {% endif %}
