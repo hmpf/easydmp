@@ -1115,16 +1115,28 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         summary_dict.update(**kwargs)
         return summary_dict
 
+    def generate_complete_path_from_data(self, data: Dict) -> Tuple[int]:
+        question = self.first_question
+        if not question:
+            return ()
+        path = []
+        while question:
+            qid = str(question.pk)
+            if not qid in data:
+                break
+            path.append(qid)
+            question = question.get_next_question(data, in_section=True)
+        return path
+
     def find_validity_of_questions(self, data: Dict) -> Tuple[Set[int], Set[int], Set[int]]:
         """
         The sets of pks of Questions for which the given answer data is valid/invalid.
         """
-        hidden = set()
         questions = self.questions.all()
         valids = set(questions.filter(optional=True).values_list('pk', flat=True))
         if not data:
             invalids = questions.filter(optional=False)
-            return (valids, set(invalids.values_list('pk', flat=True)), hidden)
+            return (valids, set(invalids.values_list('pk', flat=True)))
         invalids = set()
         for question in questions:
             question = question.get_instance()
@@ -1138,11 +1150,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 valids.add(question.pk)
             else:
                 invalids.add(question.pk)
-        # Ignore answers in hidden branches
-        if self.branching and self.is_valid_path(map(int, data.keys())):
-            hidden = invalids
-            invalids = set()
-        return (valids, invalids, hidden)
+        return (valids, invalids)
 
     def validate_data(self, data):
         if not data:
@@ -1152,8 +1160,25 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         # Toggle question == 'No' makes the section valid
         if self.is_skipped(data):
             return True
-        valids, invalids, _ = self.find_validity_of_questions(data)
-        if not invalids:
+        valids, invalids = self.find_validity_of_questions(data)
+        if not self.branching:
+            if invalids:
+                return False
+            return True
+        path = self.generate_complete_path_from_data(data)
+        return self.is_valid_and_complete_path(path, valids, invalids)
+
+    def is_valid_and_complete_path(self, path, valids, invalids) -> bool:
+        if not self.is_complete_path(path):
+            return False
+        path = set(path)
+        if valids >= path and not invalids & path:
+            return True
+        return False
+
+    def is_complete_path(self, path) -> bool:
+        paths = self.find_all_paths()
+        if tuple(path) in paths:
             return True
         return False
 
@@ -1177,12 +1202,6 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 path = path[:-1]
             paths.append(tuple(path))
         return paths
-
-    def is_valid_path(self, path) -> bool:
-        paths = self.find_all_paths()
-        if tuple(path) in paths:
-            return True
-        return False
 
     def generate_transition_map(self, pk=True, start=None, end=None):
         assert isinstance(start, (type(None), int, Question))

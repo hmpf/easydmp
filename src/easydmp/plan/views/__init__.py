@@ -708,9 +708,8 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
             if self.question.branching_possible:
                 self.__LOG.debug('form_valid: q%s/p%s: checking for unreachable answers',
                                  self.question_pk, self.plan.pk)
-                changed = self.answerset.hide_unreachable_answers_after(self.question)
-                if changed:
-                    self.plan.quiet_save()
+                self.answerset.hide_unreachable_answers_after(self.question)
+                self.answerset.validate()
         else:
             self.__LOG.debug('form_valid: q%s/p%s: condition not changed', self.question.pk, self.plan.pk)
         template = '{timestamp} {actor} updated {action_object} of {target}'
@@ -780,6 +779,7 @@ class PlanDetailView(PlanAccessViewMixin, DetailView):
 
     def get(self, request, *args, **kwargs):
         next = super().get(request, *args, **kwargs)
+        self.object.validate(request.user, recalculate=False, commit=True)
         template = '{timestamp} {actor} accessed {target}'
         log_event(request.user, 'access', target=self.object,
                   template=template)

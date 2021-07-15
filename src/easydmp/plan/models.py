@@ -282,11 +282,29 @@ class AnswerSet(ClonableModel):
 
         Returns validity.
         """
-        valids, invalids, _ = self.section.find_validity_of_questions(self.data)
-        self.set_validity_of_answers(valids, invalids)
         self.last_validated = timestamp or tznow()
-        self.valid = not invalids
-        self.save()
+        subsections = self.section.ordered_sections()[1:]
+        if subsections:
+            if AnswerSet.objects.filter(section__in=subsections, valid=False).exists():
+                valid = False
+        else:
+            valids, invalids, = self.section.find_validity_of_questions(self.data)
+            self.set_validity_of_answers(valids, invalids)
+            if not self.data and self.section.questions.exists():
+                valid = False
+            elif self.section.is_skipped(self.data):
+                valid = True
+            elif not self.section.branching:
+                valid = not invalids
+            else:
+                path = self.section.generate_complete_path_from_data(self.data)
+                valid = self.section.is_valid_and_complete_path(path, valids, invalids)
+        self.valid = valid
+        self.save(update_fields=('valid', 'last_validated'))
+        if not self.valid:
+            self.plan.valid = False
+            self.plan.last_validated = self.last_validated
+            self.plan.save(update_fields=('valid', 'last_validated'))
         return self.valid
 
     def set_validity_of_answers(self, valids: Set[int], invalids: Set[int]) -> None:
