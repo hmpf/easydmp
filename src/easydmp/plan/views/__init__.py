@@ -399,7 +399,7 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
             viewname = self.viewname
             return reverse(viewname, kwargs=kwargs)
         if 'next' in self.request.POST and self.next_section:
-            answerset = self.answerset.get_answersets_for_section(self.next_section).first()
+            answerset = self.plan.get_answersets_for_section(self.next_section).first()
             if self.next_section.branching:
                 kwargs=dict(
                     question=self.next_section.first_question.pk,
@@ -415,7 +415,7 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
                 viewname = self.viewname
             return reverse(viewname, kwargs=kwargs)
         if 'prev' in self.request.POST and self.prev_section:
-            answerset = self.answerset.get_answersets_for_section(self.prev_section).last()
+            answerset = self.plan.get_answersets_for_section(self.prev_section).last()
             if self.prev_section.branching:
                 kwargs=dict(
                     question=self.prev_section.last_question.pk,
@@ -608,7 +608,7 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
             return self.get_summary_url()
         answerset = self.answerset
         if next_question.section != self.section:
-            answersets = self.answerset.get_answersets_for_section(next_question.section)
+            answersets = self.plan.get_answersets_for_section(next_question.section)
             answerset = answersets.first()
         return self.get_url(next_question, answerset)
 
@@ -621,7 +621,7 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
             return self.get_summary_url()
         answerset = self.answerset
         if prev_question.section != self.section:
-            answersets = self.answerset.get_answersets_for_section(prev_question.section)
+            answersets = self.plan.get_answersets_for_section(prev_question.section)
             answerset = answersets.last()
         return self.get_url(prev_question, answerset)
 
@@ -923,10 +923,12 @@ class SectionDetailView(DetailView):
 
         # Redirect to first question if any
         if self.editable:
+            answerset = self.plan.get_answersets_for_section(section).first()
             return redirect(
                 'answer_question',
                 question=question.pk,
-                plan=self.plan.pk
+                plan=self.plan.pk,
+                answerset=answerset.pk
             )
 
         try:
@@ -942,41 +944,39 @@ class SectionDetailView(DetailView):
         "Generate link to next page"
         plan_pk = self.plan.pk
         next_section = self.object.get_next_section()
+        kwargs = {'plan': plan_pk}
         if next_section is not None:
             if self.editable:
                 question = next_section.first_question
                 # Has questions
                 if question:
-                    return reverse(
-                        'answer_question',
-                        kwargs={'question': question.pk, 'plan': plan_pk }
-                    )
+                    answerset = self.plan.get_answersets_for_section(next_section).first()
+                    kwargs['answerset'] = answerset.pk
+                    kwargs['question'] = question.pk
+                    return reverse('answer_question', kwargs=kwargs)
                 # Empty section
-                return reverse(
-                    'section_detail',
-                    kwargs={'plan': plan_pk, 'section': next_section.pk}
-                )
-        return reverse('plan_detail', kwargs={'plan': plan_pk})
+                kwargs['section'] = next_section.pk
+                return reverse('section_detail', kwargs=kwargs)
+        return reverse('plan_detail', kwargs=kwargs)
 
     def prev(self):
         "Generate link to previous page"
         plan_pk = self.plan.pk
         prev_section = self.object.get_prev_section()
+        kwargs = {'plan': plan_pk}
         if prev_section is not None:
             if self.editable:
                 question = prev_section.first_question
                 # Has questions
                 if question:
-                    return reverse(
-                        'answer_question',
-                        kwargs={'question': question.pk, 'plan': plan_pk }
-                    )
+                    answerset = self.plan.get_answersets_for_section(prev_section).last()
+                    kwargs['answerset'] = answerset.pk
+                    kwargs['question'] = question.pk
+                    return reverse('answer_question', kwargs=kwargs)
                 # Empty section
-                return reverse(
-                    'section_detail',
-                    kwargs={'plan': plan_pk, 'section': prev_section.pk}
-                )
-        return reverse('plan_detail', kwargs={'plan': plan_pk})
+                kwargs['section'] = prev_section.pk
+                return reverse('section_detail', kwargs=kwargs)
+        return reverse('plan_detail', kwargs=kwargs)
 
     def get_context_data(self, **kwargs):
         context = {

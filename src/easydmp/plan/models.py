@@ -174,12 +174,7 @@ class AnswerSet(ClonableModel):
         return self.get_answer(question_id).get('choice', None)
 
     def get_answersets_for_section(self, section):
-        try:
-            answersets = self.__class__.objects.filter(plan=self.plan, section=section)
-        except self.__class__.DoesNotExist:
-            AnswerSet.objects.create(plan=self.plan, section=section, valid=False)
-            answersets = self.__class__.objects.filter(plan=self.plan, section=section)
-        return answersets
+        return self.plan.get_answersets_for_section(section)
 
     def delete_answers(self, question_ids, commit=True):
         deleted = set()
@@ -699,10 +694,17 @@ class Plan(DeletionMixin, ClonableModel):
         a.initialize_answers()
         return a
 
-    # Template traversal
+    # Traversal
 
     def get_first_question(self):
         return self.template.first_question
+
+    def get_answersets_for_section(self, section):
+        answersets = self.answersets.filter(section=section)
+        if not answersets.exists():
+            AnswerSet.objects.create(plan=self, section=section, valid=False)
+            answersets = self.answersets.filter(section=section)
+        return answersets
 
     # Validation
 

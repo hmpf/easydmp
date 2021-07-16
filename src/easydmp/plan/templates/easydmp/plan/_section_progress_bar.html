@@ -4,7 +4,7 @@
         {% for section in section_progress %}
         <li {% if section.status %}class="{{ section.status }}"{% endif %}>
           <div class="progressbar2"></div>
-          <span class="withfadein"><a href="{% url 'section_detail' plan=object.id section=section.pk %}" title="{{ section.title }}">{{ section.label }}</a></span>
+          <span class="withfadein"><a href="{% url 'section_detail' plan=plan.id section=section.pk %}" title="{{ section.title }}">{{ section.label }}</a></span>
           <p title="{{ section.title }}">{{ section.title|truncatechars:13 }}</p>
         </li>
         {% endfor %}
