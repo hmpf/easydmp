@@ -247,7 +247,7 @@ class AnswerSet(ClonableModel):
         answermapping = {}
         for answer in self.answers.all():
             new_answer = answer.clone(plan=new.plan, answerset=new)
-            answermapping[str(answer.pk)] = str(new_answer.pk)
+            answermapping[str(answer.question.pk)] = str(new_answer.question.pk)
         # clone data
         if self.data:
             for key, value in self.data.items():
