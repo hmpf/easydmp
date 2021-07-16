@@ -35,10 +35,10 @@ GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
 class AnswerHelper():
     "Helper-class combining a Question and a Plan"
 
-    def __init__(self, question, plan, answerset):
+    def __init__(self, question, answerset):
         self.question = question.get_instance()
-        self.plan = plan
         self.answerset = answerset
+        self.plan = answerset.plan
         self.answer = self.set_answer()
         # IMPORTANT: json casts ints to string as keys in dicts, so use strings
         self.question_id = str(self.question.pk)
@@ -59,13 +59,12 @@ class AnswerHelper():
         return self.get_choice()
 
     def set_answer(self):
-        qv, _ = Answer.objects.get_or_create(
-            plan=self.plan,
+        answer, _ = Answer.objects.get_or_create(
             question=self.question,
             answerset=self.answerset,
             defaults={'valid': False}
         )
-        return qv
+        return answer
 
     def get_form(self, **form_kwargs):
         form = make_form(self.question, **form_kwargs)
@@ -105,13 +104,19 @@ class AnswerHelper():
 
     def set_invalid(self):
         if self.answer.valid:
+            last_validated = tznow()
             LOG.debug('set_invalid: q%s/p%s', self.question_id, self.plan.pk)
             self.answer.valid = False
-            self.answer.save()
+            self.answer.last_validated = last_validated
+            self.answer.save(update_fields=['valid', 'last_validated'])
             LOG.debug('set_invalid: q%s/p%s: section %',
                       self.question_id, self.plan.pk, self.section.pk)
             self.answerset.valid = False
-            self.answerset.save()
+            self.answerset.last_validated = last_validated
+            self.answerset.save(update_fields=['valid', 'last_validated'])
+            self.plan.valid = False
+            self.plan.last_validated = last_validated
+            self.plan.save(update_fields=['valid', 'last_validated'])
 
 
 class AnswerSet(ClonableModel):
@@ -165,7 +170,6 @@ class AnswerSet(ClonableModel):
         self.data[lookup_question_id] = choice
         self.answers.update_or_create(
             question_id=int(question_id),
-            plan_id=self.plan_id,  # XXX: Plan.data
             defaults={'valid': True}
         )
         self.save()
@@ -239,14 +243,18 @@ class AnswerSet(ClonableModel):
 
     @transaction.atomic
     def clone(self, plan):
-        new = self.__class__(plan=plan, section=self.section, valid=self.valid,
-                             last_validated=self.last_validated)
+        new = self.__class__.objects.create(
+            plan=plan,
+            section=self.section,
+            valid=self.valid,
+            last_validated=self.last_validated
+        )
         new.set_cloned_from(self)
-        new.save()
+        new.save(update_fields=['cloned_from', 'cloned_when'])
         # clone answers
         answermapping = {}
         for answer in self.answers.all():
-            new_answer = answer.clone(plan=new.plan, answerset=new)
+            new_answer = answer.clone(answerset=new)
             answermapping[str(answer.question.pk)] = str(new_answer.question.pk)
         # clone data
         if self.data:
@@ -256,19 +264,14 @@ class AnswerSet(ClonableModel):
         if self.previous_data:
             for key, value in self.previous_data.items():
                 new.previous_data[answermapping[key]] = value
-        new.save()
+        new.save(update_fields=['data', 'previous_data'])
         return new
 
     def initialize_answers(self):
         plan = self.plan
         answers = []
         for question in self.section.questions.all():
-            answers.append(Answer(
-                plan=plan,  # will eventually be unneccessary
-                question=question,
-                answerset=self,
-                valid=False
-            ))
+            answers.append(Answer(question=question, answerset=self))
         Answer.objects.bulk_create(answers)
 
     def validate(self, timestamp: datetime = None) -> bool:
@@ -315,28 +318,28 @@ class Answer(ClonableModel):
     An Answer contains metadata about an answer, such as validity. The actual answer the user gave is aggregated in
     AnswerSet.
     """
-    # TODO: remove in sync with linking to correct answersets, updating unique_together
-    plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='answers')
-    # TODO: make non nullable later
-    answerset = models.ForeignKey(AnswerSet, models.CASCADE, related_name='answers', null=True)
+    answerset = models.ForeignKey(AnswerSet, models.CASCADE, related_name='answers')
     question = models.ForeignKey('dmpt.Question', models.CASCADE, related_name='+')
-    valid = models.BooleanField()
+    valid = models.BooleanField(default=False)
     last_validated = models.DateTimeField(auto_now=True)
 
     def clone(self, plan, answerset):
-        new = self.__class__(
-             plan=plan,  # XXX: Plan.data
+        new = self.__class__.objects.create(
              question=self.question,
              answerset=answerset,
              valid=self.valid,
              last_validated=self.last_validated,
         )
         new.set_cloned_from(self)
-        new.save()
+        new.save(update_fields=['cloned_from', 'cloned_when'])
         return new
 
     class Meta:
-        unique_together = ('plan', 'question')
+        constraints = [
+            models.UniqueConstraint(
+                fields=('answerset', 'question'),
+                name='plan_answer_one_answer_per_question')
+        ]
 
 
 class PlanQuerySet(models.QuerySet):

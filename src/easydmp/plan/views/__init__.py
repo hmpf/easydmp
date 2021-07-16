@@ -382,7 +382,7 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
         self.modified_by = request.user
         self.plan_pk = self.plan.pk
         self.object = self.plan
-        self.answers = [AnswerHelper(question, self.plan, self.answerset) for question in self.questions]
+        self.answers = [AnswerHelper(question, self.answerset) for question in self.questions]
         template = '{timestamp} {actor} accessed {action_object} of {target}'
         log_event(request.user, 'access', target=self.plan,
                   object=self.section, template=template)
@@ -559,7 +559,7 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         self.answerset = super().get_object()
         self.question_pk = self.kwargs.get('question')
         self.question = self._get_question()
-        self.answer = AnswerHelper(self.question, self.plan, self.answerset)
+        self.answer = AnswerHelper(self.question, self.answerset)
         self.section = self.question.section
         self.prev_section = self.section.get_prev_section()
         self.next_section = self.section.get_next_section()
