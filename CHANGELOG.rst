@@ -15,6 +15,20 @@ Planned
 Unreleased
 ----------
 
+1.9.2
+-----
+
+Teeny tiny bugfix release
+
+Bugfixes:
+
+* Cloning was broken for plans due to a bug in Answer.clone()
+* Clicking on anything in the progress bar no longer leads to a 404
+
+Paperwork:
+
+* Synchronize the User table schema with upstream
+
 1.9.1
 -----
 
