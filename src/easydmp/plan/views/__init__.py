@@ -403,6 +403,7 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
             if self.next_section.branching:
                 kwargs=dict(
                     question=self.next_section.first_question.pk,
+                    answerset=answerset.pk,
                     **minimal_kwargs,
                 )
                 viewname = self.branching_viewname
@@ -419,6 +420,7 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
             if self.prev_section.branching:
                 kwargs=dict(
                     question=self.prev_section.last_question.pk,
+                    answerset=answerset.pk,
                     **minimal_kwargs,
                 )
                 viewname = self.branching_viewname
