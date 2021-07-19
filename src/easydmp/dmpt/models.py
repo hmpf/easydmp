@@ -1152,15 +1152,18 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 invalids.add(question.pk)
         return (valids, invalids)
 
-    def validate_data(self, data):
-        if not data:
-            return False
+    def validate_data(self, data, question_validity_status=()):
         if not self.questions.exists():
             return True
+        if not data:
+            return False
         # Toggle question == 'No' makes the section valid
         if self.is_skipped(data):
             return True
-        valids, invalids = self.find_validity_of_questions(data)
+        if not question_validity_status:
+            valids, invalids = self.find_validity_of_questions(data)
+        else:
+            valids, invalids = question_validity_status
         if not self.branching:
             if invalids:
                 return False
