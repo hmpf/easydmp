@@ -4,7 +4,7 @@ from datetime import date
 import os
 from pathlib import Path
 from textwrap import fill
-from typing import Text, Any, TypedDict, MutableMapping, Type, Dict, Tuple, Set
+from typing import Text, Any, TypedDict, MutableMapping, Type, Dict, Tuple, Set, List, Union
 from uuid import uuid4
 import logging
 import socket
@@ -79,6 +79,7 @@ CONDITION_FIELD_LENGTH = 255
 AnswerNote = Text
 AnswerChoice = Any
 Data = MutableMapping[str, dict]
+PathTuple = Tuple[int, ...]
 
 
 class AnswerStruct(TypedDict):
@@ -1115,7 +1116,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         summary_dict.update(**kwargs)
         return summary_dict
 
-    def generate_complete_path_from_data(self, data: Dict) -> Tuple[int]:
+    def generate_complete_path_from_data(self, data: Dict) -> Union[Tuple[()], PathTuple]:
         question = self.first_question
         if not question:
             return ()
@@ -1126,9 +1127,9 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 break
             path.append(qid)
             question = question.get_next_question(data, in_section=True)
-        return path
+        return tuple(int(qid) for qid in path)
 
-    def find_validity_of_questions(self, data: Dict) -> Tuple[Set[int], Set[int], Set[int]]:
+    def find_validity_of_questions(self, data: Dict) -> Tuple[Set[int], Set[int]]:
         """
         The sets of pks of Questions for which the given answer data is valid/invalid.
         """
@@ -1171,7 +1172,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         path = self.generate_complete_path_from_data(data)
         return self.is_valid_and_complete_path(path, valids, invalids)
 
-    def is_valid_and_complete_path(self, path, valids, invalids) -> bool:
+    def is_valid_and_complete_path(self, path: PathTuple, valids: Set[int], invalids: Set[int]) -> bool:
         if not self.is_complete_path(path):
             return False
         path = set(path)
@@ -1179,7 +1180,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
             return True
         return False
 
-    def is_complete_path(self, path) -> bool:
+    def is_complete_path(self, path: PathTuple) -> bool:
         paths = self.find_all_paths()
         if tuple(path) in paths:
             return True
@@ -1194,7 +1195,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         qs = minimal_qs | answered_qs
         return list(qs.distinct().order_by('position'))
 
-    def find_all_paths(self):
+    def find_all_paths(self) -> List[PathTuple]:
         tm = self.generate_transition_map()
         graph = {}
         for transition in tm.transitions:
