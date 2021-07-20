@@ -395,8 +395,6 @@ class Plan(DeletionMixin, ClonableModel):
     template = models.ForeignKey('dmpt.Template', models.CASCADE, related_name='plans')
     valid = models.BooleanField(blank=True, null=True)
     last_validated = models.DateTimeField(blank=True, null=True)
-    data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
-    previous_data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
     visited_sections = models.ManyToManyField('dmpt.Section', related_name='+', blank=True)
     generated_html = models.TextField(blank=True)
     search_data = models.TextField(null=True, blank=True)
@@ -586,9 +584,6 @@ class Plan(DeletionMixin, ClonableModel):
             title=title,
             abbreviation=abbreviation,
             template=self.template,
-            # XXX: Plan.data
-            data=self.data,
-            previous_data=self.previous_data,
             added_by=user,
             modified_by=user,
         )
