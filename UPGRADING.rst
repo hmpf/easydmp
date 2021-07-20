@@ -5,6 +5,19 @@ UPGRADING
 Normally, upgrading is just a matter of getting the new code and running
 ``python manage.py migrate``. Any exceptions will be listed here.
 
+1.9.0 -> 1.10.0
+===============
+
+The migrations in 1.9.0 are many and heavy, and 1.10.0 drops some fields
+made redundant in 1.9.0, but that 1.9.0 uses in its migrations.
+
+So: first complete the upgrade to 1.9.0, then upgrade to 1.10.0, do not
+upgrade directly to 1.10.0.
+
+The last migration in this release is potentially a lengthy, heavy one. It
+adds any missing answersets then hooks up answersets to parent answersets. If
+there are no nested templates this should be blazingly fast.
+
 1.7.0 -> 1.8.0
 ==============
 

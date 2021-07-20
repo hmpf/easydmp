@@ -15,6 +15,28 @@ Planned
 Unreleased
 ----------
 
+1.10.0
+------
+
+Do not go directly from a pre 1.9.0 version to this version, go via 1.9.0. See
+UPGRADING.rst.
+
+Small new features:
+
+* Rework how answers are shown in the summary, in preparation for repeatable
+  sections
+* Make AnswerSets available through the admin
+
+Paperwork:
+
+* Hook up AnswerSets to their parent AnswerSets. Necessary to support
+  repeatable sections
+* SQl schema cleanup:
+
+    * Plan no longer has the fields ``data`` and ``previous_data``
+    * Removed now unused fk to Plan on Answer
+
+
 1.9.4
 -----
 
