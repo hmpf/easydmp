@@ -183,7 +183,7 @@ class TemplateAuthMixin:
             if obj.in_use():
                 model = get_model_name(obj)
                 self.message_user(
-                    request, 
+                    request,
                     self.message_cannot_delete.format(model),
                     level=messages.WARNING
                 )
@@ -486,11 +486,22 @@ class QuestionOrderingInline(BaseOrderingInline):
     movement_view_pattern = '%s:%s-section-question-reorder'
     verbose_name_plural = "Question ordering"
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # Hide an optional section question, if any
+        return qs.filter(position__gte=1)
+
     def get_order(self, parent):
         return parent.get_question_order()
 
     def item(self, obj):
         return str(obj)
+
+    @mark_safe
+    def movement(self, obj):
+        if obj.position == 0:
+            return ''
+        return super().movement(obj)
 
 
 @admin.register(Section)

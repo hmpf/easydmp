@@ -817,10 +817,14 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
 
     def get_question_order(self):
         "Get a list of the pk's of questions, in order"
-        return PositionUtils.get_order(self.questions)
+        # Due to optional section magic question in position 0
+        qs = self.questions.filter(position__gte=1)
+        return PositionUtils.get_order(qs)
 
     def set_question_order(self, pk_list):
-        PositionUtils.set_order(self.questions, pk_list)
+        # Due to optional section magic question in position 0
+        qs = self.questions.filter(position__gte=1)
+        PositionUtils.set_order(qs, pk_list)
 
     def reorder_questions(self, pk, movement):
         _reorder_dependent_models(pk, movement, self.get_question_order,
