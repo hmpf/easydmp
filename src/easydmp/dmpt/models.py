@@ -2248,11 +2248,7 @@ class DateQuestion(PrimitiveTypeMixin, Question):
         answer = data.get('choice', NotSet)
         if self.optional and answer is NotSet:
             return True
-        try:
-            value = date.fromisoformat(answer)
-        except ValueError:
-            return False
-        return True
+        return isinstance(answer, date)
 
 
 class EEStoreMixin:
