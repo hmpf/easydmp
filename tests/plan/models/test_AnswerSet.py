@@ -36,21 +36,12 @@ class TestAnswerSetValidation(test.TestCase):
             }
         })
         as1.save()
-        a1, a2, a3 = self._add_answers(as1)
+        as1.initialize_answers()
         as1.validate()
-        self.assertTrue(Answer.objects.get(pk=a1.pk).valid)
-        self.assertTrue(Answer.objects.get(pk=a2.pk).valid)
-        self.assertTrue(Answer.objects.get(pk=a3.pk).valid)
+        self.assertTrue(Answer.objects.get(question=self.q1).valid)
+        self.assertTrue(Answer.objects.get(question=self.q2).valid)
+        self.assertTrue(Answer.objects.get(question=self.q3).valid)
         self.assertTrue(as1.valid)
-
-    def _add_answers(self, as1):
-        a1 = Answer(answerset=as1, question=self.q1, plan=self.plan, valid=False)
-        a2 = Answer(answerset=as1, question=self.q2, plan=self.plan, valid=False)
-        a3 = Answer(answerset=as1, question=self.q3, plan=self.plan, valid=False)
-        a1.save()
-        a2.save()
-        a3.save()
-        return a1, a2, a3
 
     def test_validate_answerset_data_fail(self):
         as1 = AnswerSet(plan=self.plan, section=self.section, valid=False, data={
@@ -68,11 +59,11 @@ class TestAnswerSetValidation(test.TestCase):
             }
         })
         as1.save()
-        a1, a2, a3 = self._add_answers(as1)
+        as1.initialize_answers()
         as1.validate()
-        self.assertFalse(Answer.objects.get(pk=a1.pk).valid)
-        self.assertFalse(Answer.objects.get(pk=a2.pk).valid)
-        self.assertFalse(Answer.objects.get(pk=a3.pk).valid)
+        self.assertFalse(Answer.objects.get(question=self.q1).valid)
+        self.assertFalse(Answer.objects.get(question=self.q2).valid)
+        self.assertFalse(Answer.objects.get(question=self.q3).valid)
         self.assertFalse(as1.valid)
 
     def test_validate_answerset_data_subset(self):
@@ -83,11 +74,11 @@ class TestAnswerSetValidation(test.TestCase):
             }
         })
         as1.save()
-        a1, a2, a3 = self._add_answers(as1)
+        as1.initialize_answers()
         as1.validate()
-        self.assertTrue(Answer.objects.get(pk=a1.pk).valid)
-        self.assertFalse(Answer.objects.get(pk=a2.pk).valid)
-        self.assertFalse(Answer.objects.get(pk=a3.pk).valid)
+        self.assertTrue(Answer.objects.get(question=self.q1).valid)
+        self.assertFalse(Answer.objects.get(question=self.q2).valid)
+        self.assertFalse(Answer.objects.get(question=self.q3).valid)
         self.assertFalse(as1.valid)
 
     def test_validate_answerset_bogus_answer(self):
@@ -97,7 +88,7 @@ class TestAnswerSetValidation(test.TestCase):
         s_bogus.save()
         q_bogus = BooleanQuestion(section=s_bogus, position=10)
         q_bogus.save()
-        a_bogus = Answer(answerset=as1, question=q_bogus, plan=self.plan, valid=False)
+        a_bogus = Answer(answerset=as1, question=q_bogus, valid=False)
         a_bogus.save()
         # No answer exists for q_bogus
         self.assertFalse(as1.validate())
@@ -122,9 +113,9 @@ class TestAnswerSetValidation(test.TestCase):
             }
         })
         as1.save()
-        a1, a2, a3 = self._add_answers(as1)
+        as1.initialize_answers()
         as1.validate()  # Sets the answers valid
-        self.assertTrue(Answer.objects.get(pk=a1.pk).valid)
-        self.assertTrue(Answer.objects.get(pk=a2.pk).valid)
-        self.assertTrue(Answer.objects.get(pk=a3.pk).valid)
+        self.assertTrue(Answer.objects.get(question=self.q1.pk).valid)
+        self.assertTrue(Answer.objects.get(question=self.q2.pk).valid)
+        self.assertTrue(Answer.objects.get(question=self.q3.pk).valid)
         self.assertTrue(as1.valid)
