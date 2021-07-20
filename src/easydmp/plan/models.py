@@ -744,32 +744,43 @@ class Plan(DeletionMixin, ClonableModel):
         context = self.get_context_for_generated_text()
         return render_to_string(GENERATED_HTML_TEMPLATE, context)
 
+    def get_summary_for_section(self, sectionobj, default_tag_level):
+        section = sectionobj.section
+        answersets = self.answersets.filter(section=section)
+        num_answersets = answersets.count()
+        is_valid = answersets.filter(valid=True).count() == num_answersets
+        meta_summary = section.get_meta_summary(
+            valid=is_valid,
+            num_answersets=num_answersets,
+            title_tag=f'h{section.section_depth+default_tag_level}',
+        )
+        answer_blocks = []
+        for answerset in answersets.order_by('pk'):
+            data_summary = section.get_data_summary(answerset.data)
+            answer_blocks.append({
+                'answerset': answerset.pk,
+                'data': data_summary,
+            })
+        subsections = []
+        for sectionobj in sectionobj.subsections:
+            subsummary = self.get_summary_for_section(sectionobj, default_tag_level)
+            subsections.append(subsummary)
+        return {
+            'answersets': answer_blocks,
+            'section': meta_summary,
+            'subsections': tuple(subsections),
+        }
+
     def get_nested_summary(self):
         """Generate a summary of all question/answer pairs in all sections
 
         This assumes that each question may be answered more than once,
         basically: sections may be answered more than once.
         """
-        summary = OrderedDict()
-        valid_section_ids = (AnswerSet.objects
-                     .filter(valid=True, plan=self)
-                     .values_list('section__pk', flat=True))
-        for section in self.template.ordered_sections():
-            is_valid = True if section.id in valid_section_ids else False
-            answersets = self.answersets.filter(section=section)
-            num_answersets = answersets.count()
-            meta_summary = section.get_meta_summary(valid=is_valid, num_answersets=num_answersets)
-            answer_blocks = []
-            for answerset in answersets.order_by('pk'):
-                data_summary = section.get_data_summary(answerset.data)
-                answer_blocks.append({
-                    'answerset': answerset.pk,
-                    'data': data_summary,
-                })
-            summary[meta_summary['full_title']] = {
-                'answersets': answer_blocks,
-                'section': meta_summary,
-            }
+        default_tag_level = 2
+        summary = []
+        for sectionobj in self.template.get_section_tree():
+            summary.append(self.get_summary_for_section(sectionobj, default_tag_level))
         return summary
 
     def get_nested_canned_text(self):

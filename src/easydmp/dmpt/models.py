@@ -407,6 +407,10 @@ class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
 
     # START: (re)ordering sections
 
+    def get_section_tree(self):
+        result = SectionPositionUtils.get_template_section_tree(self)
+        return result
+
     def ordered_sections(self) -> list:
         "Order sections with subsections in a flat list"
 

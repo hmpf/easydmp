@@ -862,19 +862,21 @@ header {
 
 .section_title{
   max-width: 80%;
-  padding-bottom: .5em;
+  margin: 0 0 0 0;
 }
 
 .section_depth_1:last-of-type {
   padding-bottom: 4em !important;
 }
 
-.section_depth_1 .section_title {
-      border-bottom: 2px solid #000000;
+.section_depth_1 .section-header {
       width: 100%;
       max-width: 100%;
-      padding: 1.5em 0;
       margin-bottom: 0;
+}
+
+.section_depth_1:not(:first-child) {
+      border-top: 2px solid #000000;
 }
 
 .section_depth_2 .section_title {
@@ -892,8 +894,44 @@ header {
 }
 
 .section_depth_2 .section_title a {
-  font-size: 19px !important;
   color: #337ab7 !important;
+}
+
+.section_depth_3 .section_title a {
+  color: #337ab7 !important;
+}
+
+section.section {
+    display: flex;
+    flex-flow: column;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-flow: row;
+    flex-grow: 0;
+}
+
+.section-body {
+    flex-grow: 1;
+}
+
+.section-header .section_title {
+    flex-grow: 1;
+}
+
+.section-header button {
+    flex-grow: 0;
+}
+
+.section-header .btn .caret {
+    float: none;
+}
+
+.section-controls {
+    height: 5em;
 }
 
 .content-wrap {
@@ -934,9 +972,6 @@ dd, .section_introduction p, .notes {
 }
 
 #summary_header button .caret{
-  position: absolute;
-  right: 0;
-  top: 5px;
   border: none !important;
   width: 23px;
   height: 23px;
@@ -970,13 +1005,10 @@ dd, .section_introduction p, .notes {
 }
 
 .dmpsummary .section .btn-default{
-  top: 0;
-  height: 92px;
-  position: absolute;
+  height: 100%;
   background: transparent !important;
   border: none !important;
   width: 100%;
-  padding: 2em 1.3em 2em 0;
 }
 
 .dmpsummary .section .btn-default.open .caret {

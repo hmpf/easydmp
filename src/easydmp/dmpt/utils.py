@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import namedtuple
 from typing import Callable
 
 from django.contrib.admin.utils import NestedObjects
@@ -106,6 +107,8 @@ class PositionUtils:
 
 class SectionPositionUtils(PositionUtils):
 
+    SectionObject = namedtuple('SectionObject', 'section subsections')
+
     @classmethod
     def ordered_section_subsections(cls, section):
         result = [section]
@@ -124,6 +127,30 @@ class SectionPositionUtils(PositionUtils):
         result = []
         for section in topmost_sections.order_by('position'):
             result.extend(cls.ordered_section_subsections(section))
+        return result
+
+    @classmethod
+    def get_section_subsection_tree(cls, section):
+        sections = section.subsections.order_by('position')
+        result = []
+        for section in sections:
+            obj = cls.SectionObject(
+                section,
+                tuple(cls.get_section_subsection_tree(section))
+            )
+            result.append(obj)
+        return result
+
+    @classmethod
+    def get_template_section_tree(cls, template):
+        topmost_sections = template.sections.filter(super_section=None)
+        result = []
+        for section in topmost_sections.order_by('position'):
+            obj = cls.SectionObject(
+                section,
+                tuple(cls.get_section_subsection_tree(section))
+            )
+            result.append(obj)
         return result
 
 
