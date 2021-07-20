@@ -15,6 +15,23 @@ Planned
 Unreleased
 ----------
 
+1.9.3
+-----
+
+Another bugfix release
+
+Bugfixes:
+
+* Optional section questions are now not reorderable but stays at position 0
+* In the continuing saga of "validate branching sections correctly"...
+
+  * Paths passed around are now always tuples of ints
+  * The if-monster in ``AnswerSet.validate_data()`` is replaced by the light
+    early-return structure of ``Section.validate_data()``
+
+* Get rid of a 404: When going from a linear section to a branching section,
+  the answerset is now passed in
+
 1.9.2
 -----
 
