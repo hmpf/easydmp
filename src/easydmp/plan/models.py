@@ -758,7 +758,9 @@ class Plan(DeletionMixin, ClonableModel):
         for answerset in answersets.order_by('pk'):
             data_summary = section.get_data_summary(answerset.data)
             answer_blocks.append({
-                'answerset': answerset.pk,
+                'pk': answerset.pk,
+                'name': answerset.identifier,
+                'valid': answerset.valid,
                 'data': data_summary,
             })
         subsections = []

@@ -491,12 +491,14 @@ class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 if not section.get_optional_section_question() == question and not optional_section_chosen:
                     continue
                 section_summary[question.pk] = value
-            may_edit_all = section.questions.exists() and not section.branching
+            has_questions = section.questions.exists()
+            may_edit_all = has_questions and not section.branching
             summary[section.full_title()] = {
                 'data': section_summary,
                 'section': {
                     'valid': True if section.id in valid_section_ids else False,
                     'may_edit_all': may_edit_all,
+                    'has_questions': has_questions,
                     'depth': section.section_depth,
                     'label': section.label,
                     'title': section.title,
