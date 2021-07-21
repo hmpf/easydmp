@@ -15,6 +15,19 @@ Planned
 Unreleased
 ----------
 
+1.9.4
+-----
+
+Small new features:
+
+* Fixed the plan summary view so that sections nest (and replaced
+  position+float with flexbox for the show section-button)
+
+Bugfixes:
+
+* DateQuestion validation now doesn't choke on the input already being a date
+
+
 1.9.3
 -----
 
