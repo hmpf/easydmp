@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.urls import reverse
 
 from guardian.admin import GuardedModelAdmin
 from guardian.shortcuts import get_objects_for_user
@@ -11,6 +12,7 @@ __all__ = [
     'FakeBooleanFilter',
     'PublishedFilter',
     'RetiredFilter',
+    'AdminConvenienceMixin',
     'ObjectPermissionModelAdmin',
     'SetObjectPermissionModelAdmin',
 ]
@@ -45,6 +47,19 @@ class RetiredFilter(FakeBooleanFilter):
 class LockedFilter(FakeBooleanFilter):
     title = 'locked'
     parameter_name = 'locked'
+
+
+class AdminConvenienceMixin:
+    def get_viewname(self, viewname):
+        admin = self.admin_site.name
+        app_label = self.model._meta.app_label
+        model_name = self.model._meta.model_name
+        viewname = viewname
+        return f'{admin}:{app_label}_{model_name}_{viewname}'
+
+    def get_change_url(self, pk):
+        viewname = self.get_viewname('change')
+        return reverse(viewname, args=[pk])
 
 
 class ObjectPermissionModelAdmin(GuardedModelAdmin):

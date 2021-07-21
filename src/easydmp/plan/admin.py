@@ -1,8 +1,10 @@
 from django.contrib import admin
+from django.http.response import HttpResponseRedirect
 
 from easydmp.lib.admin import FakeBooleanFilter
 from easydmp.lib.admin import LockedFilter
 from easydmp.lib.admin import PublishedFilter
+from easydmp.lib.admin import AdminConvenienceMixin
 
 from .models import AnswerSet
 from .models import Plan
@@ -10,21 +12,38 @@ from .models import PlanAccess
 
 
 @admin.register(AnswerSet)
-class AnswerSetAdmin(admin.ModelAdmin):
+class AnswerSetAdmin(AdminConvenienceMixin, admin.ModelAdmin):
     list_display = ['plan', 'section', 'identifier']
     list_filter = ['section__template']
     search_fields = ['plan__title', 'section__template__title']
     readonly_fields = ['valid', 'last_validated', 'cloned_from', 'cloned_when']
-    raw_id_fields = ['plan', 'section']
+    raw_id_fields = ['plan', 'section', 'parent']
     fieldsets = (
         (None, {
-            'fields': ('identifier', 'section', 'plan', 'data', 'previous_data'),
+            'fields': ('identifier', 'parent', 'section', 'plan',),
+        }),
+        ('Debug', {
+            'fields': ('data', 'previous_data'),
         }),
         ('Metadata', {
             'classes': ('collapse',),
             'fields': (('valid', 'last_validated'), ('cloned_from', 'cloned_when'),),
         }),
     )
+    change_form_template = "easydmp/plan/admin/answerset_changeform.html"
+
+    def response_change(self, request, obj):
+        redirect = super().response_change(request, obj)
+        if "_add-sibling" in request.POST:
+            sib = obj.add_sibling()
+            url = self.get_change_url(sib.pk)
+            return HttpResponseRedirect(url)
+        return redirect
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return self.readonly_fields + ['plan', 'section', 'parent']
+        return self.readonly_fields
 
 
 @admin.register(Plan)

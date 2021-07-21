@@ -13,6 +13,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 from django.forms import model_to_dict
+from django.db.models import Q
 from django.template.loader import render_to_string
 from django.utils.timezone import now as tznow
 
@@ -126,6 +127,7 @@ class AnswerSet(ClonableModel):
     identifier = models.CharField(max_length=120, blank=True, default='1')
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='answersets')
     section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='answersets')
+    parent = models.ForeignKey('self', models.CASCADE, related_name='answersets', null=True, blank=True)
     valid = models.BooleanField(default=False)
     last_validated = models.DateTimeField(auto_now=True)
     # The user's answers, represented as a Question PK keyed dict in JSON.
@@ -134,13 +136,20 @@ class AnswerSet(ClonableModel):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=('plan', 'section', 'identifier'),
-                                    name='plan_answerset_unique_identifiers')
+            models.UniqueConstraint(
+                fields=('plan', 'section', 'identifier'),
+                condition=Q(parent__isnull=True),
+                name='plan_answerset_unique_identifiers'),
+            models.UniqueConstraint(
+                fields=('plan', 'section', 'parent', 'identifier'),
+                condition=Q(parent__isnull=False),
+                name='plan_answerset_unique_identifiers_parent'),
         ]
 
     def __str__(self):
-        return '{}, section: {}, plan: {}, valid: {}'.format(
+        return '"{}" #{}, section: {}, plan: {}, valid: {}'.format(
             self.identifier,
+            self.pk,
             self.section_id,
             self.plan_id,
             self.valid)
@@ -149,10 +158,38 @@ class AnswerSet(ClonableModel):
         if not self.identifier:
             self.identifier = self.generate_next_identifier()
         super().save(*args, **kwargs)
+        if not self.answers.exists():
+            self.initialize_answers()
 
     def generate_next_identifier(self):
         count = self.__class__.objects.filter(plan=self.plan, section=self.section).count()
         return str(count + 1)
+
+    def add_sibling(self, identifier=None):
+        if identifier is None:
+            identifier = self.generate_next_identifier()
+        sib = self.__class__(
+            plan=self.plan,
+            section=self.section,
+            parent=self.parent,
+            identifier=identifier,
+        )
+        sib.save()
+        sib.add_children()
+        return sib
+
+    def get_siblings(self):
+        return self.__class__.objects.filter(
+            plan=self.plan,
+            section=self.section,
+            parent=self.parent
+        ).order_by('pk')
+
+    def add_children(self):
+        for section in self.section.subsections.all():
+            answerset = AnswerSet(plan=self.plan, section=section, parent=self)
+            answerset.save()
+            answerset.add_children()  # Cannot put this in self.save(), would loop
 
     @property
     def is_empty(self):
@@ -268,7 +305,8 @@ class AnswerSet(ClonableModel):
         return new
 
     def initialize_answers(self):
-        plan = self.plan
+        if Answer.objects.filter(answerset=self).exists():
+            return
         answers = []
         for question in self.section.questions.all():
             answers.append(Answer(question=question, answerset=self))
@@ -675,14 +713,15 @@ class Plan(DeletionMixin, ClonableModel):
 
     @transaction.atomic
     def initialize_starting_answersets(self):
-        for section in self.template.sections.all():
-            self.create_answerset(section)
+        for section in self.template.sections.filter(super_section__isnull=True):
+            a = self.create_answerset(section)
 
     @transaction.atomic
-    def create_answerset(self, section):
+    def create_answerset(self, section, parent=None):
         "Create another answerset for a specific section"
-        a = AnswerSet.objects.create(plan=self, section=section, valid=False)
-        a.initialize_answers()
+        a = AnswerSet(plan=self, section=section, parent=parent, valid=False)
+        a.save()
+        a.add_children()  # recursive
         return a
 
     # Traversal

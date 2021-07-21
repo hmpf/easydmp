@@ -20,6 +20,7 @@ from easydmp.lib.admin import FakeBooleanFilter
 from easydmp.lib.admin import PublishedFilter
 from easydmp.lib.admin import RetiredFilter
 from easydmp.lib.admin import LockedFilter
+from easydmp.lib.admin import AdminConvenienceMixin
 from easydmp.lib.admin import ObjectPermissionModelAdmin
 from easydmp.lib.admin import SetObjectPermissionModelAdmin
 from easydmp.lib import get_model_name
@@ -61,19 +62,6 @@ def get_questions_for_user(user):
 def get_canned_answers_for_user(user):
     questions = get_questions_for_user(user)
     return CannedAnswer.objects.filter(question__in=questions)
-
-
-class AdminConvenienceMixin:
-    def get_viewname(self, viewname):
-        admin = self.admin_site.name
-        app_label = self.model._meta.app_label
-        model_name = self.model._meta.model_name
-        viewname = viewname
-        return f'{admin}:{app_label}_{model_name}_{viewname}'
-
-    def get_change_url(self, pk):
-        viewname = self.get_viewname('change')
-        return reverse(viewname, args=[pk])
 
 
 class BaseOrderingInline(admin.TabularInline):
