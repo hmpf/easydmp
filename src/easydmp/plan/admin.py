@@ -4,8 +4,27 @@ from easydmp.lib.admin import FakeBooleanFilter
 from easydmp.lib.admin import LockedFilter
 from easydmp.lib.admin import PublishedFilter
 
+from .models import AnswerSet
 from .models import Plan
 from .models import PlanAccess
+
+
+@admin.register(AnswerSet)
+class AnswerSetAdmin(admin.ModelAdmin):
+    list_display = ['plan', 'section', 'identifier']
+    list_filter = ['section__template']
+    search_fields = ['plan__title', 'section__template__title']
+    readonly_fields = ['valid', 'last_validated', 'cloned_from', 'cloned_when']
+    raw_id_fields = ['plan', 'section']
+    fieldsets = (
+        (None, {
+            'fields': ('identifier', 'section', 'plan', 'data', 'previous_data'),
+        }),
+        ('Metadata', {
+            'classes': ('collapse',),
+            'fields': (('valid', 'last_validated'), ('cloned_from', 'cloned_when'),),
+        }),
+    )
 
 
 @admin.register(Plan)
@@ -23,7 +42,8 @@ class PlanAdmin(admin.ModelAdmin):
             'fields': ('title', 'abbreviation', 'version', 'template',),
         }),
         ('Debug', {
-            'fields': ('data', 'previous_data', 'visited_sections',),
+            'classes': ('collapse',),
+            'fields': ('visited_sections',),
         }),
         ('Metadata', {
             'classes': ('collapse',),

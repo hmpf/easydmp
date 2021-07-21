@@ -124,8 +124,8 @@ class AnswerSet(ClonableModel):
     valid = models.BooleanField(default=False)
     last_validated = models.DateTimeField(auto_now=True)
     # The user's answers, represented as a Question PK keyed dict in JSON.
-    data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
-    previous_data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
+    data = models.JSONField(default=dict, encoder=DjangoJSONEncoder, blank=True)
+    previous_data = models.JSONField(default=dict, encoder=DjangoJSONEncoder, blank=True)
 
     class Meta:
         constraints = [
