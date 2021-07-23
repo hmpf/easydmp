@@ -2687,9 +2687,7 @@ class MultiRDACostOneTextQuestion(NoCheckMixin, Question):
         if self.optional and not choices:
             return True
         for choice in choices:
-            type_ = choice.get('type', None)
-            reason = choice.get('reason', None)
-            if type_ and reason:
+            if choice.get('title', None):
                 return True
         return False
 
