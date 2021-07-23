@@ -38,7 +38,7 @@
             <dl class="questionrow">
               <dt class="question">
                 <p>{{ value.question }}{% if not value.question.optional %}<span class="asteriskField">*</span>{% endif %}</p>
-                {% if request.user|may_edit_plan:object and not object.locked %}
+                {% if editable_for_user %}
                 <p><a href="{% url 'answer_question' plan=object.id question=question_pk answerset=answerset.pk %}">Edit</a></p>
                 {% endif %}
               </dt>

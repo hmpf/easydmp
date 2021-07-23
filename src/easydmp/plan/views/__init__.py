@@ -771,10 +771,12 @@ class PlanDetailView(PlanAccessViewMixin, DetailView):
     template_name = 'easydmp/plan/plan_detail.html'
 
     def get_context_data(self, **kwargs):
+        editable = self.object.may_edit(self.request.user) and not self.object.locked
         context = {
             'output': self.object.get_nested_summary(),
             'plan': self.object,
             'template': self.object.template,
+            'editable_for_user': editable,
         }
         context.update(**kwargs)
         return super().get_context_data(**context)
