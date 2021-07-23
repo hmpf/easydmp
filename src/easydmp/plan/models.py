@@ -469,7 +469,7 @@ class Plan(DeletionMixin, ClonableModel):
 
     @property
     def total_answers(self):
-        return [answerset.data for answerset in self.answersets.all()]
+        return tuple(self.answersets.values_list('data', flat=True))
 
     @property
     def num_total_answers(self):
