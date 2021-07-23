@@ -22,6 +22,7 @@ from django.db import models
 from django.db import transaction
 from django.forms import model_to_dict
 from django.utils.encoding import force_text
+from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.utils.timezone import now as tznow
@@ -485,10 +486,10 @@ class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 # 2/2 Otherwise this might edit the actual plan data in memory!
                 # Mutable types strike back..
                 value['question'] = question
-                if answer and section.get_optional_section_question() == question and answer.get('choice',
+                if answer and section.get_optional_section_question == question and answer.get('choice',
                                                                                                  None) == 'No':
                     optional_section_chosen = False
-                if not section.get_optional_section_question() == question and not optional_section_chosen:
+                if not section.get_optional_section_question == question and not optional_section_chosen:
                     continue
                 section_summary[question.pk] = value
             has_questions = section.questions.exists()
@@ -1051,6 +1052,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
 
     # END: Section movement helpers
 
+    @cached_property
     def get_optional_section_question(self):
         if self.optional:
             return self.questions.get(position=0).get_instance()
@@ -1059,7 +1061,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
     def is_skipped(self, data):
         if not self.optional:  # Non-optional sections can never be skipped
             return False
-        toggle_question = self.get_optional_section_question()
+        toggle_question = self.get_optional_section_question
         toggle_answer = toggle_question.get_answer_choice(data)
         if not data or not toggle_answer:
             return True  # Should simplify logic elsewhere
@@ -1072,7 +1074,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         texts = []
         questions = self.questions.order_by('position')
         if self.is_skipped(data):
-            questions = [self.get_optional_section_question()]
+            questions = [self.get_optional_section_question]
         else:
             questions = questions.filter(position__gt=0)
         for question in questions:
@@ -1096,10 +1098,10 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
             # 2/2 Otherwise this might edit the actual data in memory!
             # Mutable types strike back..
             value['question'] = question
-            if answer and self.get_optional_section_question() == question and answer.get('choice',
+            if answer and self.get_optional_section_question == question and answer.get('choice',
                                                                                              None) == 'No':
                 optional_section_chosen = False
-            if not self.get_optional_section_question() == question and not optional_section_chosen:
+            if not self.get_optional_section_question == question and not optional_section_chosen:
                 continue
             data_summary[question.pk] = value
         return data_summary

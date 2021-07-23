@@ -309,20 +309,20 @@ class TestOptionalSections(test.TestCase):
     def test_get_optional_section_question_in_optional_section(self):
         section = SectionFactory.build(template=self.template, optional=True)
         section.save()
-        question = section.get_optional_section_question()
+        question = section.get_optional_section_question
         self.assertEqual(question.position, 0)
         self.assertEqual(question.input_type, 'bool')
 
     def test_get_optional_section_question_in_normal_section(self):
         section = SectionFactory.build(template=self.template, optional=False)
         section.save()
-        question = section.get_optional_section_question()
+        question = section.get_optional_section_question
         self.assertEqual(question, None)
 
     def test_is_skipped_true(self):
         section = SectionFactory.build(template=self.template, optional=True)
         section.save()
-        toggle_question = section.get_optional_section_question()
+        toggle_question = section.get_optional_section_question
         data = {str(toggle_question.pk): {'choice': 'No'}}
         result = section.is_skipped(data)
         self.assertTrue(result)
@@ -330,7 +330,7 @@ class TestOptionalSections(test.TestCase):
     def test_is_skipped_when_not_answered_is_true(self):
         section = SectionFactory.build(template=self.template, optional=True)
         section.save()
-        toggle_question = section.get_optional_section_question()
+        toggle_question = section.get_optional_section_question
         data = {}
         result = section.is_skipped(data)
         self.assertTrue(result)
@@ -344,7 +344,7 @@ class TestOptionalSections(test.TestCase):
     def test_is_skipped_false(self):
         section = SectionFactory.build(template=self.template, optional=True)
         section.save()
-        toggle_question = section.get_optional_section_question()
+        toggle_question = section.get_optional_section_question
         data = {str(toggle_question.pk): {'choice': 'Yes'}}
         result = section.is_skipped(data)
         self.assertFalse(result)
