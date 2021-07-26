@@ -1022,6 +1022,8 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
             'branching': self.branching,
             'title': self.title,
             'section': self,
+            'repeatable': self.repeatable,
+            'optional': self.optional,
             'full_title': self.full_title(),
             'pk': self.pk,
             'first_question': self.first_question,

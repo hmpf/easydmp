@@ -945,23 +945,23 @@ section.section {
     flex-grow: 1;
 }
 
-.section-header button {
+.section-header .section-controls {
     flex-grow: 0;
+    height: 5em;
+    display: flex;
+    flex-flow: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-answerset img, .remove-answerset img {
+    width: 20px;
+    height:20px;
 }
 
 .section-header .btn .caret {
     float: none;
 }
-
-.section-controls {
-    height: 5em;
-}
-
-/*
-.content-wrap {
-  padding-right: 1em;
-}
-*/
 
 .content-wrap .section_introduction{
   padding-top: 2em;
@@ -969,7 +969,8 @@ section.section {
 
 dd, .section_introduction p, .notes {
     max-width: 80%;
-  }
+}
+
 #summary_header h2, #summary_header h1 {
   background: #eef9ff;
   top: 0;
@@ -1035,57 +1036,6 @@ dd, .section_introduction p, .notes {
   border-bottom: 3px solid white;
   border-right: 3px solid black;
   border-top: 3px solid black;
-}
-
-/*
-#\32 1-making-data-findable-including-provisions-for-metadata,
-#\32 2-making-data-openly-accessible,
-#\32 3-making-data-interoperable,
-#\32 4-increase-data-reuse,
-#\32 5-allocation-of-resources
-{
-  border-top: none !important;
-  padding: 0;
-  margin-top: 4em;
-}
-
-#\32 5-allocation-of-resources, #\32 4-increase-data-reuse {
-    padding-bottom: 2em;
-  }
-*/
-/*
-#\32 1-making-data-findable-including-provisions-for-metadata p.actions,
-#\32 2-making-data-openly-accessible p.actions,
-#\32 3-making-data-interoperable p.actions,
-#\32 4-increase-data-reuse p.actions,
-#\32 5-allocation-of-resources p.actions
-{
-    top: 0;
-  }
-*/
-#\32-fair-data {
-  padding-bottom: 0;
-}
-
-#\32 1-making-data-findable-including-provisions-for-metadata .section_title,
-#\32 2-making-data-openly-accessible .section_title,
-#\32 3-making-data-interoperable .section_title,
-#\32 4-increase-data-reuse .section_title,
-#\32 5-allocation-of-resources .section_title
-{
-  /*color: #337db1;*/
-  color: #000000;
-  font-size: 22px;
-  font-weight: 400;
-}
-
-#\32 1-making-data-findable-including-provisions-for-metadata .questionrow,
-#\32 2-making-data-openly-accessible .questionrow,
-#\32 3-making-data-interoperable .questionrow,
-#\32 4-increase-data-reuse .questionrow,
-#\32 5-allocation-of-resources .questionrow
-{
-  margin-left: 1.5em;
 }
 
 .questionrow{

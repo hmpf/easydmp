@@ -1,10 +1,11 @@
 from copy import deepcopy
 import logging
 
+from django.contrib import messages
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy, NoReverseMatch
 from django.http import HttpResponseRedirect, Http404, HttpResponseServerError, HttpResponse
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import (
     CreateView,
     UpdateView,
@@ -354,13 +355,44 @@ class CreateNewVersionPlanView(PlanAccessViewMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
-class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
-    template_name = 'easydmp/plan/answer_linear_section_form.html'
-    model = AnswerSet
-    pk_url_kwarg = 'answerset'
-    viewname = 'answer_linear_section'
-    branching_viewname = 'answer_question'
-    __LOG = logging.getLogger('{}.{}'.format(__name__, 'AnswerLinearSectionView'))
+class AddAnswerSetView(RedirectView):
+
+    def get(self, request, *args, **kwargs):
+        self.section = get_object_or_404(Section, pk=self.kwargs['section'])
+        self.plan = get_object_or_404(Plan, pk=self.kwargs['plan'])
+        if not self.plan.template == self.section.template:
+            raise Http404
+        editable = self.plan.may_edit(request.user)
+        if not editable:
+            raise Http404
+        answerset = self.plan.get_answersets_for_section(self.section).last()
+        self.sibling = answerset.add_sibling()
+        template = '{timestamp} {actor} added answerset "{action_object}" to plan {target}'
+        log_event(request.user, 'add-answerset', target=self.plan,
+                  object=self.sibling, template=template)
+        messages.success(request, 'Answerset added')
+        url = self.get_redirect_url(*args, **kwargs)
+        return HttpResponseRedirect(url)
+
+    def get_redirect_url(self, *args,**kwargs):
+        minimal_kwargs = {'plan': self.sibling.plan_id, 'answerset': self.sibling.id}
+        if self.sibling.section.branching:
+            viewname = 'answer_question'
+            kwargs = dict(
+                question=self.sibling.section.first_question.id,
+                **minimal_kwargs,
+            )
+            return reverse(viewname, kwargs=kwargs)
+        else:
+            viewname = 'answer_linear_section'
+            kwargs = dict(
+                section=self.sibling.section_id,
+                **minimal_kwargs,
+            )
+            return reverse(viewname, kwargs=kwargs)
+
+
+class AnswerSetSectionMixin(AnswerSetAccessViewMixin):
 
     def check_and_get_kwargs(self, request):
         self.answerset = super().get_object()
@@ -372,6 +404,37 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
         self.editable = self.plan.may_edit(request.user)
         if not all((correct_plan, correct_section, viewable)):
             raise Http404
+
+
+class RemoveAnswerSetView(DeleteFormMixin, AnswerSetSectionMixin, DeleteView):
+    model = AnswerSet
+    pk_url_kwarg = 'answerset'
+    template_name = 'easydmp/plan/answerset_confirm_delete.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.check_and_get_kwargs(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        success_url = self.get_success_url()
+        template = '{timestamp} {actor} removed answerset "{action_object}" from plan {target}'
+        log_event(request.user, 'remove-answerset', target=self.plan,
+                  object=self.answerset, template=template)
+        self.answerset.delete()
+        messages.success(request, 'Answerset removed')
+        return HttpResponseRedirect(success_url)
+
+    def get_success_url(self):
+        return reverse('plan_detail', kwargs={'plan': self.plan.id})
+
+
+class AnswerLinearSectionView(AnswerSetSectionMixin, DetailView):
+    template_name = 'easydmp/plan/answer_linear_section_form.html'
+    model = AnswerSet
+    pk_url_kwarg = 'answerset'
+    viewname = 'answer_linear_section'
+    branching_viewname = 'answer_question'
+    __LOG = logging.getLogger('{}.{}'.format(__name__, 'AnswerLinearSectionView'))
 
     def dispatch(self, request, *args, **kwargs):
         error_message_404 = "This Section cannot be edited in one go"
@@ -414,37 +477,29 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
             viewname = self.viewname
             return reverse(viewname, kwargs=kwargs)
         if 'next' in self.request.POST and self.next_section:
-            answerset = self.plan.get_answersets_for_section(self.next_section).first()
-            if self.next_section.branching:
-                kwargs=dict(
-                    question=self.next_section.first_question.pk,
-                    answerset=answerset.pk,
-                    **minimal_kwargs,
-                )
+            answerset = self.answerset.get_next_answerset()
+            kwargs=dict(
+                answerset=answerset.pk,
+                **minimal_kwargs,
+            )
+            if answerset.section.branching:
+                kwargs['question'] = answerset.section.first_question.pk
                 viewname = self.branching_viewname
             else:
-                kwargs = dict(
-                    section=self.next_section.pk,
-                    answerset=answerset.pk,
-                    **minimal_kwargs,
-                )
+                kwargs['section'] = answerset.section.pk
                 viewname = self.viewname
             return reverse(viewname, kwargs=kwargs)
         if 'prev' in self.request.POST and self.prev_section:
-            answerset = self.plan.get_answersets_for_section(self.prev_section).last()
-            if self.prev_section.branching:
-                kwargs=dict(
-                    question=self.prev_section.last_question.pk,
-                    answerset=answerset.pk,
-                    **minimal_kwargs,
-                )
+            answerset = self.answerset.get_previous_answerset()
+            kwargs=dict(
+                answerset=answerset.pk,
+                **minimal_kwargs,
+            )
+            if answerset.section.branching:
+                kwargs['question'] = answerset.section.last_question.pk,
                 viewname = self.branching_viewname
             else:
-                kwargs = dict(
-                    section=self.prev_section.pk,
-                    answerset=answerset.pk,
-                    **minimal_kwargs,
-                )
+                kwargs['section'] = answerset.section.pk
                 viewname = self.viewname
             return reverse(viewname, kwargs=kwargs)
         # Summary

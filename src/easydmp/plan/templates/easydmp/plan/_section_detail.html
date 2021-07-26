@@ -1,3 +1,4 @@
+{% load static %}
 {% for summary in summaries %}
 {% with section=summary.section answersets=summary.answersets subsections=summary.subsections %}
 <!-- section {{ section.full_title }} ({{ section.pk }}) depth {{ section.depth }} -->
@@ -6,6 +7,9 @@
     {% if section.section.title %}
     <{{section.title_tag }} class="section_title"><a href="{% url 'section_detail' section=section.pk plan=object.id %}">{{ section.full_title }}{% show_checkmark section.valid %}</a></{{ section.title_tag }}>
     <div class="section-controls">
+    {% if section.addable and editable_for_user %}
+      <form action="{% url 'add_answerset' plan=plan.pk section=section.pk %}" class="add-answerset" method="get"><button></button></form>
+    {% endif %}
     <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#section-{{ section.pk }} .content-wrap" aria-expanded="false" aria-controls="collapseExample">
     <span class="caret"></span>
     </button>
@@ -27,12 +31,17 @@
           {% for answerset in answersets %}
           <div class="answerset">
             <div class="answerset-header">
-              <p class="answerset-name">{% if section.num_answersets > 1 %}{{ answerset.name }}{% show_checkmark answerset.valid %}{% else %}&nbsp;{% endif %}</p>
-              <p>
-              {% if section.may_edit_all %}
-              <a href="{% url 'answer_linear_section' section=section.pk plan=object.id answerset=answerset.pk %}">Edit all</a>
-              {% endif %}
+              <p class="answerset-name">
+                {% if section.num_answersets > 1 %}{{ answerset.name }}{% show_checkmark answerset.valid %}{% else %}&nbsp;{% endif %}
               </p>
+              {% if editable_for_user %}
+              {% if section.deletable %}
+              <form action="{% url 'remove_answerset' plan=plan.pk section=section.pk answerset=answerset.pk %}" method="get" class="remove-answerset" ><button></button></form>
+              {% endif %}
+              {% if section.may_edit_all %}
+              <p><a href="{% url 'answer_linear_section' section=section.pk plan=object.id answerset=answerset.pk %}">Edit all</a></p>
+              {% endif %}
+              {% endif %}
             </div>
             {% for question_pk, value in answerset.data.items %}
             <dl class="questionrow">

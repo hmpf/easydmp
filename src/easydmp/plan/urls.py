@@ -8,6 +8,8 @@ from .views import (
     DeletePlanView,
     SaveAsPlanView,
     AnswerQuestionView,
+    AddAnswerSetView,
+    RemoveAnswerSetView,
     FirstQuestionView,
     PlanListView,
     PlanDetailView,
@@ -40,6 +42,8 @@ urlpatterns = [
     path('<int:plan>/share/', PlanAccessView.as_view(), name='share_plan'),
 
     path('<int:plan>/section/<int:section>:<int:answerset>/update/', AnswerLinearSectionView.as_view(), name='answer_linear_section'),
+    path('<int:plan>/section/<int:section>:<int:answerset>/delete/', RemoveAnswerSetView.as_view(), name='remove_answerset'),
+    path('<int:plan>/section/<int:section>/add/', AddAnswerSetView.as_view(), name='add_answerset'),
     path('<int:plan>/section/<int:section>/', SectionDetailView.as_view(), name='section_detail'),
     path('<int:plan>/question/<int:question>:<int:answerset>/update/', AnswerQuestionView.as_view(), name='answer_question'),
     path('<int:plan>/<int:question>/new/', RedirectToAnswerQuestionView.as_view(), name='redirect_to_answer_question'),

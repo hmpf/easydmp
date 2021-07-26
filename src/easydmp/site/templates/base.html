@@ -47,6 +47,54 @@
         }
         .alert { background-color: #9ed2df; font-weight: bold; color: #fff}
         .instance { background-color: #fc9039}
+
+        /*
+        .remove-answerset {
+            padding-right: 2rem;
+        }
+        */
+        .add-answerset {
+            padding-right: 1rem;
+        }
+        .add-answerset button {
+            background: url('{% static "icons/icon-plus-black.png" %}') no-repeat center center;
+            background-size: 100%;
+            height: 1.8rem;
+            width: 1.8rem;
+            border-style: none;
+            vertical-align: middle;
+        }
+        .remove-answerset button {
+            background: url('{% static "icons/icon-minus-black.png" %}') no-repeat center center;
+            background-size: 100%;
+            height: 1.8rem;
+            width: 1.8rem;
+            border-style: none;
+            vertical-align: middle;
+        }
+        .section-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-flow: row nowrap;
+        }
+        .answerset-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-flow: row nowrap;
+            margin-bottom: 10px;
+            column-gap: 2rem;
+        }
+        .answerset-header * {
+            margin: 0;
+            height: 2.8rem;
+            line-height: 2.8rem;
+        }
+        .answerset-header a {
+            font-weight: bold;
+            display: inline-block;
+        }
     </style>
     {% block extrahead %}{% endblock %}
 </head>

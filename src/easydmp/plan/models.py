@@ -285,6 +285,46 @@ class AnswerSet(ClonableModel):
             else:
                 answerset.add_children()  # Cannot put this in self.save(), would loop
 
+    # START: Traversal
+
+    def get_next_answerset(self):
+        # Children
+        if self.answersets.exists():
+            return self.answersets.order_by('pk').first()
+        # Siblings
+        siblings = tuple(self.get_siblings())
+        index = siblings.index(self)
+        younger = siblings[index:]
+        if younger:
+            return younger[0]
+        # Next section
+        next_section = self.section.get_next_section()
+        answersets = self.plan.get_answersets_for_section(next_section)
+        if answersets:
+            return answersets.first()
+        # We've run out of possible answersets
+        return None
+
+    def get_previous_answerset(self):
+        # Siblings
+        siblings = tuple(self.get_siblings())
+        index = siblings.index(self)
+        older = siblings[:index]
+        if older:
+            return older[-1]
+        # Parent
+        if self.parent:
+            return self.parent
+        # Previous section
+        prev_section = self.section.get_prev_section()
+        answersets = self.plan.get_answersets_for_section(prev_section)
+        if answersets:
+            return answersets.last()
+        # We've run out of possible answersets
+        return None
+
+    # END: Traversal
+
     @property
     def is_empty(self):
         return bool(self.data)
@@ -963,8 +1003,14 @@ class Plan(DeletionMixin, ClonableModel):
         answersets = self.answersets.filter(section=section)
         num_answersets = answersets.count()
         is_valid = answersets.filter(valid=True).count() == num_answersets
+        deletable_if_optional = section.optional and num_answersets
+        deletable_if_repeatable = section.repeatable and num_answersets > 1
+        addable_if_optional = section.optional and not num_answersets
+        addable_if_repeatable = section.repeatable
         meta_summary = section.get_meta_summary(
             valid=is_valid,
+            deletable=bool(deletable_if_optional or deletable_if_repeatable),
+            addable=bool(addable_if_repeatable or addable_if_optional),
             num_answersets=num_answersets,
             title_tag=f'h{section.section_depth+default_tag_level}',
         )
