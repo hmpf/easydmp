@@ -37,7 +37,7 @@
   {% for answerset in section.answersets %}
     <section>
     {% if section.section.num_answersets > 1 %}
-    <h3>{{ answerset.answerset }}</h3>
+    <h3>{{ answerset.name }}</h3>
     {% endif %}
     <div class="canned_answers">
     {% for para in answerset.text %}

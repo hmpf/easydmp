@@ -832,7 +832,7 @@ class Plan(DeletionMixin, ClonableModel):
             for answerset in answersets.order_by('pk'):
                 canned_text = section.generate_canned_text(answerset.data)
                 answer_blocks.append({
-                    'answerset': answerset.pk,
+                    'name': answerset.identifier,
                     'text': canned_text,
                 })
             texts.append({
