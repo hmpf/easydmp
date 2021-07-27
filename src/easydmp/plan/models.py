@@ -17,6 +17,7 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 from django.utils.timezone import now as tznow
 
+from easydmp.constants import NotSet
 from easydmp.dmpt.forms import make_form
 from easydmp.dmpt.models.base import create_template_export_obj
 from easydmp.dmpt.utils import DeletionMixin
@@ -823,11 +824,16 @@ class Plan(DeletionMixin, ClonableModel):
     def get_first_question(self):
         return self.template.first_question
 
-    def get_answersets_for_section(self, section):
-        answersets = self.answersets.filter(section=section)
+    def get_answersets_for_section(self, section, parent=NotSet):
+        kwargs={'section': section}
+        if parent != NotSet:
+            kwargs['parent'] = parent
+        answersets = self.answersets.filter(**kwargs)
         if not answersets.exists():
-            AnswerSet.objects.create(plan=self, section=section, valid=False)
-            answersets = self.answersets.filter(section=section)
+            answerset = AnswerSet(valid=False, **kwargs)
+            answerset.save()
+            answerset.add_children()
+        answersets = self.answersets.filter(**kwargs)
         return answersets
 
     # Validation
