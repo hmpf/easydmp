@@ -347,13 +347,15 @@ class AnswerSet(ClonableModel):
         return bool(hidden) or bool(show)
 
     @transaction.atomic
-    def clone(self, plan):
+    def clone(self, plan, parent=None):
+        # Does not clone children
         new = self.__class__.objects.create(
             plan=plan,
             section=self.section,
             data=self.data,
             previous_data=self.previous_data,
             valid=self.valid,
+            parent=parent,
             last_validated=self.last_validated
         )
         # answers created during "create", fix their validity
@@ -831,8 +833,14 @@ class Plan(DeletionMixin, ClonableModel):
     # Validation
 
     def clone_answersets(self, oldplan):
+        answerset_mapping = {}
         for answerset in oldplan.answersets.all():
-            answerset.clone(self)
+            new_answerset = answerset.clone(self)
+            answerset_mapping[answerset] = new_answerset
+        for old_answerset, new_answerset in answerset_mapping.items():
+            if old_answerset.parent:
+                new_answerset.parent = answerset_mapping[old_answerset.parent]
+                new_answerset.save()
 
     def validate_data(self, recalculate: bool = True) -> bool:
         qids = self.question_ids_answered()
