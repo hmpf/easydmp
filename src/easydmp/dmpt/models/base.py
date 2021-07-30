@@ -2,6 +2,7 @@ from collections import OrderedDict, defaultdict
 from copy import deepcopy
 from textwrap import fill
 from typing import Any, Dict, Tuple, Set, List, Union
+from types import SimpleNamespace
 from uuid import uuid4
 import logging
 import socket
@@ -16,8 +17,10 @@ from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
+from django.db.models import Exists, OuterRef
 from django.forms import model_to_dict
 from django.utils.encoding import force_str
+from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now as tznow
 
@@ -331,7 +334,7 @@ class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
     def last_section(self):
         return Section.objects.filter(template=self).order_by('-position')[0]
 
-    @property
+    @cached_property
     def first_question(self):
         section = self.first_section
         return section.first_question
@@ -387,6 +390,27 @@ class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         """
         PositionUtils.renumber_positions(self.sections, self.ordered_sections())
 
+    # START: optimized section access
+    # Avoid recursive queries/connections to database
+
+    def get_topmost_sections(self):
+        return self.sections.filter(super_section__isnull=True)
+
+    def get_annotated_sections(self):
+        return self.sections.with_has_questions()
+
+    def get_childmapping(self, qs=None):
+        if not qs:
+            qs = tuple(self.sections.only('id','super_section_id').iterator())
+        return qs.childmap()
+
+    def get_linear_serialized_sections(self, qs=None, func=None):
+        if not qs:
+            qs = self.sections.with_has_questions.iterator()
+        return qs.lookup_map(func=func)
+
+    # END: optimized section access
+
     # END: (re)ordering sections
 
     def generate_canned_text(self, data: Data):
@@ -422,24 +446,11 @@ class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 value['question'] = question
                 # X2X
                 section_summary[question.pk] = value
-            has_questions = section.questions.exists()
-            may_edit_all = has_questions and not section.branching
+            # XXX calculate validity
+            valid = None
             summary[section.full_title()] = {
                 'data': section_summary,
-                'section': {
-                    'valid': True if section.id in valid_section_ids else False,
-                    'may_edit_all': may_edit_all,
-                    'has_questions': has_questions,
-                    'depth': section.section_depth,
-                    'label': section.label,
-                    'title': section.title,
-                    'section': section,
-                    'full_title': section.full_title(),
-                    'pk': section.pk,
-                    'first_question': section.first_question,
-                    'introductory_text': mark_safe(section.introductory_text),
-                    'comment': mark_safe(section.comment),
-                }
+                'section': section.get_meta_summary(valid=valid),
             }
         return summary
 
@@ -559,9 +570,84 @@ class TemplateImportMetadata(ClonableModel):
         return new
 
 
+class SectionQuerySet(models.QuerySet):
+    # START: optimized section access
+
+    def with_has_questions(self):
+        return self.annotate(
+            has_questions=Exists(Question.objects.filter(section=OuterRef('id'))))
+
+    def with_first_question(self, qs=None):
+        if not qs:
+            qs = self.all()
+        qs = qs.prefetch_related('questions')
+        for section in qs:
+            section.first_question = section.questions.first() or None
+        return qs
+
+    def childmap(self, qs=None):
+        mapping = defaultdict(set)
+        if not qs:
+            qs = tuple(self.only('id','super_section_id').iterator())
+        for section in qs:
+            mapping[section.super_section_id].add(section.id)
+        return mapping
+
+    def decorate(self, **funcs):
+        qs = self.all()
+        for section in qs:
+            for attrname, func in funcs.items():
+                setattr(section, attrname, func(section))
+        return qs
+
+    def lookup_map(self, *decorations, qs=None):
+        if not qs:
+            qs = self.prefetch_related('super_section')
+        child_mapping = self.childmap(qs)
+        mapping = {}
+        for section in tuple(qs):
+            super_section_id = section.super_section_id or None
+            sectionobj = SimpleNamespace(
+                children=child_mapping[section.id],
+                section=section,
+                super_section_id=super_section_id,
+            )
+            for decoration in decorations:
+                setattr(sectionobj, decoration, getattr(section, decoration, None))
+            mapping[section.id] = sectionobj
+        return mapping
+
+    # END: optimized section access
+
+
 class SectionManager(models.Manager):
     def get_by_natural_key(self, template, position, super_section=None):
         return self.get(template=template, super_section=super_section, position=position)
+
+
+def get_section_meta_summary(section, **kwargs):
+    "Serialize a section, suitable for using in an HTML template"
+
+    has_questions = section.questions.exists()
+    may_edit_all = has_questions and not section.branching
+    summary_dict = {
+        'has_questions': has_questions,
+        'may_edit_all': may_edit_all,
+        'depth': section.section_depth,
+        'label': section.label,
+        'branching': section.branching,
+        'title': section.title,
+        'section': section,
+        'repeatable': section.repeatable,
+        'optional': section.optional,
+        'full_title': section.full_title(),
+        'pk': section.pk,
+        'first_question': section.first_question,
+        'introductory_text': mark_safe(section.introductory_text),
+        'comment': mark_safe(section.comment),
+    }
+    summary_dict.update(**kwargs)
+    return summary_dict
 
 
 class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
@@ -612,7 +698,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         related_name='+'
     )
 
-    objects = SectionManager()
+    objects = SectionManager.from_queryset(SectionQuerySet)()
 
     orderable_manager = 'subsections'
 
@@ -765,15 +851,21 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         answer = answers.get(str(self.pk), None)
         return bool(answer)
 
-    @property
+    @cached_property
     def first_question(self):
         """Get first question in *this* section
 
         First questions are always on_trunk and always safe to jump to.
         """
-        if self.questions.exists():
-            return self.questions.order_by('position')[0]
+        try:
+            return self.questions.order_by('position').first()
+        except Question.DoesNotExist:
+            return None
         return None
+
+    @cached_property
+    def has_questions(self):
+        return self.questions.exists()
 
     @property
     def last_question(self):
@@ -1010,28 +1102,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         return data_summary
 
     def get_meta_summary(self, **kwargs):
-        "Serialize a section, suitable for using in an HTML template"
-
-        has_questions = self.questions.exists()
-        may_edit_all = has_questions and not self.branching
-        summary_dict = {
-            'has_questions': has_questions,
-            'may_edit_all': may_edit_all,
-            'depth': self.section_depth,
-            'label': self.label,
-            'branching': self.branching,
-            'title': self.title,
-            'section': self,
-            'repeatable': self.repeatable,
-            'optional': self.optional,
-            'full_title': self.full_title(),
-            'pk': self.pk,
-            'first_question': self.first_question,
-            'introductory_text': mark_safe(self.introductory_text),
-            'comment': mark_safe(self.comment),
-        }
-        summary_dict.update(**kwargs)
-        return summary_dict
+        return get_section_meta_summary(self, **kwargs)
 
     def generate_complete_path_from_data(self, data: Dict) -> Union[Tuple[()], PathTuple]:
         question = self.first_question
@@ -1593,7 +1664,7 @@ class Question(DeletionMixin, ClonableModel):
 
     def get_optional_canned_answer(self):
         if self.optional:
-            return self.section.optional_canned_text
+            return self.optional_canned_text
         return ''
 
     def generate_canned_text(self, data: Data):

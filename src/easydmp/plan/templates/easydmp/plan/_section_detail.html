@@ -1,76 +1,73 @@
 {% load static %}
 {% for summary in summaries %}
-{% with section=summary.section answersets=summary.answersets subsections=summary.subsections %}
+{% with section=summary.section answersets=summary.answersets %}
 <!-- section {{ section.full_title }} ({{ section.pk }}) depth {{ section.depth }} -->
 <section role="region" class="section section_depth_{{ section.depth }} " id="section-{{ section.pk }}">
-    <div class="section-header">
+  <div class="section-header">
     {% if section.section.title %}
-    <{{section.title_tag }} class="section_title"><a href="{% url 'section_detail' section=section.pk plan=object.id %}">{{ section.full_title }}{% show_checkmark section.valid %}</a></{{ section.title_tag }}>
+    <h{{2|add:section.depth }} class="section_title">
+    <a href="{% url 'section_detail' section=section.pk plan=object.id %}">{{ section.full_title }}{% show_checkmark section.valid %}</a>
+    </h{{ 2|add:section.depth }}>
+    {% endif %}
     <div class="section-controls">
-    {% if section.addable and editable_for_user %}
+      {% if section.addable and editable_for_user %}
       <form action="{% url 'add_answerset' plan=plan.pk section=section.pk %}" class="add-answerset" method="get"><button></button></form>
-    {% endif %}
-    <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#section-{{ section.pk }} .content-wrap" aria-expanded="false" aria-controls="collapseExample">
-    <span class="caret"></span>
-    </button>
-    </div>
-    </div>
-    <div class="section-body content-wrap collapse" aria-expanded="false" style="height: 0px;">
-    {% else %}
-    </div>
-    <div class="section-body">
-    {% endif %}
-      {% if section.introductory_text %}
-      <div class="section_introduction">{{ section.introductory_text }}</div>
       {% endif %}
-      {% if section.comment %}
-      <div class="section_comment"><td colspan="3">{{ section.comment }}</div>
-      {% endif %}
-      {% if section.has_questions %}
-        <div class="answersets">
-          {% for answerset in answersets %}
-          <div class="answerset">
-            <div class="answerset-header">
-              <p class="answerset-name">
-                {% if section.num_answersets > 1 %}{{ answerset.name }}{% show_checkmark answerset.valid %}{% else %}&nbsp;{% endif %}
-              </p>
-              {% if editable_for_user %}
-              {% if section.deletable %}
-              <form action="{% url 'remove_answerset' plan=plan.pk section=section.pk answerset=answerset.pk %}" method="get" class="remove-answerset" ><button></button></form>
+      <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#section-{{ section.pk }} .content-wrap" aria-expanded="false" aria-controls="collapseExample">
+        <span class="caret"></span>
+      </button>
+    </div>
+  </div>
+  <div class="section-body content-wrap collapse" aria-expanded="false" style="height: 0px;">
+    {% if section.introductory_text %}<div class="section_introduction">{{ section.introductory_text }}</div>{% endif %}
+    {% if section.comment %}<div class="section_comment"><td colspan="3">{{ section.comment }}</div>{% endif %}
+    {% if section.has_questions %}
+    <div class="answersets">
+      {% for answerset in answersets %}
+      <!-- answerset {{ answerset.name }} ({{ answerset.pk }}) valid {{ answerset.valid }} -->
+      <div class="answerset">
+        <div class="answerset-header">
+          <p class="answerset-name">{% if section.num_answersets > 1 %}
+            {{ answerset.name }} {% endif %}{% show_checkmark answerset.valid %}
+          </p>
+
+          {% if editable_for_user %}
+          {% if section.deletable %}
+          <form action="{% url 'remove_answerset' plan=plan.pk section=section.pk answerset=answerset.pk %}" method="get" class="remove-answerset" ><button></button></form>
+          {% endif %}
+          {% if section.may_edit_all %}
+          <p><a href="{% url 'answer_linear_section' section=section.pk plan=object.id answerset=answerset.pk %}">Edit all</a>
+          {% endif %}
+          {% endif %}
+        </div> {# / answerset-header #}
+        {% for question_pk, value in answerset.data.items %}
+        <dl class="questionrow">
+          <dt class="question">
+            <p>{{ value.question }}{% if not value.question.optional %}<span class="asteriskField">*</span>{% endif %}</p>
+            {% if editable_for_user %}
+            <p><a href="{% url 'answer_question' plan=object.id question=question_pk answerset=answerset.pk %}">Edit</a></p>
+            {% endif %}
+          </dt>
+          <dd class="answer">{{ value.answer|default:"—" }}
+              {% if value.notes %}<br />
+              <div class="notes">
+                  <b>Notes:</b>
+                  {{ value.notes }}
+              </div>
               {% endif %}
-              {% if section.may_edit_all %}
-              <p><a href="{% url 'answer_linear_section' section=section.pk plan=object.id answerset=answerset.pk %}">Edit all</a></p>
-              {% endif %}
-              {% endif %}
-            </div>
-            {% for question_pk, value in answerset.data.items %}
-            <dl class="questionrow">
-              <dt class="question">
-                <p>{{ value.question }}{% if not value.question.optional %}<span class="asteriskField">*</span>{% endif %}</p>
-                {% if editable_for_user %}
-                <p><a href="{% url 'answer_question' plan=object.id question=question_pk answerset=answerset.pk %}">Edit</a></p>
-                {% endif %}
-              </dt>
-              <dd class="answer">{{ value.answer|default:"—" }}
-                  {% if value.notes %}<br />
-                  <div class="notes">
-                      <b>Notes:</b>
-                      {{ value.notes }}
-                  </div>
-                  {% endif %}
-              </dd>
-            </dl>
-            {% endfor %} {# / question #}
-          </div>
-          {% endfor %} {# / answerset #}
-        </div>
-      {% endif %}
-      {% if subsections %}
+          </dd>
+        </dl> {# / questionrow #}
+        {% endfor %}
+{% if answerset.children %}
 {% with template_name='easydmp/plan/_section_detail.html' %}
-{% include template_name with summaries=subsections %}
+{% include template_name with summaries=answerset.children %}
 {% endwith %}
+{% endif %}
+      </div> {# / answerset #}
+      {% endfor %}
+    </div> {# / answersets #}
     {% endif %}
-    </div>
+  </div> {# / section-body #}
 </section>
 {% endwith %}
 {% endfor %}

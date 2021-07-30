@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from copy import deepcopy
 from datetime import datetime
+from types import SimpleNamespace
 from typing import Any, Set, Dict, TYPE_CHECKING
 from uuid import uuid4
 
@@ -13,13 +14,15 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 from django.forms import model_to_dict
-from django.db.models import Q
+from django.db.models import Q, Count, Exists, OuterRef
 from django.template.loader import render_to_string
+from django.utils.safestring import mark_safe
 from django.utils.timezone import now as tznow
 
 from easydmp.constants import NotSet
 from easydmp.dmpt.forms import make_form, NotesForm
 from easydmp.dmpt.export_template import create_template_export_obj
+from easydmp.dmpt.models.base import get_section_meta_summary
 from easydmp.dmpt.utils import DeletionMixin, make_qid
 from easydmp.eventlog.utils import log_event
 from easydmp.lib import dump_obj_to_searchable_string
@@ -172,6 +175,10 @@ class AnswerHelper():
             self.plan.save(update_fields=['valid', 'last_validated'])
 
 
+AnswerSetParentKey = namedtuple('AnswerSetParentKey', 'plan_id section_id parent_id')
+AnswerSetSectionKey = namedtuple('AnswerSetSectionKey', 'plan_id section_id')
+
+
 class AnswerSetQuerySet(models.QuerySet):
 
     def get_by_natural_key(self, plan_id, parent_id, section_id, identifier):
@@ -181,6 +188,60 @@ class AnswerSetQuerySet(models.QuerySet):
             answerset__section_id=section_id,
             answerset__identifier=identifier,
         )
+
+    # START: optimized answerset access
+
+    def childmap(self, qs=None):
+        mapping = defaultdict(OrderedDict)
+        if not qs:
+            qs = tuple(self.only('id','parent_id', 'section_id').iterator())
+        for answerset in qs.order_by('section_id', 'parent_id', 'id'):
+            mapping[answerset.parent_id][answerset.id] = answerset.section_id
+        return mapping
+
+    def plain_lookup_map(self, qs=None):
+        if not qs:
+            qs = self.all()
+        mapping = {}
+        for answerset in qs:
+            mapping[answerset.id] = answerset
+        return mapping
+
+    def decorate(self, func, qs=None):
+        if qs is None:
+            qs = self.all()
+        for answerset in qs:
+            answerset.decoration = func(answerset)
+        return qs
+
+    def lookup_map(self, qs=None):
+        if not qs:
+            qs = self.prefetch_related('section', 'parent').order_by('pk')
+        child_mapping = self.childmap(qs)
+        mapping = {}
+        for answerset in tuple(qs):
+            parent_id = answerset.parent.pk if answerset.parent else None
+            decoration = getattr(answerset, 'decoration', None)
+            answersetobj = SimpleNamespace(
+                children=child_mapping[answerset.id],
+                answerset=answerset,
+                parent_id=parent_id,
+                section=answerset.section,
+                decoration=decoration,
+            )
+            mapping[answerset.id] = answersetobj
+        return mapping
+
+    def map_by_parent_key(self, qs=None):
+        if not qs:
+            qs = self.all()
+        mapping = defaultdict(OrderedDict)
+        for answerset in qs:
+            key = AnswerSetParentKey(answerset.plan_id, answerset.section_id, answerset.parent_id)
+            mapping[key][answerset.id] = None
+        return {k: tuple(v.keys()) for k, v in mapping.items()}
+
+    # END: optimized answerset access
 
 
 class AnswerSet(ClonableModel):
@@ -333,7 +394,7 @@ class AnswerSet(ClonableModel):
         return self.data.get(str(question_id), {})
 
     @transaction.atomic
-    def update_answer(self, question_id, choice):
+    def update_answer(self, question_id, choice, skipped=None):
         lookup_question_id = str(question_id)
         previous_choice = self.data.get(lookup_question_id, None)
         if previous_choice:
@@ -343,13 +404,15 @@ class AnswerSet(ClonableModel):
             question_id=int(question_id),
             defaults={'valid': True}
         )
+        if self.skipped != skipped:
+            self.skipped = skipped
         self.save()
 
     def get_choice(self, question_id):
         return self.get_answer(question_id).get('choice', None)
 
-    def get_answersets_for_section(self, section, parent=NotSet):
-        return self.plan.get_answersets_for_section(section, parent=parent)
+    def get_answersets_for_section(self, section):
+        return self.plan.get_answersets_for_section(section)
 
     def delete_answers(self, question_ids, commit=True):
         deleted = set()
@@ -940,6 +1003,11 @@ class Plan(DeletionMixin, ClonableModel):
         answersets = self.answersets.filter(**kwargs)
         return answersets
 
+    def get_linear_serialized_answersets(self, qs=None):
+        if not qs:
+            qs = self.answersets.all()
+        return qs.lookup_map(qs)
+
     # Validation
 
     def clone_answersets(self, oldplan):
@@ -998,39 +1066,49 @@ class Plan(DeletionMixin, ClonableModel):
         context = self.get_context_for_generated_text()
         return render_to_string(GENERATED_HTML_TEMPLATE, context)
 
-    def get_summary_for_section(self, sectionobj, default_tag_level):
+    def make_summary_of_answerset(self, answerset):
+        sectionobj = self.linear_sections[answerset.section_id]
+        decorate_answerset = sectionobj.section.get_data_summary
+        data_summary = decorate_answerset(answerset.data)
+        return SimpleNamespace(pk=answerset.pk, name=answerset.identifier,
+                    valid=answerset.valid, data=data_summary)
+
+    def get_summary_for_section(self, sectionobj, answersetobjs):
+        num_answersets = sectionobj.num_answersets
         section = sectionobj.section
-        answersets = self.answersets.filter(section=section)
-        num_answersets = answersets.count()
-        is_valid = answersets.filter(valid=True).count() == num_answersets
+        num_valid_answersets = 0
+        for answersetobj in answersetobjs:
+            if answersetobj.answerset.valid:
+                num_valid_answersets += 1
+        is_valid = num_valid_answersets == num_answersets
         deletable_if_optional = section.optional and num_answersets
         deletable_if_repeatable = section.repeatable and num_answersets > 1
         addable_if_optional = section.optional and not num_answersets
         addable_if_repeatable = section.repeatable
-        meta_summary = section.get_meta_summary(
-            valid=is_valid,
-            deletable=bool(deletable_if_optional or deletable_if_repeatable),
-            addable=bool(addable_if_repeatable or addable_if_optional),
-            num_answersets=num_answersets,
-            title_tag=f'h{section.section_depth+default_tag_level}',
-        )
+        meta_summary = sectionobj.summary
+        meta_summary['num_answersets'] = num_answersets
+        meta_summary['valid'] = is_valid
+        meta_summary['addable'] = bool(addable_if_repeatable or addable_if_optional)
+        meta_summary['deletable'] = bool(deletable_if_optional or deletable_if_repeatable)
+
         answer_blocks = []
-        for answerset in answersets.order_by('pk'):
-            data_summary = section.get_data_summary(answerset.data)
-            answer_blocks.append({
-                'pk': answerset.pk,
-                'name': answerset.identifier,
-                'valid': answerset.valid,
-                'data': data_summary,
-            })
-        subsections = []
-        for sectionobj in sectionobj.subsections:
-            subsummary = self.get_summary_for_section(sectionobj, default_tag_level)
-            subsections.append(subsummary)
+        for answersetobj in answersetobjs:
+            decoration = answersetobj.decoration
+            decoration.section = answersetobj.section
+            parent_id = answersetobj.answerset.id
+            if sectionobj.children and answersetobj.children:
+                decoration.children = list()
+                for subsection_id in sectionobj.children:
+                    key = AnswerSetParentKey(self.id, subsection_id, parent_id)
+                    asids = self.parent_map.get(key, tuple())
+                    subsectionobj = self.linear_sections[subsection_id]
+                    child_answersetobjs = [self.linear_answersets[asid] for asid in asids]
+                    subsummary = self.get_summary_for_section(subsectionobj, child_answersetobjs)
+                    decoration.children.append(subsummary)
+            answer_blocks.append(decoration)
         return {
             'answersets': answer_blocks,
             'section': meta_summary,
-            'subsections': tuple(subsections),
         }
 
     def get_nested_summary(self):
@@ -1038,43 +1116,96 @@ class Plan(DeletionMixin, ClonableModel):
 
         This assumes that each question may be answered more than once,
         basically: sections may be answered more than once.
+
+        Optimized for makling few calls to the database, by avoiding queries
+        in loops.
         """
-        default_tag_level = 2
+        sections = (self.template.sections
+            .prefetch_related('super_section')
+            .annotate(num_answersets=Count('answersets'))
+            .order_by('position')
+            .decorate(summary=get_section_meta_summary)
+        )
+        self.linear_sections = sections.lookup_map('num_answersets', 'summary', qs=sections)
+        answersets = self.answersets.decorate(
+            self.make_summary_of_answerset,
+            qs=self.answersets.select_related('parent', 'section').order_by('pk')
+        )
+        self.parent_map = answersets.map_by_parent_key()
+        self.linear_answersets = self.answersets.lookup_map(qs=answersets)
         summary = []
-        for sectionobj in self.template.get_section_tree():
-            summary.append(self.get_summary_for_section(sectionobj, default_tag_level))
+        # Avoid queries in loops
+        for section in sections:
+            if section.super_section:
+                continue
+            key = AnswerSetParentKey(self.id, section.id, None)
+            asids = self.parent_map.get(key, tuple())
+            answersets = []
+            if asids:
+                answersets = [self.linear_answersets[asid] for asid in asids]
+            sectionobj = self.linear_sections[section.id]
+            summary.append(self.get_summary_for_section(sectionobj, answersets))
         return summary
+
+    def make_canned_text_of_answerset(self, answerset):
+        section = answerset.section
+        decorate_answerset = section.generate_canned_text
+        data_summary = decorate_answerset(answerset.data)
+        return SimpleNamespace(answerset=data_summary)
+
+    def get_canned_text_for_section(self, sectionobj, answersetobjs):
+        section = sectionobj.section
+        meta_summary = {
+            'depth': section.section_depth,
+            'title': section.title,
+            'introductory_text': mark_safe(section.introductory_text),
+            'comment': mark_safe(section.comment),
+            'num_answersets': sectionobj.num_answersets,
+        }
+        answer_blocks = []
+        for answersetobj in answersetobjs:
+            decoration = answersetobj.decoration
+            parent_id = answersetobj.answerset.id
+            if sectionobj.children and answersetobj.children:
+                decoration.children = list()
+                decoration.name = answersetobj.answerset.identifier
+                for subsection_id in sectionobj.children:
+                    key = AnswerSetParentKey(self.id, subsection_id, parent_id)
+                    asids = self.parent_map.get(key, tuple())
+                    subsectionobj = self.linear_sections[subsection_id]
+                    child_answersetobjs = [self.linear_answersets[asid] for asid in asids]
+                    subtext = self.get_canned_text_for_section(subsectionobj, child_answersetobjs)
+                    decoration.children.append(subtext)
+            answer_blocks.append(decoration)
+        return {
+            'answersets': answer_blocks,
+            'section': meta_summary,
+        }
 
     def get_nested_canned_text(self):
         texts = []
-        for section in self.template.ordered_sections():
-            if section.is_skipped and not section.optional_canned_text:
+        self.parent_map = self.answersets.map_by_parent_key()
+        answersets = self.answersets.decorate(
+            self.make_canned_text_of_answerset,
+            qs=self.answersets.select_related('parent', 'section').order_by('pk')
+        )
+        self.linear_answersets = self.answersets.lookup_map(qs=answersets)
+        self.linear_sections = self.template.sections.lookup_map('num_answersets', 'summary')
+        for section in self.template.sections.all():
+            if section.super_section:
                 continue
-            answersets = self.answersets.filter(section=section)
-            num_answersets = answersets.count()
-            meta_summary = section.get_meta_summary(num_answersets=num_answersets)
-            answer_blocks = []
-            for answerset in answersets.order_by('pk'):
-                canned_text = section.generate_canned_text(answerset.data)
-                if not canned_text:
-                    continue
-                answer_blocks.append({
-                    'name': answerset.identifier,
-                    'text': canned_text,
-                })
-            if not answer_blocks and section.optional:
-                continue
-            texts.append({
-                'section': meta_summary,
-                'answersets': answer_blocks,
-            })
+            key = AnswerSetParentKey(self.id, section.id, None)
+            asids = self.parent_map.get(key, tuple())
+            answersets = []
+            if asids:
+                answersets = [self.linear_answersets[asid] for asid in asids]
+            sectionobj = self.linear_sections[section.id]
+            texts.append(self.get_canned_text_for_section(sectionobj, answersets))
         return texts
 
     def get_context_for_generated_text(self):
         return {
             'data': self.total_answers,
-            'output': self.get_nested_summary(),
-            'text': self.get_nested_canned_text(),
             'plan': self,
             'template': self.template,
         }

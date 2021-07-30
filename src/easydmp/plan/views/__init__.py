@@ -916,6 +916,7 @@ def generate_pretty_exported_plan(plan, template_name):
                PlanAccess.objects.filter(plan=plan).filter(may_edit=True)]
 
     context = plan.get_context_for_generated_text()
+    context['text'] = plan.get_nested_canned_text()
     context['logs'] = EventLog.objects.any(plan)
     context['reveal_questions'] = plan.template.reveal_questions
     context['editors'] = ', '.join([str(ed) for ed in editors])

@@ -1,0 +1,35 @@
+{% for sectionobj in text %}
+{% with answersets=sectionobj.answersets section=sectionobj.section %}
+<section>
+<h{{ 1|add:section.depth }}>{{ section.title }}</h{{ 1|add:section.depth }}>
+{% if section.introductory_text %}
+<div class="section-introduction">{{ section.introductory_text }}</div>
+{% endif %}
+{% for answersetobj in answersets %}
+{% with answerset=answersetobj.answerset %}
+  <section>
+  {% if section.num_answersets > 1 %}
+  <h{{ 2|add:section.depth }}>{{ answersetobj.name }}</h{{ 2|add:section.depth }}>
+  {% endif %}
+  <div class="canned_answers">
+  {% for para in answerset %}
+    {% if para.text or para.notes %}
+    <div class="answer">
+      {% if reveal_questions %}<div class="question">{{ para.question }}</div>{% endif %}
+      <div class="canned">{{ para.text }}</div>{% if para.notes %}
+      <div class="note">Note: {{ para.notes }}</div>{% endif %}
+    </div>
+    {% endif %}
+  {% endfor %}
+  </div>
+  </section>
+  {% endwith %}
+{% if answersetobj.children %}
+{% with template_name='easydmp/plan/_generated_section.html' %}
+{% include template_name with text=answersetobj.children %}
+{% endwith %}
+{% endif %}
+  {% endfor %} {# / answerset #}
+</section>
+{% endwith %}
+{% endfor %}
