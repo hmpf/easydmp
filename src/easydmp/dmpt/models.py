@@ -243,7 +243,7 @@ class TemplateQuerySet(models.QuerySet):
         if user.has_superpowers:
             return self.all()
         guardian_access = get_objects_for_user(user, 'dmpt.use_template')
-        qs = self.publicly_available() | guardian_access
+        qs = self.publicly_available().distinct() | guardian_access.distinct()
         return qs.distinct()
 
     def has_change_access(self, user):
