@@ -15,6 +15,24 @@ Planned
 Unreleased
 ----------
 
+1.10.1
+------
+
+Bugfixes:
+
+* Non-superusers can once again start new plans from the template list page.
+* Validation for MultiRDACostOneTextQuestion was.. not exactly checking for
+  what needed checking. Missed because the field is not in use in any public
+  template yet.
+
+Paperwork:
+
+* Show answerset identifier/name in canned export, not the primary key.
+* Move the "is this question editable for this user" calculation from the
+  template to the view.
+* Squash migrations of more standalone apps (eestore, easdydmp_auth, eventlog)
+  in preparation for doing the same to the complex apps (dmpt, plan).
+
 1.10.0
 ------
 
