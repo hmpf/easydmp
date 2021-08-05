@@ -585,12 +585,11 @@ class SectionQuerySet(models.QuerySet):
             section.first_question = section.questions.first() or None
         return qs
 
-    def childmap(self, qs=None):
-        mapping = defaultdict(set)
-        if not qs:
-            qs = tuple(self.only('id','super_section_id').iterator())
-        for section in qs:
-            mapping[section.super_section_id].add(section.id)
+    def childmap(self):
+        mapping = defaultdict(list)
+        qs = self.only('position', 'id','super_section_id').order_by('position')
+        for section in qs.iterator():
+            mapping[section.super_section_id].append(section.id)
         return mapping
 
     def decorate(self, **funcs):
@@ -600,10 +599,9 @@ class SectionQuerySet(models.QuerySet):
                 setattr(section, attrname, func(section))
         return qs
 
-    def lookup_map(self, *decorations, qs=None):
-        if not qs:
-            qs = self.prefetch_related('super_section')
-        child_mapping = self.childmap(qs)
+    def lookup_map(self, **decorations):
+        child_mapping = self.childmap()
+        qs = self.select_related('super_section')
         mapping = {}
         for section in tuple(qs):
             super_section_id = section.super_section_id or None
@@ -612,8 +610,9 @@ class SectionQuerySet(models.QuerySet):
                 section=section,
                 super_section_id=super_section_id,
             )
-            for decoration in decorations:
-                setattr(sectionobj, decoration, getattr(section, decoration, None))
+            for decoration, decorate_func in decorations.items():
+                result = decorate_func(section)
+                setattr(sectionobj, decoration, result)
             mapping[section.id] = sectionobj
         return mapping
 
@@ -903,7 +902,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         """
         next_sections = self.get_all_next_sections().order_by('position')
         if next_sections.exists():
-            return next_sections[0]
+            return next_sections.first()
         return None
 
     def get_next_nonempty_section(self):
@@ -1047,12 +1046,15 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
 
     @property
     def is_skipped(self):
+        """Calculate whether ta scetion is skipped
+
+        This cannot take into account the answerset tree"""
         if not self.optional:
             return False
         if self.is_missing:
             return True
-        # A section with a skipped AnswerSet have no other AnswerSets
-        if self.answersets.filter(skipped=True).exists():
+        # A section with only skipped AnswerSets
+        if self.answersets.filter(skipped=True) == self.answersets.all():
             return True
         return False
 

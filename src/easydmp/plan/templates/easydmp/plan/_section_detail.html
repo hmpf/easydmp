@@ -5,13 +5,11 @@
 <section role="region" class="section section_depth_{{ section.depth }} " id="section-{{ section.pk }}">
   <div class="section-header">
     {% if section.section.title %}
-    <h{{2|add:section.depth }} class="section_title">
-    <a href="{% url 'section_detail' section=section.pk plan=object.id %}">{{ section.full_title }}{% show_checkmark section.valid %}</a>
-    </h{{ 2|add:section.depth }}>
+    <h{{2|add:section.depth }} class="section_title"><a href="{% url 'answerset_detail' section=section.pk plan=object.id answerset=section.answerset.pk %}">{{ section.full_title }}{% show_checkmark section.valid %}</a></h{{ 2|add:section.depth }}>
     {% endif %}
     <div class="section-controls">
       {% if section.addable and editable_for_user %}
-      <form action="{% url 'add_answerset' plan=plan.pk section=section.pk %}" class="add-answerset" method="get"><button></button></form>
+      <form action="{% url 'add_answerset' plan=plan.pk section=section.pk answerset=section.answerset.pk %}" class="add-answerset" method="get"><button title="Add" aria-label="Add"></button></form>
       {% endif %}
       <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#section-{{ section.pk }} .content-wrap" aria-expanded="false" aria-controls="collapseExample">
         <span class="caret"></span>
@@ -24,8 +22,9 @@
     {% if section.has_questions %}
     <div class="answersets">
       {% for answerset in answersets %}
-      <!-- answerset {{ answerset.name }} ({{ answerset.pk }}) valid {{ answerset.valid }} -->
-      <div class="answerset">
+      <!-- answerset {{ answerset.name }} ({{ answerset.pk }}) valid {{ answerset.valid }} skipped {{ answerset.skipped }}-->
+      {% if not answerset.skipped %}
+      <div class="answerset"> {# answerset #}
         <div class="answerset-header">
           <p class="answerset-name">{% if section.num_answersets > 1 %}
             {{ answerset.name }} {% endif %}{% show_checkmark answerset.valid %}
@@ -33,7 +32,7 @@
 
           {% if editable_for_user %}
           {% if section.deletable %}
-          <form action="{% url 'remove_answerset' plan=plan.pk section=section.pk answerset=answerset.pk %}" method="get" class="remove-answerset" ><button></button></form>
+          <form action="{% url 'remove_answerset' plan=plan.pk section=section.pk answerset=answerset.pk %}" method="get" class="remove-answerset" ><button title="Remove" aria-label="Remove"></button></form>
           {% endif %}
           {% if section.may_edit_all %}
           <p><a href="{% url 'answer_linear_section' section=section.pk plan=object.id answerset=answerset.pk %}">Edit all</a>
@@ -60,13 +59,14 @@
         {% endfor %}
 {% if answerset.children %}
 {% with template_name='easydmp/plan/_section_detail.html' %}
-{% include template_name with summaries=answerset.children %}
+{% include template_name with summaries=answerset.children parent=answerset %}
 {% endwith %}
 {% endif %}
       </div> {# / answerset #}
+      {% endif %} {# / answerset #}
       {% endfor %}
     </div> {# / answersets #}
-    {% endif %}
+  {% endif %}
   </div> {# / section-body #}
 </section>
 {% endwith %}

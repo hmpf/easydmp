@@ -22,7 +22,7 @@ URLS = {
     'plan_detail': {'public': False, 'kwargs': ('plan',)},
     'plan_saveas': {'public': False, 'kwargs': ('plan',)},
     'publish_plan': {'public': False, 'kwargs': ('plan',)},
-    'section_detail': {'public': False, 'kwargs': ('plan', 'section',)},
+    'answerset_detail': {'public': False, 'kwargs': ('plan', 'section','answerset')},
     'share_plan': {'public': False, 'kwargs': ('plan',)},
     'unlock_plan': {'public': False, 'kwargs': ('plan',)},
     'update_plan': {'public': False, 'kwargs': ('plan',)},

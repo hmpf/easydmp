@@ -1,13 +1,14 @@
 {% for sectionobj in text %}
 {% with answersets=sectionobj.answersets section=sectionobj.section %}
+{% if section.show %}
 <section>
 <h{{ 1|add:section.depth }}>{{ section.title }}</h{{ 1|add:section.depth }}>
 {% if section.introductory_text %}
 <div class="section-introduction">{{ section.introductory_text }}</div>
 {% endif %}
-{% for answersetobj in answersets %}
-{% with answerset=answersetobj.answerset %}
-  <section>
+  {% for answersetobj in answersets %}
+  {% with answerset=answersetobj.answerset %}
+  <section> <!-- answerset {{ answerset }} -->
   {% if section.num_answersets > 1 %}
   <h{{ 2|add:section.depth }}>{{ answersetobj.name }}</h{{ 2|add:section.depth }}>
   {% endif %}
@@ -21,8 +22,8 @@
     </div>
     {% endif %}
   {% endfor %}
-  </div>
-  </section>
+  </div> {# / canned_answers #}
+  </section> {# / answerset #}
   {% endwith %}
 {% if answersetobj.children %}
 {% with template_name='easydmp/plan/_generated_section.html' %}
@@ -31,5 +32,6 @@
 {% endif %}
   {% endfor %} {# / answerset #}
 </section>
+{% endif %}
 {% endwith %}
-{% endfor %}
+{% endfor %} {# / sectionobj #}
