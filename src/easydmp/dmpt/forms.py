@@ -13,6 +13,7 @@ from easydmp.eestore.models import EEStoreCache
 
 from .models import Template
 from .models import ExternalChoiceQuestion
+from .models import Question
 from .fields import DateRangeField
 from .fields import NamedURLField
 from .fields import ChoiceNotListedField
@@ -104,6 +105,10 @@ class AbstractNodeForm(AbstractNodeMixin, forms.Form):
         super().__init__(**kwargs)
         self._add_choice_field()
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        Question.INPUT_TYPES[cls.TYPE].form = cls
+
     def _add_choice_field(self):
         pass
 
@@ -129,6 +134,7 @@ class AbstractNodeForm(AbstractNodeMixin, forms.Form):
 
 
 class BooleanForm(AbstractNodeForm):
+    TYPE = 'bool'
     json_type = 'string'
 
     def _add_choice_field(self):
@@ -144,6 +150,7 @@ class BooleanForm(AbstractNodeForm):
 
 
 class ChoiceForm(AbstractNodeForm):
+    TYPE = 'choice'
     json_type = 'string'
 
     def _add_choice_field(self):
@@ -159,6 +166,7 @@ class ChoiceForm(AbstractNodeForm):
 
 
 class MultipleChoiceOneTextForm(AbstractNodeForm):
+    TYPE = 'multichoiceonetext'
     json_type = 'array'
 
     def _add_choice_field(self):
@@ -179,6 +187,7 @@ class MultipleChoiceOneTextForm(AbstractNodeForm):
 
 
 class DateRangeForm(AbstractNodeForm):
+    TYPE = 'daterange'
     json_type = 'object'
 
     def deserialize(self, initial):
@@ -243,6 +252,7 @@ class DateRangeForm(AbstractNodeForm):
 
 
 class ReasonForm(AbstractNodeForm):
+    TYPE = 'reason'
     json_type = 'string'
 
     def _add_choice_field(self):
@@ -256,6 +266,7 @@ class ReasonForm(AbstractNodeForm):
 
 
 class ShortFreetextForm(AbstractNodeForm):
+    TYPE = 'shortfreetext'
     json_type = 'string'
     MAX_LENGTH = 100
 
@@ -276,6 +287,7 @@ class ShortFreetextForm(AbstractNodeForm):
 
 
 class PositiveIntegerForm(AbstractNodeForm):
+    TYPE = 'positiveinteger'
     json_type = 'number'
 
     def _add_choice_field(self):
@@ -294,6 +306,7 @@ class PositiveIntegerForm(AbstractNodeForm):
 
 
 class DateForm(AbstractNodeForm):
+    TYPE = 'date'
     json_type = 'string'
 
     def _add_choice_field(self):
@@ -307,6 +320,7 @@ class DateForm(AbstractNodeForm):
 
 
 class ExternalChoiceForm(AbstractNodeForm):
+    TYPE = 'externalchoice'
     json_type = 'string'
 
     def _add_choice_field(self):
@@ -322,6 +336,7 @@ class ExternalChoiceForm(AbstractNodeForm):
 
 
 class ExternalChoiceNotListedForm(AbstractNodeForm):
+    TYPE = 'extchoicenotlisted'
     json_type = 'object'
 
     def _add_choice_field(self):
@@ -347,6 +362,7 @@ class ExternalChoiceNotListedForm(AbstractNodeForm):
 
 
 class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
+    TYPE = 'externalmultichoiceonetext'
     json_type = 'array'
 
     def _add_choice_field(self):
@@ -367,6 +383,7 @@ class ExternalMultipleChoiceOneTextForm(AbstractNodeForm):
 
 
 class ExternalMultipleChoiceNotListedOneTextForm(AbstractNodeForm):
+    TYPE = 'extmultichoicenotlistedonetext'
     json_type = 'object'
 
     def _add_choice_field(self):
@@ -393,6 +410,7 @@ class ExternalMultipleChoiceNotListedOneTextForm(AbstractNodeForm):
 
 class NamedURLForm(AbstractNodeForm):
     # High magic form with node-magic that cannot be used in a formset
+    TYPE = 'namedurl'
     json_type = 'object'
 
     def _add_choice_field(self):
@@ -641,35 +659,20 @@ StorageForecastFormSet = forms.formset_factory(
 )
 
 
-INPUT_TYPE_TO_FORMS = {
-    'bool': BooleanForm,
-    'choice': ChoiceForm,
-    'multichoiceonetext': MultipleChoiceOneTextForm,
-    'daterange': DateRangeForm,
-    'reason': ReasonForm,
-    'shortfreetext' : ShortFreetextForm,
-    'positiveinteger': PositiveIntegerForm,
-    'date': DateForm,
-    'externalchoice': ExternalChoiceForm,
-    'extchoicenotlisted': ExternalChoiceNotListedForm,
-    'externalmultichoiceonetext': ExternalMultipleChoiceOneTextForm,
-    'extmultichoicenotlistedonetext': ExternalMultipleChoiceNotListedOneTextForm,
-    'namedurl': NamedURLForm,
-    'multinamedurlonetext': MultiNamedURLOneTextFormSet,
-    'multidmptypedreasononetext': MultiDMPTypedReasonOneTextFormSet,
-    'multirdacostonetext': MultiRDACostOneTextFormSet,
-    'storageforecast': StorageForecastFormSet
-}
+Question.INPUT_TYPES['multinamedurlonetext'].form = MultiNamedURLOneTextFormSet
+Question.INPUT_TYPES['multidmptypedreasononetext'].form = MultiDMPTypedReasonOneTextFormSet
+Question.INPUT_TYPES['multirdacostonetext'].form = MultiRDACostOneTextFormSet
+Question.INPUT_TYPES['storageforecast'].form = StorageForecastFormSet
 
 
 def make_form(question, **kwargs):
     kwargs.pop('prefix', None)
     kwargs.pop('instance', None)
     kwargs['question'] = question
-    form_type = INPUT_TYPE_TO_FORMS.get(question.input_type, None)
-    if form_type is None:
+    input_type = Question.INPUT_TYPES.get(question.input_type, None)
+    if input_type is None:
         assert False, 'Unknown input type: {}'.format(question.input_type)
-    form = form_type(**kwargs)
+    form = input_type.form(**kwargs)
     if isinstance(form, forms.BaseFormSet):
         form.validate_min = not question.optional
     return form

@@ -3,7 +3,8 @@ from django.conf import settings
 from rest_framework import serializers
 
 from easydmp.dmpt.models import (Template, Section, Question, ExplicitBranch,
-                                 CannedAnswer, get_origin)
+                                 CannedAnswer)
+from easydmp.dmpt.utils import get_origin
 from easydmp.eestore.models import EEStoreMount
 
 

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from collections import namedtuple
+import socket
 from typing import Callable
 
+from django.conf import settings
 from django.contrib.admin.utils import NestedObjects
 from django.db import router
 from django.db import transaction
@@ -23,6 +25,7 @@ __all__ = (
     'render_from_string',
     'force_items_to_str',
     'print_url',
+    'get_origin',
     'DeletionMixin',
 )
 
@@ -44,6 +47,56 @@ def print_url(urldict):
     name = name if name else url
     format = '<a href="{}">{}</a>'
     return format_html(format, url, escape(name))
+
+
+# Why not just use socket.getfqdn? Well, it's *very* complicated.
+# What you get differs between OSes, distros and sysadmin practice
+# and "localhost" and private addresses are useless for what we need.
+def _get_net_info(name=''):
+    """Attempt to get all public ip-addresses and fqdns for localhost
+
+    Returns two lists: one of fqdns and one of ips
+    """
+    name = name.strip()
+    if not name or name == '0.0.0.0':
+        name = socket.gethostname()
+    try:
+        addrs = socket.getaddrinfo(name, None, 0, socket.SOCK_DGRAM, 0,
+                                   socket.AI_CANONNAME)
+    except socket.error:
+        return None, None
+
+    fqdns = list()
+    ips = list()
+    for addr in addrs:
+        ip = addr[4][0]
+        fqdn = addr[3]
+        if fqdn:
+            fqdns.append(fqdn)
+        if ip:
+            ips.append(ip)
+    return fqdns, ips
+
+
+def get_origin(origin=''):
+    """Try to find a decent value for export "origin"
+
+    From most to least explicit.
+    """
+    if origin:
+        return origin
+    settings_origin = getattr(settings, 'EASYDMP_ORIGIN', None)
+    if settings_origin:
+        return settings_origin
+    # No explicit origin given
+    # YAGNI? in case of no connection/no fqdn/public ip:
+    # hash of secret key? uuid4?
+    fqdns, ips = _get_net_info()
+    if fqdns:
+        return fqdns[0]
+    if ips:
+        return ips[0]
+    return 'n/a'
 
 
 # Reordering utility functions

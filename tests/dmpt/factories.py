@@ -9,7 +9,6 @@ from faker import Faker
 from easydmp.dmpt.models import BooleanQuestion
 from easydmp.dmpt.models import CannedAnswer
 from easydmp.dmpt.models import ChoiceQuestion
-from easydmp.dmpt.models import INPUT_TYPES
 from easydmp.dmpt.models import Question
 from easydmp.dmpt.models import ReasonQuestion
 from easydmp.dmpt.models import Section
@@ -35,7 +34,7 @@ def create_smallest_template(published=None):
         published = None
     t = TemplateFactory(published=published)
     s = SectionFactory(template=t)
-    q = QuestionFactory(section=s, input_type='int')
+    q = QuestionFactory(section=s, input_type='reason')
     return t
 
 
@@ -85,7 +84,7 @@ class QuestionFactory(AbstractQuestionFactory):
         model = Question
         django_get_or_create = ('question', 'position')
 
-    input_type = factory.Iterator(INPUT_TYPES)
+    input_type = factory.Iterator(Question.INPUT_TYPES.keys())
 
 
 class CannedAnswerFactory(factory.django.DjangoModelFactory):
