@@ -15,6 +15,11 @@ Planned
 Unreleased
 ----------
 
+Humongous new feature:
+
+* Major refactor of questions, should allow for 3rd party apps containing 3rd
+  party question types
+
 1.11.1
 ------
 

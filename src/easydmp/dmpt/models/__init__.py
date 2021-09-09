@@ -1,12 +1,9 @@
 from .base import (
     CannedAnswer,
-    CannedAnswerQuerySet,
     ExplicitBranch,
-    ExplicitBranchQuerySet,
     Question,
-    QuestionManager,
+    QuestionType,
     Section,
-    SectionManager,
     Template,
     TemplateGroupObjectPermission,
     TemplateImportMetadata,

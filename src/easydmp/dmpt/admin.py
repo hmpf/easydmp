@@ -31,6 +31,7 @@ from .models import TemplateImportMetadata
 from .models import Section
 from .models import ExplicitBranch
 from .models import Question
+from .models import QuestionType
 from .models import CannedAnswer
 from .positioning import Move
 
@@ -695,6 +696,11 @@ class QuestionCannedAnswerOrderingInline(BaseOrderingInline):
 
     def get_order(self, parent):
         return parent.get_canned_answer_order()
+
+
+@admin.register(QuestionType)
+class QuestionTypeAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(Question)

@@ -60,6 +60,7 @@ class NotesForm(forms.Form):
 
 
 class AbstractNodeMixin():
+    json_type: str  # For JSON Schema, the "type"-keyword
 
     def __init__(self, **kwargs):
         kwargs = deepcopy(kwargs)  # Avoid changing the original kwargs
@@ -96,10 +97,15 @@ class AbstractNodeMixin():
         return dict_form
 
     def serialize_choice(self):
+        """For JSON Schema serialization
+
+        All other keywords and structures needed for a type in addition to "type"
+        """
         raise NotImplemented
 
 
 class AbstractNodeForm(AbstractNodeMixin, forms.Form):
+    TYPE: str  # For registering the form with Question
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -107,7 +113,7 @@ class AbstractNodeForm(AbstractNodeMixin, forms.Form):
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        Question.INPUT_TYPES[cls.TYPE].form = cls
+        Question.register_form_class(cls.TYPE, cls)
 
     def _add_choice_field(self):
         pass
@@ -659,20 +665,18 @@ StorageForecastFormSet = forms.formset_factory(
 )
 
 
-Question.INPUT_TYPES['multinamedurlonetext'].form = MultiNamedURLOneTextFormSet
-Question.INPUT_TYPES['multidmptypedreasononetext'].form = MultiDMPTypedReasonOneTextFormSet
-Question.INPUT_TYPES['multirdacostonetext'].form = MultiRDACostOneTextFormSet
-Question.INPUT_TYPES['storageforecast'].form = StorageForecastFormSet
+Question.register_form_class('multinamedurlonetext', MultiNamedURLOneTextFormSet)
+Question.register_form_class('multidmptypedreasononetext', MultiDMPTypedReasonOneTextFormSet)
+Question.register_form_class('multirdacostonetext', MultiRDACostOneTextFormSet)
+Question.register_form_class('storageforecast', StorageForecastFormSet)
 
 
 def make_form(question, **kwargs):
     kwargs.pop('prefix', None)
     kwargs.pop('instance', None)
     kwargs['question'] = question
-    input_type = Question.INPUT_TYPES.get(question.input_type, None)
-    if input_type is None:
-        assert False, 'Unknown input type: {}'.format(question.input_type)
-    form = input_type.form(**kwargs)
+    form_class = question.get_form_class()
+    form = form_class(**kwargs)
     if isinstance(form, forms.BaseFormSet):
         form.validate_min = not question.optional
     return form

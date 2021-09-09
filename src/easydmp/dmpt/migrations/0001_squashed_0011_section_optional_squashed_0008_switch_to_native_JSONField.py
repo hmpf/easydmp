@@ -236,7 +236,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=(easydmp.dmpt.models.questions.SimpleFramingTextMixin, 'dmpt.question'),
+            bases=(easydmp.dmpt.models.questions.mixins.SimpleFramingTextMixin, 'dmpt.question'),
         ),
         migrations.CreateModel(
             name='ReasonQuestion',
@@ -246,7 +246,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=(easydmp.dmpt.models.questions.SimpleFramingTextMixin, 'dmpt.question'),
+            bases=(easydmp.dmpt.models.questions.mixins.SimpleFramingTextMixin, 'dmpt.question'),
         ),
         migrations.CreateModel(
             name='ExternalChoiceQuestion',
@@ -326,7 +326,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=(easydmp.dmpt.models.questions.NoCheckMixin, easydmp.dmpt.models.questions.SimpleFramingTextMixin, 'dmpt.question'),
+            bases=(easydmp.dmpt.models.questions.mixins.NoCheckMixin, easydmp.dmpt.models.questions.mixins.SimpleFramingTextMixin, 'dmpt.question'),
         ),
         migrations.CreateModel(
             name='DateQuestion',
@@ -337,7 +337,7 @@ class Migration(migrations.Migration):
                 'indexes': [],
                 'constraints': [],
             },
-            bases=(easydmp.dmpt.models.questions.NoCheckMixin, easydmp.dmpt.models.questions.SimpleFramingTextMixin, 'dmpt.question'),
+            bases=(easydmp.dmpt.models.questions.mixins.NoCheckMixin, easydmp.dmpt.models.questions.mixins.SimpleFramingTextMixin, 'dmpt.question'),
         ),
         migrations.CreateModel(
             name='MultiRDACostOneTextQuestion',
@@ -348,7 +348,7 @@ class Migration(migrations.Migration):
                 'indexes': [],
                 'constraints': [],
             },
-            bases=(easydmp.dmpt.models.questions.NoCheckMixin, 'dmpt.question'),
+            bases=(easydmp.dmpt.models.questions.mixins.NoCheckMixin, 'dmpt.question'),
         ),
         migrations.CreateModel(
             name='StorageForecastQuestion',
@@ -359,6 +359,6 @@ class Migration(migrations.Migration):
                 'indexes': [],
                 'constraints': [],
             },
-            bases=(easydmp.dmpt.models.questions.NoCheckMixin, 'dmpt.question'),
+            bases=(easydmp.dmpt.models.questions.mixins.NoCheckMixin, 'dmpt.question'),
         ),
     ]

@@ -79,6 +79,4 @@ components in the same module, one per type. It would be more obvious how to
 write a new type. This might also allow optional 3rd party question modules.
 
 Whenever a new input type is created, the TYPE-attribute on the form and model
-must match. Also each time `INPUT_TYPES` changes, Django generates a new
-migration that does not change anything in the database. It might be better if
-`INPUT_TYPES` were a lookup table, testing needed.
+must match.

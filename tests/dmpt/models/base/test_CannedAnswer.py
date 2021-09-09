@@ -50,7 +50,7 @@ class TestGetCannedAnswerMethods(test.TestCase):
         self.assertNotEqual(result_Yes, result_No)
 
     def test_choice_get_canned_answer(self):
-        q = QuestionFactory(section=self.section, input_type='choice')
+        q = QuestionFactory(section=self.section, input_type_id='choice')
         t_A_expected = 'ABC 123'
         t_A = CannedAnswerFactory(question=q, choice='A', canned_text=t_A_expected)
         t_B_expected = 'DEF 456'
@@ -69,7 +69,7 @@ class TestGetCannedAnswerMethods(test.TestCase):
         self.assertNotEqual(result_B, result_C)
 
     def test_multichoiceonetext_get_canned_answer(self):
-        q = QuestionFactory(section=self.section, input_type='multichoiceonetext')
+        q = QuestionFactory(section=self.section, input_type_id='multichoiceonetext')
         t_A_expected = 'ABC 123'
         t_A = CannedAnswerFactory(question=q, choice='A', canned_text=t_A_expected)
         t_B_expected = 'DEF 456'
@@ -87,7 +87,7 @@ class TestGetCannedAnswerMethods(test.TestCase):
     def test_daterange_get_canned_answer(self):
         daterange = {'start': date(1980, 1, 1), 'end': date(1990, 1, 1)}
         text = 'From {start} to {end}'
-        q = QuestionFactory(section=self.section, input_type='daterange', framing_text=text)
+        q = QuestionFactory(section=self.section, input_type_id='daterange', framing_text=text)
         expected = text.format(**daterange)
         result = q.get_canned_answer(daterange)
         self.assertEqual(result, expected)

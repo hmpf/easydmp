@@ -92,6 +92,8 @@ class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
         source='section.template', read_only=True,
         view_name='v2:template-detail',
     )
+    input_type = serializers.SerializerMethodField()
+
     class Meta:
         model = Question
         fields = [
@@ -109,6 +111,9 @@ class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
             'optional_canned_text',
             'comment',
         ]
+
+    def get_input_type(self, obj):
+        return obj.input_type_id
 
 
 class HeavyQuestionSerializer(LightQuestionSerializer):
@@ -135,10 +140,10 @@ class HeavyQuestionSerializer(LightQuestionSerializer):
         ]
 
     def get_answer_schema(self, obj):
-        input_type = Question.INPUT_TYPES.get(obj.input_type, None)
-        if not input_type:
+        form_class = obj.get_form_class()
+        if not form_class:
             return {}
-        boundform = input_type.form(question=obj)
+        boundform = form_class(question=obj)
         serialized_form = boundform.serialize_form()
         return serialized_form
 

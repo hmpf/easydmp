@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from copy import deepcopy
 from textwrap import fill
 from typing import Any, Dict, Tuple, Set, List, Union
@@ -123,7 +123,7 @@ def create_template_export_obj(template):
     easydmp = Obj()
     easydmp.version = settings.VERSION
     easydmp.origin = get_origin()
-    easydmp.input_types = sorted(Question.INPUT_TYPES.keys())
+    easydmp.input_types = sorted(Question.INPUT_TYPE_IDS)
 
     obj.easydmp = easydmp
     obj.template = template
@@ -307,7 +307,7 @@ class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
 
     @property
     def input_types_in_use(self):
-        return sorted(set(self.questions.values_list('input_type', flat=True)))
+        return sorted(set(self.questions.values_list('input_type_id', flat=True)))
 
     @property
     def is_readonly(self):
@@ -622,7 +622,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
     def save(self, *args, **kwargs):
         with transaction.atomic():
             # Toggle the existence of an optional question according to self.optional
-            do_section_question = Question.objects.filter(section=self, position=0, input_type='bool')
+            do_section_question = Question.objects.filter(section=self, position=0, input_type_id='bool')
             if self.optional:
                 if not do_section_question:
                     self.branching = True
@@ -651,7 +651,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         text_to_update = "(Template designer please update)"
         help_text = (text_to_update + 'This is an optional section. '
                      'If you select "No", this section will be skipped.')
-        do_section_question = Question(input_type='bool',
+        do_section_question = Question(input_type_id='bool',
                                        section=self,
                                        question=text_to_update,
                                        help_text=help_text,
@@ -1392,6 +1392,14 @@ class ExplicitBranch(DeletionMixin, models.Model):
         return cls.MODERNIZED_CATEGORIES.get(category, category)
 
 
+class QuestionType(models.Model):
+    MAX_LENGTH = 32
+    id = models.CharField(max_length=MAX_LENGTH, primary_key=True)
+
+    def __str__(self):
+        return self.id
+
+
 class QuestionManager(models.Manager):
 
     def get_by_natural_key(self, section, position):
@@ -1416,16 +1424,13 @@ class Question(DeletionMixin, ClonableModel):
     * The `choice` is converted to an empty string.
     """
     __LOG = logging.getLogger(__name__ + '.Question')
-    INPUT_TYPES = {}
-    INPUT_TYPE_CHOICES = zip(INPUT_TYPES.keys(), INPUT_TYPES.keys())
+    INPUT_TYPES = defaultdict(InputType)
+    INPUT_TYPE_IDS = INPUT_TYPES.keys()
+    INPUT_TYPE_CHOICES = zip(INPUT_TYPE_IDS, INPUT_TYPE_IDS)
     branching_possible = False
     has_notes = True
 
-
-    input_type = models.CharField(
-        max_length=32,
-        choices=INPUT_TYPE_CHOICES,
-    )
+    input_type = models.ForeignKey(QuestionType, on_delete=models.CASCADE)
     section = models.ForeignKey(Section, on_delete=models.CASCADE,
                                 related_name='questions')
     position = models.PositiveIntegerField(
@@ -1472,6 +1477,13 @@ class Question(DeletionMixin, ClonableModel):
 
     def natural_key(self):
         return (self.section, self.position)
+
+    @classmethod
+    def register_form_class(cls, input_type_id, form):
+        cls.INPUT_TYPES[input_type_id].form = form
+
+    def get_form_class(self):
+        return self.INPUT_TYPES[self.input_type_id].form
 
     @property
     def is_readonly(self):
@@ -1538,7 +1550,7 @@ class Question(DeletionMixin, ClonableModel):
         The subtype is stored in the attribute `input_type`
         """
         try:
-            input_type = self.INPUT_TYPES[self.input_type]
+            input_type = self.INPUT_TYPES[self.input_type_id]
         except KeyError:
             return self.__class__
         return input_type.model
