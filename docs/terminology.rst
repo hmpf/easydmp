@@ -56,7 +56,7 @@ implementation details.
        If it is not answered it will still count towards that plan being valid.
 
    optional section question
-       See `section toggle question`_
+       See :term:`section toggle question`
 
    plan
        A named collection of question-answer pairs according to some template,
@@ -66,7 +66,7 @@ implementation details.
        valid.
 
    planner
-       See `editor`_
+       See :term:`editor`
 
    question
        A question that may be answered in a plan. A question has a type. Can be
