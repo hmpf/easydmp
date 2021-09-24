@@ -300,7 +300,7 @@ class PublishPlanView(PlanAccessViewMixin, UpdateView):
     pk_url_kwarg = 'plan'
 
     def get_queryset(self):
-        qs = super().get_queryset().valid()
+        qs = super().get_queryset().valid().locked()
         return qs
 
     def get_success_url(self):

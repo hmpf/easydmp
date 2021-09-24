@@ -2,17 +2,20 @@
               {% if request.user|may_edit_plan:object %}
               <li><a href="{% url 'update_plan' plan=object.id %}"><img src="{% static 'icons/icon-edit.png' %}"/>Rename</a></li>
               <li><a href="{% url 'share_plan' plan=object.id %}"><img src="{% static 'icons/icon-people.png' %}"/>People</a></li>
-              {% if not object.locked %}
-              {% if object.valid  %}
-              <li><a href="{% url 'lock_plan' plan=object.id %}"><img src="{% static 'icons/icon-locked.png' %}"/>Lock (read only)</a></li>
-              {% else %}
-              <li><a href="{% url 'validate_plan' plan=object.id %}"><img src="{% static 'icons/icon-publish.png' %}"/>Check</a></li>
-              {% endif %}
-              {% else %}
+              {% if object.locked %}
               <li><a href="{% url 'unlock_plan' plan=object.id %}"><img src="{% static 'icons/icon-unlocked.png' %}"/>Unlock (new version)</a></li>
+              {% else %}
+                {% if object.valid  %}
+              <li><a href="{% url 'lock_plan' plan=object.id %}"><img src="{% static 'icons/icon-locked.png' %}"/>Lock (read only)</a></li>
+                {% else %}
+              <li><a href="{% url 'validate_plan' plan=object.id %}"><img src="{% static 'icons/icon-check.png' %}"/>Check</a></li>
+                {% endif %}
               {% endif %}
               <li><a href="{% url 'plan_delete' plan=object.id %}"><img src="{% static 'icons/icon-delete.png' %}"/>Delete</a></li>
               <li><a href="{% url 'plan_saveas' plan=object.id %}"><img src="{% static 'icons/icon-duplicate.png' %}"/>Duplicate</a></li>
+              {% endif %}
+              {% if object.locked and not object.published %}
+              <li><a href="{% url 'publish_plan' plan=object.id %}"><img src="{% static 'icons/icon-share.png' %}"/>Make public</a></li>
               {% endif %}
               <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'icons/icon-export.png' %}"/>Export to HTML</a></li>
               <li><a href="{% url 'generated_plan_pdf' plan=object.id %}"><img src="{% static 'icons/icon-export.png' %}"/>Export to PDF</a></li>

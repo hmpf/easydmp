@@ -1,19 +1,13 @@
 {% extends "easydmp/plan/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-  <div class="row">
-    <div class="col-lg-12">
-      <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-<h1>"{{ object.title|capfirst }} {{ object.added }}"</h1>
-      </div>
-    </div>
-  </div>
 
   <div class="row uninett-color-white uninett-whole-row">
+    <h2>Make "{{ object.title|capfirst }} {{ object.added }}" public</h2>
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-        <p>Publishing a plan entails making it read only. Edits will no longer be possible, for anyone, and html will be generated and saved into the plan itself.</p>
+        <p>Only  a locked plan can be made public, and once made public it cannot be hidden again.</p>
         <p>It will become publicly accessible for automated harvesters or anyone else with the link.</p>
-        <p>Are you really sure you are ready to publish this plan?</p>
+        <p>Are you really sure you are ready to make this plan public?</p>
         {% crispy form %}
 </div></div>
 {% endblock content %}
