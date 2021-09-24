@@ -361,7 +361,7 @@ class Answer(ClonableModel):
     valid = models.BooleanField(default=False)
     last_validated = models.DateTimeField(auto_now=True)
 
-    def clone(self, plan, answerset):
+    def clone(self, answerset):
         new = self.__class__.objects.create(
              question=self.question,
              answerset=answerset,
