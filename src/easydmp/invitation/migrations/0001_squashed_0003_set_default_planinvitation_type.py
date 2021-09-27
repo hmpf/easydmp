@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('plan', '0001_squashed_0005_auto_20201016_1539'),
+        ('plan', '0001_squashed_0005_auto_20201016_1539_squashed_0019_link_answerset_with_parent'),
     ]
 
     operations = [
