@@ -68,15 +68,31 @@ inheriting from AbstractNodeForm does this automatically, but formsets must do
 it explicitly. `INPUT_TYPES` is used in `make_forms()` in the same file to look
 up a form class given an instance of a question.
 
+Finally, run "makemigrations". To the resulting migration, add a data-migration
+that adds a row to the QuestionType-table:
+
+.. code-block::
+
+    from functools import partial
+    ..
+
+    from easydmp.dmpt.utils import register_question_type
+
+    register_mytype_type = partial(register_question_type, 'mytype')
+
+
+    class Migration(migrations.Migration):
+        ..
+        operations = [
+            ..
+            migrations.RunPython(register_mytype_type, migrations.RunPython.noop),
+        ]
+
 Things that should be better
 ============================
 
 It would be better if formsets also could auto-register in `INPUT_TYPES`, but
 frankly, it would be better to avoid formsets altogether.
-
-Also, it would be better if each question-type could have all its various
-components in the same module, one per type. It would be more obvious how to
-write a new type. This might also allow optional 3rd party question modules.
 
 Whenever a new input type is created, the TYPE-attribute on the form and model
 must match.

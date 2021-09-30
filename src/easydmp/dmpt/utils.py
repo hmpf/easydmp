@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import namedtuple
+import pathlib
 import socket
 from typing import Callable
 
@@ -22,12 +23,18 @@ from .positioning import Move, get_new_index, flat_reorder
 DJANGO_TEMPLATE_ENGINE = engines['django']
 
 __all__ = (
+    'get_question_type_from_filename',
     'render_from_string',
     'force_items_to_str',
     'print_url',
     'get_origin',
     'DeletionMixin',
 )
+
+
+def get_question_type_from_filename(path):
+    pathobj = pathlib.Path(path)
+    return pathobj.stem
 
 
 def render_from_string(template_string, context=None):
@@ -97,6 +104,22 @@ def get_origin(origin=''):
     if ips:
         return ips[0]
     return 'n/a'
+
+
+# Migration utilities
+
+
+def register_question_type(qtype, apps, _):
+    """Add a question type slug to the question type table
+
+    Use with partial:
+
+    myfunc = partial(register_question_type, 'mytype')
+
+    Migrations using this are elidable.
+    """
+    QuestionType = apps.get_model('dmpt', 'QuestionType')
+    QuestionType.objects.get_or_create(id=qtype)
 
 
 # Reordering utility functions
