@@ -10,7 +10,7 @@ import uuid
 
 class Migration(migrations.Migration):
 
-    replaces = [('plan', '0001_squashed_0005_auto_20201016_1539'), ('plan', '0007_auto_20201111_1411_squashed_0010_delete_plancomment'), ('plan', '0008_answerset_data'), ('plan', '0009_answerset_previous_data'), ('plan', '0010_switch_to_native_JSONField'), ('plan', '0011_noop'), ('plan', '0012_add_identifier_to_answerset'), ('plan', '0013_link_missing_answersets'), ('plan', '0014_move_data_into_answersets'), ('plan', '0015_noop'), ('plan', '0016_drop_Answer_plan_fk'), ('plan', '0017_drop_data_from_Plan'), ('plan', '0018_answerset_parent'), ('plan', '0019_link_answerset_with_parent')]
+    initial = True
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

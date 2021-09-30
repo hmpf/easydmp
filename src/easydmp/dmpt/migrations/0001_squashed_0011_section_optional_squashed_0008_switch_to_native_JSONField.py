@@ -12,7 +12,7 @@ import easydmp.dmpt.utils
 
 class Migration(migrations.Migration):
 
-    replaces = [('dmpt', '0001_squashed_0011_section_optional'), ('dmpt', '0002_section_repeatable'), ('dmpt', '0003_TemplateImportMetadata'), ('dmpt', '0004_add_locked_to_template'), ('dmpt', '0005_clonable_TemplateImportMetadata'), ('dmpt', '0006_uneditable_section_position'), ('dmpt', '0007_fix_uniqueness_contraints'), ('dmpt', '0008_switch_to_native_JSONField')]
+    initial = True
 
     dependencies = [
         ('auth', '0008_alter_user_username_max_length'),

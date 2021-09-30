@@ -7,12 +7,10 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    replaces = [('eestore', '0001_squashed_0002_convert_to_jsonb'), ('eestore', '0002_switch_to_native_JSONField')]
-
     initial = True
 
     dependencies = [
-        ('dmpt', '0001_squashed_0011_section_optional'),
+        ('dmpt', '0001_squashed_0011_section_optional_squashed_0008_switch_to_native_JSONField'),
     ]
 
     operations = [

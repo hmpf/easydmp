@@ -9,8 +9,6 @@ import easydmp.auth.models
 
 class Migration(migrations.Migration):
 
-    replaces = [('easydmp_auth', '0001_initial'), ('easydmp_auth', '0001_squashed_0003_upstream_change'), ('easydmp_auth', '0002_set_user_manager'), ('easydmp_auth', '0003_alter_user_first_name')]
-
     initial = True
 
     dependencies = [

@@ -8,8 +8,6 @@ import django.utils.timezone
 
 class Migration(migrations.Migration):
 
-    replaces = [('eventlog', '0001_squashed_0002_convert_to_jsonb'), ('eventlog', '0002_switch_to_native_JSONField')]
-
     initial = True
 
     dependencies = [
