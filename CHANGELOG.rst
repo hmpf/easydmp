@@ -15,6 +15,27 @@ Planned
 Unreleased
 ----------
 
+1.11.0
+------
+
+Due to the squashed migrations of the major functionality this cannot be
+a patch release. Nothing should change in the database except for new lines in
+the `django_migrations` table.
+
+Bugfix:
+
+* Fix bug when making a new version of a plan
+
+Small new feature:
+
+* Allow making a plan public. This will make it readable for all.
+
+Paperwork:
+
+* Improve documentation slightly
+* Squash all unsquashed migrations in preparation for some big refactors
+* Upgrade insecure dependecies
+
 1.10.1
 ------
 
