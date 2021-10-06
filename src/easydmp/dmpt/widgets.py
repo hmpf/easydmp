@@ -1,5 +1,4 @@
 from django import forms
-from django.forms.widgets import MultiWidget, DateInput
 
 from django_select2.forms import Select2Widget
 from django_select2.forms import Select2MultipleWidget
@@ -27,7 +26,7 @@ __all__ = [
 # Overridden standard widgets
 
 
-class DMPTDateInput(DateInput):
+class DMPTDateInput(forms.DateInput):
     input_type = 'date'
 
 
@@ -39,7 +38,7 @@ class DMPTRadioSelect(forms.RadioSelect):
 # Multiwidgets
 
 
-class DateRangeWidget(MultiWidget):
+class DateRangeWidget(forms.MultiWidget):
     template_name = 'widgets/daterange_widget.html'
 
     def __init__(self, attrs=None, date_format=None, *args, **kwargs):
@@ -79,7 +78,7 @@ class NamedURLWidget(forms.MultiWidget):
         return (None, None)
 
 
-class SelectNotListed(MultiWidget):
+class SelectNotListed(forms.MultiWidget):
     template_name = 'widgets/selectnotlisted_widget.html'
     is_required = False
     required = False
@@ -100,7 +99,7 @@ class SelectNotListed(MultiWidget):
         return (None, None)
 
 
-class SelectMultipleNotListed(MultiWidget):
+class SelectMultipleNotListed(forms.MultiWidget):
     template_name = 'widgets/selectmultiplenotlisted_widget.html'
     is_required = False
     required = False
