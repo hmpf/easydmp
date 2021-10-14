@@ -15,6 +15,17 @@ Planned
 Unreleased
 ----------
 
+1.11.1
+------
+
+Bugfix:
+
+* The endpoint /api/v1/plans/ now works with answersets. The old "one answerset
+  per section" is emulated by showing the first created answerset per plan and
+  section and ignoring any others. Needless to say, this means that plans made
+  from templates that allows more than one answerset per section won't have all
+  its answers in the json blob.
+
 1.11.0
 ------
 
