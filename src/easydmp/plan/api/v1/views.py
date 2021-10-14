@@ -67,8 +67,8 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
     )
     generated_html_url = serializers.SerializerMethodField()
     generated_pdf_url = serializers.SerializerMethodField()
-    data = JSONField(binary=False)
-    previous_data = JSONField(binary=False)
+    data = serializers.SerializerMethodField()
+    previous_data = serializers.SerializerMethodField()
     added_by = serializers.HyperlinkedRelatedField(
         view_name='user-detail',
         lookup_field='pk',
@@ -136,6 +136,24 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
     def get_generated_pdf_url(self, obj):
         return reverse('generated_plan_pdf', kwargs={'plan': obj.id},
                        request=self.context['request'])
+
+    def get_data(self, obj):
+        sections = obj.template.sections.prefetch_related('answersets')
+        outdict = {}
+        for section in sections:
+            answerset = section.answersets.filter(plan=obj).order_by('pk').first()
+            if answerset:
+                outdict.update(**answerset.data)
+        return outdict
+
+    def get_previous_data(self, obj):
+        sections = obj.template.sections.prefetch_related('answersets')
+        outdict = {}
+        for section in sections:
+            answerset = section.answersets.filter(plan=obj).order_by('pk').first()
+            if answerset:
+                outdict.update(**answerset.previous_data)
+        return outdict
 
 
 class PlanViewSet(ReadOnlyModelViewSet):
