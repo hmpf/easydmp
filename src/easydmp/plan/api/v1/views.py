@@ -10,7 +10,7 @@ from rest_framework.reverse import reverse
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from easydmp.auth.api.v1.views import UserSerializer
-from easydmp.lib.api.pagination import ToggleablePageNumberPagination
+from easydmp.lib.api.pagination import ToggleablePageNumberPaginationV1
 from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
 from easydmp.plan.models import Answer
@@ -160,7 +160,7 @@ class PlanViewSet(ReadOnlyModelViewSet):
     filter_class = PlanFilter
     search_fields = ['=id', 'title', '=abbreviation', 'search_data']
     serializer_class = PlanSerializer
-    pagination_class = ToggleablePageNumberPagination
+    pagination_class = ToggleablePageNumberPaginationV1
 
     def get_queryset(self):
         qs = Plan.objects.all()

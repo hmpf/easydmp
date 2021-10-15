@@ -13,7 +13,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from easydmp.auth.api.permissions import IsAuthenticatedAndActive
 from easydmp.auth.api.v2.views import UserSerializer
-from easydmp.lib.api.pagination import ToggleablePageNumberPagination
+from easydmp.lib.api.pagination import ToggleablePageNumberPaginationV2
 from easydmp.lib.api.renderers  import StaticPlaintextRenderer, HTML2PDFRenderer
 from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
@@ -143,7 +143,7 @@ class PlanViewSet(ReadOnlyModelViewSet):
     filter_class = PlanFilter
     search_fields = ['=id', 'title', '=abbreviation', 'search_data']
     serializer_class = HeavyPlanSerializer
-    pagination_class = ToggleablePageNumberPagination
+    pagination_class = ToggleablePageNumberPaginationV2
     export_renderers = [
         StaticHTMLRenderer,
         StaticPlaintextRenderer,
