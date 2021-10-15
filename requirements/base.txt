@@ -17,7 +17,7 @@ social-auth-core>=3.3
 Sphinx>=3.3
 sphinxcontrib_django
 whitenoise>=5.2
-drf-spectacular>=0.11
+drf-spectacular>=0.14
 weasyPrint==52.1
 factory-boy>=3.0,<4.0
 python-dataporten-auth>=2.0

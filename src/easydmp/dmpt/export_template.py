@@ -1,5 +1,6 @@
 from django.conf import settings
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from easydmp.dmpt.models import (Template, Section, Question, ExplicitBranch,
@@ -27,9 +28,11 @@ class EasyDMPSerializer(serializers.Serializer):
         min_length=1,
     )
 
+    @extend_schema_field(str)
     def get_version(self, _):
         return settings.VERSION
 
+    @extend_schema_field(str)
     def get_origin(self, _):
         return get_origin()
 

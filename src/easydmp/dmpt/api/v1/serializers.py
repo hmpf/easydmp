@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from easydmp.dmpt.models import Template
@@ -89,6 +90,7 @@ class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
             'comment',
         ]
 
+    @extend_schema_field(str)
     def get_input_type(self, obj):
         return obj.input_type_id
 
@@ -116,6 +118,7 @@ class HeavyQuestionSerializer(LightQuestionSerializer):
             'answer_schema',
         ]
 
+    @extend_schema_field(dict)
     def get_answer_schema(self, obj):
         form_class = obj.get_form_class()
         if not form_class:

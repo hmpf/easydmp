@@ -14,7 +14,9 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from easydmp.auth.api.permissions import IsAuthenticatedAndActive
 from easydmp.auth.api.v2.views import UserSerializer
 from easydmp.lib.api.pagination import ToggleablePageNumberPaginationV2
-from easydmp.lib.api.renderers  import StaticPlaintextRenderer, HTML2PDFRenderer
+from easydmp.lib.api.renderers import StaticPlaintextRenderer, HTML2PDFRenderer
+from easydmp.lib.api.serializers import SelfHyperlinkedModelSerializer
+from easydmp.lib.api.serializers import SelfModelSerializer
 from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
 from easydmp.plan.models import Answer
@@ -36,25 +38,15 @@ class PlanFilter(FilterSet):
         }
 
 
-class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(
-        view_name='plan-detail',
-        lookup_field='pk',
-    )
-    template = serializers.HyperlinkedRelatedField(
-        view_name='template-detail',
-        lookup_field='pk',
-        many=False,
-        read_only=True,
-    )
+class LightPlanSerializer(SelfHyperlinkedModelSerializer):
     generated_html_url = serializers.SerializerMethodField()
     generated_pdf_url = serializers.SerializerMethodField()
     class Meta:
         model = Plan
         fields = [
             'id',
+            'self',
             'uuid',
-            'url',
             'title',
             'abbreviation',
             'version',
@@ -81,30 +73,8 @@ class LightPlanSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class HeavyPlanSerializer(LightPlanSerializer):
-    data = JSONField(binary=False)
-    previous_data = JSONField(binary=False)
-    added_by = serializers.HyperlinkedRelatedField(
-        view_name='user-detail',
-        lookup_field='pk',
-        many=False,
-        read_only=True,
-    )
-    modified_by = serializers.HyperlinkedRelatedField(
-        view_name='user-detail',
-        lookup_field='pk',
-        many=False,
-        read_only=True,
-    )
-    locked_by = serializers.HyperlinkedRelatedField(
-        view_name='user-detail',
-        lookup_field='pk',
-        many=False,
-        read_only=True,
-    )
-    published_by = serializers.HyperlinkedRelatedField(
-        view_name='user-detail',
-        lookup_field='pk',
-        many=False,
+    answersets = LightAnswerSetSerializer(
+        many=True,
         read_only=True,
     )
 
@@ -112,8 +82,8 @@ class HeavyPlanSerializer(LightPlanSerializer):
         model = Plan
         fields = [
             'id',
+            'self',
             'uuid',
-            'url',
             'title',
             'abbreviation',
             'version',
@@ -150,11 +120,10 @@ class PlanViewSet(ReadOnlyModelViewSet):
         HTML2PDFRenderer,
     ]
 
-#
-#     def get_serializer_class(self):
-#         if self.action == 'retrieve':
-#             return HeavyPlanSerializer
-#         return LightPlanSerializer
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return HeavyPlanSerializer
+        return LightPlanSerializer
 
     def get_queryset(self):
         qs = Plan.objects.all()
