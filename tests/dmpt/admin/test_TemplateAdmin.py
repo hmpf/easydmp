@@ -21,7 +21,7 @@ VERSION = 'blbl'
 def create_minimum_template():
     template = TemplateFactory()
     section = SectionFactory(template=template, position=1)
-    question = QuestionFactory(input_type='shortfreetext', section=section, position=1)
+    question = QuestionFactory(input_type_id='shortfreetext', section=section, position=1)
     return template
 
 

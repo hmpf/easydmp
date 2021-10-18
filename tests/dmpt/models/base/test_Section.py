@@ -1,11 +1,10 @@
 from django import test
 
-from easydmp.dmpt.models import Question
 from easydmp.dmpt.models import ExplicitBranch
 from easydmp.dmpt.positioning import Move
 
 from tests.dmpt.factories import (TemplateFactory, SectionFactory,
-                                  QuestionFactory, ReasonQuestionFactory)
+                                  ReasonQuestionFactory)
 
 
 class TestOrderingSection(test.TestCase):
@@ -123,7 +122,7 @@ class TestNextSectionMethods(test.TestCase):
     def test_get_next_nonempty_section(self):
         section = SectionFactory(template=self.template, position=1)
         next_section = SectionFactory(template=self.template, position=2)
-        QuestionFactory(section=next_section)
+        ReasonQuestionFactory(section=next_section)
         result = section.get_next_nonempty_section()
         self.assertEqual(result, next_section)
 
@@ -135,7 +134,7 @@ class TestNextSectionMethods(test.TestCase):
     def test_get_first_question_in_next_section(self):
         section = SectionFactory(template=self.template, position=1)
         next_section = SectionFactory(template=self.template, position=2)
-        question = QuestionFactory(section=next_section)
+        question = ReasonQuestionFactory(section=next_section)
         result = section.get_first_question_in_next_section()
         self.assertEqual(result, question)
 
@@ -181,7 +180,7 @@ class TestPrevSectionMethods(test.TestCase):
     def test_get_prev_nonempty_section(self):
         prev_section = SectionFactory(template=self.template, position=1)
         section = SectionFactory(template=self.template, position=2)
-        QuestionFactory(section=prev_section)
+        ReasonQuestionFactory(section=prev_section)
         result = section.get_prev_nonempty_section()
         self.assertEqual(result, prev_section)
 
@@ -193,7 +192,7 @@ class TestPrevSectionMethods(test.TestCase):
     def test_get_last_question_in_prev_section(self):
         prev_section = SectionFactory(template=self.template, position=1)
         section = SectionFactory(template=self.template, position=2)
-        question = QuestionFactory(section=prev_section)
+        question = ReasonQuestionFactory(section=prev_section)
         result = section.get_last_question_in_prev_section()
         self.assertEqual(result, question)
 
@@ -205,14 +204,14 @@ class TestPrevSectionMethods(test.TestCase):
     def test_get_last_on_trunk_question_in_prev_section_no_prev_oblig_question(self):
         prev_section = SectionFactory(template=self.template, position=1)
         section = SectionFactory(template=self.template, position=2)
-        QuestionFactory(section=prev_section, on_trunk=False)
+        ReasonQuestionFactory(section=prev_section, on_trunk=False)
         result = section.get_last_on_trunk_question_in_prev_section()
         self.assertIsNone(result)
 
     def test_get_last_on_trunk_question_in_prev_section(self):
         prev_section = SectionFactory(template=self.template, position=1)
         section = SectionFactory(template=self.template, position=2)
-        question = QuestionFactory(section=prev_section, on_trunk=True)
+        question = ReasonQuestionFactory(section=prev_section, on_trunk=True)
         result = section.get_last_on_trunk_question_in_prev_section()
         self.assertEqual(result, question)
 
@@ -223,7 +222,7 @@ class TestPrevSectionMethods(test.TestCase):
 
     def test_get_last_answered_question_no_oblig_questions(self):
         section = SectionFactory(template=self.template, position=1)
-        QuestionFactory(section=section, on_trunk=False)
+        ReasonQuestionFactory(section=section, on_trunk=False)
         result = section.get_last_answered_question({})
         self.assertIsNone(result)
 
@@ -253,13 +252,13 @@ class TestOptionalSections(test.TestCase):
         self.assertEqual(1, len(section.questions.all()))
         q0 = section.questions.get()
         self.assertEqual(0, q0.position)
-        self.assertEqual('bool', q0.input_type)
+        self.assertEqual('bool', q0.input_type_id)
         self.assertEqual(1, len(ExplicitBranch.objects.all()))
         branch = ExplicitBranch.objects.get()
         self.assertEqual('Last', branch.category)
         self.assertEqual(q0, branch.current_question)
-        Question(question='Foo', section=section, position=1).save()
-        Question(question='Bar', section=section, position=2).save()
+        ReasonQuestionFactory(question='Foo', section=section, position=1).save()
+        ReasonQuestionFactory(question='Bar', section=section, position=2).save()
         self.assertEqual(3, len(section.questions.all()))
         self.assertEqual(0, section.questions.first().position)
 
@@ -271,47 +270,56 @@ class TestOptionalSections(test.TestCase):
         self.assertEqual(2, section.questions.get(question='Bar').position)
 
     def test_optional_section_in_summary(self):
-        section0 = SectionFactory.build(template=self.template, position=1)
-        section0.optional = True
-        section0.save()
-        q01 = Question(question='Foo', section=section0, position=1)
-        q01.save()
-        q02 = Question(question='Bar', section=section0, position=2)
-        q02.save()
-        section1 = SectionFactory.build(template=self.template, position=2)
-        section1.optional = False
+        # first section is optional
+        section1 = SectionFactory.build(title='Section 1', template=self.template, position=1)
+        section1.optional = True
         section1.save()
-        Question(question='Foo', section=section1, position=1).save()
-        Question(question='Bar', section=section1, position=2).save()
-        section2 = SectionFactory.build(template=self.template, position=3)
-        section2.optional = True
+        q11 = ReasonQuestionFactory(question='Foo1', section=section1, position=1)
+        q11.save()
+        q12 = ReasonQuestionFactory(question='Bar1', section=section1, position=2)
+        q12.save()
+        # second section is required
+        section2 = SectionFactory.build(title='Section 2', template=self.template, position=2)
+        section2.optional = False
         section2.save()
-        q21 = Question(question='Foo2', section=section2, position=1)
+        q21 = ReasonQuestionFactory(question='Foo2', section=section2, position=1)
         q21.save()
-        q22 = Question(question='Bar2', section=section2, position=2)
+        q22 = ReasonQuestionFactory(question='Bar2', section=section2, position=2)
         q22.save()
+        # third section is optional
+        section3 = SectionFactory.build(title='Section 3', template=self.template, position=3)
+        section3.optional = True
+        section3.save()
+        q31 = ReasonQuestionFactory(question='Foo3', section=section3, position=1)
+        q31.save()
+        q32 = ReasonQuestionFactory(question='Bar3', section=section3, position=2)
+        q32.save()
+        # there should be eight questions in all
+        self.assertEqual(self.template.questions.count(), 8)
 
         # get summary from data set of answers
-        s0_firstq_pk = section0.questions.all().first().pk
-        s2_firstq_pk = section2.questions.all().first().pk
-        summary = self.template.get_summary({str(s0_firstq_pk): {"choice": "No"},
-                                             str(q01.pk): {},
-                                             str(q02.pk): {},
-                                             str(s2_firstq_pk): {"choice": "Yes"},
-                                             str(q21.pk): {},
-                                             str(q22.pk): {},
-                                             })
-        self.assertEqual(1, len(summary[section0.title]['data']))
-        self.assertEqual('(Template designer please update)', summary[section0.title]['data'][s0_firstq_pk]['question'].question)
-        self.assertEqual(2, len(summary[section1.title]['data']))
-        self.assertEqual(3, len(summary[section2.title]['data']))
+        s1_firstq_pk = section1.questions.all().first().pk
+        s3_firstq_pk = section3.questions.all().first().pk
+        data = {
+            str(s1_firstq_pk): {"choice": "No"},
+            str(q11.pk): {},
+            str(q12.pk): {},
+            str(s3_firstq_pk): {"choice": "Yes"},
+            str(q31.pk): {},
+            str(q32.pk): {},
+        }
+        summary = self.template.get_summary(data)
+        self.assertEqual(1, len(summary[section1.title]['data']))
+        self.assertEqual('(Template designer please update)', summary[section1.title]['data'][s1_firstq_pk]['question'].question)
+        self.assertEqual(2, len(summary[section2.title]['data']))
+        self.assertEqual(3, len(summary[section3.title]['data']))
 
     def test_get_optional_section_question_in_optional_section(self):
         section = SectionFactory.build(template=self.template, optional=True)
         section.save()
         question = section.get_optional_section_question()
         self.assertEqual(question.position, 0)
-        self.assertEqual(question.input_type, 'bool')
+        self.assertEqual(question.input_type_id, 'bool')
 
     def test_get_optional_section_question_in_normal_section(self):
         section = SectionFactory.build(template=self.template, optional=False)

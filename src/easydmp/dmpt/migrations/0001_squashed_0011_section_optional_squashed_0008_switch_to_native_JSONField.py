@@ -10,12 +10,6 @@ import easydmp.dmpt.models
 import easydmp.dmpt.utils
 
 
-# Functions from the following migrations need manual copying.
-# Move them and any dependencies into this file, then update the
-# RunPython operations to refer to the local versions:
-# easydmp.dmpt.migrations.0004_add_locked_to_template
-# easydmp.dmpt.migrations.0006_uneditable_section_position
-
 class Migration(migrations.Migration):
 
     replaces = [('dmpt', '0001_squashed_0011_section_optional'), ('dmpt', '0002_section_repeatable'), ('dmpt', '0003_TemplateImportMetadata'), ('dmpt', '0004_add_locked_to_template'), ('dmpt', '0005_clonable_TemplateImportMetadata'), ('dmpt', '0006_uneditable_section_position'), ('dmpt', '0007_fix_uniqueness_contraints'), ('dmpt', '0008_switch_to_native_JSONField')]
@@ -136,6 +130,65 @@ class Migration(migrations.Migration):
             index=models.Index(fields=['section', 'position'], name='dmpt_questi_section_9fdc5f_idx'),
         ),
         migrations.CreateModel(
+            name='TemplateImportMetadata',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('origin', models.CharField(help_text='Where the template was imported from', max_length=255)),
+                ('original_template_pk', models.IntegerField(help_text="Copy of the original template's primary key")),
+                ('originally_cloned_from', models.IntegerField(blank=True, help_text='Copy of the original template\'s "cloned_from"', null=True)),
+                ('mappings', models.JSONField(default=dict, encoder=django.core.serializers.json.DjangoJSONEncoder)),
+                ('imported', models.DateTimeField(default=django.utils.timezone.now)),
+                ('imported_via', models.CharField(default='CLI', max_length=255)),
+                ('template', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='import_metadata', to='dmpt.template')),
+                ('originally_published', models.DateTimeField(blank=True, help_text='Copy of the original template\'s "published"', null=True)),
+                ('cloned_from', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='clones', to='dmpt.templateimportmetadata')),
+                ('cloned_when', models.DateTimeField(blank=True, null=True)),
+            ],
+            options={
+                'verbose_name_plural': 'template import metadata',
+            },
+        ),
+        migrations.AddIndex(
+            model_name='templateimportmetadata',
+            index=models.Index(fields=['original_template_pk'], name='tim_lookup_original_idx'),
+        ),
+        migrations.CreateModel(
+            name='ExplicitBranch',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('category', models.CharField(choices=[('Last', 'Last'), ('CannedAnswer', 'CannedAnswer'), ('ExplicitBranch', 'ExplicitBranch'), ('Edge', 'Edge'), ('Node-edgeless', 'Node-edgeless')], max_length=16)),
+                ('condition', models.CharField(blank=True, max_length=255)),
+                ('current_question', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='forward_transitions', to='dmpt.question')),
+                ('next_question', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='backward_transitions', to='dmpt.question')),
+            ],
+            options={
+                'unique_together': {('current_question', 'category', 'condition', 'next_question')},
+            },
+            bases=(easydmp.dmpt.utils.DeletionMixin, models.Model),
+        ),
+        migrations.CreateModel(
+            name='CannedAnswer',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('choice', models.CharField(help_text='Human friendly view of condition', max_length=255)),
+                ('canned_text', models.TextField(blank=True, null=True)),
+                ('comment', models.TextField(blank=True, null=True)),
+                ('question', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='canned_answers', to='dmpt.question')),
+                ('position', models.PositiveIntegerField(blank=True, default=1, help_text='Position in question. Just used for ordering.', null=True)),
+                ('cloned_from', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='clones', to='dmpt.cannedanswer')),
+                ('cloned_when', models.DateTimeField(blank=True, null=True)),
+                ('transition', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='canned_answers', to='dmpt.explicitbranch')),
+            ],
+        ),
+        migrations.AddIndex(
+            model_name='cannedanswer',
+            index=models.Index(fields=['question', 'position'], name='dmpt_preferred_ca_ordering_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='cannedanswer',
+            index=models.Index(fields=['question', 'position', 'id'], name='dmpt_fallback_ca_ordering_idx'),
+        ),
+        migrations.CreateModel(
             name='BooleanQuestion',
             fields=[
             ],
@@ -183,7 +236,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=(easydmp.dmpt.models.SimpleFramingTextMixin, 'dmpt.question'),
+            bases=(easydmp.dmpt.models.questions.mixins.SimpleFramingTextMixin, 'dmpt.question'),
         ),
         migrations.CreateModel(
             name='ReasonQuestion',
@@ -193,7 +246,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=(easydmp.dmpt.models.SimpleFramingTextMixin, 'dmpt.question'),
+            bases=(easydmp.dmpt.models.questions.mixins.SimpleFramingTextMixin, 'dmpt.question'),
         ),
         migrations.CreateModel(
             name='ExternalChoiceQuestion',
@@ -273,7 +326,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=(easydmp.dmpt.models.NoCheckMixin, easydmp.dmpt.models.SimpleFramingTextMixin, 'dmpt.question'),
+            bases=(easydmp.dmpt.models.questions.mixins.NoCheckMixin, easydmp.dmpt.models.questions.mixins.SimpleFramingTextMixin, 'dmpt.question'),
         ),
         migrations.CreateModel(
             name='DateQuestion',
@@ -284,7 +337,7 @@ class Migration(migrations.Migration):
                 'indexes': [],
                 'constraints': [],
             },
-            bases=(easydmp.dmpt.models.NoCheckMixin, easydmp.dmpt.models.SimpleFramingTextMixin, 'dmpt.question'),
+            bases=(easydmp.dmpt.models.questions.mixins.NoCheckMixin, easydmp.dmpt.models.questions.mixins.SimpleFramingTextMixin, 'dmpt.question'),
         ),
         migrations.CreateModel(
             name='MultiRDACostOneTextQuestion',
@@ -295,7 +348,7 @@ class Migration(migrations.Migration):
                 'indexes': [],
                 'constraints': [],
             },
-            bases=(easydmp.dmpt.models.NoCheckMixin, 'dmpt.question'),
+            bases=(easydmp.dmpt.models.questions.mixins.NoCheckMixin, 'dmpt.question'),
         ),
         migrations.CreateModel(
             name='StorageForecastQuestion',
@@ -306,65 +359,6 @@ class Migration(migrations.Migration):
                 'indexes': [],
                 'constraints': [],
             },
-            bases=(easydmp.dmpt.models.NoCheckMixin, 'dmpt.question'),
-        ),
-        migrations.CreateModel(
-            name='ExplicitBranch',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('category', models.CharField(choices=[('Last', 'Last'), ('CannedAnswer', 'CannedAnswer'), ('ExplicitBranch', 'ExplicitBranch'), ('Edge', 'Edge'), ('Node-edgeless', 'Node-edgeless')], max_length=16)),
-                ('condition', models.CharField(blank=True, max_length=255)),
-                ('current_question', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='forward_transitions', to='dmpt.question')),
-                ('next_question', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='backward_transitions', to='dmpt.question')),
-            ],
-            options={
-                'unique_together': {('current_question', 'category', 'condition', 'next_question')},
-            },
-            bases=(easydmp.dmpt.utils.DeletionMixin, models.Model),
-        ),
-        migrations.CreateModel(
-            name='CannedAnswer',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('choice', models.CharField(help_text='Human friendly view of condition', max_length=255)),
-                ('canned_text', models.TextField(blank=True, null=True)),
-                ('comment', models.TextField(blank=True, null=True)),
-                ('question', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='canned_answers', to='dmpt.question')),
-                ('position', models.PositiveIntegerField(blank=True, default=1, help_text='Position in question. Just used for ordering.', null=True)),
-                ('cloned_from', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='clones', to='dmpt.cannedanswer')),
-                ('cloned_when', models.DateTimeField(blank=True, null=True)),
-                ('transition', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='canned_answers', to='dmpt.explicitbranch')),
-            ],
-        ),
-        migrations.AddIndex(
-            model_name='cannedanswer',
-            index=models.Index(fields=['question', 'position'], name='dmpt_preferred_ca_ordering_idx'),
-        ),
-        migrations.AddIndex(
-            model_name='cannedanswer',
-            index=models.Index(fields=['question', 'position', 'id'], name='dmpt_fallback_ca_ordering_idx'),
-        ),
-        migrations.CreateModel(
-            name='TemplateImportMetadata',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('origin', models.CharField(help_text='Where the template was imported from', max_length=255)),
-                ('original_template_pk', models.IntegerField(help_text="Copy of the original template's primary key")),
-                ('originally_cloned_from', models.IntegerField(blank=True, help_text='Copy of the original template\'s "cloned_from"', null=True)),
-                ('mappings', models.JSONField(default=dict, encoder=django.core.serializers.json.DjangoJSONEncoder)),
-                ('imported', models.DateTimeField(default=django.utils.timezone.now)),
-                ('imported_via', models.CharField(default='CLI', max_length=255)),
-                ('template', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='import_metadata', to='dmpt.template')),
-                ('originally_published', models.DateTimeField(blank=True, help_text='Copy of the original template\'s "published"', null=True)),
-                ('cloned_from', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='clones', to='dmpt.templateimportmetadata')),
-                ('cloned_when', models.DateTimeField(blank=True, null=True)),
-            ],
-            options={
-                'verbose_name_plural': 'template import metadata',
-            },
-        ),
-        migrations.AddIndex(
-            model_name='templateimportmetadata',
-            index=models.Index(fields=['original_template_pk'], name='tim_lookup_original_idx'),
+            bases=(easydmp.dmpt.models.questions.mixins.NoCheckMixin, 'dmpt.question'),
         ),
     ]

@@ -9,8 +9,8 @@ from faker import Faker
 from easydmp.dmpt.models import BooleanQuestion
 from easydmp.dmpt.models import CannedAnswer
 from easydmp.dmpt.models import ChoiceQuestion
-from easydmp.dmpt.models import INPUT_TYPES
 from easydmp.dmpt.models import Question
+from easydmp.dmpt.models import QuestionType
 from easydmp.dmpt.models import ReasonQuestion
 from easydmp.dmpt.models import Section
 from easydmp.dmpt.models import Template
@@ -21,6 +21,7 @@ __all__ = [
     'SectionFactory',
     'CannedAnswerFactory',
     'QuestionFactory',
+    'QuestionTypeFactory',
     'BooleanQuestionFactory',
     'ChoiceQuestionFactory',
     'ReasonQuestionFactory',
@@ -35,7 +36,8 @@ def create_smallest_template(published=None):
         published = None
     t = TemplateFactory(published=published)
     s = SectionFactory(template=t)
-    q = QuestionFactory(section=s, input_type='int')
+    qt = QuestionType(id='reason')
+    q = QuestionFactory(section=s, input_type=qt)
     return t
 
 
@@ -62,6 +64,15 @@ class SectionFactory(factory.django.DjangoModelFactory):
     introductory_text = factory.Faker('paragraph')
 
 
+class QuestionTypeFactory(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = QuestionType
+        django_get_or_create = ('id',)
+
+    id = factory.Faker('word')
+
+
 class AbstractQuestionFactory(factory.django.DjangoModelFactory):
 
     class Meta:
@@ -72,6 +83,7 @@ class AbstractQuestionFactory(factory.django.DjangoModelFactory):
     section = factory.Iterator(Section.objects.all())
     on_trunk = True
     help_text = factory.Faker('paragraph')
+    input_type = factory.Iterator(QuestionType.objects.all())
 
     @classmethod
     def _generate(cls, strategy, params):
@@ -85,7 +97,7 @@ class QuestionFactory(AbstractQuestionFactory):
         model = Question
         django_get_or_create = ('question', 'position')
 
-    input_type = factory.Iterator(INPUT_TYPES)
+    input_type = factory.Iterator(QuestionType.objects.all())
 
 
 class CannedAnswerFactory(factory.django.DjangoModelFactory):
@@ -105,7 +117,7 @@ class BooleanQuestionFactory(AbstractQuestionFactory):
         model = BooleanQuestion
         django_get_or_create = ('question', 'position')
 
-    input_type = 'bool'
+    input_type_id = 'bool'
 
     @factory.post_generation
     def create_canned_answers(obj, create, extracted, **kwargs):
@@ -122,7 +134,7 @@ class ChoiceQuestionFactory(AbstractQuestionFactory):
         model = ChoiceQuestion
         django_get_or_create = ('question', 'position')
 
-    input_type = 'choice'
+    input_type_id = 'choice'
 
     @factory.post_generation
     def create_canned_answers(obj, create, extracted, **kwargs):
@@ -143,4 +155,4 @@ class ReasonQuestionFactory(AbstractQuestionFactory):
         model = ReasonQuestion
         django_get_or_create = ('question', 'position')
 
-    input_type = 'reason'
+    input_type_id = 'reason'

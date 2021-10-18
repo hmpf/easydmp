@@ -6,7 +6,6 @@ from easydmp.dmpt.models import Section
 from easydmp.dmpt.models import Question
 from easydmp.dmpt.models import CannedAnswer
 from easydmp.dmpt.models import ExplicitBranch
-from easydmp.dmpt.forms import INPUT_TYPE_TO_FORMS
 
 from easydmp.eestore.models import EEStoreMount
 
@@ -93,6 +92,8 @@ class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
         source='section.template', read_only=True,
         view_name='v2:template-detail',
     )
+    input_type = serializers.SerializerMethodField()
+
     class Meta:
         model = Question
         fields = [
@@ -110,6 +111,9 @@ class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
             'optional_canned_text',
             'comment',
         ]
+
+    def get_input_type(self, obj):
+        return obj.input_type_id
 
 
 class HeavyQuestionSerializer(LightQuestionSerializer):
@@ -136,10 +140,10 @@ class HeavyQuestionSerializer(LightQuestionSerializer):
         ]
 
     def get_answer_schema(self, obj):
-        form = INPUT_TYPE_TO_FORMS.get(obj.input_type, None)
-        if not form:
+        form_class = obj.get_form_class()
+        if not form_class:
             return {}
-        boundform = form(question=obj)
+        boundform = form_class(question=obj)
         serialized_form = boundform.serialize_form()
         return serialized_form
 

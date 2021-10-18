@@ -12,8 +12,8 @@ from rest_framework.parsers import JSONParser
 from easydmp.dmpt.export_template import ExportSerializer
 from easydmp.dmpt.models import (Template, CannedAnswer, Question, Section,
                                  ExplicitBranch, TemplateImportMetadata,
-                                 get_origin)
-from easydmp.dmpt.models import TemplateImportMetadata, INPUT_TYPES
+                                 )
+from easydmp.dmpt.utils import get_origin
 from easydmp.eestore.models import EEStoreSource, EEStoreType, EEStoreMount
 
 
@@ -44,7 +44,7 @@ def _prep_model_dict(model_dict):
 
 def _check_missing_input_types(template_dict):
     input_types_needed = template_dict.pop('input_types_in_use')
-    missing_input_types = set(input_types_needed) - set(INPUT_TYPES)
+    missing_input_types = set(input_types_needed) - set(Question.INPUT_TYPE_IDS)
     if missing_input_types:
         raise TemplateImportError(
             f'The imported template is incompatible with this EasyDMP installation: '
@@ -193,8 +193,10 @@ def _create_imported_questions(export_dict, mappings):
     for question_dict in question_list:
         orig_id = question_dict.pop('id')
         orig_section_id = question_dict.pop('section')
+        input_type_id = question_dict.pop('input_type')
         question = Question.objects.create(
             section_id=mappings['sections'][orig_section_id],
+            input_type_id=input_type_id,
             **_prep_model_dict(question_dict)
         )
         mappings['questions'][orig_id] = question.id
