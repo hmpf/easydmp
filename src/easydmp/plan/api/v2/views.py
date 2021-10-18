@@ -1,27 +1,19 @@
-from django.http import HttpResponse
-
+from django_filters.rest_framework import DjangoFilterBackend
 from django_filters.rest_framework.filterset import FilterSet
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema_field
-from rest_framework import serializers
 from rest_framework.decorators import action
-from rest_framework.fields import JSONField
 from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
-from rest_framework.reverse import reverse
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from easydmp.auth.api.permissions import IsAuthenticatedAndActive
-from easydmp.auth.api.v2.views import UserSerializer
 from easydmp.lib.api.pagination import ToggleablePageNumberPaginationV2
 from easydmp.lib.api.renderers import StaticPlaintextRenderer, HTML2PDFRenderer
-from easydmp.lib.api.serializers import SelfHyperlinkedModelSerializer
-from easydmp.lib.api.serializers import SelfModelSerializer
 from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
 from easydmp.plan.models import Answer
 from easydmp.plan.views import generate_pretty_exported_plan
 from easydmp.plan.utils import GenerateRDA10
+from . import serializers
 
 
 class PlanFilter(FilterSet):
@@ -38,81 +30,10 @@ class PlanFilter(FilterSet):
         }
 
 
-class LightPlanSerializer(SelfHyperlinkedModelSerializer):
-    generated_html_url = serializers.SerializerMethodField()
-    generated_pdf_url = serializers.SerializerMethodField()
-    class Meta:
-        model = Plan
-        fields = [
-            'id',
-            'self',
-            'uuid',
-            'title',
-            'abbreviation',
-            'version',
-            'template',
-            'generated_html_url',
-            'generated_pdf_url',
-            'valid',
-            'last_validated',
-            'added',
-            'modified',
-            'locked',
-            'published',
-        ]
-
-    @extend_schema_field(OpenApiTypes.URI)
-    def get_generated_html_url(self, obj):
-        return reverse('v2:plan-export', kwargs={'pk': obj.id, 'format': 'html'},
-                       request=self.context['request'])
-
-    @extend_schema_field(OpenApiTypes.URI)
-    def get_generated_pdf_url(self, obj):
-        return reverse('v2:plan-export', kwargs={'pk': obj.id, 'format': 'pdf'},
-                       request=self.context['request'])
-
-
-class HeavyPlanSerializer(LightPlanSerializer):
-    answersets = LightAnswerSetSerializer(
-        many=True,
-        read_only=True,
-    )
-
-    class Meta:
-        model = Plan
-        fields = [
-            'id',
-            'self',
-            'uuid',
-            'title',
-            'abbreviation',
-            'version',
-            'template',
-            'answersets',
-            'answers',
-            'data',
-            'previous_data',
-            'generated_html',
-            'generated_html_url',
-            'generated_pdf_url',
-            'valid',
-            'last_validated',
-            'doi',
-            'added',
-            'added_by',
-            'modified',
-            'modified_by',
-            'locked',
-            'locked_by',
-            'published',
-            'published_by',
-        ]
-
-
 class PlanViewSet(ReadOnlyModelViewSet):
     filter_class = PlanFilter
     search_fields = ['=id', 'title', '=abbreviation', 'search_data']
-    serializer_class = HeavyPlanSerializer
+    serializer_class = serializers.HeavyPlanSerializer
     pagination_class = ToggleablePageNumberPaginationV2
     export_renderers = [
         StaticHTMLRenderer,
@@ -122,8 +43,8 @@ class PlanViewSet(ReadOnlyModelViewSet):
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
-            return HeavyPlanSerializer
-        return LightPlanSerializer
+            return serializers.HeavyPlanSerializer
+        return serializers.LightPlanSerializer
 
     def get_queryset(self):
         qs = Plan.objects.all()
@@ -154,3 +75,47 @@ class PlanViewSet(ReadOnlyModelViewSet):
         response = Response(blob)
         response['Content-Disposition'] = f'inline; filename=plan-{plan.pk}.{format}'
         return response
+
+
+class AnswerSetFilter(FilterSet):
+
+    class Meta:
+        model = AnswerSet
+        fields = {
+            'plan': ['exact'],
+            'section': ['exact'],
+            'section__template': ['exact'],
+            'valid': ['exact'],
+            'last_validated': ['lt', 'gt', 'lte', 'gte'],
+        }
+
+
+class AnswerSetViewSet(ReadOnlyModelViewSet):
+    filter_class = AnswerSetFilter
+    serializer_class = serializers.AnswerSetSerializer
+    queryset = AnswerSet.objects.order_by('pk')
+    pagination_class = ToggleablePageNumberPaginationV2
+    search_fields = ['data', 'previous_data']
+
+
+class AnswerFilter(FilterSet):
+
+    class Meta:
+        model = Answer
+        fields = {
+            'answerset': ['exact'],
+            'answerset__plan': ['exact'],
+            'question': ['exact'],
+            'question__section': ['exact'],
+            'question__section__template': ['exact'],
+            'valid': ['exact'],
+            'last_validated': ['lt', 'gt', 'lte', 'gte'],
+        }
+
+
+class AnswerViewSet(ReadOnlyModelViewSet):
+    filter_backends = [DjangoFilterBackend]
+    filter_class = AnswerFilter
+    serializer_class = serializers.AnswerSerializer
+    queryset = Answer.objects.order_by('answerset_id', 'question_id', 'pk')
+    pagination_class = ToggleablePageNumberPaginationV2
