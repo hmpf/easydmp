@@ -69,10 +69,16 @@ class SectionSerializer(SelfHyperlinkedModelSerializer):
             'id',
             'self',
             'template',
+            'label',
             'title',
-            'position',
             'introductory_text',
             'comment',
+            'position',
+            'super_section',
+            'section_depth',
+            'branching',
+            'optional',
+            'repeatable',
             'modified',
         ]
 
