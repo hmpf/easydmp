@@ -220,10 +220,11 @@ REST_FRAMEWORK = {
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
     'DEFAULT_VERSION': 'v1',
     'DEFAULT_FILTER_BACKENDS': (
-        'drf_spectacular.contrib.django_filters.DjangoFilterBackend',
+        'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'PAGE_SIZE': 100,
 }
 
 JWT_AUTH = {

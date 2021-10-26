@@ -1,13 +1,15 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from easydmp.dmpt.models import Template
-from easydmp.dmpt.models import TemplateImportMetadata
-from easydmp.dmpt.models import Section
-from easydmp.dmpt.models import Question
-from easydmp.dmpt.models import CannedAnswer
-from easydmp.dmpt.models import ExplicitBranch
-
 from easydmp.eestore.models import EEStoreMount
+from easydmp.lib.api.serializers import SelfHyperlinkedModelSerializer
+from easydmp.lib.api.serializers import SelfHyperlinkedRelatedField
+from ...models import Template
+from ...models import TemplateImportMetadata
+from ...models import Section
+from ...models import Question
+from ...models import CannedAnswer
+from ...models import ExplicitBranch
 
 
 __all__ = [
@@ -21,17 +23,13 @@ __all__ = [
 ]
 
 
-class TemplateSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(
-        view_name='v2:template-detail',
-        lookup_field='pk'
-    )
+class TemplateSerializer(SelfHyperlinkedModelSerializer):
 
     class Meta:
         model = Template
         fields = [
             'id',
-            'url',
+            'self',
             'title',
             'import_metadata',
             'abbreviation',
@@ -46,13 +44,13 @@ class TemplateSerializer(serializers.HyperlinkedModelSerializer):
         ]
 
 
-class TemplateImportMetadataSerializer(serializers.HyperlinkedModelSerializer):
+class TemplateImportMetadataSerializer(SelfHyperlinkedModelSerializer):
 
     class Meta:
         model = TemplateImportMetadata
         fields = [
-            'url',
-            'pk',
+            'id',
+            'self',
             'origin',
             'original_template_pk',
             'originally_cloned_from',
@@ -63,32 +61,30 @@ class TemplateImportMetadataSerializer(serializers.HyperlinkedModelSerializer):
         ]
 
 
-class SectionSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(
-        view_name='v2:section-detail',
-        lookup_field='pk'
-    )
+class SectionSerializer(SelfHyperlinkedModelSerializer):
 
     class Meta:
         model = Section
         fields = [
             'id',
-            'url',
+            'self',
             'template',
+            'label',
             'title',
-            'position',
             'introductory_text',
             'comment',
+            'position',
+            'super_section',
+            'section_depth',
+            'branching',
+            'optional',
+            'repeatable',
             'modified',
         ]
 
 
-class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(
-        view_name='v2:question-detail',
-        lookup_field='pk'
-    )
-    template = serializers.HyperlinkedRelatedField(
+class LightQuestionSerializer(SelfHyperlinkedModelSerializer):
+    template = SelfHyperlinkedRelatedField(
         source='section.template', read_only=True,
         view_name='v2:template-detail',
     )
@@ -98,7 +94,7 @@ class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
         model = Question
         fields = [
             'id',
-            'url',
+            'self',
             'input_type',
             'template',
             'section',
@@ -112,6 +108,7 @@ class LightQuestionSerializer(serializers.HyperlinkedModelSerializer):
             'comment',
         ]
 
+    @extend_schema_field(str)
     def get_input_type(self, obj):
         return obj.input_type_id
 
@@ -123,7 +120,7 @@ class HeavyQuestionSerializer(LightQuestionSerializer):
         model = Question
         fields = [
             'id',
-            'url',
+            'self',
             'input_type',
             'template',
             'section',
@@ -139,6 +136,7 @@ class HeavyQuestionSerializer(LightQuestionSerializer):
             'answer_schema',
         ]
 
+    @extend_schema_field(dict)
     def get_answer_schema(self, obj):
         form_class = obj.get_form_class()
         if not form_class:
@@ -148,17 +146,13 @@ class HeavyQuestionSerializer(LightQuestionSerializer):
         return serialized_form
 
 
-class CannedAnswerSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(
-        view_name='v2:question-detail',
-        lookup_field='pk'
-    )
+class CannedAnswerSerializer(SelfHyperlinkedModelSerializer):
 
     class Meta:
         model = CannedAnswer
         fields = [
             'id',
-            'url',
+            'self',
             'question',
             'choice',
             'canned_text',
@@ -166,17 +160,13 @@ class CannedAnswerSerializer(serializers.HyperlinkedModelSerializer):
         ]
 
 
-class ExplicitBranchSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(
-        view_name='v2:explicitbranch-detail',
-        lookup_field='pk'
-    )
+class ExplicitBranchSerializer(SelfHyperlinkedModelSerializer):
 
     class Meta:
         model = ExplicitBranch
         fields = [
             'id',
-            'url',
+            'self',
             'current_question',
             'category',
             'condition',
