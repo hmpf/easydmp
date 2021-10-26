@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'rest_framework.authtoken',
+    'rest_framework_jwt',
+    'rest_framework_jwt.blacklist',
 
     'easydmp.auth.apps.EasyDMPAuthConfig',
     'easydmp.dmpt',
@@ -227,9 +229,13 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100,
 }
 
+# drf-jwt
+
 JWT_AUTH = {
-    'JWT_ALLOW_REFRESH': True,
-    'JWT_LEEWAY': 30,
+    'JWT_DELETE_STALE_BLACKLISTED_TOKENS': True,
+    'JWT_LEEWAY': 10,
+    'JWT_TOKEN_ID': 'require',
+    'JWT_AUTH_HEADER_PREFIX': 'JWT',
 }
 
 # drf-spectacular (swagger/OpenAPI)

@@ -78,7 +78,7 @@ docutils==0.16
     # via
     #   -r requirements/base.txt
     #   sphinx
-drf-jwt==1.18.0
+drf-jwt==1.19.1
     # via -r requirements/base.txt
 drf-spectacular==0.20.2
     # via -r requirements/base.txt

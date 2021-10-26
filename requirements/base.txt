@@ -4,7 +4,7 @@ django-extensions
 django-filter>=2.4.0,<2.5
 django-guardian>=2.3,<2.4
 djangorestframework>=3.12
-drf-jwt>=1.18
+drf-jwt>=1.19
 django_select2>=7.3
 dj-database-url>=0.5
 docutils>=0.16
