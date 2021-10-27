@@ -12,13 +12,25 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
-Unreleased
-----------
+1.12.0
+------
 
 Humongous new feature:
 
 * Major refactor of questions, should allow for 3rd party apps containing 3rd
   party question types
+
+Small new features:
+
+* New API v2 endpoints for JWT impersonation and logout, logging out will
+  invalidate the token.
+* API v2 ready for use
+* Added a question type for email-addresses: email
+* Added a question type for links (URLS/URIs/IRIs): iri
+
+Paperwork:
+
+* Removed squashed migrations.
 
 1.11.1
 ------
