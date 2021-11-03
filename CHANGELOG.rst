@@ -12,6 +12,14 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+Unreleased
+----------
+
+Bugfixes:
+
+* Ensure that validation of email questions doesn't wind up in debugging-mode,
+  and check commits for python debugging statements
+
 1.12.0
 ------
 

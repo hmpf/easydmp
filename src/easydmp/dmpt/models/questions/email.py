@@ -28,7 +28,6 @@ class EmailQuestion(PrimitiveTypeMixin, SaveMixin, Question):
 
     def validate_choice(self, data: Data) -> bool:
         answer = data.get('choice', NotSet)
-        breakpoint()
         if self.optional and answer is NotSet:
             return True
         answer = answer.strip()
