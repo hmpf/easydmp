@@ -12,8 +12,8 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
-Unreleased
-----------
+1.13.0
+------
 
 Small new feature:
 
