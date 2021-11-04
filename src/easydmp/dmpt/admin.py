@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import warnings
+from urllib.parse import parse_qsl
 
 from django.contrib import admin
 from django.contrib import messages
@@ -7,6 +8,7 @@ from django.core.exceptions import ValidationError, PermissionDenied
 from django import forms
 from django.template.response import TemplateResponse
 from django.http.response import HttpResponseRedirect
+from django.http import Http404
 from django.urls import reverse, path
 from django.utils.html import format_html, mark_safe
 
@@ -42,6 +44,8 @@ hence all questions are on_trunk.
 
 
 def get_templates_for_user(user):
+    if user.has_superpowers:
+        return Template.objects.all()
     templates = get_objects_for_user(
         user,
         'dmpt.change_template',
@@ -559,13 +563,37 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
     def get_limited_queryset(self, request):
         return get_sections_for_user(request.user)
 
+    def get_form(self, request, obj=None, **kwargs):
+        request.instance = obj
+        return super().get_form(request, obj, **kwargs)
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'template' and not request.user.has_superpowers:
-            templates = get_templates_for_user(request.user)
-            kwargs["queryset"] = templates
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        # Ensure that only templates the user are allowed to use are available
+        templates = get_templates_for_user(request.user)
+        # Limit templates by the template filter, if any
+        filters = dict(parse_qsl(request.GET.get('_changelist_filters', '')))
+        template_id = int(filters.get('template__id__exact', 0))
+        if template_id:
+            templates = templates.filter(id=template_id)
+            if not templates.exists():
+                raise Http404
+
+        if db_field.name == 'template':
+            # Limit to allowable templates
+            field.queryset = templates
+            return field
+        instance = request.instance
         if db_field.name == 'super_section':
-            kwargs["queryset"] = self.get_queryset(request)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+            if instance:
+                # Limit to existing sections of the template and exclude self
+                qs = field.queryset.filter(template_id=instance.template_id)
+                field.queryset = qs.exclude(id=instance.id)
+            else:
+                # Limit to allowable sections
+                field.queryset = field.queryset.filter(template__in=templates)
+            return field
+        return field
 
     def save_model(self, request, obj, form, change):
         if not change:
@@ -607,6 +635,17 @@ class QuestionExplicitBranchInline(admin.StackedInline):
             return ()
         return [f.name for f in self.model._meta.fields]
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        filters = dict(parse_qsl(request.GET.get('_changelist_filters', '')))
+        if db_field.name == 'next_question':
+            sections = get_sections_for_user(request.user)
+            if template_id := int(filters.get('template', 0)):
+                sections = sections.filter(template_id=template_id)
+            if section_id := int(filters.get('section', 0)):
+                sections = sections.filter(id=section_id)
+            field.queryset = field.queryset.filter(section__in=sections)
+        return field
 
 class QuestionCannedAnswerInline(admin.StackedInline):
     model = CannedAnswer
@@ -799,10 +838,16 @@ class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMo
             return None
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'section' and not request.user.has_superpowers:
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        filters = dict(parse_qsl(request.GET.get('_changelist_filters', '')))
+        if db_field.name == 'section':
             sections = get_sections_for_user(request.user)
-            kwargs["queryset"] = sections
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+            if template_id := int(filters.get('template', 0)):
+                sections = sections.filter(template_id=template_id)
+            if section_id := int(filters.get('section', 0)):
+                sections = sections.filter(id=section_id)
+            field.queryset = sections
+        return field
 
     def save_model(self, request, obj, form, change):
         if not change:
