@@ -32,7 +32,6 @@ class BooleanQuestion(ChoiceValidationMixin, SaveMixin, Question):
     The choice is converted to True or False.
     """
     TYPE = 'bool'
-    branching_possible = True
 
     class Meta:
         proxy = True
@@ -64,7 +63,6 @@ class BooleanQuestion(ChoiceValidationMixin, SaveMixin, Question):
 class ChoiceQuestion(ChoiceValidationMixin, SaveMixin, Question):
     "A branch-capable question answerable with one of a small set of choices"
     TYPE = 'choice'
-    branching_possible = True
 
     class Meta:
         proxy = True
@@ -252,7 +250,6 @@ class ExternalChoiceNotListedQuestion(NotListedMixin, EEStoreMixin, SaveMixin, Q
     to branch.
     """
     TYPE = 'extchoicenotlisted'
-    branching_possible = True
 
     class Meta:
         proxy = True
@@ -362,7 +359,6 @@ class ExternalMultipleChoiceNotListedOneTextQuestion(NotListedMixin, EEStoreMixi
     to branch.
     """
     TYPE = 'extmultichoicenotlistedonetext'
-    branching_possible = True
 
     class Meta:
         proxy = True

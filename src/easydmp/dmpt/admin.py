@@ -700,7 +700,9 @@ class QuestionCannedAnswerOrderingInline(BaseOrderingInline):
 
 @admin.register(QuestionType)
 class QuestionTypeAdmin(admin.ModelAdmin):
-    pass
+    list_filter = ['allow_notes', 'branching_possible']
+    list_display = ['id'] + list_filter
+    readonly_fields = list_display
 
 
 @admin.register(Question)

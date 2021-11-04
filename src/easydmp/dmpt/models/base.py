@@ -1396,8 +1396,12 @@ class QuestionType(models.Model):
     MAX_LENGTH = 32
     id = models.CharField(max_length=MAX_LENGTH, primary_key=True)
     allow_notes = models.BooleanField(default=True)
+    branching_possible = models.BooleanField(default=False)
 
     def __str__(self):
+        return self.id
+
+    def natural_key(self):
         return self.id
 
 
@@ -1428,7 +1432,6 @@ class Question(DeletionMixin, ClonableModel):
     INPUT_TYPES = defaultdict(InputType)
     INPUT_TYPE_IDS = INPUT_TYPES.keys()
     INPUT_TYPE_CHOICES = zip(INPUT_TYPE_IDS, INPUT_TYPE_IDS)
-    branching_possible = False
 
     input_type = models.ForeignKey(QuestionType, on_delete=models.CASCADE)
     section = models.ForeignKey(Section, on_delete=models.CASCADE,
@@ -1488,6 +1491,10 @@ class Question(DeletionMixin, ClonableModel):
 
     def get_form_class(self):
         return self.INPUT_TYPES[self.input_type_id].form
+
+    @property
+    def branching_possible(self):
+        return self.input_type.branching_possible
 
     @property
     def is_readonly(self):
