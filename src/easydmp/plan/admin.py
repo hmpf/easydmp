@@ -14,13 +14,13 @@ from .models import PlanAccess
 @admin.register(AnswerSet)
 class AnswerSetAdmin(AdminConvenienceMixin, admin.ModelAdmin):
     list_display = ['plan', 'section', 'identifier']
-    list_filter = ['section__template']
+    list_filter = ['section__template', 'section', 'skipped']
     search_fields = ['plan__title', 'section__template__title']
     readonly_fields = ['valid', 'last_validated', 'cloned_from', 'cloned_when']
     raw_id_fields = ['plan', 'section', 'parent']
     fieldsets = (
         (None, {
-            'fields': ('identifier', 'parent', 'section', 'plan',),
+            'fields': ('identifier', 'parent', 'section', 'plan', 'skipped'),
         }),
         ('Debug', {
             'fields': ('data', 'previous_data'),

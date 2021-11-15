@@ -130,6 +130,7 @@ class AnswerSet(ClonableModel):
     parent = models.ForeignKey('self', models.CASCADE, related_name='answersets', null=True, blank=True)
     valid = models.BooleanField(default=False)
     last_validated = models.DateTimeField(auto_now=True)
+    skipped = models.BooleanField(null=True, blank=True)
     # The user's answers, represented as a Question PK keyed dict in JSON.
     data = models.JSONField(default=dict, encoder=DjangoJSONEncoder, blank=True)
     previous_data = models.JSONField(default=dict, encoder=DjangoJSONEncoder, blank=True)
