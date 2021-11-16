@@ -43,10 +43,15 @@ def get_editors_for_plan(plan):
 
 
 def select_plans(plan_ids=(), template_ids=(), section_ids=()):
-    from easydmp.plan.models import Plan
+    from easydmp.plan.models import Plan, AnswerSet
     from easydmp.dmpt.models import Template, Section
 
-    plan_qs = Plan.objects.exclude(data={})
+    plans_with_answers = tuple(AnswerSet.objects
+        .exclude(skipped=True)
+        .exclude(data={})
+        .values_list('plan_id', flat=True).distinct()
+    )
+    plan_qs = Plan.objects.filter(id__in=plans_with_answers)
     template_qs = Template.objects.all()
     if template_ids:
         template_qs = Template.objects.filter(id__in=template_ids)
