@@ -55,8 +55,6 @@ class Command(BaseCommand):
                 )
                 for answerset in plan.answersets.filter(section=section):
                     answer_ids = set(map(int, answerset.data.keys()))
-                    if answer_ids:
-                        assert False, answer_ids
                     answered_in_answerset = set(tuple(question_ids)) & answer_ids
                     report.append('\tAnswerset "{}": {}'.format(
                         answerset.identifier,
