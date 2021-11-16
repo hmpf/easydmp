@@ -20,7 +20,7 @@ from easydmp.eestore.models import EEStoreSource, EEStoreType, EEStoreMount
 __all__ = [
     'TemplateImportError',
     'deserialize_template_export',
-    'import_serialized_export',
+    'import_serialized_template_export',
 ]
 
 
@@ -253,12 +253,11 @@ def _create_imported_eestore_mounts(export_dict, mappings):
     # EEStoreMount doesn't need to leave a mapping due to natural keys
 
 
-def import_serialized_export(export_dict, origin='', via=DEFAULT_VIA):
+def clean_serialized_template_export(export_dict):
     if not export_dict:
         raise TemplateImportError("Template export file was empty, cannot import")
 
     easydmp_dict = export_dict['easydmp']
-    chosen_origin = origin or easydmp_dict.get('origin') or get_origin(origin)
     export_version = easydmp_dict.get('version')
     if export_version < settings.VERSION:
         # warning
@@ -269,6 +268,14 @@ def import_serialized_export(export_dict, origin='', via=DEFAULT_VIA):
     # Check compatibility
     _check_missing_input_types(template_dict)
     _check_missing_eestore_types_and_sources(eestore_mounts)
+
+    origin = easydmp_dict.get('origin')
+    return origin
+
+
+def import_serialized_template_export(export_dict, origin='', via=DEFAULT_VIA):
+    stored_origin = clean_serialized_template_export(export_dict)
+    chosen_origin = origin or stored_origin or get_origin(origin)
 
     empty_mapping = {
         'sections': {},

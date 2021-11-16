@@ -27,7 +27,7 @@ from easydmp.lib.admin import ObjectPermissionModelAdmin
 from easydmp.lib.admin import SetObjectPermissionModelAdmin
 from easydmp.lib import get_model_name
 
-from .import_template import deserialize_template_export, import_serialized_export, TemplateImportError
+from .import_template import deserialize_template_export, import_serialized_template_export, TemplateImportError
 from .models import Template
 from .models import TemplateImportMetadata
 from .models import Section
@@ -350,7 +350,7 @@ class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissio
 
                 try:
                     with warnings.catch_warnings(record=True) as w:
-                        tim = import_serialized_export(serialized_dict, via='admin')
+                        tim = import_serialized_template_export(serialized_dict, via='admin')
                         if w:
                             messages.warning(request, w[-1].message)
                 except TemplateImportError as e:
