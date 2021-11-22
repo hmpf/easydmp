@@ -12,6 +12,7 @@ __all__ = [
     'FakeBooleanFilter',
     'PublishedFilter',
     'RetiredFilter',
+    'ImportedFilter',
     'AdminConvenienceMixin',
     'ObjectPermissionModelAdmin',
     'SetObjectPermissionModelAdmin',
@@ -47,6 +48,11 @@ class RetiredFilter(FakeBooleanFilter):
 class LockedFilter(FakeBooleanFilter):
     title = 'locked'
     parameter_name = 'locked'
+
+
+class ImportedFilter(FakeBooleanFilter):
+    title = 'imported'
+    parameter_name = 'imported'
 
 
 class AdminConvenienceMixin:

@@ -9,6 +9,7 @@ from django.utils.timezone import now as tznow
 from rest_framework.exceptions import ParseError
 from rest_framework.parsers import JSONParser
 
+from easydmp.lib import deserialize_export, get_free_title_for_importing, strip_model_dict
 from easydmp.dmpt.export_template import ExportSerializer
 from easydmp.dmpt.models import (Template, CannedAnswer, Question, Section,
                                  ExplicitBranch, TemplateImportMetadata,
@@ -35,15 +36,13 @@ class TemplateImportWarning(UserWarning):
     pass
 
 
-def _prep_model_dict(model_dict):
-    exclude_fields = ['id', 'pk', 'cloned_from', 'cloned_when']
-    for field in exclude_fields:
-        model_dict.pop(field, None)
-    return model_dict
-
-
 def _check_missing_input_types(template_dict):
-    input_types_needed = template_dict.pop('input_types_in_use')
+    try:
+        input_types_needed = template_dict['input_types_in_use']
+    except KeyError:
+        raise TemplateImportError(
+            'The imported template is malformed, the list of input types supported by the origin is missing'
+        )
     missing_input_types = set(input_types_needed) - set(Question.INPUT_TYPE_IDS)
     if missing_input_types:
         raise TemplateImportError(
@@ -86,33 +85,7 @@ def _check_missing_eestore_types_and_sources(eestore_mounts):
 
 
 def deserialize_template_export(export_json) -> dict:
-    if isinstance(export_json, str):
-        export_json = export_json.encode('utf-8')
-    stream = io.BytesIO(export_json)
-    try:
-        data = JSONParser().parse(stream)
-    except ParseError:
-        raise TemplateImportError('Template export is not JSON')
-    if not data:
-        raise TemplateImportError("Template export is empty")
-    serializer = ExportSerializer(data=data)
-    if serializer.is_valid():
-        return data
-    raise TemplateImportError("Template export is malformed")
-
-
-def _get_free_title(template_dict, origin):
-    title = template_dict.pop('title')
-    orig_pk = template_dict['id']
-    if not Template.objects.filter(title=title).exists():
-        return title
-    changed_title1 = f'{title} via {origin}#{orig_pk}'
-    if not Template.objects.filter(title=changed_title1).exists():
-        return changed_title1
-    changed_title2 = f'{changed_title1} at {tznow()}'
-    if not Template.objects.filter(title=changed_title2).exists():
-        return changed_title2
-    return f'{changed_title2}, {uuid4()}'
+    return deserialize_export(export_json, ExportSerializer, 'Template', TemplateImportError)
 
 
 @transaction.atomic
@@ -120,8 +93,10 @@ def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
     via = via if via else DEFAULT_VIA
     template_dict = export_dict['template']
     original_title = template_dict['title']
-    title = _get_free_title(template_dict, origin)
+    title = get_free_title_for_importing(template_dict, origin, Template)
     original_template_pk = template_dict.pop('id')
+
+    # Chcek that this template hasn't already been imported from this origin before
     existing_tim = TemplateImportMetadata.objects.filter(
         origin=origin,
         original_template_pk=original_template_pk
@@ -133,9 +108,11 @@ def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
         raise TemplateImportError(error_msg)
     # Ensure the import is not auto-published
     published = template_dict.pop('published', None)
+
+    # Create template
     imported_template = Template.objects.create(
         title=title,
-        **_prep_model_dict(template_dict)
+        **strip_model_dict(template_dict, 'input_types_in_use')
     )
     try:
         tim = TemplateImportMetadata.objects.create(
@@ -149,6 +126,25 @@ def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
     except DatabaseError as e:
         raise TemplateImportError(f'{e} Cannot import')
     return tim
+
+
+def create_identity_template_mapping(template):
+    mappings = {
+        'sections': {},
+        'questions': {},
+        'explicit_branches': {},
+        'canned_answers': {},
+    }
+    for section in template.sections.all():
+         mappings['sections'][section.id] = section.id
+    questions = template.questions.all()
+    for question in questions:
+        mappings['questions'][question.id] = question.id
+    for explicit_branch in ExplicitBranch.objects.filter(current_question__in=questions):
+        mappings['explicit_branches'][explicit_branch.id] = explicit_branch.id
+    for canned_answer in CannedAnswer.objects.filter(question__in=questions):
+        mappings['canned_answers'][canned_answer.id] = canned_answer.id
+    return mappings
 
 
 # These are just similar enough that might be tempting to turn it all
@@ -171,7 +167,7 @@ def _create_imported_sections(export_dict, tim):
         orig_super_section_id = section_dict.pop('super_section')
         section = Section.objects.create(
             template=tim.template,
-            **_prep_model_dict(section_dict)
+            **strip_model_dict(section_dict)
         )
         mappings['sections'][orig_id] = section.id
         if orig_super_section_id:
@@ -197,7 +193,7 @@ def _create_imported_questions(export_dict, mappings):
         question = Question.objects.create(
             section_id=mappings['sections'][orig_section_id],
             input_type_id=input_type_id,
-            **_prep_model_dict(question_dict)
+            **strip_model_dict(question_dict)
         )
         mappings['questions'][orig_id] = question.id
     return mappings
@@ -214,7 +210,7 @@ def _create_imported_explicit_branches(export_dict, mappings):
         explicit_branch = ExplicitBranch.objects.create(
             current_question_id=mappings['questions'][orig_current_question_id],
             next_question_id=mappings['questions'].get(orig_next_question_id, None),
-            **_prep_model_dict(explicit_branch_dict)
+            **strip_model_dict(explicit_branch_dict)
         )
         mappings['explicit_branches'][orig_id] = explicit_branch.id
     return mappings
@@ -231,7 +227,7 @@ def _create_imported_canned_answers(export_dict, mappings):
         canned_answer = CannedAnswer.objects.create(
             question_id=mappings['questions'][orig_question_id],
             transition_id=mappings['explicit_branches'].get(orig_transition_id, None),
-            **_prep_model_dict(canned_answer_dict)
+            **strip_model_dict(canned_answer_dict)
         )
         mappings['canned_answers'][orig_id] = canned_answer.id
     return mappings
@@ -257,13 +253,26 @@ def clean_serialized_template_export(export_dict):
     if not export_dict:
         raise TemplateImportError("Template export file was empty, cannot import")
 
+    section_keys = set(('easydmp', 'template'))
+    missing_section_keys = ', '.join(section_keys.difference(export_dict.keys()))
+    if missing_section_keys:
+        raise TemplateImportError(
+            f'Template export file is malformed, lacking the following section(s): {missing_section_keys}. Cannot import'
+        )
+
     easydmp_dict = export_dict['easydmp']
+    field_keys = set(('version', 'origin'))
+    missing_field_keys = ', '.join(field_keys.difference(easydmp_dict.keys()))
+    if missing_field_keys:
+        raise TemplateImportError(
+            f'Template export file is malformed, lacking the following field(s): {missing_field_keys}. Cannot import'
+        )
     export_version = easydmp_dict.get('version')
     if export_version < settings.VERSION:
         # warning
         pass
     template_dict = export_dict['template']
-    eestore_mounts = export_dict.get('eestore_mounts') or []
+    eestore_mounts = export_dict.get('eestore_mounts', [])
 
     # Check compatibility
     _check_missing_input_types(template_dict)

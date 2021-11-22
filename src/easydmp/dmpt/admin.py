@@ -22,6 +22,7 @@ from easydmp.lib.admin import FakeBooleanFilter
 from easydmp.lib.admin import PublishedFilter
 from easydmp.lib.admin import RetiredFilter
 from easydmp.lib.admin import LockedFilter
+from easydmp.lib.admin import ImportedFilter
 from easydmp.lib.admin import AdminConvenienceMixin
 from easydmp.lib.admin import ObjectPermissionModelAdmin
 from easydmp.lib.admin import SetObjectPermissionModelAdmin
@@ -217,22 +218,6 @@ class TemplateMoreInfoFilter(admin.SimpleListFilter):
             queryset = queryset.exclude(more_info='')
         elif value == 'no':
             queryset = queryset.filter(more_info='')
-        return queryset
-
-
-class ImportedFilter(admin.SimpleListFilter):
-    title = 'imported'
-    parameter_name = 'imported'
-
-    def lookups(self, request, model_admin):
-        return (('yes', 'Yes'), ('no', 'No'))
-
-    def queryset(self, request, queryset):
-        value = self.value()
-        if value == 'yes':
-            queryset = queryset.exclude(import_metadata=None)
-        elif value == 'no':
-            queryset = queryset.filter(import_metadata=None)
         return queryset
 
 
