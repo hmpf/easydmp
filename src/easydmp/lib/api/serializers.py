@@ -6,6 +6,7 @@ __all__ = [
     'SelfHyperlinkedRelatedField',
     'SelfModelSerializer',
     'SelfHyperlinkedModelSerializer',
+    'URLSerializer',
 ]
 
 
@@ -32,3 +33,7 @@ class SelfModelSerializer(serializers.ModelSerializer):
 class SelfHyperlinkedModelSerializer(serializers.HyperlinkedModelSerializer):
     serializer_related_field = SelfHyperlinkedRelatedField
     url_field_name = 'self'
+
+
+class URLSerializer(serializers.Serializer):
+    url = serializers.URLField(max_length=255, required=True)

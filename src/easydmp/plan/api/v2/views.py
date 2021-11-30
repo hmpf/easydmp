@@ -1,20 +1,67 @@
+from django.db import IntegrityError
+
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters.rest_framework.filterset import FilterSet
+from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework import parsers, status
 from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
-from easydmp.lib.api.viewsets import AnonReadOnlyModelViewSet
+from rest_framework.reverse import reverse
 
 from easydmp.auth.api.permissions import IsAuthenticatedAndActive
 from easydmp.lib.api.pagination import ToggleablePageNumberPaginationV2
 from easydmp.lib.api.renderers import StaticPlaintextRenderer, HTML2PDFRenderer
-from easydmp.plan.export_plan import serialize_plan_export
+from easydmp.lib.api.response_exceptions import DRFIntegrityError
+from easydmp.lib.api.serializers import URLSerializer
+from easydmp.lib.api.viewsets import AnonReadOnlyModelViewSet
+from easydmp.lib.import_export import get_export_from_url
+from easydmp.plan.export_plan import serialize_plan_export, SingleVersionExportSerializer
+from easydmp.plan.import_plan import (
+    deserialize_plan_export,
+    get_stored_plan_origin,
+    import_serialized_plan_export,
+    PlanImportError,
+)
 from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
 from easydmp.plan.models import Answer
 from easydmp.plan.views import generate_pretty_exported_plan
 from easydmp.plan.utils import GenerateRDA10
 from . import serializers
+
+
+def _get_plan_export_from_url(url):
+    return get_export_from_url(url, deserialize_plan_export)
+
+
+def _import_plan(request, export_dict):
+    "Import safely in an API"
+    if not export_dict:
+        errormsg = {
+            'detail': 'No export data',
+            'code': 'import_error',
+        }
+        raise ValidationError(**errormsg)
+    # export_dict is not falsey from this point onward
+    try:
+        pim = import_serialized_plan_export(export_dict, request.user, via='API')
+        return pim
+    except IntegrityError as e:
+        errormsg = e.args
+        if e.__cause__.__class__.__name__ == 'UniqueViolation':
+            errormsg = {
+                'detail': 'A plan with this id and origin already exists',
+                'code': 'already_exists'
+            }
+        raise DRFIntegrityError(**errormsg)
+    except PlanImportError as e:
+        errormsg = {
+            'detail': str(e),
+            'code': 'import_error',
+        }
+        raise ValidationError(**errormsg)
 
 
 class PlanFilter(FilterSet):
@@ -81,6 +128,37 @@ class PlanViewSet(AnonReadOnlyModelViewSet):
         response = Response(blob)
         response['Content-Disposition'] = f'inline; filename=plan-{plan.pk}.{format}'
         return response
+
+    @extend_schema(request=SingleVersionExportSerializer, responses=serializers.HeavyPlanSerializer)
+    @action(detail=False, methods=['post'], serializer_class=SingleVersionExportSerializer, parser_classes=[parsers.JSONParser], url_path='import', url_name='plan-import-json')
+    def import_via_json_post(self, request):
+        export_dict = request.data
+        pim = _import_plan(request, export_dict)
+        plan = pim.plan
+        serializer = serializers.HeavyPlanSerializer(
+            plan,
+            context={'request': request}
+        )
+        headers = {'Location': reverse('v2:plan-detail', kwargs={'pk': plan.pk}, request=request)}
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @extend_schema(request=URLSerializer, responses=serializers.HeavyPlanSerializer)
+    @action(detail=False, methods=['post'], serializer_class=URLSerializer, parser_classes=[parsers.JSONParser], url_path='import/url', url_name='plan-import-url')
+    def import_via_url(self, request):
+        url_serializer = URLSerializer(data=request.data)
+        url_serializer.is_valid(raise_exception=True)
+        # url_serializer is valid from this point onward
+        data = url_serializer.data
+        url = data['url']
+        export_dict = _get_plan_export_from_url(url)
+        pim = _import_plan(request, export_dict)
+        plan = pim.plan
+        serializer = serializers.HeavyPlanSerializer(
+            plan,
+            context={'request': request}
+        )
+        headers = {'Location': reverse('v2:plan-detail', kwargs={'pk': plan.pk}, request=request)}
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class AnswerSetFilter(FilterSet):
