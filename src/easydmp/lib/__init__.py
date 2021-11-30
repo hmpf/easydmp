@@ -76,7 +76,7 @@ def deserialize_export(export_json, export_serializer, model_name, exception_typ
     if not data:
         raise exception_type(f'{model_name} export is empty')
     serializer = export_serializer(data=data)
-    if serializer.is_valid():
+    if serializer.is_valid(raise_exception=True):
         return data
     raise exception_type(f'{model_name} export is malformed')
 
