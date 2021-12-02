@@ -3,7 +3,7 @@ from django.utils.translation import ugettext as _
 
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from easydmp.lib.api.viewsets import AnonReadOnlyModelViewSet
 from rest_framework import serializers
 from rest_framework import status
 
@@ -39,7 +39,7 @@ class UserSerializer(SelfHyperlinkedModelSerializer):
         ]
 
 
-class UserViewSet(ReadOnlyModelViewSet):
+class UserViewSet(AnonReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 

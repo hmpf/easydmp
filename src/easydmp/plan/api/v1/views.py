@@ -7,7 +7,7 @@ from rest_framework.fields import JSONField
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from easydmp.lib.api.viewsets import AnonReadOnlyModelViewSet
 
 from easydmp.auth.api.v1.views import UserSerializer
 from easydmp.lib.api.pagination import ToggleablePageNumberPaginationV1
@@ -156,7 +156,7 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
         return outdict
 
 
-class PlanViewSet(ReadOnlyModelViewSet):
+class PlanViewSet(AnonReadOnlyModelViewSet):
     filter_class = PlanFilter
     search_fields = ['=id', 'title', '=abbreviation', 'search_data']
     serializer_class = PlanSerializer

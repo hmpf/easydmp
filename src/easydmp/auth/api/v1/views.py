@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.utils.translation import ugettext as _
 
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from easydmp.lib.api.viewsets import AnonReadOnlyModelViewSet
 from rest_framework import serializers
 
 from easydmp.auth.models import User
@@ -54,7 +54,7 @@ class UserSerializer(ObfuscatedUserSerializer):
         ]
 
 
-class UserViewSet(ReadOnlyModelViewSet):
+class UserViewSet(AnonReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 

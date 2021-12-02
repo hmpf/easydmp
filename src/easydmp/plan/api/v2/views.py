@@ -3,7 +3,7 @@ from django_filters.rest_framework.filterset import FilterSet
 from rest_framework.decorators import action
 from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from easydmp.lib.api.viewsets import AnonReadOnlyModelViewSet
 
 from easydmp.auth.api.permissions import IsAuthenticatedAndActive
 from easydmp.lib.api.pagination import ToggleablePageNumberPaginationV2
@@ -30,7 +30,7 @@ class PlanFilter(FilterSet):
         }
 
 
-class PlanViewSet(ReadOnlyModelViewSet):
+class PlanViewSet(AnonReadOnlyModelViewSet):
     filter_class = PlanFilter
     search_fields = ['=id', 'title', '=abbreviation', 'search_data']
     serializer_class = serializers.HeavyPlanSerializer
@@ -90,7 +90,7 @@ class AnswerSetFilter(FilterSet):
         }
 
 
-class AnswerSetViewSet(ReadOnlyModelViewSet):
+class AnswerSetViewSet(AnonReadOnlyModelViewSet):
     filter_class = AnswerSetFilter
     serializer_class = serializers.AnswerSetSerializer
     queryset = AnswerSet.objects.order_by('pk')
@@ -113,7 +113,7 @@ class AnswerFilter(FilterSet):
         }
 
 
-class AnswerViewSet(ReadOnlyModelViewSet):
+class AnswerViewSet(AnonReadOnlyModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filter_class = AnswerFilter
     serializer_class = serializers.AnswerSerializer

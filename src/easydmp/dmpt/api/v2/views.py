@@ -1,14 +1,13 @@
 from rest_framework.decorators import action
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
-from rest_framework import serializers
 from drf_spectacular.utils import extend_schema
 
 from easydmp.lib.api.renderers import DotPDFRenderer
 from easydmp.lib.api.renderers import DotPNGRenderer
 from easydmp.lib.api.renderers import DotDOTRenderer
 from easydmp.lib.api.renderers import DotSVGRenderer
+from easydmp.lib.api.viewsets import AnonReadOnlyModelViewSet
 
 from easydmp.dmpt.export_template import ExportSerializer, serialize_template_export
 from easydmp.dmpt.models import Template
@@ -20,7 +19,7 @@ from easydmp.dmpt.models import ExplicitBranch
 from .serializers import *
 
 
-class TemplateViewSet(ReadOnlyModelViewSet):
+class TemplateViewSet(AnonReadOnlyModelViewSet):
     queryset = Template.objects.all()
     serializer_class = TemplateSerializer
     search_fields = ['title']
@@ -32,12 +31,12 @@ class TemplateViewSet(ReadOnlyModelViewSet):
         return Response(data=serializer.data)
 
 
-class TemplateImportMetadataViewSet(ReadOnlyModelViewSet):
+class TemplateImportMetadataViewSet(AnonReadOnlyModelViewSet):
     queryset = TemplateImportMetadata.objects.all()
     serializer_class = TemplateImportMetadataSerializer
 
 
-class SectionViewSet(ReadOnlyModelViewSet):
+class SectionViewSet(AnonReadOnlyModelViewSet):
     queryset = Section.objects.select_related('template')
     serializer_class = SectionSerializer
     filter_fields = ['template', 'branching']
@@ -58,7 +57,7 @@ class SectionViewSet(ReadOnlyModelViewSet):
         return Response(dotsource)
 
 
-class QuestionViewSet(ReadOnlyModelViewSet):
+class QuestionViewSet(AnonReadOnlyModelViewSet):
     queryset = Question.objects.select_related('section', 'section__template')
     filterset_fields = ['input_type', 'on_trunk', 'optional', 'section',
                         'section__template']
@@ -72,14 +71,14 @@ class QuestionViewSet(ReadOnlyModelViewSet):
         return LightQuestionSerializer
 
 
-class CannedAnswerViewSet(ReadOnlyModelViewSet):
+class CannedAnswerViewSet(AnonReadOnlyModelViewSet):
     queryset = CannedAnswer.objects.all()
     serializer_class = CannedAnswerSerializer
     filter_fields = ['question', 'question__input_type', 'question__section',
                      'question__section__template', ]
 
 
-class ExplicitBranchViewSet(ReadOnlyModelViewSet):
+class ExplicitBranchViewSet(AnonReadOnlyModelViewSet):
     queryset = ExplicitBranch.objects.select_related('current_question', 'next_question')
     serializer_class = ExplicitBranchSerializer
     filter_fields = ['current_question', 'next_question', 'condition',
