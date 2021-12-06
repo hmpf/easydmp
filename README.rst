@@ -42,7 +42,7 @@ Layout:
 Prerequisites
 =============
 
-- python >= 3.5
+- python >= 3.8
 - pip
 - graphviz (if you want to be able to graph the flow of templates)
 - virtualenv/wrapper (optional)
