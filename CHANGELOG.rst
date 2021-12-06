@@ -12,6 +12,35 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.14.0
+------
+
+Big new feature:
+
+* Support exporting and importing plans: export via CLI, admin and API,
+  import via CLI and admin
+
+Small new feature:
+
+* Reuse admin-filter to limit foreign keys in admin when making templates. For
+  instance, when making questions, if you filter on a template in the questions
+  list, a new question can only select the sections of that template as
+  possible sections. Sections can only select sections in the same template as
+  parents etc.
+
+Bugfixes:
+
+* Fix "analyze_plans" management command
+* Fix utility function to work with answersets
+
+Paperwork:
+
+* Various upgrades
+* Add "skipped"-field to AnswerSet in preparation of repeatable section support
+* Store "branching_possible" on QuestionType. This'll make it possible to join
+  on branchability.
+* Various refactors for consistency and cleanup
+
 1.13.0
 ------
 
