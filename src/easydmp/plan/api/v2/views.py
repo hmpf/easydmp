@@ -8,6 +8,7 @@ from easydmp.lib.api.viewsets import AnonReadOnlyModelViewSet
 from easydmp.auth.api.permissions import IsAuthenticatedAndActive
 from easydmp.lib.api.pagination import ToggleablePageNumberPaginationV2
 from easydmp.lib.api.renderers import StaticPlaintextRenderer, HTML2PDFRenderer
+from easydmp.plan.export_plan import serialize_plan_export
 from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
 from easydmp.plan.models import Answer
@@ -39,6 +40,7 @@ class PlanViewSet(AnonReadOnlyModelViewSet):
         StaticHTMLRenderer,
         StaticPlaintextRenderer,
         HTML2PDFRenderer,
+        JSONRenderer,
     ]
 
     def get_serializer_class(self):
@@ -65,8 +67,12 @@ class PlanViewSet(AnonReadOnlyModelViewSet):
         # WTF: Makes "export/?format=txt" behave the same as "export.txt"
         if not format:
             get_format = request.GET.get('format', None) or 'html'
-            if get_format in ('html', 'txt', 'pdf'):
+            if get_format in ('html', 'txt', 'pdf', 'json'):
                 format = get_format
+        if format == 'json':
+            # JSON export
+            serializer = serialize_plan_export(pk)
+            return Response(data=serializer.data)
         template_name = 'easydmp/plan/generated_plan.html'
         plan = self.get_object()
         if format == 'txt':

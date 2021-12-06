@@ -4,7 +4,7 @@ from unittest import TestCase as UnitTestCase
 from django.test import TestCase as DjangoTestCase
 from django.test import tag
 
-from easydmp.dmpt.import_template import _prep_model_dict, _check_missing_input_types, TemplateImportError, _check_missing_eestore_types_and_sources, deserialize_template_export
+from easydmp.dmpt.import_template import _check_missing_input_types, TemplateImportError, _check_missing_eestore_types_and_sources, deserialize_template_export
 
 from tests.eestore.factories import EEStoreTypeFactory, EEStoreSourceFactory
 

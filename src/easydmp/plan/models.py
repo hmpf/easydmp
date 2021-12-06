@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, Set, Dict, TYPE_CHECKING
@@ -18,7 +18,8 @@ from django.template.loader import render_to_string
 from django.utils.timezone import now as tznow
 
 from easydmp.dmpt.forms import make_form
-from easydmp.dmpt.utils import DeletionMixin
+from easydmp.dmpt.models.base import create_template_export_obj
+from easydmp.dmpt.utils import DeletionMixin, get_origin
 from easydmp.eventlog.utils import log_event
 from easydmp.lib import dump_obj_to_searchable_string
 from easydmp.lib.models import ClonableModel
@@ -31,6 +32,38 @@ if TYPE_CHECKING:
 
 LOG = logging.getLogger(__name__)
 GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
+
+AnswerSetKey = namedtuple('AnswerSetKey', ['plan', 'parent', 'section', 'identifier'])
+AnswerKey = namedtuple('AnswerKey', ['answerset', 'question'])
+
+def create_plan_export_obj(plan, variant, include_template=True, comment=''):
+    """
+    Create an amalgamation of all objects involved in a single plan
+
+    Suitable for instanciating non-model drf serializers.
+    """
+    class Obj:
+        pass
+    obj = Obj()
+    obj.comment = comment
+
+    metadata = Obj()
+    metadata.version = settings.VERSION
+    metadata.origin = get_origin()
+    metadata.variant = variant
+    metadata.template_id = plan.template_id
+    metadata.template_copy = None
+    if include_template:
+        metadata.template_copy = create_template_export_obj(plan.template)
+    obj.metadata = metadata
+
+    obj.plan = plan
+    obj.answersets = plan.answersets.all()
+
+    answers = Answer.objects.filter(answerset__in=obj.answersets)
+    obj.answers = answers
+
+    return obj
 
 
 class AnswerHelper():
@@ -120,6 +153,17 @@ class AnswerHelper():
             self.plan.save(update_fields=['valid', 'last_validated'])
 
 
+class AnswerSetQuerySet(models.QuerySet):
+
+    def get_by_natural_key(self, plan_id, parent_id, section_id, identifier):
+        return self.get(
+            answerset__plan_id=plan_id,
+            answerset__parent_id=parent_id,
+            answerset__section_id=section_id,
+            answerset__identifier=identifier,
+        )
+
+
 class AnswerSet(ClonableModel):
     """
     A user's set of answers to a Section
@@ -134,6 +178,8 @@ class AnswerSet(ClonableModel):
     # The user's answers, represented as a Question PK keyed dict in JSON.
     data = models.JSONField(default=dict, encoder=DjangoJSONEncoder, blank=True)
     previous_data = models.JSONField(default=dict, encoder=DjangoJSONEncoder, blank=True)
+
+    objects = AnswerSetQuerySet.as_manager()
 
     class Meta:
         constraints = [
@@ -155,12 +201,20 @@ class AnswerSet(ClonableModel):
             self.plan_id,
             self.valid)
 
-    def save(self, *args, **kwargs):
+    def save(self, importing=False, *args, **kwargs):
+        if importing:
+            kwargs.pop('force_insert', None)
+            kwargs.pop('force_update', None)
+            super().save(force_insert=True, *args, **kwargs)
+            return
         if not self.identifier:
             self.identifier = self.generate_next_identifier()
         super().save(*args, **kwargs)
         if not self.answers.exists():
             self.initialize_answers()
+
+    def natural_key(self):
+        return AnswerSetKey(self.plan_id, self.parent_id, self.section_id, self.identifier)
 
     def generate_next_identifier(self):
         count = self.__class__.objects.filter(plan=self.plan, section=self.section).count()
@@ -352,6 +406,19 @@ class AnswerSet(ClonableModel):
             answer.save()
 
 
+class AnswerQuerySet(models.QuerySet):
+
+    def get_by_natural_key(self, answerset, question_id):
+        anss = AnswerSetKey(answerset)
+        return self.select_related('answerset').get(
+            answerset__plan_id=anss.plan,
+            answerset__parent_id=anss.parent,
+            answerset__section_id=anss.section,
+            answerset__identifier=anss.identifier,
+            question_id=question_id,
+        )
+
+
 class Answer(ClonableModel):
     """
     An Answer contains metadata about an answer, such as validity. The actual answer the user gave is aggregated in
@@ -361,6 +428,18 @@ class Answer(ClonableModel):
     question = models.ForeignKey('dmpt.Question', models.CASCADE, related_name='+')
     valid = models.BooleanField(default=False)
     last_validated = models.DateTimeField(auto_now=True)
+
+    objects = AnswerQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=('answerset', 'question'),
+                name='plan_answer_one_answer_per_question')
+        ]
+
+    def natural_key(self):
+        return (tuple(self.answerset.natural_key()), self.question_id)
 
     def clone(self, answerset):
         new = self.__class__.objects.create(
@@ -372,13 +451,6 @@ class Answer(ClonableModel):
         new.set_cloned_from(self)
         new.save(update_fields=['cloned_from', 'cloned_when'])
         return new
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=('answerset', 'question'),
-                name='plan_answer_one_answer_per_question')
-        ]
 
 
 class PlanQuerySet(models.QuerySet):
@@ -464,6 +536,9 @@ class Plan(DeletionMixin, ClonableModel):
 
     def __repr__(self):
         return '{} V{} ({})'.format(self.title, self.version, self.id)
+
+    def create_export_object(self, variant, include_template=True, comment=''):
+        return create_plan_export_obj(self, variant, include_template, comment)
 
     def logprint(self):
         return 'Plan #{}: {}'.format(self.pk, self.title)
@@ -582,7 +657,13 @@ class Plan(DeletionMixin, ClonableModel):
         # Report if the plan was changed
         return any(changed)
 
-    def save(self, user=None, question=None, recalculate=False, clone=False, **kwargs):
+    def save(self, user=None, question=None, recalculate=False, clone=False, importing=False, **kwargs):
+        if importing:
+            kwargs.pop('force_insert', None)
+            kwargs.pop('force_update', None)
+            super().save(force_insert=True, **kwargs)
+            return
+
         self.search_data = dump_obj_to_searchable_string(self.total_answers)
         if user:
             self.modified_by = user
@@ -850,6 +931,61 @@ class Plan(DeletionMixin, ClonableModel):
             'plan': self,
             'template': self.template,
         }
+
+
+class PlanImportMetadata(ClonableModel):
+    DEFAULT_VIA = 'CLI'
+
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE,
+                             related_name='import_metadata')
+    origin = models.CharField(
+        max_length=255,
+        help_text='Where the plan was imported from',
+    )
+    original_template_pk = models.IntegerField(
+        help_text='Copy of the original plan\'s template\'s primary key',
+    )
+    original_plan_pk = models.IntegerField(
+        help_text='Copy of the original plan\'s primary key',
+    )
+    originally_cloned_from = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text='Copy of the original plan\'s "cloned_from"',
+    )
+    originally_locked = models.DateTimeField(
+        blank=True, null=True,
+        help_text='Copy of the original plan\'s "locked"'
+    )
+    originally_published = models.DateTimeField(
+        blank=True, null=True,
+        help_text='Copy of the original plan\'s "published"'
+    )
+    variant = models.CharField(max_length=32, default='single version')
+
+    # metadata for the metadata
+    imported = models.DateTimeField(default=tznow)
+    # URL or method
+    imported_via = models.CharField(max_length=255, default=DEFAULT_VIA)
+
+    class Meta:
+        verbose_name_plural = 'plan import metadata'
+        indexes = [
+            models.Index(fields=['original_plan_pk'],
+                         name='pim_lookup_original_idx')
+        ]
+
+    def __str__(self):
+        return f'Plan #{self.original_plan_pk} @ {self.origin}'
+
+    def natural_key(self):
+        return (self.origin, self.original_plan_pk)
+
+    @transaction.atomic
+    def clone(self, plan):
+        "Make a complete copy of the import metadata and put it on <plan>"
+        new = self.get_copy()
+        return new
 
 
 class PlanAccess(ClonableModel):
