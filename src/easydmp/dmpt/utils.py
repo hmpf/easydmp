@@ -14,7 +14,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce
 from django.template import engines
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.html import format_html, escape
 
 from .positioning import Move, get_new_index, flat_reorder
@@ -45,7 +45,7 @@ def render_from_string(template_string, context=None):
 
 
 def force_items_to_str(dict_):
-    return {force_text(k): force_text(v) for k, v in dict_.items()}
+    return {force_str(k): force_str(v) for k, v in dict_.items()}
 
 
 def print_url(urldict):
