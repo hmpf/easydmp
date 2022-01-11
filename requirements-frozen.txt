@@ -121,7 +121,7 @@ pygments==2.9.0
     # via
     #   -r requirements/forced-upgrade.txt
     #   sphinx
-pyjwt[crypto]==1.7.1
+pyjwt[crypto]==2.3.0
     # via
     #   drf-jwt
     #   social-auth-core
@@ -160,15 +160,13 @@ six==1.15.0
     #   jsonschema
     #   packaging
     #   python-dateutil
-    #   social-auth-app-django
-    #   social-auth-core
 snowballstemmer==2.0.0
     # via sphinx
-social-auth-app-django==4.0.0
+social-auth-app-django==5.0.0
     # via -r requirements/base.txt
 social-auth-backend-b2access==1.0.0
     # via -r requirements/base.txt
-social-auth-core==3.3.3
+social-auth-core==4.1.0
     # via
     #   -r requirements/base.txt
     #   python-dataporten-auth
