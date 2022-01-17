@@ -662,6 +662,7 @@ class Plan(DeletionMixin, ClonableModel):
             kwargs.pop('force_insert', None)
             kwargs.pop('force_update', None)
             super().save(force_insert=True, **kwargs)
+            self.set_adder_as_editor()
             return
 
         self.search_data = dump_obj_to_searchable_string(self.total_answers)
