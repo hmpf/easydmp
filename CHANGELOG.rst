@@ -12,6 +12,17 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.14.1
+------
+
+Bugfix:
+
+* Ensure that the importer of a plan can access the import correctly
+
+Paperwork:
+
+* Upgrade python social auth (psa) and in the process get rid of a hack
+
 1.14.0
 ------
 
