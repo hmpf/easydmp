@@ -1,4 +1,4 @@
 pyyaml>=5.4
 Pygments>=2.7.4
 sqlparse>=0.4.2
-pillow>=8.3.2
+pillow>=9.0.0

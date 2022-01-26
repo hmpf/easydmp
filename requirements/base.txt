@@ -13,7 +13,7 @@ graphviz>=0.16
 psycopg2 --no-binary=psycopg2
 pytz>=2020.5
 social-auth-app-django>=4.0
-social-auth-core>=3.3
+social-auth-core>=4.1
 Sphinx>=3.3
 sphinxcontrib_django
 whitenoise>=5.2
