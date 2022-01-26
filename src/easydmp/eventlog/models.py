@@ -163,6 +163,8 @@ class EventLogManager(models.Manager):
         be added to the `data`-field, and may be looked up from the
         `description_template`.
         """
+        if not actor or not actor.pk:
+            return
         timestamp = timestamp if timestamp else tznow()
         description = _format_description(locals(), description_template)
         data = _serialize_event(locals())

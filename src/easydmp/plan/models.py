@@ -948,9 +948,12 @@ class PlanQuerySet(models.QuerySet):
         return self.filter(accesses__user=user, accesses__may_edit=True)
 
     def viewable(self, user, superpowers=True):
+        public = self.filter(published__isnull=False)
+        if not user.is_authenticated:
+            return public
         if superpowers and user.has_superpowers:
             return self.all()
-        return self.filter(accesses__user=user)
+        return public | self.filter(accesses__user=user)
 
 
 class Plan(DeletionMixin, ClonableModel):

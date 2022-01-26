@@ -1098,6 +1098,7 @@ class PlanDetailView(PlanAccessViewMixin, DetailView):
     model = Plan
     pk_url_kwarg = 'plan'
     template_name = 'easydmp/plan/plan_detail.html'
+    login_required = False  # Public plans are accessible to all
 
     def get_context_data(self, **kwargs):
         editable = self.object.may_edit(self.request.user) and not self.object.locked
@@ -1151,9 +1152,10 @@ class AbstractGeneratedPlanView(DetailView):
         self.export = generate_pretty_exported_plan(self.object, template)
 
     def log(self, request):
-        template = '{timestamp} {actor} accessed generated version of {target}'
-        log_event(request.user, 'access generated plan', target=self.object,
-                  template=template)
+        if request.user.is_authenticated:
+            template = '{timestamp} {actor} accessed generated version of {target}'
+            log_event(request.user, 'access generated plan', target=self.object,
+                      template=template)
 
     def get(self, request, *args, **kwargs):
         self.generate_exported_plan()
