@@ -1,6 +1,7 @@
-from django.views.generic import TemplateView
+from django.conf import settings
 from django.contrib.auth import logout
 from django.shortcuts import redirect, render
+from django.views.generic import TemplateView
 
 from easydmp.lib.stats import stats
 
@@ -36,10 +37,7 @@ class LoginView(TemplateView):
     login_required = False
 
     def get_context_data(self, **kwargs):
-        providers = [
-            {'slug': 'b2access', 'name': 'B2ACCESS'},
-            {'slug': 'dataporten_email', 'name': 'Dataporten'},
-        ]
+        providers = getattr(settings, 'EASYDMP_SOCIAL_AUTH_LOGIN_MENU', [])
         context = super().get_context_data(**kwargs)
         context['providers'] = providers
         return context

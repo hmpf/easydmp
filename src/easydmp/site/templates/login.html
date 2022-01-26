@@ -13,6 +13,7 @@
       <h2>Log in</h2>
       {% for provider in providers %}
       <h3><a href="{% url 'social:begin' provider.slug %}">{{ provider.name }}</a></h3>
+      {% if provider.comment %}<p>{{ provider.comment }}</p>{% endif %}
       {% endfor %}
     {% else %}
       <p>You are alreday logged in, as "{{ request.user.username }}".</p>

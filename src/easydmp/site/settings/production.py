@@ -46,6 +46,11 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
 # Other settings
 
+EASYDMP_SOCIAL_AUTH_LOGIN_MENU = [
+    {'slug': 'b2access', 'name': 'B2ACCESS'},
+    {'slug': 'dataporten', 'name': 'Dataporten'},
+]
+
 SOCIAL_AUTH_DATAPORTEN_EMAIL_KEY = getenv('SOCIAL_AUTH_DATAPORTEN_EMAIL_KEY')
 SOCIAL_AUTH_DATAPORTEN_EMAIL_SECRET = getenv('SOCIAL_AUTH_DATAPORTEN_EMAIL_SECRET')
 SOCIAL_AUTH_B2ACCESS_KEY = getenv('SOCIAL_AUTH_B2ACCESS_KEY')
