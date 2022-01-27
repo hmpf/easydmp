@@ -15,6 +15,14 @@
       <h3><a href="{% url 'social:begin' provider.slug %}">{{ provider.name }}</a></h3>
       {% if provider.comment %}<p>{{ provider.comment }}</p>{% endif %}
       {% endfor %}
+      {% if providers|length > 1 %}
+      <p>Be aware that each provider creates and connects to
+      a provider-specific user. Therefore, logging in using multiple providers
+      leads to multiple users! If your username ends with random characters,
+      this is what has happened.</p>
+      <p>If you want to combine users, contact Support. We can merge them
+      for you.</p>
+      {% endif %}
     {% else %}
       <p>You are alreday logged in, as "{{ request.user.username }}".</p>
     {% endif %}
