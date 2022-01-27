@@ -12,6 +12,23 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.15.0
+------
+
+Small new feature:
+
+* Stop hardcoding login-providers. As a bonus, add support for logging in with
+  ORCID.
+
+Bugfix:
+
+* "Save As" no longer leads to a 500 error. This was due to a bug in cloning
+  answersets.
+
+Paperwork:
+
+* Various dependency upgrades
+
 1.14.1
 ------
 
