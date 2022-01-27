@@ -201,14 +201,15 @@ class AnswerSet(ClonableModel):
             self.plan_id,
             self.valid)
 
+    @transaction.atomic
     def save(self, importing=False, *args, **kwargs):
+        if not self.identifier:
+            self.identifier = self.generate_next_identifier()
         if importing:
             kwargs.pop('force_insert', None)
             kwargs.pop('force_update', None)
             super().save(force_insert=True, *args, **kwargs)
             return
-        if not self.identifier:
-            self.identifier = self.generate_next_identifier()
         super().save(*args, **kwargs)
         if not self.answers.exists():
             self.initialize_answers()
@@ -338,25 +339,21 @@ class AnswerSet(ClonableModel):
         new = self.__class__.objects.create(
             plan=plan,
             section=self.section,
+            data=self.data,
+            previous_data=self.previous_data,
             valid=self.valid,
             last_validated=self.last_validated
         )
+        # answers created during "create", fix their validity
+        orig_validities = {q: valid for q, valid in
+                           self.answers.values_list('question_id', 'valid')}
+        for answer in new.answers.all():
+            # Some old plans lack answers
+            if answer.question_id in orig_validities:
+                answer.valid = orig_validities[answer.question_id]
+                answer.save()
         new.set_cloned_from(self)
         new.save(update_fields=['cloned_from', 'cloned_when'])
-        # clone answers
-        answermapping = {}
-        for answer in self.answers.all():
-            new_answer = answer.clone(answerset=new)
-            answermapping[str(answer.question.pk)] = str(new_answer.question.pk)
-        # clone data
-        if self.data:
-            for key, value in self.data.items():
-                new.data[answermapping[key]] = value
-        # clone previous_data
-        if self.previous_data:
-            for key, value in self.previous_data.items():
-                new.previous_data[answermapping[key]] = value
-        new.save(update_fields=['data', 'previous_data'])
         return new
 
     def initialize_answers(self):
