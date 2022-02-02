@@ -13,11 +13,19 @@
   turns out to be a temporary problem. If the back button works it
   is probably only this page that is broken.</p>
 
-  <p>If you wish to report it as a bug, please include which url
-  you were visiting and the time and date you made your attempt so
-  we can connect your info to the automatically generated report.
-  Please send any bug report to:
-  <a href="mailto:support@easydmp.sigma2.no">support@easydmp.sigma2.no</a>.</p>
+  <p>If you wish to report it as a bug, please write an email to
+  <a href="mailto:support@easydmp.sigma2.no">support@easydmp.sigma2.no</a>. In
+  it, jot down what you were trying to, and please copy paste the following
+  into the email:</p>
+
+  <pre>
+  Error type: 500
+  Error site: {{ request.build_absolute_uri }}
+  Error timestamp: {% now "c" %}
+  </pre>
+
+  <p>With this information we can connect your info to the automatically
+  generated error-report.</p>
 
   <p>(This page being very plain is very much intentional.)</p>
 </body>
