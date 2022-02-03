@@ -17,7 +17,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 from django.forms import model_to_dict
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now as tznow
 
@@ -1354,7 +1354,7 @@ class ExplicitBranch(DeletionMixin, models.Model):
             self.__class__.__name__,
             id_or_none(self.current_question),
             self.category,
-            force_text(self.condition),
+            force_str(self.condition),
             id_or_none(self.next_question),
         )
 

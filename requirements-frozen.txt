@@ -8,7 +8,7 @@
 
 alabaster==0.7.12
     # via sphinx
-asgiref==3.3.4
+asgiref==3.4.1
     # via django
 attrs==20.3.0
     # via jsonschema
