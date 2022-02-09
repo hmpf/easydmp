@@ -1,13 +1,7 @@
-import io
-from uuid import uuid4
 import warnings
 
 from django.conf import settings
 from django.db import transaction, DatabaseError
-from django.utils.timezone import now as tznow
-
-from rest_framework.exceptions import ParseError
-from rest_framework.parsers import JSONParser
 
 from easydmp.lib import strip_model_dict
 from easydmp.lib.import_export import deserialize_export, get_free_title_for_importing
@@ -33,6 +27,10 @@ class TemplateImportError(DataImportError):
     pass
 
 
+class TemplateImportAlreadyExistsError(TemplateImportError):
+    pass
+
+
 class TemplateImportWarning(UserWarning):
     pass
 
@@ -47,8 +45,8 @@ def _check_missing_input_types(template_dict):
     missing_input_types = set(input_types_needed) - set(Question.INPUT_TYPE_IDS)
     if missing_input_types:
         raise TemplateImportError(
-            f'The imported template is incompatible with this EasyDMP installation: '
-            'The following input types are missing: {missing_input_types}'
+            'The imported template is incompatible with this EasyDMP installation: '
+            f'The following input types are missing: {missing_input_types}'
         )
 
 
@@ -73,15 +71,25 @@ def _check_missing_eestore_types_and_sources(eestore_mounts):
     missing_types = types - types_found
     if missing_types:
         raise TemplateImportError(
-            f'The imported template is incompatible with this EasyDMP installation: '
-            'The following eestore types are missing: {missing_types}'
+            'The imported template is incompatible with this EasyDMP installation: '
+            f'The following eestore types are missing: {missing_types}'
         )
 
     missing_sources = sources - sources_found
     if missing_sources:
         raise TemplateImportError(
-            f'The imported template is incompatible with this EasyDMP installation: '
-            'The following eestore sources are missing: {missing_sources}'
+            'The imported template is incompatible with this EasyDMP installation: '
+            f'The following eestore sources are missing: {missing_sources}'
+        )
+
+
+def get_stored_template_origin(export_dict):
+    try:
+        return export_dict['easydmp']['origin']
+    except KeyError:
+        raise TemplateImportError(
+            'Template export file is malformed, there should be an "easydmp" '
+            'section with an "origin" key. Cannot import'
         )
 
 
@@ -89,24 +97,28 @@ def deserialize_template_export(export_json) -> dict:
     return deserialize_export(export_json, ExportSerializer, 'Template', TemplateImportError)
 
 
-@transaction.atomic
-def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
-    via = via if via else DEFAULT_VIA
-    template_dict = export_dict['template']
-    original_title = template_dict['title']
-    title = get_free_title_for_importing(template_dict, origin, Template)
-    original_template_pk = template_dict.pop('id')
-
+def ensure_unknown_template(export_dict, origin):
     # Chcek that this template hasn't already been imported from this origin before
+    template_dict = export_dict['template']
+    original_template_pk = template_dict['id']
     existing_tim = TemplateImportMetadata.objects.filter(
         origin=origin,
         original_template_pk=original_template_pk
     )
     if existing_tim.exists():
-        error_msg = (f'Template "{original_title}" #{original_template_pk} '
-                     f'has been imported from "{origin}" before, '
-                     'will not re-import')
-        raise TemplateImportError(error_msg)
+        error_msg = (f'''Template "{template_dict['title']}" '''
+                     f'#{original_template_pk} has been imported from '
+                     f'"{origin}" before, will not re-import')
+        raise TemplateImportAlreadyExistsError(error_msg)
+
+
+@transaction.atomic
+def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
+    via = via if via else DEFAULT_VIA
+    template_dict = export_dict['template']
+    title = get_free_title_for_importing(template_dict, origin, Template)
+    original_template_pk = template_dict.pop('id')
+
     # Ensure the import is not auto-published
     published = template_dict.pop('published', None)
 
@@ -137,7 +149,7 @@ def create_identity_template_mapping(template):
         'canned_answers': {},
     }
     for section in template.sections.all():
-         mappings['sections'][section.id] = section.id
+        mappings['sections'][section.id] = section.id
     questions = template.questions.all()
     for question in questions:
         mappings['questions'][question.id] = question.id
@@ -279,13 +291,12 @@ def clean_serialized_template_export(export_dict):
     _check_missing_input_types(template_dict)
     _check_missing_eestore_types_and_sources(eestore_mounts)
 
-    origin = easydmp_dict.get('origin')
-    return origin
-
 
 def import_serialized_template_export(export_dict, origin='', via=DEFAULT_VIA):
-    stored_origin = clean_serialized_template_export(export_dict)
+    clean_serialized_template_export(export_dict)
+    stored_origin = get_stored_template_origin(export_dict)
     chosen_origin = origin or stored_origin or get_origin(origin)
+    ensure_unknown_template(export_dict, chosen_origin)
 
     empty_mapping = {
         'sections': {},
@@ -303,7 +314,7 @@ def import_serialized_template_export(export_dict, origin='', via=DEFAULT_VIA):
             return tim
         mappings = _create_imported_questions(export_dict, mappings)
         if mappings is None:
-            tim.mappings = empty_mapping + mappings
+            tim.mappings = empty_mapping
             tim.save()
             return tim
         mappings = _create_imported_explicit_branches(export_dict, mappings)
