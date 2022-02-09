@@ -50,9 +50,22 @@ class LockedFilter(FakeBooleanFilter):
     parameter_name = 'locked'
 
 
-class ImportedFilter(FakeBooleanFilter):
+class ImportedFilter(admin.SimpleListFilter):
     title = 'imported'
     parameter_name = 'imported'
+
+    def lookups(self, request, _model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        lookup = 'import_metadata__isnull'.format(self.parameter_name)
+        if self.value() == 'yes':
+            return queryset.filter(**{lookup: False})
+        if self.value() == 'no':
+            return queryset.filter(**{lookup: True})
 
 
 class AdminConvenienceMixin:
