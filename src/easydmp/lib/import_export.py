@@ -9,10 +9,15 @@ from rest_framework.serializers import ValidationError
 
 
 __all__ = [
+    'DataImportError',
     'deserialize_export',
     'get_free_title_for_importing',
     'get_origin',
 ]
+
+
+class DataImportError(ValueError):
+    pass
 
 
 def deserialize_export(export_json, export_serializer, model_name, exception_type) -> dict:

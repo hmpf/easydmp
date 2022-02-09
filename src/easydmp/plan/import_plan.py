@@ -12,7 +12,7 @@ from easydmp.dmpt.import_template import TemplateImportError
 from easydmp.dmpt.models import Template, TemplateImportMetadata
 from easydmp.eventlog.utils import log_event
 from easydmp.lib import strip_model_dict
-from easydmp.lib.import_export import get_origin, deserialize_export, get_free_title_for_importing
+from easydmp.lib.import_export import get_origin, deserialize_export, get_free_title_for_importing, DataImportError
 
 from .export_plan import SingleVersionExportSerializer
 from .models import Plan, PlanImportMetadata, AnswerSet, Answer
@@ -33,7 +33,7 @@ User = get_user_model()
 PreliminaryPlanImportMetadata = namedtuple('PreliminaryPlanImportMetadata', ['version', 'origin', 'variant', 'template_id'])
 
 
-class PlanImportError(ValueError):
+class PlanImportError(DataImportError):
     pass
 
 

@@ -15,7 +15,7 @@ from easydmp.dmpt.export_template import ExportSerializer
 from easydmp.dmpt.models import (Template, CannedAnswer, Question, Section,
                                  ExplicitBranch, TemplateImportMetadata,
                                  )
-from easydmp.lib.import_export import get_origin
+from easydmp.lib.import_export import get_origin, DataImportError
 from easydmp.eestore.models import EEStoreSource, EEStoreType, EEStoreMount
 
 
@@ -29,7 +29,7 @@ __all__ = [
 DEFAULT_VIA = TemplateImportMetadata.DEFAULT_VIA
 
 
-class TemplateImportError(ValueError):
+class TemplateImportError(DataImportError):
     pass
 
 
