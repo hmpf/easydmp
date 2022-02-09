@@ -9,12 +9,13 @@ from django.utils.timezone import now as tznow
 from rest_framework.exceptions import ParseError
 from rest_framework.parsers import JSONParser
 
-from easydmp.lib import deserialize_export, get_free_title_for_importing, strip_model_dict
+from easydmp.lib import strip_model_dict
+from easydmp.lib.import_export import deserialize_export, get_free_title_for_importing
 from easydmp.dmpt.export_template import ExportSerializer
 from easydmp.dmpt.models import (Template, CannedAnswer, Question, Section,
                                  ExplicitBranch, TemplateImportMetadata,
                                  )
-from easydmp.dmpt.utils import get_origin
+from easydmp.lib.import_export import get_origin
 from easydmp.eestore.models import EEStoreSource, EEStoreType, EEStoreMount
 
 
