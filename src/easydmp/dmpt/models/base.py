@@ -24,7 +24,6 @@ from django.utils.timezone import now as tznow
 from ..flow import Transition, TransitionMap, dfs_paths
 from ..typing import AnswerChoice, Data, PathTuple, AnswerStruct
 from ..utils import DeletionMixin
-from ..utils import get_origin
 from ..utils import PositionUtils
 from ..utils import _reorder_dependent_models
 from ..utils import SectionPositionUtils
@@ -32,6 +31,7 @@ from ..positioning import get_new_index, flat_reorder
 
 from easydmp.eestore.models import EEStoreMount
 from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file, render_dotsource_to_bytes
+from easydmp.lib.import_export import get_origin
 from easydmp.lib.models import ModifiedTimestampModel, ClonableModel
 
 """

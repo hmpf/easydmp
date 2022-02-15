@@ -19,9 +19,10 @@ from django.utils.timezone import now as tznow
 
 from easydmp.dmpt.forms import make_form
 from easydmp.dmpt.models.base import create_template_export_obj
-from easydmp.dmpt.utils import DeletionMixin, get_origin
+from easydmp.dmpt.utils import DeletionMixin
 from easydmp.eventlog.utils import log_event
 from easydmp.lib import dump_obj_to_searchable_string
+from easydmp.lib.import_export import get_origin
 from easydmp.lib.models import ClonableModel
 
 from .utils import purge_answer

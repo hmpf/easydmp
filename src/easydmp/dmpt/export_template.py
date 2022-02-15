@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from easydmp.dmpt.models import (Template, Section, Question, ExplicitBranch,
                                  CannedAnswer)
-from easydmp.dmpt.utils import get_origin
+from easydmp.lib.import_export import get_origin
 from easydmp.eestore.models import EEStoreMount
 
 

@@ -4,7 +4,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from easydmp.dmpt.export_template import serialize_template_export, ExportSerializer as TemplateExportSerializer
-from easydmp.dmpt.utils import get_origin
+from easydmp.lib.import_export import get_origin
 from easydmp.plan.models import Answer, AnswerSet, Plan
 
 
