@@ -6,6 +6,15 @@ from social_core.pipeline.partial import partial
 from .forms import FullnameForm, EmailForm
 
 
+def fix_non_string_fullname(details, *args, **kwargs):
+    if 'fullname' not in details:
+        return
+
+    fullname = details.get('fullname', None)
+    if not isinstance(fullname, str):
+        details.pop('fullname')
+
+
 @partial
 def get_missing_full_name(strategy, details, current_partial, user=None, is_new=False, *args, **kwargs):
     if (user and user.get_full_name()) or details.get('fullname', None):
@@ -13,9 +22,9 @@ def get_missing_full_name(strategy, details, current_partial, user=None, is_new=
         return
 
     fullname = strategy.request_data().get('fullname')
-    form = FullnameForm({'fullname': fullname})  # Validate
+    form = FullnameForm({'full_name': fullname})  # Validate
     if form.is_valid():
-        details['fullname'] = form.cleaned_data['fullname']
+        details['fullname'] = form.cleaned_data['full_name']
     else:
         backend_name = current_partial.backend
         token = current_partial.token
@@ -47,4 +56,4 @@ def get_missing_email(strategy, details, current_partial, user=None, is_new=Fals
 
 def fix_orcid_username(backend, details, *args, **kwargs):
     if backend.name in ('orcid', 'orcid-sandbox'):
-        orcid = details.pop('username')
+        details.pop('username')

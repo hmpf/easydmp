@@ -1,9 +1,17 @@
 from django import forms
 
-
-class FullnameForm(forms.Form):
-    fullname = forms.CharField(max_length=200)
+from .models import User
 
 
-class EmailForm(forms.Form):
-    email = forms.EmailField()
+class FullnameForm(forms.ModelForm):
+
+    class Meta:
+        model = User
+        fields = ('full_name',)
+
+
+class EmailForm(forms.ModelForm):
+
+    class Meta:
+        model = User
+        fields = ('email',)

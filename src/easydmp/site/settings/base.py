@@ -256,6 +256,7 @@ SOCIAL_AUTH_USER_FIELD_MAPPING = {'fullname': 'full_name'}
 
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
+    'easydmp.auth.psa_pipeline.fix_non_string_fullname',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.auth_allowed',
     'social_core.pipeline.social_auth.social_user',
