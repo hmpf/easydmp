@@ -12,6 +12,27 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.16.0
+------
+
+Big new feature:
+
+* Support importing plans and templates via API: either by POSTing an export or
+  by pulling an export from a URL.
+
+Bugfix:
+
+* Work around a problem in the ORCID backend: it sets "fullname" to be a json
+  blob when it is supposed to be a string.
+* The "Imported"-filter in the admin now works.
+
+Paperwork:
+
+* Refactor the import/export functionality
+* Upgrade Django to currently secure version
+* Run and test on Django 4.0
+* Run and test on Python 3.10
+
 1.15.0
 ------
 
