@@ -2,22 +2,49 @@ import socket
 import io
 from uuid import uuid4
 
+import requests
+import requests.exceptions
 from django.conf import settings
 from django.utils.timezone import now as utcnow
 
 from rest_framework.serializers import ValidationError
 
+from easydmp.lib.api.response_exceptions import ServiceUnavailable
+
 
 __all__ = [
     'DataImportError',
+    'get_export_from_url',
     'deserialize_export',
     'get_free_title_for_importing',
     'get_origin',
 ]
 
 
+CONNECT_TIMEOUT = 0.1
+READ_TIMEOUT = 10
+TIMEOUT_TUPLE = (CONNECT_TIMEOUT, READ_TIMEOUT)
+
+
 class DataImportError(ValueError):
     pass
+
+
+def get_export_from_url(url, deserialize_export):
+    try:
+        with requests.get(url, timeout=TIMEOUT_TUPLE) as response:
+            response.raise_for_status()
+            try:
+                export_dict = deserialize_export(response.content)
+                if export_dict:
+                    return export_dict
+            except DataImportError as e:
+                raise ValidationError(e)
+        raise ValidationError('Url points to invalid export, cannot import')
+    except requests.exceptions.Timeout:
+        raise ServiceUnavailable(
+            detail=f'Could not access {url}, timeout'
+        )
 
 
 def deserialize_export(export_json, export_serializer, model_name, exception_type) -> dict:

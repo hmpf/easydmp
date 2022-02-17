@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import transaction, DatabaseError
 
 from easydmp.lib import strip_model_dict
-from easydmp.lib.import_export import deserialize_export, get_free_title_for_importing
+from easydmp.lib.import_export import deserialize_export, get_free_title_for_importing, DataImportError
 from easydmp.dmpt.export_template import ExportSerializer
 from easydmp.dmpt.models import (Template, CannedAnswer, Question, Section,
                                  ExplicitBranch, TemplateImportMetadata,
@@ -91,6 +91,48 @@ def get_stored_template_origin(export_dict):
             'Template export file is malformed, there should be an "easydmp" '
             'section with an "origin" key. Cannot import'
         )
+
+
+def get_template_and_mappings(export_dict=None, template_id=None, origin='', via=DEFAULT_VIA):
+    "Get or create template and mappings"
+    assert export_dict or template_id
+
+    origin = get_origin(origin)
+    stored_origin = None
+    if export_dict:
+        external_template_id = template_id
+        clean_serialized_template_export(export_dict)
+        stored_origin = get_stored_template_origin(export_dict)
+        template_id = export_dict['template']['id']
+        if external_template_id and (external_template_id != template_id):
+            error_msg = ('The export is malformed, the id for the '
+                         'included template does not match the id given. '
+                         'Aborting import.')
+            raise TemplateImportError(error_msg)
+
+    # Check if this is a local template
+    if not stored_origin or stored_origin == origin:
+        try:
+            template = Template.objects.get(id=template_id)
+        except Template.DoesNotExist:
+            raise TemplateImportError(
+                'The template for this plan ought to already exist but might '
+                'have been deleted.'
+            )
+        else:
+            mappings = create_identity_template_mapping(template)
+            return template, mappings
+
+    template_dict = export_dict['template']
+
+    # Check if this is a previously imported template
+    try:
+        tim = TemplateImportMetadata.objects.get(origin=stored_origin, original_template_pk=template_id)
+    except TemplateImportMetadata.DoesNotExist:
+        # import the template
+        tim = import_serialized_template_export(export_dict, stored_origin, via)
+
+    return tim.template, tim.mappings
 
 
 def deserialize_template_export(export_json) -> dict:

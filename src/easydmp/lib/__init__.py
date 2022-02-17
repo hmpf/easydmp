@@ -6,7 +6,6 @@ from django.utils.timezone import now as utcnow
 default_app_config = 'easydmp.lib.apps.EasyDMPSiteConfig'
 
 __all__ = [
-    'dump_obj_to_searchable_string',
     'get_model_name',
     'iso_epoch',
     'pprint_list',
