@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from easydmp.lib.api.viewsets import AnonReadOnlyModelViewSet
 
-from easydmp.auth.api.v1.views import UserSerializer
 from easydmp.lib.api.pagination import ToggleablePageNumberPaginationV1
 from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
