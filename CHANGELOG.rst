@@ -12,6 +12,18 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.17.0
+------
+
+Backwards incompatible change:
+
+* After a security audit it was decided to shut down the API endpoint
+  /api/v1/users/. The new endpoint, /api/v2/users/, has better security.
+
+Ppaerwork:
+
+* Officially run on Python 3.10 instead of Python 3.8
+
 1.16.0
 ------
 
