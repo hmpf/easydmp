@@ -180,6 +180,9 @@ class ShortFreetextQuestion(IsSetValidationMixin, PrimitiveTypeMixin, SaveMixin,
     class Meta:
         proxy = True
 
+    def get_identifier(self, answer):
+        return answer
+
 
 class PositiveIntegerQuestion(PrimitiveTypeMixin, SaveMixin, Question):
     "A non-branch-capable question answerable with a positive integer"

@@ -1397,6 +1397,7 @@ class QuestionType(models.Model):
     id = models.CharField(max_length=MAX_LENGTH, primary_key=True)
     allow_notes = models.BooleanField(default=True)
     branching_possible = models.BooleanField(default=False)
+    can_identify = models.BooleanField(default=False)
 
     def __str__(self):
         return self.id
@@ -1497,11 +1498,19 @@ class Question(DeletionMixin, ClonableModel):
         return self.input_type.branching_possible
 
     @property
+    def can_identify(self):
+        return self.input_type.can_identify
+
+    @property
     def is_readonly(self):
         return self.section.is_readonly
 
     def in_use(self):
         return self.section.template.plans.exists()
+
+    def get_identifier(self, _):
+        "Get the answer (or part of the answer) suitable as an identifier"
+        raise NotImplementedError
 
     @transaction.atomic
     def clone(self, section):
