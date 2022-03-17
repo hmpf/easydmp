@@ -605,6 +605,12 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                                    help_text='True if this section is optional. The template designer needs to provide a wording to an automatically generated yes/no question at the start of the section.')
     repeatable = models.BooleanField(default=False,
                                      help_text='True if this section is repeatable. This means a plan can have multiple answersets for this section.')
+    identifier_question = models.ForeignKey(
+        'dmpt.Question',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='+'
+    )
 
     objects = SectionManager()
 

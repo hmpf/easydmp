@@ -467,6 +467,7 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
                 self.__LOG.debug('form_valid: q%s/p%s: condition not changed',
                                  answer.question_id, self.object.pk)
         if prev_data != self.answerset.data:
+            self.answerset.validate()
             self.plan.modified_by = self.request.user
             self.plan.save(user=self.request.user)
         return HttpResponseRedirect(self.get_success_url())

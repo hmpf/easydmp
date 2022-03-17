@@ -169,7 +169,7 @@ class AnswerSet(ClonableModel):
     """
     A user's set of answers to a Section
     """
-    identifier = models.CharField(max_length=120, blank=True, default='1')
+    identifier = models.CharField(max_length=120, blank=True)
     plan = models.ForeignKey('plan.Plan', models.CASCADE, related_name='answersets')
     section = models.ForeignKey('dmpt.Section', models.CASCADE, related_name='answersets')
     parent = models.ForeignKey('self', models.CASCADE, related_name='answersets', null=True, blank=True)
@@ -204,13 +204,12 @@ class AnswerSet(ClonableModel):
 
     @transaction.atomic
     def save(self, importing=False, *args, **kwargs):
-        if not self.identifier:
-            self.identifier = self.generate_next_identifier()
         if importing:
             kwargs.pop('force_insert', None)
             kwargs.pop('force_update', None)
             super().save(force_insert=True, *args, **kwargs)
             return
+        self.identifier =  self.get_identifier()
         super().save(*args, **kwargs)
         if not self.answers.exists():
             self.initialize_answers()
@@ -219,8 +218,20 @@ class AnswerSet(ClonableModel):
         return AnswerSetKey(self.plan_id, self.parent_id, self.section_id, self.identifier)
 
     def generate_next_identifier(self):
+        # We could also have used a UUID here but they are so fugly
         count = self.__class__.objects.filter(plan=self.plan, section=self.section).count()
         return str(count + 1)
+
+    def get_identifier(self):
+        iq = self.section.identifier_question
+        if not iq:
+            if self.identifier:
+                return self.identifier
+            return self.generate_next_identifier()
+        choice = self.get_choice(iq.pk)
+        if choice:
+            return iq.get_instance().get_identifier(choice)
+        return self.generate_next_identifier()
 
     def add_sibling(self, identifier=None):
         if identifier is None:
