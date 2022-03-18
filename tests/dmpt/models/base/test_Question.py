@@ -4,10 +4,15 @@ from easydmp.dmpt.flow import Transition
 from easydmp.dmpt.models import ExplicitBranch
 from easydmp.dmpt.positioning import Move
 
-from tests.dmpt.factories import (TemplateFactory, SectionFactory,
-                                  BooleanQuestionFactory,
-                                  ChoiceQuestionFactory, CannedAnswerFactory,
-                                  ReasonQuestionFactory)
+from tests.dmpt.factories import (
+    TemplateFactory,
+    SectionFactory,
+    BooleanQuestionFactory,
+    ChoiceQuestionFactory,
+    ShortFreetextQuestionFactory,
+    ReasonQuestionFactory,
+    CannedAnswerFactory,
+)
 
 
 class CannedData(object):
@@ -256,3 +261,18 @@ class TestReorderCannedAnswers(test.TestCase):
         new_order = [obj.pk for obj in question.canned_answers.order_by('position')]
         self.assertNotEqual(current_order, new_order)
         self.assertEqual(new_order, [current_order[1], current_order[0], current_order[2]])
+
+
+class TestIdentifyingQuestions(CannedData, test.TestCase):
+
+    def test_shortfreetext_can_be_an_identifier(self):
+        stf = ShortFreetextQuestionFactory(section=self.section)
+        self.assertTrue(stf.can_identify)
+        answer = 'bghjk'
+        self.assertEqual(answer, stf.get_identifier(answer))
+
+    def test_most_questions_cannot_be_an_identifier(self):
+        reason = ReasonQuestionFactory(section=self.section)
+        self.assertFalse(reason.can_identify)
+        with self.assertRaises(NotImplementedError):
+            reason.get_identifier('vfbgnhj')

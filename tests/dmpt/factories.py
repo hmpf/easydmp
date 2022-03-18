@@ -12,6 +12,7 @@ from easydmp.dmpt.models import ChoiceQuestion
 from easydmp.dmpt.models import Question
 from easydmp.dmpt.models import QuestionType
 from easydmp.dmpt.models import ReasonQuestion
+from easydmp.dmpt.models import ShortFreetextQuestion
 from easydmp.dmpt.models import Section
 from easydmp.dmpt.models import Template
 
@@ -25,6 +26,7 @@ __all__ = [
     'BooleanQuestionFactory',
     'ChoiceQuestionFactory',
     'ReasonQuestionFactory',
+    'ShortFreetextQuestionFactory',
     'create_smallest_template',
 ]
 
@@ -156,3 +158,12 @@ class ReasonQuestionFactory(AbstractQuestionFactory):
         django_get_or_create = ('question', 'position')
 
     input_type_id = 'reason'
+
+
+class ShortFreetextQuestionFactory(AbstractQuestionFactory):
+
+    class Meta:
+        model = ShortFreetextQuestion
+        django_get_or_create = ('question', 'position')
+
+    input_type_id = 'shortfreetext'
