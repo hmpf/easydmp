@@ -12,6 +12,25 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.18.0
+------
+
+New features:
+
+* Questions can be used as the identifier of answersets. This is marked on
+  their QuestionType. The answer of a ShortfreeTextQuestion can be used as such
+  an identifier.
+* New question-type TypedIdentifierQuestion that can also be used as the
+  identifier of answersets. It consists of a typed string, where the types are
+  currently denominated via CannedAnswers. This is necessary for proper RDA DMP
+  CS support.
+
+Bugfix:
+
+* Fix logging of DRF authtokens created via admin. The admin for these is
+  overly clever, breaking introspection, which lead to a 500 Server Error when
+  logging creation of a token.
+
 1.17.0
 ------
 
@@ -20,7 +39,7 @@ Backwards incompatible change:
 * After a security audit it was decided to shut down the API endpoint
   /api/v1/users/. The new endpoint, /api/v2/users/, has better security.
 
-Ppaerwork:
+Paperwork:
 
 * Officially run on Python 3.10 instead of Python 3.8
 
