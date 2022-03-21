@@ -1,6 +1,8 @@
 from django import test
 
-from easydmp.dmpt.models import ShortFreetextQuestion, BooleanQuestion, PositiveIntegerQuestion
+from easydmp.dmpt.models import ShortFreetextQuestion
+from easydmp.dmpt.models import BooleanQuestion
+from easydmp.dmpt.models import PositiveIntegerQuestion
 from easydmp.plan.models import Plan, AnswerSet, Answer
 from tests.dmpt.factories import TemplateFactory, SectionFactory
 
@@ -119,3 +121,44 @@ class TestAnswerSetValidation(test.TestCase):
         self.assertTrue(Answer.objects.get(question=self.q2.pk).valid)
         self.assertTrue(Answer.objects.get(question=self.q3.pk).valid)
         self.assertTrue(as1.valid)
+
+
+class TestAnswersetGetIdentifier(test.TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.template = TemplateFactory()
+        cls.plan = Plan(template=cls.template, added_by_id=1, modified_by_id=1, valid=False)
+        cls.plan.save()
+
+    def test_no_identifier_question_should_yield_serial_number(self):
+        section = SectionFactory(template=self.template, repeatable=True)
+        as1 = AnswerSet(plan=self.plan, section=section, data={})
+        as1.save()
+        as2 = AnswerSet(plan=self.plan, section=section, data={})
+        as2.save()
+        self.assertEqual(as1.identifier, '1')
+        self.assertEqual(as2.identifier, '2')
+
+    def test_identifier_question_should_use_answer_in_data(self):
+        section = SectionFactory(template=self.template, repeatable=True)
+        iq = ShortFreetextQuestion(section=section)
+        iq.save()
+        section.identifier_question = iq
+        section.save()
+        identifier = 'foo'
+        as1 = AnswerSet(plan=self.plan, section=section, data={
+            str(iq.pk): {'choice': identifier, 'notes': ''},
+        })
+        as1.save()
+        self.assertEqual(as1.identifier, identifier)
+
+    def test_identifier_question_should_fallback_to_serial_number(self):
+        section = SectionFactory(template=self.template, repeatable=True)
+        iq = ShortFreetextQuestion(section=section)
+        iq.save()
+        section.identifier_question = iq
+        section.save()
+        as1 = AnswerSet(plan=self.plan, section=section, data={})
+        as1.save()
+        self.assertEqual(as1.identifier, '1')

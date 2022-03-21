@@ -502,7 +502,8 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
     fieldsets = (
         (None, {
             'fields': ('template', 'title', 'position', 'label', 'branching',
-                       'optional', 'repeatable', 'introductory_text', 'comment'),
+                       'optional', 'repeatable', 'introductory_text', 'comment',
+                       'identifier_question'),
         }),
         ('Super section', {
             'fields': ('super_section', 'section_depth'),
@@ -578,6 +579,14 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
                 # Limit to allowable sections
                 field.queryset = field.queryset.filter(template__in=templates)
             return field
+        if db_field.name == 'identifier_question':
+            if instance:
+                # Limit to existing questions of this section
+                qs = field.queryset.filter(section_id=instance.id)
+                field.queryset = field.queryset.filter(section_id=instance.id)
+            else:
+                # No section set, no questions available
+                field.queryset = field.queryset.none()
         return field
 
     def save_model(self, request, obj, form, change):
@@ -724,7 +733,7 @@ class QuestionCannedAnswerOrderingInline(BaseOrderingInline):
 
 @admin.register(QuestionType)
 class QuestionTypeAdmin(admin.ModelAdmin):
-    list_filter = ['allow_notes', 'branching_possible']
+    list_filter = ['allow_notes', 'branching_possible', 'can_identify']
     list_display = ['id'] + list_filter
     readonly_fields = list_display
 

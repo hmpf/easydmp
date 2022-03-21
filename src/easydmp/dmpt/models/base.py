@@ -605,6 +605,12 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                                    help_text='True if this section is optional. The template designer needs to provide a wording to an automatically generated yes/no question at the start of the section.')
     repeatable = models.BooleanField(default=False,
                                      help_text='True if this section is repeatable. This means a plan can have multiple answersets for this section.')
+    identifier_question = models.ForeignKey(
+        'dmpt.Question',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='+'
+    )
 
     objects = SectionManager()
 
@@ -1397,6 +1403,7 @@ class QuestionType(models.Model):
     id = models.CharField(max_length=MAX_LENGTH, primary_key=True)
     allow_notes = models.BooleanField(default=True)
     branching_possible = models.BooleanField(default=False)
+    can_identify = models.BooleanField(default=False)
 
     def __str__(self):
         return self.id
@@ -1497,11 +1504,19 @@ class Question(DeletionMixin, ClonableModel):
         return self.input_type.branching_possible
 
     @property
+    def can_identify(self):
+        return self.input_type.can_identify
+
+    @property
     def is_readonly(self):
         return self.section.is_readonly
 
     def in_use(self):
         return self.section.template.plans.exists()
+
+    def get_identifier(self, _):
+        "Get the answer (or part of the answer) suitable as an identifier"
+        raise NotImplementedError
 
     @transaction.atomic
     def clone(self, section):
