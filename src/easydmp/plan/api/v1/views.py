@@ -13,7 +13,7 @@ from easydmp.lib.api.pagination import ToggleablePageNumberPaginationV1
 from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
 from easydmp.plan.models import Answer
-from easydmp.plan.utils import GenerateRDA10
+from easydmp.rdadcs.lib.json import GenerateRDA10
 
 
 class SectionValiditySerializer(serializers.ModelSerializer):
