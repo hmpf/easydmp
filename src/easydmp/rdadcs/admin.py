@@ -1,6 +1,9 @@
 from django.contrib import admin
 
-from .models import RDADCSKey, RDADCSQuestionLink, RDADCSSectionLink
+from .models import RDADCSKey
+from .models import RDADCSQuestionLink
+from .models import RDADCSSectionLink
+from .models import RDADCSImportMetadata
 
 
 @admin.register(RDADCSKey)
@@ -26,3 +29,12 @@ class RDADCSSectionLinkAdmin(admin.ModelAdmin):
     list_filter = ('section__template',)
     raw_id_fields = ('section',)
     search_fields = ('key__path', 'section__title')
+
+
+@admin.register(RDADCSImportMetadata)
+class RDADCSImportMetadataAdmin(admin.ModelAdmin):
+    list_display = ('original_id', 'plan')
+    readonly_fields = ('plan', 'original_id', 'original_id_type',
+                        'originally_created', 'originally_modified',
+                        'original_json', 'imported', 'imported_via')
+    filter = ['imported_via']
