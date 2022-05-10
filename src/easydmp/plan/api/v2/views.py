@@ -28,7 +28,7 @@ from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
 from easydmp.plan.models import Answer
 from easydmp.plan.views import generate_pretty_exported_plan
-from easydmp.rdadcs.lib.json import GenerateRDA10
+from easydmp.rdadcs.lib.exporting import GenerateRDA10
 from . import serializers
 
 

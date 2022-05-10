@@ -5,7 +5,7 @@ import sys
 from django.core.management.base import BaseCommand, CommandError
 
 from easydmp.plan.models import Plan
-from easydmp.rdadcs.lib.json import GenerateRDA10
+from easydmp.rdadcs.lib.exporting import GenerateRDA10
 
 class Command(BaseCommand):
     help = "Export a plan and all its dependencies to a json dump"
