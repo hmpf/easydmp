@@ -464,6 +464,9 @@ class Answer(ClonableModel):
                 name='plan_answer_one_answer_per_question')
         ]
 
+    def __str__(self):
+        return f'Answer #{self.id}, q#{self.question_id}, set#{self.answerset_id}'
+
     def natural_key(self):
         return (tuple(self.answerset.natural_key()), self.question_id)
 
