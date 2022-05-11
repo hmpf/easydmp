@@ -12,6 +12,19 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.19.0
+------
+
+New feature:
+
+* Support for questions that can be answered by either Yes, No or Unknown. For
+  RDA DMP Common Standard.
+
+Paperwork:
+
+* More babysteps towards repeated sections
+* Security updates: Django 3.2.13, Django 4.0.4 and Pillow 9.0.1
+
 1.18.0
 ------
 
