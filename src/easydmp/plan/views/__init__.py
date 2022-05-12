@@ -16,7 +16,6 @@ from django.views.generic import (
 from weasyprint import HTML
 
 from easydmp.lib.views.mixins import DeleteFormMixin
-from easydmp.dmpt.forms import make_form, NotesForm
 from easydmp.dmpt.models import Question, Section, Template
 from easydmp.eventlog.models import EventLog
 from easydmp.eventlog.utils import log_event
@@ -455,11 +454,11 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
             answer = question['answer']
             form = question['form']
             notesform = question['notesform']
-            notesform.is_valid()
-            notes = notesform.cleaned_data.get('notes', '')
-            choice = form.serialize()
-            choice['notes'] = notes
-            changed_condition = answer.save_choice(choice, self.request.user)
+            changed_condition = answer.update_answer_via_forms(
+                form,
+                notesform,
+                self.request.user,
+            )
             if changed_condition:
                 self.__LOG.debug('form_valid: q%s/p%s: change saved',
                                  answer.question_id, self.object.pk)
@@ -489,7 +488,7 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
             prefix = 'q{}'.format(answer.question_id)
             initial = answer.get_initial()
             form = answer.get_form(initial=initial, **form_kwargs)
-            notesform = NotesForm(initial=initial, prefix=prefix, **form_kwargs)
+            notesform = answer.get_notesform(initial=initial, prefix=prefix, **form_kwargs)
             forms.append({
                 'form': form,
                 'notesform': notesform,
@@ -664,9 +663,9 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
 
     def get_notesform(self, **_):
         form_kwargs = self.get_form_kwargs().copy()
-        form_kwargs['prefix'] = 'q{}'.format(self.question.pk)
-        question = self.question
-        form = NotesForm(**form_kwargs)
+        form_kwargs.pop('prefix')
+        prefix = 'q{}'.format(self.question.pk)
+        form = self.answer.get_notesform(prefix=prefix, **form_kwargs)
         return form
 
     def get_form(self, **_):
@@ -676,7 +675,7 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
             'has_prevquestion': question.has_prev_question(),
         }
         generate_kwargs.update(form_kwargs)
-        form = make_form(question, **generate_kwargs)
+        form = self.answer.get_form(**generate_kwargs)
         return form
 
     def get(self, request, *args, **kwargs):
@@ -700,10 +699,11 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
 
     def form_valid(self, form, notesform):
         self.__LOG.debug('form_valid: q%s/p%s: valid', self.question_pk, self.plan.pk)
-        notes = notesform.cleaned_data.get('notes', '')
-        choice = form.serialize()
-        choice['notes'] = notes
-        changed_condition = self.answer.save_choice(choice, self.request.user)
+        changed_condition = self.answer.update_answer_via_forms(
+            form,
+            notesform,
+            self.request.user,
+        )
         self.plan = self.get_object().plan  # Refresh
         if changed_condition:
             self.__LOG.debug('form_valid: q%s/p%s: change saved',

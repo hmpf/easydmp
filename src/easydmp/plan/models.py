@@ -18,7 +18,7 @@ from django.template.loader import render_to_string
 from django.utils.timezone import now as tznow
 
 from easydmp.constants import NotSet
-from easydmp.dmpt.forms import make_form
+from easydmp.dmpt.forms import make_form, NotesForm
 from easydmp.dmpt.models.base import create_template_export_obj
 from easydmp.dmpt.utils import DeletionMixin
 from easydmp.eventlog.utils import log_event
@@ -105,6 +105,20 @@ class AnswerHelper():
     def get_form(self, **form_kwargs):
         form = make_form(self.question, **form_kwargs)
         return form
+
+    def get_notesform(self, **form_kwargs):
+        return NotesForm(**form_kwargs)
+
+    def get_empty_bound_notesform(self, prefix=None):
+        return NotesForm(data={'notes': ''}, prefix=prefix)
+
+    def update_answer_via_forms(self, form, notesform, saved_by):
+        if form.is_valid() and notesform.is_valid():
+            notes = notesform.cleaned_data.get('notes', '')
+            choice = form.serialize()
+            choice['notes'] = notes
+            return self.save_choice(choice, saved_by)
+        return None
 
     def save_choice(self, choice, saved_by):
         LOG.debug('save_choice: q%s/p%s: Answer: previous %s current %s',
