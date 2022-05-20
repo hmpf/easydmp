@@ -1,3 +1,6 @@
+import sys
+
+from django.db import IntegrityError
 from django.utils.timezone import now as tznow
 
 from easydmp.eestore.models import EEStoreType, EEStoreSource, EEStoreCache
@@ -5,7 +8,7 @@ from easydmp.eestore.models import EEStoreType, EEStoreSource, EEStoreCache
 __all__ = ['fill_cache_from_class']
 
 
-def fill_cache_from_class(cls):
+def fill_cache_from_class(cls, stderr=sys.stderr):
     """Fill the EEStore cache with items from a class
 
     The class is of the format
@@ -20,17 +23,20 @@ def fill_cache_from_class(cls):
     """
     try:
         et = EEStoreType.objects.create(name=cls.etype)
-    except:
+    except IntegrityError as e:
+        stderr.write(f'"Type {cls.etype} alreday exists: {e}')
         et = EEStoreType.objects.get(name=cls.etype)
 
     try:
         esource = EEStoreSource.objects.create(eestore_type=et, name=cls.source)
-    except:
+    except IntegrityError as e:
+        stderr.write(f'"Source {cls.source}" alreday exists: {e}')
         esource = EEStoreSource.objects.get(eestore_type=et, name=cls.source)
     timestamp = tznow()
     for i, item in enumerate(sorted(cls.items), start=1):
         eestore_pid = f'{cls.etype}:{cls.source}:{item}'
-        ec, _ = EEStoreCache.objects.get_or_create(
+        try:
+            ec = EEStoreCache.objects.create(
             eestore_type=et,
             source=esource,
             eestore_id=i,
@@ -40,5 +46,7 @@ def fill_cache_from_class(cls):
             remote_id=item,
             last_fetched=timestamp,
         )
+        except IntegrityError as e:
+            stderr.write(f'"{item}" alreday exists: {e}')
 
     return esource
