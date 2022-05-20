@@ -6,7 +6,7 @@ from django.test import tag, skipUnlessDBFeature
 from easydmp.auth.models import User
 from easydmp.dmpt.models import Template
 from easydmp.plan.models import Plan
-from easydmp.plan.utils import GenerateRDA10
+from easydmp.rdadcs.lib.json import GenerateRDA10
 
 from tests import has_sufficient_json_support
 
