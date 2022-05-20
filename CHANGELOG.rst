@@ -12,6 +12,22 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.20.0
+------
+
+See UPGRADING.rst to start using the new EEStore types.
+
+New feature:
+
+* EEStore types country (ISO 3166-1), currency (ISO 4217), and language (ISO
+  639-3)
+
+Paperwork:
+
+* Stub app for RDA DCS specific stuff
+* Util-function in EEStore for loading EEStoreCache from a class
+* Refactored saving questions in views to ensure identical code-path
+
 1.19.0
 ------
 

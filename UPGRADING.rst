@@ -5,6 +5,20 @@ UPGRADING
 Normally, upgrading is just a matter of getting the new code and running
 ``python manage.py migrate``. Any exceptions will be listed here.
 
+1.19.0 -> 1.20.0
+================
+
+After having installed 1.20.0:
+
+If your settings-file does not inherit from ``easydmp.site.settings.base``
+you'll have to add the app ``easydmp.rdadcs`` to the end of ``INSTALLED_APPS``.
+
+Then, running the management command ``load_large_vocabularies`` will load the
+three new EEStore types into your EEStore cache::
+
+    $ python manage.py load_large_vocabularies
+
+
 1.9.0 -> 1.10.0
 ===============
 
