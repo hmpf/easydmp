@@ -1,11 +1,18 @@
 from datetime import datetime
 
+try:
+    from zoneinfo import ZoneInfo
+    UTC = ZoneInfo('UTC')
+except ImportError:
+    from pytz import UTC
+
 from django.utils.timezone import now as utcnow
 
 
 default_app_config = 'easydmp.lib.apps.EasyDMPSiteConfig'
 
 __all__ = [
+    'UTC',
     'get_model_name',
     'iso_epoch',
     'pprint_list',
