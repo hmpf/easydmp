@@ -12,6 +12,18 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.21.0
+------
+
+New feature:
+
+* Add a "datetime" question-type, for RDA DMP Common Standard
+
+Paperwork:
+
+* Make ``fill_cache_from_class()`` idempotent, which makes it possible to rerun
+  the eestore upgrading commands from 1.20.0 without errors.
+
 1.20.0
 ------
 
