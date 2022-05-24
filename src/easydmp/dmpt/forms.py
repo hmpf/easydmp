@@ -274,7 +274,7 @@ class ReasonForm(AbstractNodeForm):
 class ShortFreetextForm(AbstractNodeForm):
     TYPE = 'shortfreetext'
     json_type = 'string'
-    MAX_LENGTH = 100
+    MAX_LENGTH = 255
 
     def _add_choice_field(self):
         help_text = '(This field has a hard limit of {} letters.)'.format(
