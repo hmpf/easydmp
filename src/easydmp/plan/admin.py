@@ -9,6 +9,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse, path
 from django.utils.html import format_html, mark_safe
 
+from easydmp.dmpt.models import Section
 from easydmp.eventlog.utils import log_event
 from easydmp.lib.admin import LockedFilter
 from easydmp.lib.admin import PublishedFilter
@@ -22,10 +23,35 @@ from .models import PlanAccess
 from .models import PlanImportMetadata
 
 
+class AnswerSetSectionFilter(admin.SimpleListFilter):
+    title = 'section'
+    parameter_name = 'section'
+
+    def lookups(self, request, _model_admin):
+        sections = Section.objects.all()
+        key = 'section__template__id__exact'
+        template_id = request.GET.get(key, None)
+        if template_id:
+            sections = sections.filter(template_id=template_id)
+        lookups = []
+        for section in sections:
+            lookups.append((section.pk, str(section)))
+        return lookups
+
+    def queryset(self, request, queryset):
+        if self.value():
+            queryset = queryset.filter(section__id=self.value())
+        return queryset
+
+
 @admin.register(AnswerSet)
 class AnswerSetAdmin(AdminConvenienceMixin, admin.ModelAdmin):
     list_display = ['plan', 'section', 'identifier']
-    list_filter = ['section__template', 'section', 'skipped']
+    list_filter = [
+        'section__template',
+        AnswerSetSectionFilter,
+        'skipped',
+    ]
     search_fields = ['plan__title', 'section__template__title']
     readonly_fields = ['valid', 'last_validated', 'cloned_from', 'cloned_when']
     raw_id_fields = ['plan', 'section', 'parent']
