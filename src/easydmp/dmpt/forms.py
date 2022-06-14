@@ -446,6 +446,8 @@ class NamedURLForm(AbstractNodeForm):
 class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
     can_add = True  # Whether adding extra rows is allowed
     json_type = 'array'
+    MIN_NUM: int = 1  # Override in subclass
+    MAX_NUM: int  # Override in subclass
 
     def deserialize(self, initial):
         data = initial.get('choice', [])
@@ -481,6 +483,20 @@ class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
     def serialize_subform(self):
         raise NotImplemented
 
+    @classmethod
+    def generate_formset(cls):
+        kwargs = {}
+        if hasattr(cls, 'MAX_NUM'):
+            kwargs['max_num'] = cls.MAX_NUM
+            kwargs['validate_max'] = True
+        return forms.formset_factory(
+            cls.FORM,
+            min_num=cls.MIN_NUM,
+            formset=cls,
+            can_delete=True,
+            **kwargs,
+        )
+
 
 class NamedURLFormSetForm(forms.Form):
     # Low magic form to be used in a formset
@@ -491,6 +507,7 @@ class NamedURLFormSetForm(forms.Form):
 
 
 class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
+    FORM = NamedURLFormSetForm
 
     @classmethod
     def generate_choice(cls, choice):
@@ -511,12 +528,8 @@ class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
         }
 
 
-MultiNamedURLOneTextFormSet = forms.formset_factory(
-    NamedURLFormSetForm,
-    min_num=1,
-    formset=AbstractMultiNamedURLOneTextFormSet,
-    can_delete=True,
-)
+MultiNamedURLOneTextFormSet = AbstractMultiNamedURLOneTextFormSet.generate_formset()
+Question.register_form_class('multinamedurlonetext', MultiNamedURLOneTextFormSet)
 
 
 class DMPTypedReasonFormSetForm(forms.Form):
@@ -528,6 +541,7 @@ class DMPTypedReasonFormSetForm(forms.Form):
 
 
 class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
+    FORM = DMPTypedReasonFormSetForm
 
     @classmethod
     def generate_choice(cls, choice):
@@ -555,12 +569,8 @@ class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
         }
 
 
-MultiDMPTypedReasonOneTextFormSet = forms.formset_factory(
-    DMPTypedReasonFormSetForm,
-    min_num=1,
-    formset=AbstractMultiDMPTypedReasonOneTextFormSet,
-    can_delete=True,
-)
+MultiDMPTypedReasonOneTextFormSet = AbstractMultiDMPTypedReasonOneTextFormSet.generate_formset()
+Question.register_form_class('multidmptypedreasononetext', MultiDMPTypedReasonOneTextFormSet)
 
 
 class RDACostFormSetForm(forms.Form):
@@ -572,6 +582,7 @@ class RDACostFormSetForm(forms.Form):
 
 
 class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
+    FORM = RDACostFormSetForm
 
     @classmethod
     def generate_choice(cls, choice):
@@ -602,12 +613,8 @@ class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
         }
 
 
-MultiRDACostOneTextFormSet = forms.formset_factory(
-    RDACostFormSetForm,
-    min_num=1,
-    formset=AbstractMultiRDACostOneTextFormSet,
-    can_delete=True,
-)
+MultiRDACostOneTextFormSet = AbstractMultiRDACostOneTextFormSet.generate_formset()
+Question.register_form_class('multirdacostonetext', MultiRDACostOneTextFormSet)
 
 
 class StorageForecastFormSetForm(forms.Form):
@@ -621,6 +628,9 @@ class StorageForecastFormSetForm(forms.Form):
 
 
 class AbstractStorageForecastFormSet(AbstractNodeFormSet):
+    FORM = StorageForecastFormSetForm
+    MIN_NUM = 5
+    MAX_NUM = 5
     can_add = False
     start_year = int(datetime.now().year)
 
@@ -657,17 +667,7 @@ class AbstractStorageForecastFormSet(AbstractNodeFormSet):
         return form_kwargs
 
 
-StorageForecastFormSet = forms.formset_factory(
-    form=StorageForecastFormSetForm,
-    formset=AbstractStorageForecastFormSet,
-    min_num=5,
-    max_num=5,
-)
-
-
-Question.register_form_class('multinamedurlonetext', MultiNamedURLOneTextFormSet)
-Question.register_form_class('multidmptypedreasononetext', MultiDMPTypedReasonOneTextFormSet)
-Question.register_form_class('multirdacostonetext', MultiRDACostOneTextFormSet)
+StorageForecastFormSet = AbstractStorageForecastFormSet.generate_formset()
 Question.register_form_class('storageforecast', StorageForecastFormSet)
 
 
