@@ -485,10 +485,9 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
         form_kwargs.pop('prefix', None)
         forms = []
         for answer in self.answers:
-            prefix = 'q{}'.format(answer.question_id)
             initial = answer.get_initial()
             form = answer.get_form(initial=initial, **form_kwargs)
-            notesform = answer.get_notesform(initial=initial, prefix=prefix, **form_kwargs)
+            notesform = answer.get_notesform(initial=initial, **form_kwargs)
             forms.append({
                 'form': form,
                 'notesform': notesform,
@@ -661,11 +660,12 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         kwargs['section_progress'] = get_section_progress(self.plan, section)
         return super().get_context_data(**kwargs)
 
+    def get_prefix(self):
+        return self.answer.prefix
+
     def get_notesform(self, **_):
-        form_kwargs = self.get_form_kwargs().copy()
-        form_kwargs.pop('prefix')
-        prefix = 'q{}'.format(self.question.pk)
-        form = self.answer.get_notesform(prefix=prefix, **form_kwargs)
+        form_kwargs = self.get_form_kwargs()
+        form = self.answer.get_notesform(**form_kwargs)
         return form
 
     def get_form(self, **_):

@@ -53,6 +53,10 @@ def print_url(urldict):
     return format_html(format, url, escape(name))
 
 
+def make_qid(question_id: int):
+    return f'q{question_id}'
+
+
 # Migration utilities
 
 

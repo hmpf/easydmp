@@ -21,6 +21,7 @@ from .fields import MultipleChoiceNotListedField
 from .fields import DMPTypedReasonField
 from .fields import RDACostField
 from .fields import StorageForecastField
+from .utils import make_qid
 from .widgets import DMPTDateInput
 from .widgets import Select2Widget
 from .widgets import Select2MultipleWidget
@@ -74,7 +75,7 @@ class AbstractNodeMixin():
         kwargs.pop('instance', None)
         initial = self.deserialize(kwargs.pop('initial', {}))
         kwargs.pop('prefix', None)
-        prefix = 'q{}'.format(self.question_pk)
+        prefix = make_qid(self.question_pk)
         super().__init__(initial=initial, prefix=prefix, **kwargs)
 
     def serialize_form(self):
