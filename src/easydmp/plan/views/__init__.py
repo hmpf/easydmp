@@ -17,6 +17,7 @@ from weasyprint import HTML
 
 from easydmp.lib.views.mixins import DeleteFormMixin
 from easydmp.dmpt.models import Question, Section, Template
+from easydmp.dmpt.forms import AbstractNodeFormSet
 from easydmp.eventlog.models import EventLog
 from easydmp.eventlog.utils import log_event
 
@@ -55,6 +56,18 @@ def get_section_progress(plan, current_section=None):
             section_dict['status'] = 'active'
         section_struct.append(section_dict)
     return section_struct
+
+
+def update_data_for_additional_form_in_formset(form, post_data):
+    if not isinstance(form, AbstractNodeFormSet):
+        return
+    prefix = form.prefix
+    if not f'{prefix}_add_row' in post_data:
+        return  # row not added
+    data = post_data.copy()
+    total_form_lookup = f'{prefix}-TOTAL_FORMS'
+    data[total_form_lookup] = str(int(post_data[total_form_lookup]) + 1)
+    return data
 
 
 # -- plans
@@ -438,8 +451,29 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
         forms = self.get_forms()
         return self.render_to_response(self.get_context_data(forms=forms))
 
+    def add_form_to_formset(self, post_data, forms):
+        for formdict in forms:
+            form = formdict['form']
+            data = update_data_for_additional_form_in_formset(form, post_data)
+            if data:
+                break
+        else:
+            return  # no formsets found or no add_row command
+
+        # Generate all forms with new data
+        form_kwargs = self.get_form_kwargs()
+        new_forms = []
+        for formdict in forms:
+            answer = formdict['answer']
+            new_formdict = self._get_form(answer, form_kwargs, data=data)
+            new_forms.append(new_formdict)
+        return self.render_to_response(self.get_context_data(forms=new_forms))
+
     def post(self, request, *args, **kwargs):
         forms = self.get_forms()
+        response = self.add_form_to_formset(request.POST, forms)
+        if response:
+            return response
         template = '{timestamp} {actor} updated {action_object} of {target}'
         log_event(request.user, 'update section', target=self.plan,
                   object=self.section, template=template)
@@ -480,30 +514,33 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
             kwargs['data'] = self.request.POST
         return kwargs
 
+    def _get_form(self, answer, form_kwargs, data=None):
+        if data:
+            form_kwargs['data'] = data
+        initial = answer.get_initial()
+        form = answer.get_form(initial=initial, **form_kwargs)
+        notesform = answer.get_notesform(initial=initial, **form_kwargs)
+        return {
+            'form': form,
+            'notesform': notesform,
+            'answer': answer,
+        }
+
     def get_forms(self):
         form_kwargs = self.get_form_kwargs()
-        form_kwargs.pop('prefix', None)
         forms = []
         for answer in self.answers:
-            initial = answer.get_initial()
-            form = answer.get_form(initial=initial, **form_kwargs)
-            notesform = answer.get_notesform(initial=initial, **form_kwargs)
-            forms.append({
-                'form': form,
-                'notesform': notesform,
-                'answer': answer,
-            })
+            forms.append(self._get_form(answer, form_kwargs))
         return forms
 
     def get_context_data(self, **kwargs):
-        context = {}
-        context.update(**super().get_context_data(**kwargs))
+        context = super().get_context_data(**kwargs).copy()
         context['section'] = self.section
         context['answerset'] = self.answerset
         context['prev_section'] = self.prev_section
         context['next_section'] = self.next_section
         context['section_progress'] = get_section_progress(self.plan, self.section)
-        context['forms'] = self.get_forms()
+        context['forms'] = kwargs.get('forms', self.get_forms())
         return context
 
     def put(self, *args, **kwargs):
@@ -642,23 +679,27 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         question = self.question
         section = self.section
         path = section.questions.order_by('position')
-        kwargs['plan'] = self.plan
-        kwargs['path'] = path
-        kwargs['question'] = question
-        kwargs['question_pk'] = question.pk
-        kwargs['notesform'] = kwargs.get('notesform', self.get_notesform())
-        kwargs['label'] = question.label
-        kwargs['answers'] = question.canned_answers.order().values()
-        kwargs['framing_text'] = question.framing_text
-        kwargs['section'] = section
+        context = kwargs.copy()
+        context['object'] = self.get_object()  # SingleObjectMixin
+        # FormMixin
+        context['form'] = kwargs.get('form', self.get_form())
+        context['notesform'] = kwargs.get('notesform', self.get_notesform())
+        context['plan'] = self.plan
+        context['path'] = path
+        context['question'] = question
+        context['question_pk'] = question.pk
+        context['label'] = question.label
+        context['answers'] = question.canned_answers.order().values()
+        context['framing_text'] = question.framing_text
+        context['section'] = section
         neighboring_questions = Question.objects.filter(section=section)
-        kwargs['questions_in_section'] = neighboring_questions
+        context['questions_in_section'] = neighboring_questions
         num_questions = neighboring_questions.count()
         num_questions_so_far = len(question.get_all_preceding_questions())
-        kwargs['progress'] = progress(num_questions_so_far, num_questions)
-        kwargs['referrer'] = self.referer  # Not a typo! From the http header
-        kwargs['section_progress'] = get_section_progress(self.plan, section)
-        return super().get_context_data(**kwargs)
+        context['progress'] = progress(num_questions_so_far, num_questions)
+        context['referrer'] = self.referer  # Not a typo! From the http header
+        context['section_progress'] = get_section_progress(self.plan, section)
+        return super().get_context_data(**context)
 
     def get_prefix(self):
         return self.answer.prefix
@@ -668,14 +709,19 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         form = self.answer.get_notesform(**form_kwargs)
         return form
 
-    def get_form(self, **_):
+    def _get_form(self, **kwargs):
         form_kwargs = self.get_form_kwargs()
         question = self.question
         generate_kwargs = {
             'has_prevquestion': question.has_prev_question(),
         }
         generate_kwargs.update(form_kwargs)
+        generate_kwargs.update(kwargs)
         form = self.answer.get_form(**generate_kwargs)
+        return form
+
+    def get_form(self, **_):
+        form = self._get_form()
         return form
 
     def get(self, request, *args, **kwargs):
@@ -686,10 +732,25 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
                   object=self.question, template=template)
         return super().get(request, *args, **kwargs)
 
+    def add_form_to_formset(self, request, form, *args, **kwargs):
+        data = update_data_for_additional_form_in_formset(form, request.POST)
+        if not data:
+            return
+        formset = self._get_form(data=data)
+        notesform = self.get_notesform(data=data)
+        self.object = self.get_object()
+        return self.render_to_response(self.get_context_data(
+            form=formset,
+            notesform=notesform,
+        ))
+
     def post(self, request, *args, **kwargs):
         self.set_referer(request)
         self.__LOG.debug('POST-ing q%s/p%s', self.question_pk, self.plan.pk)
         form = self.get_form()
+        response = self.add_form_to_formset(request, form)  # May redirect to a GET
+        if response:
+            return response
         notesform = self.get_notesform()
         if form.is_valid() and notesform.is_valid():
             self.request = request

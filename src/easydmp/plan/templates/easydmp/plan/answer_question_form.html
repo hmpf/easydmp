@@ -127,12 +127,5 @@ $("#btnShowHelp").click(function () {
     $(".help-block").dialog("open");
 });
 </script>
-<script type="text/javascript">
-    $('#add_row').click(function() {
-        var form_idx = $('#id_{{ question_pk }}-TOTAL_FORMS').val();
-        $('#formset').append($('#empty_form').html().replace(/__prefix__/g, form_idx));
-        $('#id_{{ question_pk }}-TOTAL_FORMS').val(parseInt(form_idx) + 1);
-    });
-</script>
 {{ form.media.js }}
 {% endblock postload %}
