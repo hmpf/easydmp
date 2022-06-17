@@ -22,7 +22,7 @@ def unregister_multistring_type(apps, _):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dmpt', '0011_multistringquestion'),
+        ('dmpt', '0011_datetimequestion'),
     ]
 
     operations = [
