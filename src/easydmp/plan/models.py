@@ -20,7 +20,7 @@ from django.utils.timezone import now as tznow
 from easydmp.constants import NotSet
 from easydmp.dmpt.forms import make_form, NotesForm
 from easydmp.dmpt.models.base import create_template_export_obj
-from easydmp.dmpt.utils import DeletionMixin
+from easydmp.dmpt.utils import DeletionMixin, make_qid
 from easydmp.eventlog.utils import log_event
 from easydmp.lib import dump_obj_to_searchable_string
 from easydmp.lib.import_export import get_origin
@@ -81,6 +81,7 @@ class AnswerHelper():
         self.has_notes = self.question.has_notes
         self.section = self.question.section
         self.current_choice = answerset.data.get(self.question_id, {})
+        self.prefix = make_qid(self.question_id)
 
     def get_choice(self):
         choice = self.answerset.data.get(self.question_id, {})
@@ -107,10 +108,11 @@ class AnswerHelper():
         return form
 
     def get_notesform(self, **form_kwargs):
-        return NotesForm(**form_kwargs)
+        form_kwargs.pop('prefix', None)
+        return NotesForm(prefix=self.prefix, **form_kwargs)
 
-    def get_empty_bound_notesform(self, prefix=None):
-        return NotesForm(data={'notes': ''}, prefix=prefix)
+    def get_empty_bound_notesform(self):
+        return NotesForm(data={'notes': ''}, prefix=self.prefix)
 
     def update_answer_via_forms(self, form, notesform, saved_by):
         if form.is_valid() and notesform.is_valid():

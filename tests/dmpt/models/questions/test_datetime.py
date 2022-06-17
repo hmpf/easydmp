@@ -3,6 +3,7 @@ from datetime import datetime
 from django import test
 
 from easydmp.dmpt.models.questions.datetime import DateTimeForm
+from easydmp.dmpt.utils import make_qid
 
 from tests.dmpt.factories import (
     TemplateFactory,
@@ -30,7 +31,7 @@ class TestDateTimeForm(test.TestCase):
 
     def test_cleans_to_datetime_utc(self):
         data = '2022-01-01T01:02:03Z'
-        prefix = f'q{self.question.pk}'
+        prefix = make_qid(self.question.pk)
         bound_form = DateTimeForm(data={f'{prefix}-choice': data}, question=self.question)
         self.assertTrue(bound_form.is_valid())
         result = bound_form.cleaned_data['choice']
@@ -39,7 +40,7 @@ class TestDateTimeForm(test.TestCase):
 
     def test_cleans_to_datetime_naive(self):
         data = '2022-01-01T01:02:03'
-        prefix = f'q{self.question.pk}'
+        prefix = make_qid(self.question.pk)
         bound_form = DateTimeForm(data={f'{prefix}-choice': data}, question=self.question)
         self.assertTrue(bound_form.is_valid())
         result = bound_form.cleaned_data['choice']

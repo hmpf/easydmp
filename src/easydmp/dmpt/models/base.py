@@ -30,6 +30,7 @@ from ..utils import SectionPositionUtils
 from ..positioning import get_new_index, flat_reorder
 
 from easydmp.eestore.models import EEStoreMount
+from easydmp.dmpt.utils import make_qid
 from easydmp.lib.graphviz import _prep_dotsource, view_dotsource, render_dotsource_to_file, render_dotsource_to_bytes
 from easydmp.lib.import_export import get_origin
 from easydmp.lib.models import ModifiedTimestampModel, ClonableModel
@@ -1240,7 +1241,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                     optional
                 )
             q_kwargs['label'] = fill(q_label, 20)
-            q_id = 'q{}'.format(question.pk)
+            q_id = make_qid(question.pk)
             if question.pk == self.first_question.pk:
                 dot.edge(s_start_id, q_id, **s_kwargs)
             dot.node(q_id, **q_kwargs)
@@ -1251,7 +1252,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                     category = next_questions[choice]['category']
                     next_question = next_questions[choice]['next']
                     if next_question:
-                        nq_id = 'q{}'.format(next_question)
+                        nq_id = make_qid(next_question)
                     else:
                         nq_id = s_end_id
                     edge_label = category
