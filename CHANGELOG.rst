@@ -12,6 +12,13 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.22.1
+------
+
+Bugfix:
+
+* Fix migration inheritance problem, caused by too aggressive search/replace
+
 1.22.0
 ------
 
