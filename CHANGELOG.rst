@@ -12,6 +12,25 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.22.0
+------
+
+New feature:
+
+* Add a "multistring" question-type, for RDA DMP Common Standard
+
+Bugfixes:
+
+* Fix adding additional rows to formsets, this time without any javascript
+* Extend the max-length of "shortfreetext" to 255 characters, after finding
+  an overly long project title in the wild. (It still can't fit the full title
+  of "Moll Flanders" (1722) by Daniel Defoe, though.)
+
+Paperwork:
+
+* Refactored how formset questions works and made the first standalone formset
+  question-type: multistring
+
 1.21.0
 ------
 
