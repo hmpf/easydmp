@@ -52,7 +52,7 @@ class AnswerSetAdmin(AdminConvenienceMixin, admin.ModelAdmin):
         AnswerSetSectionFilter,
         'skipped',
     ]
-    search_fields = ['plan__title', 'section__template__title']
+    search_fields = ['plan__pk', 'plan__title', 'section__template__title']
     readonly_fields = ['valid', 'last_validated', 'cloned_from', 'cloned_when']
     raw_id_fields = ['plan', 'section', 'parent']
     fieldsets = (
