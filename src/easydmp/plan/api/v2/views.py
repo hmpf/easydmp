@@ -106,7 +106,7 @@ class PlanViewSet(AnonReadOnlyModelViewSet):
     def export_rda(self, request, pk=None, **kwargs):
         plan = self.get_object()
         rda = GenerateRDA10(plan)
-        return Response(rda.get_dmp())
+        return Response(rda.json())
 
     @action(detail=True, methods=['get'], renderer_classes=export_renderers,
             permission_classes=[IsAuthenticatedAndActive])

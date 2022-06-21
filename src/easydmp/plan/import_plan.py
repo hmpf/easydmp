@@ -3,7 +3,7 @@ import logging
 import warnings
 
 from django.contrib.auth import get_user_model
-from django.db import transaction, DatabaseError
+from django.db import transaction, DatabaseError, models
 
 from easydmp.dmpt.import_template import TemplateImportError
 from easydmp.dmpt.import_template import get_template_and_mappings
@@ -11,7 +11,11 @@ from easydmp.dmpt.import_template import get_stored_template_origin
 from easydmp.dmpt.models import TemplateImportMetadata
 from easydmp.eventlog.utils import log_event
 from easydmp.lib import strip_model_dict
-from easydmp.lib.import_export import get_origin, deserialize_export, get_free_title_for_importing, DataImportError
+from easydmp.lib.import_export import DataImportError
+from easydmp.lib.import_export import deserialize_export
+from easydmp.lib.import_export import get_free_title_for_importing
+from easydmp.lib.import_export import get_origin
+from easydmp.lib.import_export import load_json_from_stream
 
 from .export_plan import SingleVersionExportSerializer
 from .models import Plan, PlanImportMetadata, AnswerSet, Answer
@@ -19,6 +23,8 @@ from .models import Plan, PlanImportMetadata, AnswerSet, Answer
 
 __all__ = [
     'PlanImportError',
+    'PlanExportType',
+    'detect_export_type',
     'deserialize_plan_export',
     'import_serialized_plan_export',
 ]
@@ -41,6 +47,22 @@ class PlanImportError(DataImportError):
 
 class PlanImportWarning(UserWarning):
     pass
+
+
+class PlanExportType(models.TextChoices):
+    EASYDMP = 'EASYDMP', "EasyDMP"
+    RDADCS = 'RDADCS', "RDADCS"
+
+
+def detect_export_type(export_json) -> PlanExportType:
+    data = load_json_from_stream(export_json, 'Plan', PlanImportError)
+    if set(data.keys()) == set(('plan', 'answersets', 'comment', 'metadata')):
+        # EasyDMP
+        return PlanExportType.EASYDMP
+    elif 'dmp' in data:
+        # RDA DMP CS
+        return PlanExportType.RDADCS
+    raise PlanImportError('Unknown export format')
 
 
 def deserialize_plan_export(export_json) -> dict:

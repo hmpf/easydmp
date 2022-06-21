@@ -50,11 +50,11 @@ class ImportRDA10:
     ))
     ERROR = "The provided json is not valid RDA DCS"
 
-    def __init__(self, jsonblob, importer, via=None):
+    def __init__(self, jsonblob, owner, via=None):
         self.jsonblob = jsonblob
-        self.owner = importer
-        self.via = via
         self.template = Template.objects.get(uuid=RDADCS_UUID)
+        self.owner = owner
+        self.via = via
         self.validate_json(jsonblob)
         self.title = self.jsonblob['dmp']['title']
         # cache some expensive lookups
