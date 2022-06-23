@@ -235,7 +235,7 @@ def import_serialized_plan_export(export_dict, user, via=DEFAULT_VIA):
             template_id, template_copy = get_template_metadata(metadata_dict)
         except PlanImportError:
             raise
-        template, mapping = get_template_and_mappings(
+        template, mapping, _ = get_template_and_mappings(
             template_copy,
             template_id,
             metadata.origin,

@@ -28,7 +28,9 @@ from easydmp.lib.admin import ObjectPermissionModelAdmin
 from easydmp.lib.admin import SetObjectPermissionModelAdmin
 from easydmp.lib import get_model_name
 
-from .import_template import deserialize_template_export, import_serialized_template_export, TemplateImportError
+from .import_template import deserialize_template_export
+from .import_template import import_or_get_template
+from .import_template import TemplateImportError
 from .models import Template
 from .models import TemplateImportMetadata
 from .models import Section
@@ -263,6 +265,7 @@ class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissio
     date_hierarchy = 'published'
     set_permissions = ['use_template']
     has_object_permissions = True
+    readonly_fields = ['uuid']
     list_filter = [
         LockedFilter,
         PublishedFilter,
@@ -282,7 +285,7 @@ class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissio
     ]
     fieldsets = (
         (None, {
-            'fields': ('title', 'abbreviation', 'version', 'description',
+            'fields': ('title', 'abbreviation', 'uuid','version', 'description',
                        'more_info', 'reveal_questions', 'domain_specific',
                        'locked', 'published', 'retired'),
         }),
@@ -335,26 +338,26 @@ class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissio
 
                 try:
                     with warnings.catch_warnings(record=True) as w:
-                        tim = import_serialized_template_export(serialized_dict, via='admin')
+                        tim = import_or_get_template(serialized_dict, via='admin')
                         if w:
                             messages.warning(request, w[-1].message)
                 except TemplateImportError as e:
                     messages.error(request, str(e))
                     return HttpResponseRedirect(url_on_error)
-                msg = f'Template "{tim.template}" successfully imported.'
+                template = tim.template
+                msg = f'Template "{template}" successfully imported.'
                 messages.success(request, msg)
-                log_event(request.user, 'import', target=tim.template,
+                log_event(request.user, 'import', target=template,
                           timestamp=tim.imported,
                           template=msg[:-1])
                 # for admin.LogEntry
-                self.log_change(request, tim.template, {'added': {}})
+                self.log_change(request, template, {'added': {}})
                 if not request.user.has_superpowers:
                     extra_permissions = getattr(self, 'set_permissions', [])
                     # TD's may view and use the imported template regardless
-                    assign_perm('view_template', request.user, tim.template)
+                    assign_perm('view_template', request.user, template)
                     for perm in extra_permissions:
-                        assign_perm(perm, request.user, tim.template)
-                    template = tim.template
+                        assign_perm(perm, request.user, template)
                     # TD's may work on a copy of a locked import
                     if template.locked:
                         template = template.private_copy()

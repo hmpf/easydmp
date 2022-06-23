@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from operator import itemgetter
 import warnings
 
@@ -24,6 +24,12 @@ __all__ = [
 
 
 DEFAULT_VIA = TemplateImportMetadata.DEFAULT_VIA
+
+
+def get_fieldnames_on_model(model):
+    fields = model._meta.get_fields()
+    names = set(field.name for field in fields)
+    return names
 
 
 class TemplateImportError(DataImportError):
@@ -113,24 +119,39 @@ def get_stored_template_origin(export_dict):
         )
 
 
+def get_template_id(export_dict):
+    try:
+        return export_dict['template']['id']
+    except KeyError:
+        raise TemplateImportError(
+            'Template export file is malformed, there should be a "template" '
+            'section with an "id" key. Cannot import'
+        )
+
+
 def get_template_and_mappings(export_dict=None, template_id=None, origin='', via=DEFAULT_VIA):
-    "Get or create template and mappings"
+    """Get or create template and mappings
+
+    If not export_dict, try returning the template in the template id and an
+    identity mapping. If both export_dict and template_id, check that the id
+    in the export_dict is the same as the template_id.
+    """
+
     assert export_dict or template_id
 
     origin = get_origin(origin)
     stored_origin = None
     if export_dict:
         external_template_id = template_id
-        clean_serialized_template_export(export_dict)
         stored_origin = get_stored_template_origin(export_dict)
-        template_id = export_dict['template']['id']
+        template_id = get_template_id(export_dict)
         if external_template_id and (external_template_id != template_id):
             error_msg = ('The export is malformed, the id for the '
                          'included template does not match the id given. '
                          'Aborting import.')
             raise TemplateImportError(error_msg)
 
-    # Check if this is a local template
+    # Check if this is a local template: id exists, and origin is the same
     if not stored_origin or stored_origin == origin:
         try:
             template = Template.objects.get(id=template_id)
@@ -143,16 +164,47 @@ def get_template_and_mappings(export_dict=None, template_id=None, origin='', via
             mappings = create_identity_template_mapping(template)
             return template, mappings
 
-    template_dict = export_dict['template']
+    tim = import_or_get_template(export_dict, origin='', via=DEFAULT_VIA)
+    return tim.template, tim.mappings
+
+
+def import_or_get_template(export_dict, origin='', via=DEFAULT_VIA):
+    """Import a new template or connect an external template"""
+    clean_serialized_template_export(export_dict)
+    # override origin if given
+    origin = origin or get_stored_template_origin(export_dict)
+    template_id = get_template_id(export_dict)
+
+    # Check if this template already exists with this uuid
+    uuid = export_dict['template'].get('uuid', None)
+    if uuid:
+        try:
+            template = Template.objects.get(uuid=uuid)
+        except Template.DoesNotExist:
+            # Unknown template, we'll import it the normal way
+            pass
+        else:
+            # Check if this is a previously imported template
+            try:
+                tim = TemplateImportMetadata.objects.get(template=template)
+            except TemplateImportMetadata.DoesNotExist:
+                # create the new mappings without creating a new template
+                tim = connect_template_import_to_existing_template(
+                    template,
+                    export_dict,
+                    origin,
+                    via,
+                )
+            return tim
 
     # Check if this is a previously imported template
     try:
-        tim = TemplateImportMetadata.objects.get(origin=stored_origin, original_template_pk=template_id)
+        tim = TemplateImportMetadata.objects.get(origin=origin, original_template_pk=template_id)
     except TemplateImportMetadata.DoesNotExist:
         # import the template
-        tim = import_serialized_template_export(export_dict, stored_origin, via)
+        tim = import_serialized_template_export(export_dict, origin, via)
 
-    return tim.template, tim.mappings
+    return tim
 
 
 def deserialize_template_export(export_json) -> dict:
@@ -178,23 +230,33 @@ def ensure_unknown_template(export_dict, origin):
 def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
     via = via if via else DEFAULT_VIA
     template_dict = export_dict['template']
-    title = get_free_title_for_importing(template_dict, origin, Template)
     original_template_pk = template_dict.pop('id')
+    cloned_from = template_dict.get('cloned_from', None)
 
     # Ensure the import is not auto-published
     published = template_dict.pop('published', None)
 
-    # Create template
+    # Prep what keys, values to copy over
     stripped_dict = strip_model_dict(template_dict, 'input_types_in_use',
                                     'rdadcs_keys_in_use')
-    imported_template = Template.objects.create(title=title, **stripped_dict)
+    # remove fields that does not exist in this version of the Template model
+    fieldnames = get_fieldnames_on_model(Template).intersection(stripped_dict)
+    creation_dict = {key: stripped_dict[key] for key in fieldnames}
+    # Create template
+    title = get_free_title_for_importing(template_dict, origin, Template)
+    imported_template = Template.objects.create(title=title, **creation_dict)
+    tim = _create_template_import_metadata(imported_template, origin, original_template_pk, published, cloned_from, via)
+    return tim
+
+
+def _create_template_import_metadata(template, origin, original_pk, original_published=None, original_cloned_from=None, via=DEFAULT_VIA):
     try:
         tim = TemplateImportMetadata.objects.create(
-            template=imported_template,
+            template=template,
             origin=origin,
-            original_template_pk=original_template_pk,
-            originally_cloned_from=template_dict.get('cloned_from'),
-            originally_published=published,
+            original_template_pk=original_pk,
+            originally_cloned_from=original_cloned_from,
+            originally_published=original_published,
             imported_via=via,
         )
     except DatabaseError as e:
@@ -222,7 +284,7 @@ def create_identity_template_mapping(template):
 
 
 # These are just similar enough that might be tempting to turn it all
-# into a single clever function run four times..
+# into a single clever function..
 #
 # That way lies madness. Don't.
 
@@ -235,35 +297,13 @@ def _create_imported_sections(export_dict, tim):
         return
     mappings = {'sections': {}}
 
-    # build maps to create Sections in the correct order
-    super_section_map = {}
-    order_map = defaultdict(list)
-    orig_identifier_question_map = {}
-    rdadcs_paths = {}
-    for section_dict in section_list:
-        orig_id = section_dict['id']
-
-        orig_super_section_id = section_dict['super_section']
-        super_section_map[orig_id] = orig_super_section_id
-
-        orig_identifier_question_id = section_dict.pop('identifier_question')
-        orig_identifier_question_map[orig_id] = orig_identifier_question_id
-
-        rdadcs_paths[orig_id] = section_dict.pop('rdadcs_path', None)
-
-        depth = section_dict['section_depth']
-        order_map[int(depth)].append(section_dict)
+    order_map, super_section_map, orig_identifier_question_map, rdadcs_paths = _get_imported_section_ordering(section_list)
     mappings['rdadcs_sections'] = rdadcs_paths
-
-    # order by super_section and position
-    for depth, section_dicts in order_map.items():
-        section_dicts = sorted(section_dicts, key=itemgetter('super_section', 'position'))
-        order_map[depth] = section_dicts
 
     # create sections in the correct order
     identifier_question_set = set()
     section_map = {}
-    for depth in sorted(order_map):
+    for depth in order_map:
         section_list = []
         for section_dict in order_map[depth]:
             section_dict.pop('template')
@@ -288,6 +328,63 @@ def _create_imported_sections(export_dict, tim):
         mappings['sections'][orig_id] = section.id
 
     return mappings
+
+
+def _map_imported_sections(export_dict, tim):
+    section_list = export_dict['sections']
+    mappings = {'sections': {}}
+    template = tim.template
+    order_map, _, _, _ = _get_imported_section_ordering(section_list)
+
+    # get the existing scetion in the same format as the imported ones
+    existing_sections = template.sections.order_by('section_depth', 'super_section', 'position')
+    existing_order_map = defaultdict(list)
+    for section_dict in existing_sections.values('super_section', 'position', 'section_depth', 'id'):
+        depth = section_dict['section_depth']
+        existing_order_map[int(depth)].append(section_dict)
+
+    for depth, section_dicts in existing_order_map.items():
+        section_dicts = sorted(section_dicts, key=itemgetter('super_section', 'position'))
+        existing_order_map[depth] = section_dicts
+
+    # compare and create the map
+    section_map = dict()
+    for depth in order_map:
+        imported_ids = [section_dict['id'] for section_dict in order_map[depth]]
+        existing_ids = [section_dict['id'] for section_dict in existing_order_map[depth]]
+        section_map.update(zip(existing_ids,imported_ids))
+    mappings['sections'] = section_map
+    return mappings
+
+
+def _get_imported_section_ordering(section_list):
+    # build maps to create Sections in the correct order
+    super_section_map = {}
+    order_map = defaultdict(list)
+    orig_identifier_question_map = {}
+    rdadcs_paths = {}
+    for section_dict in section_list:
+        orig_id = section_dict['id']
+
+        orig_super_section_id = section_dict['super_section']
+        super_section_map[orig_id] = orig_super_section_id
+
+        orig_identifier_question_id = section_dict.pop('identifier_question')
+        orig_identifier_question_map[orig_id] = orig_identifier_question_id
+
+        rdadcs_paths[orig_id] = section_dict.pop('rdadcs_path', None)
+
+        depth = section_dict['section_depth']
+        order_map[int(depth)].append(section_dict)
+
+    # order by super_section and position
+    for depth, section_dicts in order_map.items():
+        section_dicts = sorted(section_dicts, key=itemgetter('super_section', 'position'))
+        order_map[depth] = section_dicts
+
+    # ensure the keys are in increasing order
+    order_map = OrderedDict(sorted(order_map.items()))
+    return order_map, super_section_map, orig_identifier_question_map, rdadcs_paths
 
 
 @transaction.atomic
@@ -328,10 +425,31 @@ def _create_imported_questions(export_dict, mappings):
     return mappings
 
 
+def _map_imported_questions(export_dict, mappings):
+    question_list = export_dict['questions']
+    mappings['questions'] = dict()
+    orig_order = defaultdict(dict)
+    # Order per section
+    for question_dict in question_list:
+        orig_id = question_dict.pop('id')
+        orig_section_id = question_dict.pop('section')
+        position = question_dict['position']
+        orig_order[orig_section_id][position] = orig_id
+    new_order = defaultdict(dict)
+    for question in Question.objects.all():
+        new_order[question.section_id][question.position] = question.id
+    for orig_section_id, questions in orig_order.items():
+        new_section_id = mappings['sections'][orig_section_id]
+        for position, question_id in questions.items():
+            new_id = new_order[new_section_id][position]
+            mappings['questions'][question_id] = new_id
+
+    return mappings
+
+
 @transaction.atomic
 def _create_rdadcs_links(mappings):
-    keys = RDADCSKey.objects.all()
-    keymap = {key.path: key.slug for key in keys}
+    keymap = {key.path: key.slug for key in RDADCSKey.objects.all()}
 
     section_paths = mappings.pop('rdadcs_sections', {})
     if section_paths:
@@ -376,6 +494,26 @@ def _create_imported_explicit_branches(export_dict, mappings):
 
 
 @transaction.atomic
+def _map_imported_explicit_branches(export_dict, mappings):
+    explicit_branch_list = export_dict['explicit_branches']
+    mappings['explicit_branches'] = dict()
+    for explicit_branch_dict in explicit_branch_list:
+        orig_id = explicit_branch_dict.pop('id')
+        orig_current_question_id = explicit_branch_dict.pop('current_question')
+        orig_next_question_id = explicit_branch_dict.pop('next_question', None)
+        new_current_question_id = mappings['questions'][orig_current_question_id]
+        new_next_question_id = mappings['questions'].get(orig_next_question_id, None)
+        new_explicit_branch = ExplicitBranch.objects.get(
+            current_question_id=new_current_question_id,
+            next_question_id=new_next_question_id,
+            category=explicit_branch_dict['category'],
+            condition=explicit_branch_dict['condition'],
+        )
+        mappings['explicit_branches'][orig_id] = new_explicit_branch.id
+    return mappings
+
+
+@transaction.atomic
 def _create_imported_canned_answers(export_dict, mappings):
     canned_answer_list = export_dict['canned_answers']
     mappings['canned_answers'] = dict()
@@ -389,6 +527,25 @@ def _create_imported_canned_answers(export_dict, mappings):
             **strip_model_dict(canned_answer_dict)
         )
         mappings['canned_answers'][orig_id] = canned_answer.id
+    return mappings
+
+
+@transaction.atomic
+def _map_imported_canned_answers(export_dict, mappings):
+    canned_answer_list = export_dict['canned_answers']
+    mappings['canned_answers'] = dict()
+    for canned_answer_dict in canned_answer_list:
+        orig_id = canned_answer_dict.pop('id')
+        orig_question_id = canned_answer_dict.pop('question')
+        orig_transition_id = canned_answer_dict.pop('transition')
+        new_question_id = mappings['questions'][orig_question_id]
+        new_transition_id = mappings['explicit_branches'].get(orig_transition_id, None)
+        canned_answers = CannedAnswer.objects.filter(
+            question_id=new_question_id,
+            transition_id=new_transition_id,
+        )
+        for ca in canned_answers:
+            mappings['canned_answers'][orig_id] = ca.id
     return mappings
 
 
@@ -418,6 +575,7 @@ def clean_serialized_template_export(export_dict):
         raise TemplateImportError(
             f'Template export file is malformed, lacking the following section(s): {missing_section_keys}. Cannot import'
         )
+    get_template_id(export_dict)
 
     easydmp_dict = export_dict['easydmp']
     field_keys = set(('version', 'origin'))
@@ -437,6 +595,42 @@ def clean_serialized_template_export(export_dict):
     _check_missing_input_types(template_dict)
     _check_missing_rdadcs_keys(template_dict)
     _check_missing_eestore_types_and_sources(eestore_mounts)
+
+
+def connect_template_import_to_existing_template(template, export_dict, origin='', via=DEFAULT_VIA):
+    clean_serialized_template_export(export_dict)
+    stored_origin = get_stored_template_origin(export_dict)
+    chosen_origin = origin or stored_origin or get_origin(origin)
+    original_pk = export_dict['template'].pop('id')
+    cloned_from = export_dict['template'].get('cloned_from', None)
+    published = export_dict['template'].pop('published', None)
+
+    empty_mapping = {
+        'sections': {},
+        'questions': {},
+        'explicit_branches': {},
+        'canned_answers': {},
+        'eestore_mounts': {},
+    }
+    with transaction.atomic():
+        tim = _create_template_import_metadata(template, chosen_origin, original_pk, published, cloned_from, via)
+        mappings = _map_imported_sections(export_dict, tim)
+        if mappings is None:
+            tim.mappings = empty_mapping
+            tim.save()
+            return tim
+        mappings = _map_imported_questions(export_dict, mappings)
+        if mappings is None:
+            tim.mappings = empty_mapping
+            tim.save()
+            return tim
+        mappings = _map_imported_explicit_branches(export_dict, mappings)
+        mappings = _map_imported_canned_answers(export_dict, mappings)
+
+        # Finally, store the mappings. JSON, keys are converts to str
+        tim.mappings = mappings
+        tim.save()
+        return tim
 
 
 def import_serialized_template_export(export_dict, origin='', via=DEFAULT_VIA):

@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from easydmp.dmpt.import_template import (
     deserialize_template_export,
-    import_serialized_template_export,
+    import_or_get_template,
     TemplateImportError
 )
 
@@ -34,9 +34,9 @@ class Command(BaseCommand):
             self.stderr.write(f"{e}, cannot import")
             sys.exit(1)
         try:
-            tim = import_serialized_template_export(serialized_dict, origin=origin)
+            tim = import_or_get_template(serialized_dict, origin=origin, via='CLI')
         except TemplateImportError as e:
             self.stderr.write(str(e))
             sys.exit(1)
         else:
-            self.stdout.write(f'Successfully imported "{tim.template}", origin set to "{origin}"')
+            self.stdout.write(f'Successfully imported "{tim.template}", origin set to "{tim.origin}"')

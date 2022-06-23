@@ -33,6 +33,7 @@ class TemplateSerializer(SelfHyperlinkedModelSerializer):
             'title',
             'import_metadata',
             'abbreviation',
+            'uuid',
             'description',
             'more_info',
             'reveal_questions',

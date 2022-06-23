@@ -8,6 +8,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
+from easydmp.eventlog.utils import log_event
 from easydmp.lib.api.renderers import DotPDFRenderer
 from easydmp.lib.api.renderers import DotDOTRenderer
 from easydmp.lib.api.renderers import DotPNGRenderer
@@ -21,7 +22,7 @@ from easydmp.dmpt.export_template import ExportSerializer, serialize_template_ex
 from easydmp.dmpt.import_template import (
     deserialize_template_export,
     get_stored_template_origin,
-    import_serialized_template_export,
+    import_or_get_template,
     TemplateImportError,
 )
 from easydmp.dmpt.models import Template
@@ -48,8 +49,17 @@ def _import_template(request, export_dict):
     # export_dict is not falsey from this point onward
     try:
         origin = get_stored_template_origin(export_dict)
-        tim = import_serialized_template_export(export_dict, origin=origin, via='API')
-        return tim
+        tim = import_or_get_template(export_dict, origin=origin, via='API')
+        template = tim.template
+        msg = f'Template "{template}" successfully imported.'
+        log_event(
+            request.user,
+            'import',
+            target=template,
+            timestamp=tim.imported,
+            template=msg
+        )
+        return tim.template
     except IntegrityError as e:
         errormsg = e.args
         if e.__cause__.__class__.__name__ == 'UniqueViolation':
@@ -81,8 +91,7 @@ class TemplateViewSet(AnonReadOnlyModelViewSet):
     @action(detail=False, methods=['post'], serializer_class=ExportSerializer, parser_classes=[parsers.JSONParser], url_path='import', url_name='template-import-json')
     def import_via_json_post(self, request):
         export_dict = request.data
-        tim = _import_template(request, export_dict)
-        template = tim.template
+        template = _import_template(request, export_dict)
         serializer = serializers.TemplateSerializer(
             template,
             context={'request': request}
@@ -99,8 +108,7 @@ class TemplateViewSet(AnonReadOnlyModelViewSet):
         data = url_serializer.data
         url = data['url']
         export_dict = _get_template_export_from_url(url)
-        tim = _import_template(request, export_dict)
-        template = tim.template
+        template = _import_template(request, export_dict)
         serializer = serializers.TemplateSerializer(
             template,
             context={'request': request}
