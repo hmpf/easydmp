@@ -31,9 +31,9 @@ class RDADCSImportError(PlanImportError):
     pass
 
 
-class ImportRDA10:
-    """Initialize then run instance.import_rdadcs()"""
+class ImportRDA11:
 
+    """Initialize then run instance.import_rdadcs()"""
     OBJECT_PATHS = set((
         '.dmp.contact',
         '.dmp.contributor[]?',

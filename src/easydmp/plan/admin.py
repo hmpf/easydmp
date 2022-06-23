@@ -16,7 +16,7 @@ from easydmp.lib.admin import PublishedFilter
 from easydmp.lib.admin import ImportedFilter
 from easydmp.lib.admin import AdminConvenienceMixin
 from easydmp.lib.import_export import load_json_from_stream
-from easydmp.rdadcs.lib.importing import ImportRDA10
+from easydmp.rdadcs.lib.import_plan import ImportRDA11
 from easydmp.rdadcs.models import RDADCSImportMetadata
 
 from .import_plan import deserialize_plan_export
@@ -212,7 +212,7 @@ class PlanAdmin(AdminConvenienceMixin, admin.ModelAdmin):
             raise
 
         try:
-            importer = ImportRDA10(data, request.user, via='admin')
+            importer = ImportRDA11(data, request.user, via='admin')
             importer.import_rdadcs()
             return importer.metadata
         except PlanImportError as e:

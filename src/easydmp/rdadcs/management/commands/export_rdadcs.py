@@ -5,7 +5,7 @@ import sys
 from django.core.management.base import BaseCommand, CommandError
 
 from easydmp.plan.models import Plan
-from easydmp.rdadcs.lib.exporting import GenerateRDA10
+from easydmp.rdadcs.lib.export_plan import GenerateRDA11
 
 class Command(BaseCommand):
     help = "Export a plan and all its dependencies to a json dump"
@@ -29,6 +29,6 @@ class Command(BaseCommand):
         except Plan.DoesNotExist:
             self.stderr.write(f'Plan with id {plan_id} does not exist, aborting')
             sys.exit(1)
-        data = GenerateRDA10(plan).json()
+        data = GenerateRDA11(plan).json()
         blob = json.dumps(data, indent=indent)
         filename.write(blob)

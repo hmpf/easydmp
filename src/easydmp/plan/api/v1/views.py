@@ -13,7 +13,7 @@ from easydmp.lib.api.pagination import ToggleablePageNumberPaginationV1
 from easydmp.plan.models import Plan
 from easydmp.plan.models import AnswerSet
 from easydmp.plan.models import Answer
-from easydmp.rdadcs.lib.exporting import GenerateRDA10
+from easydmp.rdadcs.lib.export_plan import GenerateRDA11
 
 
 class SectionValiditySerializer(serializers.ModelSerializer):
@@ -171,5 +171,5 @@ class PlanViewSet(AnonReadOnlyModelViewSet):
     @action(detail=True, methods=['get'], renderer_classes=[JSONRenderer])
     def export_rda(self, request, pk=None, **kwargs):
         plan = self.get_object()
-        rda = GenerateRDA10(plan)
+        rda = GenerateRDA11(plan)
         return Response(rda.get_dmp())

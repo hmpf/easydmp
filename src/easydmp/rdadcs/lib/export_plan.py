@@ -8,7 +8,7 @@ from easydmp.rdadcs.models import RDADCSKey, RDADCSQuestionLink, RDADCSSectionLi
 Unknown = 'Unknown'
 
 
-class GenerateRDA10:
+class GenerateRDA11:
     """
     A minimal WIP RDA DMP CS serializer
     """

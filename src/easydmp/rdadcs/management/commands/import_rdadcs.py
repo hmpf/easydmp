@@ -4,8 +4,8 @@ import logging
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 
-from easydmp.rdadcs.lib.importing import ImportRDA10
-from easydmp.rdadcs.lib.importing import RDADCSImportError
+from easydmp.rdadcs.lib.import_plan import ImportRDA11
+from easydmp.rdadcs.lib.import_plan import RDADCSImportError
 
 
 class Command(BaseCommand):
@@ -30,7 +30,7 @@ class Command(BaseCommand):
             return
         with open(filename, 'r') as FILE:
             jsonblob = json.load(FILE)
-        importer = ImportRDA10(jsonblob, owner, via='CLI')
+        importer = ImportRDA11(jsonblob, owner, via='CLI')
         try:
             importer.import_rdadcs()
         except RDADCSImportError as e:
