@@ -66,8 +66,9 @@ def dump_obj_to_searchable_string(obj):
 
 def strip_model_dict(model_dict, *excluded_fields):
     always_exclude_fields = ['id', 'pk', 'cloned_from', 'cloned_when']
+    new_dict = model_dict.copy()
     for field in always_exclude_fields:
-        model_dict.pop(field, None)
+        new_dict.pop(field, None)
     for field in excluded_fields:
-        model_dict.pop(field, None)
-    return model_dict
+        new_dict.pop(field, None)
+    return new_dict

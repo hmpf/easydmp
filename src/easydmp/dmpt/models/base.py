@@ -626,17 +626,20 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
     def __str__(self):
         return '{}: {}'.format(self.template.title, self.full_title())
 
-    def save(self, *args, **kwargs):
-        with transaction.atomic():
-            # Toggle the existence of an optional question according to self.optional
-            do_section_question = Question.objects.filter(section=self, position=0, input_type_id='bool')
-            if self.optional:
-                if not do_section_question:
-                    self.branching = True
+    def save(self, do_section_question=True, *args, **kwargs):
+        if do_section_question:
+            with transaction.atomic():
+                # Toggle the existence of an optional question according to self.optional
+                section_question = Question.objects.filter(section=self, position=0, input_type_id='bool')
+                if self.optional:
+                    if not section_question:
+                        self.branching = True
+                        super().save(*args, **kwargs)
+                        self._make_do_section_question()
+                elif section_question:
+                    section_question.delete()
                     super().save(*args, **kwargs)
-                    self._make_do_section_question()
-            elif do_section_question:
-                do_section_question.delete()
+        else:
             super().save(*args, **kwargs)
 
     def natural_key(self):

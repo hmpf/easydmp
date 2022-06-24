@@ -1,3 +1,5 @@
+from collections import defaultdict
+from operator import itemgetter
 import warnings
 
 from django.conf import settings
@@ -215,22 +217,55 @@ def _create_imported_sections(export_dict, tim):
         warnings.warn(TemplateImportWarning('This template lacks sections and questions'))
         return
     mappings = {'sections': {}}
+
+    # build maps to create Sections in the correct order
     super_section_map = {}
+    order_map = defaultdict(list)
+    orig_identifier_question_map = {}
     for section_dict in section_list:
-        orig_id = section_dict.pop('id')
-        section_dict.pop('template')
-        orig_super_section_id = section_dict.pop('super_section')
-        section = Section.objects.create(
-            template=tim.template,
-            **strip_model_dict(section_dict)
-        )
+        orig_id = section_dict['id']
+
+        orig_super_section_id = section_dict['super_section']
+        super_section_map[orig_id] = orig_super_section_id
+
+        orig_identifier_question_id = section_dict.pop('identifier_question')
+        orig_identifier_question_map[orig_id] = orig_identifier_question_id
+
+        depth = section_dict['section_depth']
+        order_map[int(depth)].append(section_dict)
+
+    # order by super_section and position
+    for depth, section_dicts in order_map.items():
+        section_dicts = sorted(section_dicts, key=itemgetter('super_section', 'position'))
+        order_map[depth] = section_dicts
+
+    # create sections in the correct order
+    identifier_question_set = set()
+    section_map = {}
+    for depth in sorted(order_map):
+        section_list = []
+        for section_dict in order_map[depth]:
+            section_dict.pop('template')
+            stripped_dict = strip_model_dict(section_dict, 'super_section')
+            section = Section(template=tim.template, **stripped_dict)
+            section_list.append(section)
+        new_section_list = Section.objects.bulk_create(section_list)
+        for i, section in enumerate(new_section_list):
+            orig_id = order_map[depth][i]['id']
+            orig_identifier_question_id = orig_identifier_question_map[orig_id]
+            identifier_question_set.add(orig_identifier_question_id)
+            section_map[orig_id] = section
+    mappings['identifier_questions'] = identifier_question_set
+
+    # set super_section and section mappings
+    for orig_id, section in section_map.items():
+        orig_super_section_id = super_section_map[orig_id]
+        if orig_super_section_id:  # top level sections lack a super_section
+            new_super_section = section_map[orig_super_section_id]
+            section.super_section = new_super_section
+            section.save(do_section_question=False)
         mappings['sections'][orig_id] = section.id
-        if orig_super_section_id:
-            super_section_map[section.id] = orig_super_section_id
-    for section in Section.objects.filter(id__in=super_section_map.keys()):
-        orig_super_section_id = super_section_map[section.id]
-        section.super_section_id = mappings['sections'][orig_super_section_id]
-        section.save()
+
     return mappings
 
 
@@ -241,16 +276,31 @@ def _create_imported_questions(export_dict, mappings):
         warnings.warn(TemplateImportWarning('This template lacks questions'))
         return
     mappings['questions'] = dict()
+    orig_order = defaultdict(list)
+    questions_by_section = defaultdict(list)
+
+    # Order per section
     for question_dict in question_list:
         orig_id = question_dict.pop('id')
         orig_section_id = question_dict.pop('section')
-        input_type_id = question_dict.pop('input_type')
-        question = Question.objects.create(
+        new_section_id = mappings['sections'][orig_section_id]
+        question = Question(
             section_id=mappings['sections'][orig_section_id],
-            input_type_id=input_type_id,
+            input_type_id=question_dict.pop('input_type'),
             **strip_model_dict(question_dict)
         )
-        mappings['questions'][orig_id] = question.id
+        orig_order[orig_section_id].append(orig_id)
+        questions_by_section[orig_section_id].append(question)
+    for orig_section_id, questions in questions_by_section.items():
+        new_questions = Question.objects.bulk_create(questions)
+        for i, question in enumerate(new_questions):
+            orig_id = orig_order[orig_section_id][i]
+            mappings['questions'][orig_id] = question.id
+            identifies_section = orig_id in mappings['identifier_questions']
+            if identifies_section:
+                question.section.identifier_question = question
+                question.section.save()
+    del mappings['identifier_questions']
     return mappings
 
 
