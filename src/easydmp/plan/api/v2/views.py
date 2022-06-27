@@ -29,6 +29,7 @@ from easydmp.plan.models import AnswerSet
 from easydmp.plan.models import Answer
 from easydmp.plan.views import generate_pretty_exported_plan
 from easydmp.rdadcs.lib.export_plan import GenerateRDA11
+from easydmp.rdadcs.lib.import_plan import ImportRDA11
 from . import serializers
 
 
@@ -36,8 +37,12 @@ def _get_plan_export_from_url(url):
     return get_export_from_url(url, deserialize_plan_export)
 
 
-def _import_plan(request, export_dict):
-    "Import safely in an API"
+def _import_easydmp_plan(request, export_dict):
+    return _import_plan(request, export_dict, import_serialized_plan_export)
+
+
+def _import_plan(request, export_dict, importer):
+    "Import plans safely in an API"
     if not export_dict:
         errormsg = {
             'detail': 'No export data',
@@ -46,7 +51,7 @@ def _import_plan(request, export_dict):
         raise ValidationError(**errormsg)
     # export_dict is not falsey from this point onward
     try:
-        pim = import_serialized_plan_export(export_dict, request.user, via='API')
+        pim = importer(export_dict, request.user, via='API')
         return pim
     except IntegrityError as e:
         errormsg = e.args
@@ -62,6 +67,14 @@ def _import_plan(request, export_dict):
             'code': 'import_error',
         }
         raise ValidationError(**errormsg)
+
+
+def _import_rdadcs_plan(request, export_dict):
+    def wrapper(export_dict, user, via):
+        importer = ImportRDA11(export_dict, user, via)
+        return importer.import_rdadcs()
+
+    return _import_plan(request, export_dict, wrapper)
 
 
 class PlanFilter(FilterSet):
@@ -102,8 +115,14 @@ class PlanViewSet(AnonReadOnlyModelViewSet):
             qs = qs | Plan.objects.filter(accesses__in=pas)
         return qs.distinct()
 
-    @action(detail=True, methods=['get'], renderer_classes=[JSONRenderer])
+    @extend_schema(responses=None)
+    @action(detail=True, methods=['get'], url_path="export/rda", renderer_classes=[JSONRenderer])
     def export_rda(self, request, pk=None, **kwargs):
+        """Exports a plan in RDA DCS format
+
+        This is a JSON file with a key "dmp", the object pointed to by that is
+        the RDA DCS plan. Any other valid JSON, anywhere is, OK according to
+        the spec."""
         plan = self.get_object()
         rda = GenerateRDA11(plan)
         return Response(rda.json())
@@ -133,7 +152,36 @@ class PlanViewSet(AnonReadOnlyModelViewSet):
     @action(detail=False, methods=['post'], serializer_class=SingleVersionExportSerializer, parser_classes=[parsers.JSONParser], url_path='import', url_name='plan-import-json')
     def import_via_json_post(self, request):
         export_dict = request.data
-        pim = _import_plan(request, export_dict)
+        pim = _import_easydmp_plan(request, export_dict)
+        plan = pim.plan
+        serializer = serializers.HeavyPlanSerializer(
+            plan,
+            context={'request': request}
+        )
+        headers = {'Location': reverse('v2:plan-detail', kwargs={'pk': plan.pk}, request=request)}
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @staticmethod
+    def _get_url_from_serializer(data):
+        url_serializer = URLSerializer(data=data)
+        url_serializer.is_valid(raise_exception=True)
+        # url_serializer is valid from this point onward
+        data = url_serializer.data
+        url = data['url']
+        return url
+
+    def _import_easydmp_plan(self, request, export_dict):
+        pim = _import_easydmp_plan(request, export_dict)
+        plan = pim.plan
+        serializer = serializers.HeavyPlanSerializer(
+            plan,
+            context={'request': request}
+        )
+        headers = {'Location': reverse('v2:plan-detail', kwargs={'pk': plan.pk}, request=request)}
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def _import_rdadcs_plan(self, request, export_dict):
+        pim = _import_rdadcs_plan(request, export_dict)
         plan = pim.plan
         serializer = serializers.HeavyPlanSerializer(
             plan,
@@ -145,20 +193,29 @@ class PlanViewSet(AnonReadOnlyModelViewSet):
     @extend_schema(request=URLSerializer, responses=serializers.HeavyPlanSerializer)
     @action(detail=False, methods=['post'], serializer_class=URLSerializer, parser_classes=[parsers.JSONParser], url_path='import/url', url_name='plan-import-url')
     def import_via_url(self, request):
-        url_serializer = URLSerializer(data=request.data)
-        url_serializer.is_valid(raise_exception=True)
-        # url_serializer is valid from this point onward
-        data = url_serializer.data
-        url = data['url']
+        url = self._get_url_from_serializer(request.data)
         export_dict = _get_plan_export_from_url(url)
-        pim = _import_plan(request, export_dict)
-        plan = pim.plan
-        serializer = serializers.HeavyPlanSerializer(
-            plan,
-            context={'request': request}
-        )
-        headers = {'Location': reverse('v2:plan-detail', kwargs={'pk': plan.pk}, request=request)}
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return self._import_easydmp_plan(request, export_dict)
+
+    @extend_schema(request=None, responses=serializers.HeavyPlanSerializer)
+    @action(detail=False, methods=['post'], serializer_class=SingleVersionExportSerializer, parser_classes=[parsers.JSONParser], url_path='import/rda', url_name='plan-import-rda-json')
+    def import_rdadcs_via_json_post(self, request):
+        """Takes as input *any* JSON!
+
+        It will error out if the JSON does not contain a valid RDA DMP CS part.
+
+        The RDA DMP CS only cares that the JSON contains a top-level key "dmp"
+        pointing to a valid dmp object. Any other keys, or unknown keys in the
+        "dmp"-object, are ignored."""
+        export_dict = request.data
+        return self._import_rdadcs_plan(request, export_dict)
+
+    @extend_schema(request=URLSerializer, responses=serializers.HeavyPlanSerializer)
+    @action(detail=False, methods=['post'], serializer_class=URLSerializer, parser_classes=[parsers.JSONParser], url_path='import/rda/url', url_name='plan-import-rda-url')
+    def import_rdadcs_via_url(self, request):
+        url = self._get_url_from_serializer(request.data)
+        export_dict = _get_plan_export_from_url(url)
+        return self._import_rdadcs_plan(request, export_dict)
 
 
 class AnswerSetFilter(FilterSet):
