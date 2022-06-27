@@ -59,7 +59,7 @@ class MultistringQuestion(NoCheckMixin, SaveMixin, Question):
         if self.optional and not choices:
             return True
         for choice in choices:
-            if choice.get('string', None):
+            if choice and isinstance(choice, str):
                 return True
         return False
 
