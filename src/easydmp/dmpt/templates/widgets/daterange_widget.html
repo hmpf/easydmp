@@ -1,2 +1,2 @@
-{% with widget.subwidgets.0 as widget %}<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>From</label> {% include widget.template_name %}{% endwith %}
-{% with widget.subwidgets.1 as widget %}<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>To</label> {% include widget.template_name %}{% endwith %}
+{% with widget.subwidgets.0 as widget %}<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>From{% if not value.question.optional %}<span class="asteriskField">*</span>{% endif %}</label> {% include widget.template_name %}{% endwith %}
+{% with widget.subwidgets.1 as widget %}<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>To{% if not value.question.optional %}<span class="asteriskField">*</span>{% endif %}</label> {% include widget.template_name %}{% endwith %}

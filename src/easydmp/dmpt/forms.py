@@ -214,7 +214,7 @@ class DateRangeForm(AbstractNodeForm):
             help_text=self.help_text,
             required=not self.question.optional,
         )
-        self.fields['choice'].widget.attrs.update({'class': self.input_class})
+        self.fields['choice'].widget.attrs.update({'type': 'date', 'class': self.input_class})
 
     def serialize(self):
         if self.is_bound:
@@ -235,9 +235,12 @@ class DateRangeForm(AbstractNodeForm):
         return {}
 
     def pprint(self):
-        if self.is_valid() and not self.question.optional:
+        if self.is_valid():
             choice = self.serialize()['choice']
-            return '{}–{}'.format(choice['start'], choice['end'])
+            try:
+                return f"{choice['start']}–{choice['end']}"
+            except KeyError:
+                pass
         return 'Not set'
 
     def serialize_choice(self):

@@ -33,7 +33,8 @@ class DateRangeField(forms.MultiValueField):
 
     def __init__(self, *args, **kwargs):
         fields = [
-            self.base_field(), self.base_field()
+            self.base_field(required=True),
+            self.base_field(required=True),
         ]
         super().__init__(fields, *args, **kwargs)
 

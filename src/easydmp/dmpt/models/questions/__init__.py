@@ -154,7 +154,8 @@ class DateRangeQuestion(NoCheckMixin, SaveMixin, Question):
         return framing_text.format(**daterange)
 
     def pprint(self, value):
-        return self.framing_text.format(**value['choice'])
+        framing_text = self.framing_text or self.DEFAULT_FRAMING_TEXT
+        return framing_text.format(**value['choice'])
 
     def validate_choice(self, data):
         choice = data.get('choice', {})
