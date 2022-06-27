@@ -593,6 +593,7 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
 
         self.template = self.plan.template
         self.answerset = super().get_object()
+        self.object = self.answerset
         self.question_pk = self.kwargs.get('question')
         self.question = self._get_question()
         self.answer = AnswerHelper(self.question, self.answerset)
