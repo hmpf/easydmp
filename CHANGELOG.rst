@@ -12,6 +12,23 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.22.2
+------
+
+The myriad fixes release
+
+Bugfixes:
+
+* Validation of multistrings, dates and datetimes was fixed
+* When answering questions one by one it was possible to end up in a situation
+  where self.object (the answerset) wasn't available, which lead to a 500
+  Server Error
+* The UX for daterange questions was improved: it was missing from the plan
+  summary, it was unclear that both dates are needed etc.
+* Import of templates with optional sections and deep structure was broken,
+  which wasn't discovered until the RDA DCS template was sufficiently finished.
+
+
 1.22.1
 ------
 
