@@ -7,3 +7,4 @@ How-tos
     howtos/installation
     howtos/creating_templates
     howtos/api
+    howtos/rdadcs
