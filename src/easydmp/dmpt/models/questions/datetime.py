@@ -34,7 +34,14 @@ class DateTimeQuestion(PrimitiveTypeMixin, SaveMixin, Question):
         answer = data.get('choice', NotSet)
         if self.optional and answer is NotSet:
             return True
-        return isinstance(answer, datetime)
+        try:
+            # python's vanilla fromisoformat is not up to spec
+            if answer[-1] in ('z', 'Z'):
+                answer = answer[:-1] + '+00:00'
+            datetime.fromisoformat(answer)
+            return True
+        except ValueError:
+            return False
 
 
 class DateTimeForm(AbstractNodeForm):
