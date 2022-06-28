@@ -35,3 +35,8 @@ text in the generated HTML makes sense. It is the responsibilty of
 the researchers making plans to assure that any text written in
 free text fields, like "Notes", makes sense together with the
 canned answers.
+
+.. toctree::
+
+    overview/templates
+    overview/api

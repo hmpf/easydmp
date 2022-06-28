@@ -1,6 +1,13 @@
-========
-Overview
-========
+=========
+Templates
+=========
+
+A template is a collection of questions, and questions are organized into
+sections. When filling in plan a form is generated from the section and
+questions according to the template of that plan.
+
+The structure of a template
+===========================
 
 A ``Template`` consists of at least one ``Section``. If there is only a single
 section, it does not need a ``title``. If there are multiple sections, each

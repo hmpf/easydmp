@@ -19,11 +19,9 @@ See the :doc:`overview <overview>`.
    :caption: Contents:
 
    overview
-   installation
-   templates
-   api
+   howtos
    development
-   terminology
+   reference
 
 
 
