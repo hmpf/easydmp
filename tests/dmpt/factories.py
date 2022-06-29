@@ -122,12 +122,12 @@ class BooleanQuestionFactory(AbstractQuestionFactory):
     input_type_id = 'bool'
 
     @factory.post_generation
-    def create_canned_answers(obj, create, extracted, **kwargs):
+    def create_canned_answers(obj, create, extracted):
         # Do not generate ca's
         if extracted is False:
             return
-        CannedAnswerFactory(question=obj, choice='Yes', **kwargs)
-        CannedAnswerFactory(question=obj, choice='No', **kwargs)
+        for choice in ('Yes', 'No'):
+            CannedAnswerFactory(question=obj, choice=choice, canned_text=choice)
 
 
 class ChoiceQuestionFactory(AbstractQuestionFactory):
