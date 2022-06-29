@@ -88,9 +88,17 @@ class RDADCSKey(models.Model):
         return slugify(f'1-{path}')
 
 
+class RDADCSQuestionLinkQuerySet(models.QuerySet):
+
+    def per_template(self, template):
+        return self.filter(question__section__template=template)
+
+
 class RDADCSQuestionLink(models.Model):
     key = models.ForeignKey(RDADCSKey, models.CASCADE)
     question = models.OneToOneField('dmpt.question', models.CASCADE)
+
+    objects = RDADCSQuestionLinkQuerySet.as_manager()
 
     class Meta:
         unique_together = ('key', 'question')
@@ -99,9 +107,17 @@ class RDADCSQuestionLink(models.Model):
         return f'{self.key.path} -> {self.question_id}'
 
 
+class RDADCSSectionLinkQuerySet(models.QuerySet):
+
+    def per_template(self, template):
+        return self.filter(section__template=template)
+
+
 class RDADCSSectionLink(models.Model):
     key = models.ForeignKey(RDADCSKey, models.CASCADE)
     section = models.OneToOneField('dmpt.section', models.CASCADE)
+
+    objects = RDADCSSectionLinkQuerySet.as_manager()
 
     class Meta:
         unique_together = ('key', 'section')

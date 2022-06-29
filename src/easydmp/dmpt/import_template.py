@@ -13,6 +13,7 @@ from easydmp.dmpt.models import (Template, CannedAnswer, Question, Section,
                                  )
 from easydmp.lib.import_export import get_origin, DataImportError
 from easydmp.eestore.models import EEStoreSource, EEStoreType, EEStoreMount
+from easydmp.rdadcs.models import RDADCSKey, RDADCSSectionLink, RDADCSQuestionLink
 
 
 __all__ = [
@@ -49,6 +50,23 @@ def _check_missing_input_types(template_dict):
         raise TemplateImportError(
             'The imported template is incompatible with this EasyDMP installation: '
             f'The following input types are missing: {missing_input_types}'
+        )
+
+
+def _check_missing_rdadcs_keys(template_dict):
+    rdadcs_keys_needed = set()
+    try:
+        rdadcs_keys_needed = set(template_dict['rdadcs_keys_in_use'])
+    except KeyError:
+        msg = 'The template export lacks the "rdadcs_keys_in_use" key'
+        warnings.warn(TemplateImportWarning(msg))
+        return
+    rdadcs_keys = set(RDADCSKey.objects.values_list('path', flat=True))
+    missing_rdadcs_keys = rdadcs_keys_needed - rdadcs_keys
+    if missing_rdadcs_keys:
+        raise TemplateImportError(
+            'The imported template is incompatible with this EasyDMP installation: '
+            f'The following RDADCS keys are missing: {missing_rdadcs_keys}'
         )
 
 
@@ -167,10 +185,9 @@ def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
     published = template_dict.pop('published', None)
 
     # Create template
-    imported_template = Template.objects.create(
-        title=title,
-        **strip_model_dict(template_dict, 'input_types_in_use')
-    )
+    stripped_dict = strip_model_dict(template_dict, 'input_types_in_use',
+                                    'rdadcs_keys_in_use')
+    imported_template = Template.objects.create(title=title, **stripped_dict)
     try:
         tim = TemplateImportMetadata.objects.create(
             template=imported_template,
@@ -222,6 +239,7 @@ def _create_imported_sections(export_dict, tim):
     super_section_map = {}
     order_map = defaultdict(list)
     orig_identifier_question_map = {}
+    rdadcs_paths = {}
     for section_dict in section_list:
         orig_id = section_dict['id']
 
@@ -231,8 +249,11 @@ def _create_imported_sections(export_dict, tim):
         orig_identifier_question_id = section_dict.pop('identifier_question')
         orig_identifier_question_map[orig_id] = orig_identifier_question_id
 
+        rdadcs_paths[orig_id] = section_dict.pop('rdadcs_path', None)
+
         depth = section_dict['section_depth']
         order_map[int(depth)].append(section_dict)
+    mappings['rdadcs_sections'] = rdadcs_paths
 
     # order by super_section and position
     for depth, section_dicts in order_map.items():
@@ -279,9 +300,11 @@ def _create_imported_questions(export_dict, mappings):
     orig_order = defaultdict(list)
     questions_by_section = defaultdict(list)
 
+    rdadcs_paths = {}
     # Order per section
     for question_dict in question_list:
         orig_id = question_dict.pop('id')
+        rdadcs_paths[orig_id] = question_dict.pop('rdadcs_path', None)
         orig_section_id = question_dict.pop('section')
         new_section_id = mappings['sections'][orig_section_id]
         question = Question(
@@ -291,6 +314,7 @@ def _create_imported_questions(export_dict, mappings):
         )
         orig_order[orig_section_id].append(orig_id)
         questions_by_section[orig_section_id].append(question)
+    mappings['rdadcs_questions'] = rdadcs_paths
     for orig_section_id, questions in questions_by_section.items():
         new_questions = Question.objects.bulk_create(questions)
         for i, question in enumerate(new_questions):
@@ -302,6 +326,36 @@ def _create_imported_questions(export_dict, mappings):
                 question.section.save()
     del mappings['identifier_questions']
     return mappings
+
+
+@transaction.atomic
+def _create_rdadcs_links(mappings):
+    keys = RDADCSKey.objects.all()
+    keymap = {key.path: key.slug for key in keys}
+
+    section_paths = mappings.pop('rdadcs_sections', {})
+    if section_paths:
+        section_key_list = []
+        for pk, path in section_paths.items():
+            if not path: continue
+            key = keymap[path]
+            section_id = mappings['sections'][pk]
+            section_key_list.append(
+                RDADCSSectionLink(key_id=key, section_id=section_id)
+            )
+        RDADCSSectionLink.objects.bulk_create(section_key_list)
+
+    question_paths = mappings.pop('rdadcs_questions', {})
+    if question_paths:
+        question_key_list = []
+        for pk, path in question_paths.items():
+            if not path: continue
+            key = keymap[path]
+            question_id = mappings['questions'][pk]
+            question_key_list.append(
+                RDADCSQuestionLink(key_id=key, question_id=question_id)
+            )
+        RDADCSQuestionLink.objects.bulk_create(question_key_list)
 
 
 @transaction.atomic
@@ -381,6 +435,7 @@ def clean_serialized_template_export(export_dict):
 
     # Check compatibility
     _check_missing_input_types(template_dict)
+    _check_missing_rdadcs_keys(template_dict)
     _check_missing_eestore_types_and_sources(eestore_mounts)
 
 
@@ -412,6 +467,7 @@ def import_serialized_template_export(export_dict, origin='', via=DEFAULT_VIA):
         mappings = _create_imported_explicit_branches(export_dict, mappings)
         mappings = _create_imported_canned_answers(export_dict, mappings)
         _create_imported_eestore_mounts(export_dict, mappings)
+        _create_rdadcs_links(mappings)
 
         # Finally, store the mappings. JSON, keys are converts to str
         tim.mappings = mappings

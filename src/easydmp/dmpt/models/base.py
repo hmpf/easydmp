@@ -135,7 +135,6 @@ def create_template_export_obj(template):
     obj.explicit_branches = ExplicitBranch.objects.filter(current_question__in=questions)
     obj.canned_answers = CannedAnswer.objects.filter(question__in=questions)
     obj.eestore_mounts = EEStoreMount.objects.filter(question__in=questions)
-
     return obj
 
 

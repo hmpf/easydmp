@@ -15,8 +15,19 @@ __all__ = [
 ]
 
 
-def _get_field_names_as_list(model_class):
-    return [f.name for f in model_class._meta.fields]
+def _get_field_names_as_list(model_class, *extra_fields):
+    model_fields = [f.name for f in model_class._meta.fields]
+    if extra_fields:
+        return model_fields + list(extra_fields)
+    return model_fields
+
+
+def rdadcs_keys_in_use(template):
+    rdadcs_question_links = template.questions.values_list('rdadcsquestionlink__key__path', flat=True)
+    rdadcs_section_links = template.sections.values_list('rdadcssectionlink__key__path', flat=True)
+    used = set(rdadcs_section_links) | set(rdadcs_question_links)
+    used.remove(None)
+    return sorted(used)
 
 
 class EasyDMPSerializer(serializers.Serializer):
@@ -42,24 +53,39 @@ class TemplateExportSerializer(serializers.ModelSerializer):
         child=serializers.SlugField(allow_blank=False),
         allow_empty=True,
     )
+    rdadcs_keys_in_use = serializers.ListField(
+        required=False,
+        child=serializers.CharField(allow_blank=False),
+        allow_empty=True,
+    )
 
     class Meta:
         model = Template
-        fields = _get_field_names_as_list(model) + ['input_types_in_use']
+        fields = _get_field_names_as_list(model) + ['input_types_in_use', 'rdadcs_keys_in_use']
         read_only_fields = fields
+
+    def validate(self, attrs):
+        # rdadcs is optional
+        if 'rdadcs_keys_in_use' not in attrs:
+            attrs['rdadcs_keys_in_use'] = []
+        return attrs
 
 
 class SectionExportSerializer(serializers.ModelSerializer):
+    rdadcs_path = serializers.CharField(source='rdadcssectionlink.key.path', allow_null=True)
+
     class Meta:
         model = Section
-        fields = _get_field_names_as_list(model)
+        fields = _get_field_names_as_list(model, 'rdadcs_path')
         read_only_fields = fields
 
 
 class QuestionExportSerializer(serializers.ModelSerializer):
+    rdadcs_path = serializers.CharField(source='rdadcsquestionlink.key.path', allow_null=True)
+
     class Meta:
         model = Question
-        fields = _get_field_names_as_list(model)
+        fields = _get_field_names_as_list(model, 'rdadcs_path')
         read_only_fields = fields
 
 
@@ -103,7 +129,20 @@ class ExportSerializer(serializers.Serializer):
     eestore_mounts = EEStoreMountExportSerializer(many=True)
 
 
-def serialize_template_export(template_pk):
-    template = Template.objects.get(pk=template_pk)
+def create_template_export_obj(template):
+    template.rdadcs_keys_in_use = rdadcs_keys_in_use(template)
     export_obj = template.create_export_object()
+    return export_obj
+
+
+def serialize_template_export(template_pk):
+    template = (
+        Template.objects
+        .prefetch_related(
+            'sections__rdadcssectionlink__key',
+            'sections__questions__rdadcsquestionlink__key',
+        )
+        .get(pk=template_pk)
+    )
+    export_obj = create_template_export_obj(template)
     return ExportSerializer(export_obj)
