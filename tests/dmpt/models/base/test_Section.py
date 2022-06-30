@@ -2,9 +2,41 @@ from django import test
 
 from easydmp.dmpt.models import ExplicitBranch
 from easydmp.dmpt.positioning import Move
+from easydmp.dmpt.models import Section
 
 from tests.dmpt.factories import (TemplateFactory, SectionFactory,
                                   ReasonQuestionFactory)
+
+
+class TestSectionSaving(test.TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.template = TemplateFactory()
+
+    def test_saving_required_section(self):
+        section = Section(template=self.template, position=1, optional=False)
+        section.save()
+        self.assertEqual(Section.objects.count(), 1)
+        self.assertEqual(section.questions.count(), 0)
+
+    def test_saving_optional_section(self):
+        section = Section(template=self.template, position=1, optional=True)
+        section.save()
+        self.assertEqual(Section.objects.count(), 1)
+        self.assertEqual(section.questions.count(), 1)
+
+    def test_saving_optional_section_with_do_section_question_off(self):
+        section = Section(template=self.template, position=1, optional=True)
+        section.save(do_section_question=False)
+        self.assertEqual(Section.objects.count(), 1)
+        self.assertEqual(section.questions.count(), 0)
+
+    def test_saving_required_section_with_do_section_question_off(self):
+        section = Section(template=self.template, position=1, optional=False)
+        section.save(do_section_question=False)
+        self.assertEqual(Section.objects.count(), 1)
+        self.assertEqual(section.questions.count(), 0)
 
 
 class TestOrderingSection(test.TestCase):
