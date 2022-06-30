@@ -12,6 +12,22 @@ Planned
 * Repeated sections
 * Better support for exporting to RDA DMP Common Standard
 
+1.22.3
+------
+
+The fix to the fix release
+
+Bugfix:
+
+* There was a bug in the fix of template import with optional sections/deep
+  structure
+
+Paperwork:
+
+* Reorganize the documentation as per http://diataxis.fr into Howtos, Overview
+  (explanation), Reference, except for the docs for developers.
+  (There are no tutorials yet.)
+
 1.22.2
 ------
 
