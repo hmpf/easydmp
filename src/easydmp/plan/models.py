@@ -19,7 +19,7 @@ from django.utils.timezone import now as tznow
 
 from easydmp.constants import NotSet
 from easydmp.dmpt.forms import make_form, NotesForm
-from easydmp.dmpt.models.base import create_template_export_obj
+from easydmp.dmpt.export_template import create_template_export_obj
 from easydmp.dmpt.utils import DeletionMixin, make_qid
 from easydmp.eventlog.utils import log_event
 from easydmp.lib import dump_obj_to_searchable_string

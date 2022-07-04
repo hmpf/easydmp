@@ -135,7 +135,6 @@ def create_template_export_obj(template):
     obj.explicit_branches = ExplicitBranch.objects.filter(current_question__in=questions)
     obj.canned_answers = CannedAnswer.objects.filter(question__in=questions)
     obj.eestore_mounts = EEStoreMount.objects.filter(question__in=questions)
-
     return obj
 
 
@@ -190,6 +189,7 @@ class TemplateQuerySet(models.QuerySet):
 class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
     title = models.CharField(max_length=255)
     abbreviation = models.CharField(max_length=8, blank=True)
+    uuid = models.UUIDField(unique=True, default=uuid4, editable=False, help_text='Created on first save')
     description = models.TextField(blank=True)
     more_info = models.URLField(blank=True)
     domain_specific = models.BooleanField(default=False)

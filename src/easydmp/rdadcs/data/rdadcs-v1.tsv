@@ -1,0 +1,93 @@
+.dmp
+.dmp.contact
+.dmp.contact.contact_id	typedidentifier
+.dmp.contact.contact_id.identifier	shortfreetext
+.dmp.contact.contact_id.type	choice
+.dmp.contact.mbox	email
+.dmp.contact.name	shortfreetext
+.dmp.contributor[]?
+.dmp.contributor[]?.contributor_id	typedidentifier
+.dmp.contributor[]?.contributor_id.identifier	shortfreetext
+.dmp.contributor[]?.contributor_id.type	choice
+.dmp.contributor[]?.mbox	email
+.dmp.contributor[]?.name	shortfreetext
+.dmp.contributor[]?.role[]	multistring
+.dmp.cost[]?
+.dmp.cost[]?.currency_code	externalchoice
+.dmp.cost[]?.description	reason
+.dmp.cost[]?.title	shortfreetext
+.dmp.cost[]?.value	positiveinteger
+.dmp.created	datetime
+.dmp.dataset[]
+.dmp.dataset[].data_quality_assurance[]?	multistring
+.dmp.dataset[].dataset_id	typedidentifier
+.dmp.dataset[].dataset_id.identifier	shortfreetext
+.dmp.dataset[].dataset_id.type	choice
+.dmp.dataset[].description?	reason
+.dmp.dataset[].distribution[]?
+.dmp.dataset[].distribution[]?.access_url?	iri
+.dmp.dataset[].distribution[]?.available_until?	date
+.dmp.dataset[].distribution[]?.byte_size?	positiveinteger
+.dmp.dataset[].distribution[]?.data_access	choice
+.dmp.dataset[].distribution[]?.description?	reason
+.dmp.dataset[].distribution[]?.download_url?	iri
+.dmp.dataset[].distribution[]?.format[]?	multistring
+.dmp.dataset[].distribution[]?.host?
+.dmp.dataset[].distribution[]?.host?.availability?	shortfreetext
+.dmp.dataset[].distribution[]?.host?.backup_frequency?	shortfreetext
+.dmp.dataset[].distribution[]?.host?.backup_type?	shortfreetext
+.dmp.dataset[].distribution[]?.host?.certified_with?	choice
+.dmp.dataset[].distribution[]?.host?.description?	reason
+.dmp.dataset[].distribution[]?.host?.geo_location?	externalchoice
+.dmp.dataset[].distribution[]?.host?.pid_system[]?	choice
+.dmp.dataset[].distribution[]?.host?.storage_type?	shortfreetext
+.dmp.dataset[].distribution[]?.host?.support_versioning?	trilean
+.dmp.dataset[].distribution[]?.host?.title	shortfreetext
+.dmp.dataset[].distribution[]?.host?.url	iri
+.dmp.dataset[].distribution[]?.license[]?
+.dmp.dataset[].distribution[]?.license[]?.license_ref	iri
+.dmp.dataset[].distribution[]?.license[]?.start_date	date
+.dmp.dataset[].distribution[]?.title	shortfreetext
+.dmp.dataset[].issued?	date
+.dmp.dataset[].keyword[]?	multistring
+.dmp.dataset[].language?	externalchoice
+.dmp.dataset[].metadata[]?
+.dmp.dataset[].metadata[]?.description?	reason
+.dmp.dataset[].metadata[]?.language	externalchoice
+.dmp.dataset[].metadata[]?.metadata_standard_id	typedidentifier
+.dmp.dataset[].metadata[]?.metadata_standard_id.identifier	shortfreetext
+.dmp.dataset[].metadata[]?.metadata_standard_id.type	choice
+.dmp.dataset[].personal_data	trilean
+.dmp.dataset[].preservation_statement?	reason
+.dmp.dataset[].security_and_privacy[]?
+.dmp.dataset[].security_and_privacy[]?.description?	reason
+.dmp.dataset[].security_and_privacy[]?.title	shortfreetext
+.dmp.dataset[].sensitive_data	trilean
+.dmp.dataset[].technical_resource[]?
+.dmp.dataset[].technical_resource[]?.description?	reason
+.dmp.dataset[].technical_resource[]?.name	shortfreetext
+.dmp.dataset[].title	shortfreetext
+.dmp.dataset[].type	choice
+.dmp.description?	reason
+.dmp.dmp_id	typedidentifier
+.dmp.dmp_id.identifier	shortfreetext
+.dmp.dmp_id.type	choice
+.dmp.ethical_issues_description?	reason
+.dmp.ethical_issues_exist	trilean
+.dmp.ethical_issues_report?	iri
+.dmp.language	externalchoice
+.dmp.modified	datetime
+.dmp.project[]?
+.dmp.project[]?.description?	reason
+.dmp.project[]?.end?	date
+.dmp.project[]?.funding[]?
+.dmp.project[]?.funding[]?.funder_id	typedidentifier
+.dmp.project[]?.funding[]?.funder_id.identifier	shortfreetext
+.dmp.project[]?.funding[]?.funder_id.type	choice
+.dmp.project[]?.funding[]?.funding_status?	choice
+.dmp.project[]?.funding[]?.grant_id?	typedidentifier
+.dmp.project[]?.funding[]?.grant_id?.identifier	shortfreetext
+.dmp.project[]?.funding[]?.grant_id?.type	choice
+.dmp.project[]?.start?	date
+.dmp.project[]?.title	shortfreetext
+.dmp.title	shortfreetext

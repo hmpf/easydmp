@@ -10,6 +10,7 @@ from easydmp.auth.api.v2.views import ImpersonateJSONWebTokenView
 from easydmp.dmpt.api.v2 import router as dmpt_router
 from easydmp.lib.api.routers import ContainerRouter
 from easydmp.plan.api.v2 import router as plan_router
+from easydmp.rdadcs.api.v2 import router as rdadcs_router
 
 
 jwt_urls = [
@@ -25,6 +26,7 @@ router.prepend_urls(jwt_urls)
 router.register_router(plan_router)
 router.register_router(auth_router)
 router.register_router(dmpt_router)
+router.register_router(rdadcs_router)
 
 urlpatterns = jwt_urls + [
     path('auth/', include('rest_framework.urls', namespace='rest_framework')),
