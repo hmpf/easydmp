@@ -5,6 +5,20 @@ UPGRADING
 Normally, upgrading is just a matter of getting the new code and running
 ``python manage.py migrate``. Any exceptions will be listed here.
 
+1.22.x -> 1.23.0
+================
+
+After the database migration (``python manage.py migrate``) it is neccessary to
+load the RDADCS support::
+
+    python manage.py load_rdadcs_keys_and_types src/easydmp/rdadcs/data/rdadcs-v1.tsv
+
+Recommended but optional: Add the official RDA DCS v1.1 template by::
+
+    python manage.py load_complete_template src/easydmp/rdadcs/data/rdadcs-v1.1.template.json
+
+See the docs for how to add RDA DCS compatibility to an existing template.
+
 1.19.0 -> 1.20.0
 ================
 

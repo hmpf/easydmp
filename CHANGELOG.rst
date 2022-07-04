@@ -9,8 +9,29 @@ date per feature, or commit hashes were used.
 Planned
 -------
 
-* Repeated sections
-* Better support for exporting to RDA DMP Common Standard
+* Good UX for repeated sections
+
+1.23.0
+------
+
+See UPGRADING.rst to set up the RDA DCS support.
+
+New features:
+
+* A new field "uuid" on the template, which is assumed to be a persistent
+  unique identifier. When exporting a template, the uuid is preserved.
+* Support marking up templates using the JSON structure of RDA DCS as
+  a taxonomy of sorts, via the new app "rdadcs"
+* Backend support for repeated sections, the frontend is lagging behind, though
+
+New included template:
+
+* RDADCS v1.1, in src/easydmp/rdadcs/data/rdadcs-v1.1.template.json
+
+Paperwork:
+
+* Add tests for exporting EasyDMP plans
+
 
 1.22.3
 ------
