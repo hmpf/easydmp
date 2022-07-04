@@ -230,6 +230,7 @@ def ensure_unknown_template(export_dict, origin):
 def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
     via = via if via else DEFAULT_VIA
     template_dict = export_dict['template']
+    title = get_free_title_for_importing(template_dict, origin, Template)
     original_template_pk = template_dict.pop('id')
     cloned_from = template_dict.get('cloned_from', None)
 
@@ -239,11 +240,10 @@ def _create_imported_template(export_dict, origin, via=DEFAULT_VIA):
     # Prep what keys, values to copy over
     stripped_dict = strip_model_dict(template_dict, 'input_types_in_use',
                                     'rdadcs_keys_in_use')
-    # remove fields that does not exist in this version of the Template model
+    # remove fields that do not exist in this version of the Template model
     fieldnames = get_fieldnames_on_model(Template).intersection(stripped_dict)
     creation_dict = {key: stripped_dict[key] for key in fieldnames}
     # Create template
-    title = get_free_title_for_importing(template_dict, origin, Template)
     imported_template = Template.objects.create(title=title, **creation_dict)
     tim = _create_template_import_metadata(imported_template, origin, original_template_pk, published, cloned_from, via)
     return tim
