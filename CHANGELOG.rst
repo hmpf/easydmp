@@ -11,6 +11,13 @@ Planned
 
 * Good UX for repeated sections
 
+1.23.1
+------
+
+Bugfix:
+
+* Template import failed on generating a new Template title
+
 1.23.0
 ------
 
