@@ -395,6 +395,22 @@ class AnswerSet(ClonableModel):
             answers.append(Answer(question=question, answerset=self))
         Answer.objects.bulk_create(answers)
 
+    def clean(self):
+        "Remove answers to unknown questions"
+        our_qids = set([
+            str(qid)
+            for qid in self.section.questions.values_list('id', flat=True)
+        ])
+        bad_data_qids = set(self.data.keys()) - our_qids
+        for qid in bad_data_qids:
+            del self.data[qid]
+        bad_previous_data_qids = set(self.previous_data.keys()) - our_qids
+        for qid in bad_previous_data_qids:
+            del self.previous_data[qid]
+        if bad_data_qids or bad_previous_data_qids:
+            LOG.info('Removed spurious answers from answerset %s', self.id)
+            self.validate()
+
     def validate(self, timestamp: datetime = None) -> bool:
         """
         Validates the answers and persists the validity state on this as well as on related Answers.
@@ -867,14 +883,20 @@ class Plan(DeletionMixin, ClonableModel):
                 new_answerset.parent = answerset_mapping[old_answerset.parent]
                 new_answerset.save()
 
+    def clean(self):
+        for section in self.template.sections.all():
+            for answerset in self.answersets.filter(section=section):
+                if answerset.data or answerset.previous_data:
+                    answerset.clean()
+
     def validate_data(self, recalculate: bool = True) -> bool:
         qids = self.question_ids_answered()
         wrong_pks = [str(pk) for pk in self.template.list_unknown_questions(qids)]
         if wrong_pks:
             error = 'The plan {} contains nonsense data: template has no questions for: {}'
             selfstr = '{} ({}), template {} ({})'.format(self, self.pk, self.template, self.pk)
-            LOG.error(error.format(selfstr, ' '.join(wrong_pks)))
-            return False
+            LOG.info(error.format(selfstr, ' '.join(wrong_pks)))
+            self.clean()
         if self.is_empty:
             error = 'The plan {} ({}) has no data: invalid'
             LOG.error(error.format(self, self.pk))
