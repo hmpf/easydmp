@@ -20,6 +20,19 @@ Load it into the database with the management-command
 
 Check in the admin under RDADCS > RDADCS keys that they were loaded correctly.
 
+Import the RDA DCS template
+===========================
+
+In order to make it possible to import plans in RDA DSC format, it is neccessary to first import the RDA DCS template.
+
+Run::
+
+    python manage.py import_complete_template src/easydmp/rdadcs/data/rrdadcs-v1.1.template.json
+
+The template is not locked, in order to make it possible to improve on help
+texts and comments. If you want to share your improvements, make an issue on
+github with the new template attached. Adding or removing questions or sections
+**will** break the template.
 
 Mark up a template with RDA DCS keys
 ====================================
