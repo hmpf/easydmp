@@ -1,2 +1,2 @@
-{% with widget.subwidgets.0 as widget %}<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>Identifier</label> {% include widget.template_name %}{% endwith %}
-{% with widget.subwidgets.1 as widget %}<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>Type</label> {% include widget.template_name %}{% endwith %}
+{% with widget.subwidgets.0 as widget %}<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>Identifier{% if widget.attrs.required %}<span class="asteriskField">*</span>{% endif %}</label> {% include widget.template_name %}{% endwith %}
+{% with widget.subwidgets.1 as widget %}<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>Type{% if widget.attrs.required %}<span class="asteriskField">*</span>{% endif %}</label> {% include widget.template_name %}{% endwith %}
