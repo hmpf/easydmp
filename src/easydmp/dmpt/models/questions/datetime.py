@@ -32,15 +32,18 @@ class DateTimeQuestion(PrimitiveTypeMixin, SaveMixin, Question):
 
     def validate_choice(self, data: Data) -> bool:
         answer = data.get('choice', NotSet)
+        if not answer:
+            answer = NotSet
         if self.optional and answer is NotSet:
             return True
+
         try:
             # python's vanilla fromisoformat is not up to spec
             if answer[-1] in ('z', 'Z'):
                 answer = answer[:-1] + '+00:00'
             datetime.fromisoformat(answer)
             return True
-        except ValueError:
+        except (TypeError, ValueError):
             return False
 
 

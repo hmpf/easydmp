@@ -42,13 +42,14 @@ class TypedIdentifierQuestion(SaveMixin, Question):
         return f'{identifier} ({type_})'
 
     def validate_choice(self, data: Data) -> bool:
-        answer = data.get('choice', NotSet)
-        if self.optional and answer is NotSet:
-            return True
-        if not answer['identifier']:
+        answer = data.get('choice', NotSet) or NotSet
+        if answer is NotSet:
+            if self.optional:
+                return True
             return False
-        if answer['type'] in self.get_choices_keys():
-            return True
+        if answer.get('identifier', None) and answer.get('type', None):
+            if answer['type'] in self.get_choices_keys():
+                return True
         return False
 
     def get_choices(self):

@@ -27,9 +27,11 @@ class EmailQuestion(PrimitiveTypeMixin, SaveMixin, Question):
         managed = False
 
     def validate_choice(self, data: Data) -> bool:
-        answer = data.get('choice', NotSet)
-        if self.optional and answer is NotSet:
-            return True
+        answer = data.get('choice', NotSet) or NotSet
+        if answer is NotSet:
+            if self.optional:
+                return True
+            return False
         answer = answer.strip()
         try:
             value = validate_email(answer)

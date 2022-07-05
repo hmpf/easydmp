@@ -193,9 +193,11 @@ class PositiveIntegerQuestion(PrimitiveTypeMixin, SaveMixin, Question):
         proxy = True
 
     def validate_choice(self, data: Data) -> bool:
-        answer = data.get('choice', NotSet)
-        if self.optional and answer is NotSet:
-            return True
+        answer = data.get('choice', NotSet) or NotSet
+        if answer is NotSet:
+            if self.optional:
+                return True
+            return False
         try:
             value = int(answer)
         except (ValueError, TypeError):
@@ -214,13 +216,15 @@ class DateQuestion(PrimitiveTypeMixin, SaveMixin, Question):
         proxy = True
 
     def validate_choice(self, data: Data) -> bool:
-        answer = data.get('choice', NotSet)
-        if self.optional and answer is NotSet:
-            return True
+        answer = data.get('choice', NotSet) or NotSet
+        if answer is NotSet:
+            if self.optional:
+                return True
+            return False
         try:
             date.fromisoformat(answer)
             return True
-        except ValueError:
+        except (TypeError, ValueError):
             return False
 
 

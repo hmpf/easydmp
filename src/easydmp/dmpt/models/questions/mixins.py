@@ -62,8 +62,12 @@ class ChoiceValidationMixin:
 class IsSetValidationMixin:
 
     def validate_choice(self, data):
-        choice = data.get('choice', NotSet)
-        if choice or self.optional:
+        choice = data.get('choice', NotSet) or NotSet
+        if choice is NotSet:
+            if self.optional:
+                return True
+            return False
+        if choice:
             return True
         return False
 
