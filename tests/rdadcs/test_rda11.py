@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 
 from django import test
 from django.test import tag, skipUnlessDBFeature
@@ -6,18 +7,27 @@ from django.test import tag, skipUnlessDBFeature
 from easydmp.auth.models import User
 from easydmp.dmpt.models import Template
 from easydmp.plan.models import Plan
+from easydmp.rdadcs.lib.csv import load_rdadcs_from_csv
 from easydmp.rdadcs.lib.export_plan import GenerateRDA11
 
 
-@tag('JSONField')
+@tag('JSONField', 'load_file')
 class RDADCSTest(test.TestCase):
 
-    def test_rda11_export(self):
+
+    @classmethod
+    def setUpTestData(cls):
+        path = Path('./src/easydmp/rdadcs/data/rdadcs-v1.tsv').resolve()
+        with open(str(path)) as F:
+            load_rdadcs_from_csv(F)
+
+    def test_minimal_rda11_export(self):
         template = Template.objects.create(title='testtemplate')
         u1 = User.objects.create(username='testuser1', full_name='Test 1. User', email='a@b.com')
         plan_uuid = 'cccaced2-a381-48a4-9806-70b9e329a83d'
         p1 = Plan.objects.create(title='testplan1', added_by=u1, modified_by=u1, template=template, uuid=plan_uuid)
-        dmp = GenerateRDA11(p1).get_dmp()
+        generator = GenerateRDA11(p1)
+        dmp = generator.json()
         self.assertEqual('eng', dmp['dmp']['language'])
         self.assertEqual('testplan1', dmp['dmp']['title'])
         self.assertEqual(plan_uuid, dmp['dmp']['dmp_id']['identifier'])
