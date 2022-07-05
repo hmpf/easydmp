@@ -11,7 +11,6 @@ from easydmp.dmpt.admin import TemplateAdmin
 from easydmp.dmpt.export_template import ExportSerializer
 from easydmp.dmpt.models import Template, TemplateImportMetadata
 
-from tests import has_sufficient_json_support
 from tests.auth.factories import SuperuserFactory
 from tests.dmpt.factories import *
 
@@ -26,7 +25,6 @@ def create_minimum_template():
 
 
 @tag('JSONField')
-@skipUnlessDBFeature(*has_sufficient_json_support)
 @override_settings(VERSION=VERSION)
 class TestImportTemplate(DjangoTestCase):
 
