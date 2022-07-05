@@ -104,7 +104,7 @@ class TestDeserilizeTemplateExport(UnitTestCase):
                 "reason",
                 "shortfreetext",
                 "storageforecast"
-              ]
+              ],
             },
             "template": {
               "id": 64,
@@ -123,7 +123,7 @@ class TestDeserilizeTemplateExport(UnitTestCase):
               "retired": None,
               "input_types_in_use": [
                 "reason"
-              ]
+              ],
             },
             "sections": [
               {
@@ -141,7 +141,8 @@ class TestDeserilizeTemplateExport(UnitTestCase):
                 "section_depth": 1,
                 "branching": False,
                 "optional": False,
-                "repeatable": False
+                "repeatable": False,
+                "rdadcs_path": None,
               },
             ],
             "questions": [
@@ -159,7 +160,8 @@ class TestDeserilizeTemplateExport(UnitTestCase):
                 "comment": "",
                 "on_trunk": True,
                 "optional": False,
-                "optional_canned_text": ""
+                "optional_canned_text": "",
+                "rdadcs_path": None,
               },
             ],
             "explicit_branches": [],
@@ -169,4 +171,3 @@ class TestDeserilizeTemplateExport(UnitTestCase):
         jsonblob = json.dumps(data)
         result = deserialize_template_export(jsonblob)
         self.assertEqual(data, result)
-

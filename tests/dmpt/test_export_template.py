@@ -26,6 +26,6 @@ class TestSerializeTemplateExport(DjangoTestCase):
     def test_ExportSerializer_data_should_be_of_a_certain_structure(self):
         template = create_minimum_template()
         serializer = serialize_template_export(template.pk)
-        keys = {'comment', 'easydmp', 'template', 'sections', 'questions', 'canned_answers', 'explicit_branches', 'eestore_mounts', 'rdadcs'}
+        keys = {'comment', 'easydmp', 'template', 'sections', 'questions', 'canned_answers', 'explicit_branches', 'eestore_mounts'}
         self.assertEqual(keys, set(serializer.data.keys()))
         self.assertEqual(serializer.data['easydmp']['version'], VERSION)
