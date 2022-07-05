@@ -18,6 +18,7 @@ __all__ = [
     'deserialize_export',
     'get_free_title_for_importing',
     'get_origin',
+    'load_json_from_stream',
 ]
 
 
@@ -47,7 +48,7 @@ def get_export_from_url(url, deserialize_export):
         )
 
 
-def deserialize_export(export_json, export_serializer, model_name, exception_type) -> dict:
+def load_json_from_stream(export_json, model_name, exception_type) -> dict:
     # If these are not imported here, drf can't find the plan-detail view (!)
     from rest_framework.parsers import JSONParser
     from rest_framework.exceptions import ParseError
@@ -60,6 +61,12 @@ def deserialize_export(export_json, export_serializer, model_name, exception_typ
         raise exception_type(f'{model_name} export is not JSON')
     if not data:
         raise exception_type(f'{model_name} export is empty')
+    return data
+
+
+def deserialize_export(export_json, export_serializer, model_name, exception_type) -> dict:
+    if not isinstance(export_json, dict):
+        data = load_json_from_stream(export_json, model_name, exception_type)
     serializer = export_serializer(data=data)
     try:
         serializer.is_valid(raise_exception=True)

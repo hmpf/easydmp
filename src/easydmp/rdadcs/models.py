@@ -26,6 +26,7 @@ syntax to fetch the value is ``.dmp.dataset[0].description?``.
 
 from django.db import models
 from django.utils.text import slugify
+from django.utils.timezone import now as tznow
 
 
 class RDADCSKey(models.Model):
@@ -124,3 +125,34 @@ class RDADCSSectionLink(models.Model):
 
     def __str__(self):
         return f'{self.key.path} -> {self.section_id}'
+
+
+class RDADCSImportMetadata(models.Model):
+    DEFAULT_VIA = 'CLI'
+    ID_TYPES = ['handle', 'doi', 'ark', 'url', 'other']
+
+    plan = models.ForeignKey('plan.Plan', on_delete=models.CASCADE,
+                             related_name='import_rdadcs_metadata')
+    original_id = models.TextField()
+    original_id_type = models.CharField(
+        choices=tuple(zip(ID_TYPES, ID_TYPES)),
+        max_length=len(max(ID_TYPES, key=len)),
+    )
+    originally_created = models.DateTimeField(
+        help_text='Copy of the original plan\'s "created"'
+    )
+    originally_modified = models.DateTimeField(
+        help_text='Copy of the original plan\'s "modified"'
+    )
+    original_json = models.JSONField()
+
+    # metadata for the metadata
+    imported = models.DateTimeField(default=tznow)
+    # URL or method
+    imported_via = models.CharField(max_length=255, default=DEFAULT_VIA)
+
+    class Meta:
+        verbose_name_plural = 'rdadcs plan import metadata'
+
+    def __str__(self):
+        return f'Plan #{self.original_id} via RDA DCS'

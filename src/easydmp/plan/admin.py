@@ -15,8 +15,15 @@ from easydmp.lib.admin import LockedFilter
 from easydmp.lib.admin import PublishedFilter
 from easydmp.lib.admin import ImportedFilter
 from easydmp.lib.admin import AdminConvenienceMixin
+from easydmp.lib.import_export import load_json_from_stream
+from easydmp.rdadcs.lib.import_plan import ImportRDA11
+from easydmp.rdadcs.models import RDADCSImportMetadata
 
-from .import_plan import deserialize_plan_export, import_serialized_plan_export, PlanImportError
+from .import_plan import deserialize_plan_export
+from .import_plan import detect_export_type
+from .import_plan import import_serialized_plan_export
+from .import_plan import PlanExportType
+from .import_plan import PlanImportError
 from .models import AnswerSet
 from .models import Plan
 from .models import PlanAccess
@@ -87,6 +94,13 @@ class PlanImportForm(forms.Form):
     plan_export_file = forms.FileField()
 
 
+class PlanExportForm(forms.Form):
+    format = forms.ChoiceField(
+        choices=PlanExportType.choices,
+        widget=forms.RadioSelect,
+    )
+
+
 class PlanImportMetadataInline(admin.TabularInline):
     model = PlanImportMetadata
     fk_name = 'plan'
@@ -101,9 +115,22 @@ class PlanImportMetadataInline(admin.TabularInline):
         return False
 
 
+class RDADCSImportMetadataInline(admin.TabularInline):
+    model = RDADCSImportMetadata
+    fk_name = 'plan'
+    fields = ['original_id', 'original_id_type', 'originally_created', 'originally_modified', 'imported', 'imported_via']
+    read_only_fields = fields
+    extra = 0
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
 @admin.register(Plan)
 class PlanAdmin(AdminConvenienceMixin, admin.ModelAdmin):
-    list_display = ['title', 'version', 'template', 'added_by', 'added', 'export']
+    list_display = ['title', 'version', 'template', 'added_by', 'added']
     list_filter = [
         'template',
         LockedFilter,
@@ -135,16 +162,10 @@ class PlanAdmin(AdminConvenienceMixin, admin.ModelAdmin):
     )
     inlines = [
         PlanImportMetadataInline,
+        RDADCSImportMetadataInline,
     ]
 
     # displays
-
-    def export(self, obj):
-        json_url = reverse('v2:plan-export', kwargs={'pk': obj.pk})
-        html = '<a target="_blank" href="{}?format=json">JSON</a>'
-        return format_html(html, mark_safe(json_url))
-    export.short_description = 'Export'  # type: ignore
-    export.allow_tags = True  # type: ignore
 
     # actions
 
@@ -162,6 +183,42 @@ class PlanAdmin(AdminConvenienceMixin, admin.ModelAdmin):
 
     # extra buttons on changelist
 
+    @classmethod
+    def import_easydmp_plan(cls, request, plan_export_jsonblob):
+        try:
+            serialized_dict = deserialize_plan_export(plan_export_jsonblob)
+        except PlanImportError as e:
+            error_msg = f'{e}, cannot import'
+            messages.error(request, error_msg)
+            raise
+
+        try:
+            with warnings.catch_warnings(record=True) as w:
+                pim = import_serialized_plan_export(serialized_dict, request.user, via='admin')
+                if w:
+                    messages.warning(request, w[-1].message)
+                return pim
+        except PlanImportError as e:
+            messages.error(request, str(e))
+            raise
+
+    @classmethod
+    def import_rdadcs_plan(cls, request, plan_export_jsonblob):
+        try:
+            data = load_json_from_stream(plan_export_jsonblob, 'Plan', PlanImportError)
+        except PlanImportError as e:
+            error_msg = f'{e}, cannot import'
+            messages.error(request, error_msg)
+            raise
+
+        try:
+            importer = ImportRDA11(data, request.user, via='admin')
+            importer.import_rdadcs()
+            return importer.metadata
+        except PlanImportError as e:
+            messages.error(request, str(e))
+            raise
+
     def import_plan(self, request):
         # authorization
         user = request.user
@@ -177,19 +234,12 @@ class PlanAdmin(AdminConvenienceMixin, admin.ModelAdmin):
                 plan_export_jsonblob = plan_export_file.read()
                 url_on_error = reverse(self.get_viewname('import'))
                 try:
-                    serialized_dict = deserialize_plan_export(plan_export_jsonblob)
-                except PlanImportError as e:
-                    error_msg = f'{e}, cannot import'
-                    messages.error(request, error_msg)
-                    return HttpResponseRedirect(url_on_error)
-
-                try:
-                    with warnings.catch_warnings(record=True) as w:
-                        pim = import_serialized_plan_export(serialized_dict, request.user, via='admin')
-                        if w:
-                            messages.warning(request, w[-1].message)
-                except PlanImportError as e:
-                    messages.error(request, str(e))
+                    export_type = detect_export_type(plan_export_jsonblob)
+                    if export_type == PlanExportType.EASYDMP:
+                        pim = self.import_easydmp_plan(request, plan_export_jsonblob)
+                    elif export_type == PlanExportType.RDADCS:
+                        pim = self.import_rdadcs_plan(request, plan_export_jsonblob)
+                except PlanImportError:
                     return HttpResponseRedirect(url_on_error)
                 msg = f'Plan "{pim.plan}" successfully imported.'
                 messages.success(request, msg)
@@ -215,13 +265,49 @@ class PlanAdmin(AdminConvenienceMixin, admin.ModelAdmin):
         }
         return TemplateResponse(request, 'admin/plan/plan/import_form.html', context)
 
+    # extra buttons on changeform
+
+    def export_plan(self, request, object_id):
+        object_id = int(object_id)
+        # authorization
+        user = request.user
+        if not user.has_superpowers:
+            raise PermissionDenied
+
+        if request.method == 'POST':
+            form = PlanExportForm(request.POST)
+            if form.is_valid():
+                format = form.cleaned_data['format']
+                if format == PlanExportType.EASYDMP:
+                    url = reverse('v2:plan-export', kwargs={'pk': object_id})
+                    return HttpResponseRedirect(f'{url}?format=json')
+                elif format == PlanExportType.RDADCS:
+                    url = reverse('v2:plan-export-rda', kwargs={'pk': object_id})
+                    return HttpResponseRedirect(url)
+                raise ValueError(f'Unsupported format: {format}')
+        else:
+            form = PlanExportForm()
+
+        fieldsets = [(None, {'fields': list(form.base_fields)})]
+        adminForm = admin.helpers.AdminForm(form, fieldsets, {})
+        context = {
+            'title': 'Export plan',
+            'adminForm': adminForm,
+            'form': form,
+            'opts': self.model._meta,
+            **self.admin_site.each_context(request),
+        }
+        return TemplateResponse(request, 'admin/plan/plan/export_form.html', context)
+
     # extra urls
 
     def get_urls(self):
         urls = super().get_urls()
         extra_urls = [
+            path('<int:object_id>/export/', self.admin_site.admin_view(self.export_plan),
+                name='plan_plan_export'),
             path('import/', self.admin_site.admin_view(self.import_plan),
-                name='plan_plan_import')
+                name='plan_plan_import'),
         ]
         return extra_urls + urls
 
