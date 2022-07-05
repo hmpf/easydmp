@@ -23,3 +23,17 @@ All questions are by default ``on_trunk``. That means that they will all be
 shown to the plan maker. In a branching plan, questions hidden by a branch are
 NOT on_trunk, they can be skipped over completely, never seen by the plan
 maker.
+
+Templates included with the source
+==================================
+
+There are currently two templates included with the source:
+
+* One template that exemplifies every single question type that comes with
+  a vanilla installation of EasyDMP, in
+  ``src/easydmp/dmpt/data/question-type-demonstration.template.json``.
+* One template for importing plans in RDA DCS format, in
+  ``src/easydmp/rdadcs/data/rdadcs-v1.1.template.json``.
+
+In order to have full RDA DCS support, the latter *must* be imported. See the
+howtos for how.
