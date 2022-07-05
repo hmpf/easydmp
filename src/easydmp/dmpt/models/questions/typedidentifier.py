@@ -80,14 +80,27 @@ class TypedIdentifierWidget(forms.MultiWidget):
 
 
 class TypedIdentifierField(forms.MultiValueField):
+    invalid_type_error = 'Select a valid choice for the type. "%(value)s" is not one of {}.'
+
+    def pprint_choices(self, choices):
+        choicelist = [f'"{choice[0]}"' for choice in choices]
+        choicestring = ', '.join(choicelist[:-1]) + ' or ' + choicelist[-1]
+        return choicestring
 
     def __init__(self, choices=None, *args, **kwargs):
         assert choices, 'No types given'
+        choicestring = self.pprint_choices(choices)
         kwargs['widget'] = TypedIdentifierWidget
         kwargs['require_all_fields'] = True
         fields = [
             forms.CharField(required=True),
-            forms.ChoiceField(required=True, choices=choices),
+            forms.ChoiceField(
+                required=True,
+                choices=choices,
+                error_messages={
+                    'invalid_choice': self.invalid_type_error.format(choicestring)
+                },
+            ),
         ]
         super().__init__(fields, *args, **kwargs)
         self.widget.widgets[1].choices = self.fields[1].widget.choices
