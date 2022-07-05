@@ -11,6 +11,40 @@ Planned
 
 * Good UX for repeated sections
 
+1.24.0
+------
+
+The full RDA DCS support release! See UPGRADING.rst.
+
+New feature:
+
+* Import RDA DCS plans into EasyDMP. (They do need to be valid, as per
+  JSON-Schema!)
+* Export any plan to RDA DCS format. One that is based on the RDA DCS template
+  will yield the most complete result, while exporting a plan based a template
+  that is marked up with RDA DCS keys will be as good as the mark up and
+  structure compatibility allows.
+
+Bugfix:
+
+* When designing a template, plans based on that template might end up with
+  answers to questions that no longer exist in that template, which prevented
+  the plan from validating. Now, the spurious/dead answers are removed from the
+  plan on validation instead.
+* Fix validation of all question types that uses NotSet
+
+New included template:
+
+* An example of all available question types, in
+  src/easydmp/dmpt/data/question-type-demonstration.template.json
+
+Paperwork:
+
+* Added documentation about the new features
+* Improve on the UX of the typedidentifier question type: better error
+  messages, looks and validation
+* Fix the template importi/export tests to work with the new template structure
+
 1.23.1
 ------
 

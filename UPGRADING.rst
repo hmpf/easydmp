@@ -5,6 +5,13 @@ UPGRADING
 Normally, upgrading is just a matter of getting the new code and running
 ``python manage.py migrate``. Any exceptions will be listed here.
 
+1.23.0 -> 1.24.0
+================
+
+In order to support the import of plans in RDA DCS format, it is neccessary to
+have done all the steps to upgrade to 1.23.0: both loading the support and
+importing the new template.
+
 1.22.x -> 1.23.0
 ================
 
