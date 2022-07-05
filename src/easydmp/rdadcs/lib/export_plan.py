@@ -5,12 +5,14 @@ from easydmp.plan.models import AnswerHelper
 from easydmp.rdadcs.models import RDADCSKey, RDADCSQuestionLink, RDADCSSectionLink
 
 
-Unknown = 'Unknown'
+Unknown = 'unknown'
 
 
 class GenerateRDA11:
     """
     A minimal WIP RDA DMP CS serializer
+
+    First initialize, then run instance.json()
     """
 
     def __init__(self, plan):
@@ -86,8 +88,11 @@ class GenerateRDA11:
     def _get_flat_list(self, path, rules, parent_answerset_id=None):
         key, *_ = RDADCSKey.get_key(path)
         _, _, repeatable = RDADCSKey.parse_key(path)
-        section_id = self.rda_section_links[path]
         data = []
+        try:
+            section_id = self.rda_section_links[path]
+        except KeyError:
+            return key, data
         answersets = self.answersets.filter(section_id=section_id)
         if parent_answerset_id:
             answersets = answersets.filter(parent_id=parent_answerset_id)
@@ -141,9 +146,13 @@ class GenerateRDA11:
             ('.dmp.contact.mbox', None),
             ('.dmp.contact.name', None),
         ]
-        section_id = self.rda_section_links[PATH]
-        answerset = self.answersets.get(section_id=section_id)
-        data = self._get_key(RULES, answerset.id)
+        try:
+            section_id = self.rda_section_links[PATH]
+        except KeyError:
+            data = None
+        else:
+            answerset = self.answersets.get(section_id=section_id)
+            data = self._get_key(RULES, answerset.id)
         if not data:
             data = self._get_metadata_person(self.plan.added_by, 'contact_id')
         return 'contact', data
@@ -191,8 +200,12 @@ class GenerateRDA11:
                 ('.dmp.dataset[].technical_resource[]?.description?', None),
             ],
         }
-        section_id = self.rda_section_links[PATH]
         data = []
+        try:
+            section_id = self.rda_section_links[PATH]
+        except KeyError:
+            fallback_dataset = self._get_fallback_dataset()
+            return 'dataset', fallback_dataset
         for answerset in self.answersets.filter(section_id=section_id):
             entry = self._get_key(RULES, answerset.id)
             # distribution
@@ -206,6 +219,15 @@ class GenerateRDA11:
                     entry[subkey] = subentries
             data.append(entry)
         return 'dataset', data
+
+    def _get_fallback_dataset(self):
+        dataset = [{
+            'dataset_id': self._get_fallback_id(),
+            'title': self.plan.title,
+            'personal_data': Unknown,
+            'sensitive_data': Unknown,
+        }]
+        return dataset
 
     def get_distribution_list(self, parent_answerset_id):
         PATH = '.dmp.dataset[].distribution[]?'
@@ -238,8 +260,11 @@ class GenerateRDA11:
                 ('.dmp.dataset[].distribution[]?.license[]?.start_date', None),
             ],
         }
-        section_id = self.rda_section_links[PATH]
         data = []
+        try:
+            section_id = self.rda_section_links[PATH]
+        except KeyError:
+            return 'distribution', data
         for answerset in self.answersets.filter(
                 section_id=section_id,
                 parent_id=parent_answerset_id,
@@ -265,8 +290,11 @@ class GenerateRDA11:
             ('.dmp.project[]?.funding[]?.funding_status?', None),
             ('.dmp.project[]?.funding[]?.grant_id?', None),
         ]
-        section_id = self.rda_section_links[PATH]
         data = []
+        try:
+            section_id = self.rda_section_links[PATH]
+        except KeyError:
+            return 'project', data
         for answerset in self.answersets.filter(section_id=section_id):
             entry = self._get_key(RULES, answerset.id)
             key, funding_entries = self._get_flat_list(
