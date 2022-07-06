@@ -11,6 +11,25 @@ Planned
 
 * Good UX for repeated sections
 
+1.24.1
+------
+
+Yet Another Bugfix release
+
+Bugfixes:
+
+* Fixed the fix of the fix etc. that fixed the import of sections and questions
+  in the correct order.
+* Ensure templates entirely without RDA DCS mark up can be exported to
+  a minimal RDA DCS json dump, as they could prior to 1.23.0
+
+Paperwork:
+
+* Dedicated functions made to load all the extra stuff needed for RDA DCS
+  support, and to set up fixtures for the RDA DCS tests
+* Removed outdated testing-flags that skipped some tests that should not have
+  been skipped
+
 1.24.0
 ------
 
