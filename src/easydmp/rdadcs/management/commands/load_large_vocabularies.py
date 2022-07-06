@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from easydmp.eestore.utils import fill_cache_from_class
-import easydmp.rdadcs.data.large_controlled_vocabularies as lcv
+from easydmp.rdadcs.lib.resources import load_rdadcs_eestore_cache_modelresource
 
 
 class Command(BaseCommand):
@@ -9,9 +8,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         verbosity = options['verbosity']
-        classes = [cls for cls in map(lcv.__dict__.get, lcv.__all__)]
-        for cls in classes:
-            source = fill_cache_from_class(cls)
+        for source in load_rdadcs_eestore_cache_modelresource():
             if verbosity:
                 self.stdout.write(self.style.SUCCESS(
                     f'Successfully created {source} from class'

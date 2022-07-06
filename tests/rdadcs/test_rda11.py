@@ -1,5 +1,5 @@
 from datetime import datetime
-from pathlib import Path
+from importlib.resources import open_text
 
 from django import test
 from django.test import tag, skipUnlessDBFeature
@@ -9,18 +9,16 @@ from easydmp.dmpt.models import Template
 from easydmp.plan.models import Plan
 from easydmp.rdadcs.lib.csv import load_rdadcs_from_csv
 from easydmp.rdadcs.lib.export_plan import GenerateRDA11
+from easydmp.rdadcs.lib.resources import load_rdadcs_keymapping_modelresource
 
 
-@tag('JSONField', 'load_file')
 class RDADCSTest(test.TestCase):
-
 
     @classmethod
     def setUpTestData(cls):
-        path = Path('./src/easydmp/rdadcs/data/rdadcs-v1.tsv').resolve()
-        with open(str(path)) as F:
-            load_rdadcs_from_csv(F)
+        load_rdadcs_keymapping_modelresource()
 
+    @tag('JSONField', 'load_file')
     def test_minimal_rda11_export(self):
         template = Template.objects.create(title='testtemplate')
         u1 = User.objects.create(username='testuser1', full_name='Test 1. User', email='a@b.com')
