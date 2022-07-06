@@ -1,3 +1,4 @@
+from uuid import uuid4
 from io import StringIO
 import json
 
@@ -24,7 +25,7 @@ def create_minimum_template():
     return template
 
 
-@tag('JSONField')
+@tag('JSONField', 'view')
 @override_settings(VERSION=VERSION)
 class TestImportTemplate(DjangoTestCase):
 
@@ -35,6 +36,8 @@ class TestImportTemplate(DjangoTestCase):
         self.template = create_minimum_template()
         template_export = self.template.create_export_object()
         template_export_dict = ExportSerializer(template_export).data
+        # ensure that the export looks different from the local template
+        template_export_dict['template']['uuid'] = str(uuid4())
         template_export_json = json.dumps(template_export_dict)
         self.template_export_file = StringIO(template_export_json)
 
@@ -43,9 +46,9 @@ class TestImportTemplate(DjangoTestCase):
         url = reverse('admin:dmpt_template_import')
         response = self.client.post(url, {'template_export_file': self.template_export_file})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(Template.objects.count(), 2)
         tims = TemplateImportMetadata.objects.all()
         self.assertEqual(tims.count(), 1)
+        self.assertEqual(Template.objects.count(), 2)
         tim = tims.get()
         self.assertTrue(tim.template.title.startswith(self.template.title))
         messages = list(get_messages(response.wsgi_request))

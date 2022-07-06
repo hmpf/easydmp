@@ -6,7 +6,9 @@ from django.conf import settings
 from django.db import transaction, DatabaseError
 
 from easydmp.lib import strip_model_dict
-from easydmp.lib.import_export import deserialize_export, get_free_title_for_importing, DataImportError
+from easydmp.lib.import_export import deserialize_export
+from easydmp.lib.import_export import get_free_title_for_importing
+from easydmp.lib.import_export import DataImportError
 from easydmp.dmpt.export_template import ExportSerializer
 from easydmp.dmpt.models import (Template, CannedAnswer, Question, Section,
                                  ExplicitBranch, TemplateImportMetadata,
@@ -300,33 +302,32 @@ def _create_imported_sections(export_dict, tim):
     order_map, super_section_map, orig_identifier_question_map, rdadcs_paths = _get_imported_section_ordering(section_list)
     mappings['rdadcs_sections'] = rdadcs_paths
 
+    # sections link to other sections, important to
     # create sections in the correct order
     identifier_question_set = set()
     section_map = {}
     for depth in order_map:
         section_list = []
         for section_dict in order_map[depth]:
+            orig_id = section_dict['id']
             section_dict.pop('template')
             stripped_dict = strip_model_dict(section_dict, 'super_section')
             section = Section(template=tim.template, **stripped_dict)
-            section_list.append(section)
-        new_section_list = Section.objects.bulk_create(section_list)
-        for i, section in enumerate(new_section_list):
-            orig_id = order_map[depth][i]['id']
-            orig_identifier_question_id = orig_identifier_question_map[orig_id]
+            # Wanted to use bulk_create but primary keys are not returned..
+            section.save(do_section_question=False)
+            section_map[orig_id] = section.id
+    for orig_id, new_id in section_map.items():
+        orig_identifier_question_id = orig_identifier_question_map.get(orig_id, None)
+        if orig_identifier_question_id:
             identifier_question_set.add(orig_identifier_question_id)
-            section_map[orig_id] = section
-    mappings['identifier_questions'] = identifier_question_set
-
-    # set super_section and section mappings
-    for orig_id, section in section_map.items():
         orig_super_section_id = super_section_map[orig_id]
         if orig_super_section_id:  # top level sections lack a super_section
             new_super_section = section_map[orig_super_section_id]
-            section.super_section = new_super_section
+            section.super_section_id = new_super_section
             section.save(do_section_question=False)
-        mappings['sections'][orig_id] = section.id
 
+    mappings['identifier_questions'] = identifier_question_set
+    mappings['sections'] = section_map
     return mappings
 
 
@@ -369,8 +370,9 @@ def _get_imported_section_ordering(section_list):
         orig_super_section_id = section_dict['super_section']
         super_section_map[orig_id] = orig_super_section_id
 
-        orig_identifier_question_id = section_dict.pop('identifier_question')
-        orig_identifier_question_map[orig_id] = orig_identifier_question_id
+        orig_identifier_question_id = section_dict.pop('identifier_question', None)
+        if orig_identifier_question_id:
+            orig_identifier_question_map[orig_id] = orig_identifier_question_id
 
         rdadcs_paths[orig_id] = section_dict.pop('rdadcs_path', None)
 
@@ -405,23 +407,18 @@ def _create_imported_questions(export_dict, mappings):
         orig_section_id = question_dict.pop('section')
         new_section_id = mappings['sections'][orig_section_id]
         question = Question(
-            section_id=mappings['sections'][orig_section_id],
+            section_id=new_section_id,
             input_type_id=question_dict.pop('input_type'),
             **strip_model_dict(question_dict)
         )
-        orig_order[orig_section_id].append(orig_id)
-        questions_by_section[orig_section_id].append(question)
-    mappings['rdadcs_questions'] = rdadcs_paths
-    for orig_section_id, questions in questions_by_section.items():
-        new_questions = Question.objects.bulk_create(questions)
-        for i, question in enumerate(new_questions):
-            orig_id = orig_order[orig_section_id][i]
-            mappings['questions'][orig_id] = question.id
-            identifies_section = orig_id in mappings['identifier_questions']
-            if identifies_section:
-                question.section.identifier_question = question
-                question.section.save()
+        question.save()
+        mappings['questions'][orig_id] = question.id
+        identifies_section = orig_id in mappings['identifier_questions']
+        if identifies_section:
+            question.section.identifier_question = question
+            question.section.save(do_section_question=False)
     del mappings['identifier_questions']
+    mappings['rdadcs_questions'] = rdadcs_paths
     return mappings
 
 
