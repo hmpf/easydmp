@@ -11,6 +11,17 @@ Planned
 
 * Good UX for repeated sections
 
+1.24.2
+------
+
+A oneliner bugfix release
+
+Bugfix:
+
+* Creating new plans via web-ui now works again. Was due to "Plan.clean()"
+  depending on the model having been saved at least once, and being run on an
+  unsaved model.
+
 1.24.1
 ------
 
