@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><!-- template: "{{ view.template_name|default:"--unknown--" }}", url: "{{ request.get_full_path|default:"--unknown--" }}"  -->
+{% load static %}
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}EasyDMP{% endblock title %}</title>
+    <link rel="stylesheet" href="{% static 'default.css' %}" />
+    {% block extrahead %}{% endblock %}
+</head>
+<body>
+  <header role="banner">
+    <div class="navbar" role="navigation">
+      {% if instance_message or messages %}
+      <div class="messages">
+        {% if instance_message %}
+        <div role="alert" class="alert instance">{{ instance_message }}</div>
+        {% endif %}
+        {% if messages %}
+        {% for message in messages %}
+        <div role="alert" class="alert">{{ message }}</div>
+        {% endfor %}
+        {% block "messages" %}{% endblock %}
+        {% endif %}
+      </div>
+      {% endif %}
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="{% if user.is_authenticated %}{% url "plan_list" %}{% else %}{% url "home" %}{% endif %}">
+              <img src="/static/usit/logo.svg" alt="EasyDMP logo" width="240">
+          </a>
+        </div>
+
+        <nav role="navigation">
+          <ul>
+            {% if request.user.is_authenticated %}
+            <li><a href="{% url 'plan_list' %}">Your plans</a></li>
+            {% if plan %}
+            <li><a href="{% url 'plan_detail' plan=plan.pk %}">Current plan</a></li>
+            {% endif %}
+            <li><a href="/help/">Help</a></li>
+            {% if request.user.is_staff %}
+            <li><a href="{% url 'admin:index' %}">Admin</a></li>
+            {% endif %}
+            <li><span class="username"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0S96 57.3 96 128s57.3 128 128 128zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg>
+ {{ request.user.username }}</span></li>
+            <li>
+              <a href="{% url 'logout' %}"><button type="button">Log out</button></a>
+            </li>
+            {% else %}
+            <li>
+              <a href="{% url 'login-selector' %}">Log in</a>
+            </li>
+            {% endif %}
+
+          </ul>
+        </nav>
+
+      </div>
+    </div>
+  </header>
+
+  <main role="main">
+{% block precontent %}{% endblock %}
+  <div>
+{% block content %}
+{% endblock %}
+  </div>
+  </main>
+
+  <footer role="contentinfo">
+    <p>
+    <a href="https://eudat.eu/"><img src="{% static 'eudat/logo.png' %}" alt="EUDAT logo" width="150"></a>
+    <a href="https://www.sigma2.no/"><img src="{% static 'sigma2/sigma2-logo.png' %}" alt="Sigma2 logo" width="200"></a>
+    <a href="https://www.sigma2.no/easydmp/how-to">User Guide</a>
+    <a href="/about/">About</a>
+    <a href="mailto:support@easydmp.sigma2.no">Support</a>
+    <a href="http://hdl.handle.net/11304/e43b2e3f-83c5-4e3f-b8b7-18d38d37a6cd">Terms of use</a>
+    <a href="/privacy/">Privacy policy</a>
+    </p>
+  </footer>
+
+{% block postload %}{% endblock %}
+</body>
+</html>
+

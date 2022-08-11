@@ -1,19 +1,15 @@
-{% extends "base.html" %}
+{% extends "newbase.html" %}
 {% load static %}
 {% block content %}
-        <div class="row uninett-color-white uninett-whole-row">
-             <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-                <h1>Page not found</h1>
-                <p>The page <b>{{ request.build_absolute_uri }}</b> was not found.</p>
-                <p>There are four possible causes:</p>
-                <ol>
-                    <li>The page has never existed. Maybe there is a typo in the link?</li>
-                    <li>The link was one-use only and the page was deleted
-                        after the first visit. This is the case for invitation
-                        links, so there's no point in sharing them.</li>
-                    <li>The page used to exist but has since been removed.</li>
-                    <li>You have stumbled upon a secret page, and you do not know the secret handshake.</p>
-                </ol>
-            </div>
-        </div>
+        <h1>Page not found</h1>
+        <p>The page <b>{{ request.build_absolute_uri }}</b> was not found.</p>
+        <p>There are four possible causes:</p>
+        <ol>
+            <li>The page has never existed. Maybe there is a typo in the link?</li>
+            <li>The link was one-use only and the page was deleted
+                after the first visit. This is the case for invitation
+                links, so there's no point in sharing them.</li>
+            <li>The page used to exist but has since been removed.</li>
+            <li>You have stumbled upon a secret page, and you do not know the secret handshake.</p>
+        </ol>
 {% endblock content %}

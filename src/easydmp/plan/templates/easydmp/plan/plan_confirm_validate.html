@@ -1,21 +1,14 @@
 {% extends "easydmp/plan/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-  <div class="row">
-    <div class="col-lg-12">
-      <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-<h1>Check "{{ object.title|capfirst }} {{ object.added }}"</h1>
-      </div>
-    </div>
-  </div>
+  <h1>Check "{{ object.title|capfirst }} {{ object.added }}"</h1>
 
-  <div class="row uninett-color-white uninett-whole-row">
-    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-        <p>A plan needs to be valid (all the necessary questions answered) before it can be published.</p>
-        <p>By clicking "Yes" below the plan will be checked for validity.
-        Depending on the number of questions and the complexity of the template
-        this might take several seconds.</p>
-        <p>Do you want to check the plan now?</p>
-        {% crispy form %}
-</div></div>
+  <div class="confirm-form">
+    <p>A plan needs to be valid (all the necessary questions answered) before it can be published.</p>
+    <p>By clicking "Yes" below the plan will be checked for validity.
+    Depending on the number of questions and the complexity of the template
+    this might take several seconds.</p>
+    <p>Do you want to check the plan now?</p>
+    {% crispy form %}
+  </div>
 {% endblock content %}

@@ -1,19 +1,11 @@
 {% extends "easydmp/plan/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-  <div class="row uninett-color-white uninett-whole-row">
-    <div class="col-lg-12 uninett-color-white">
-      <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-<h1>Leaving "{{ object.plan.title|capfirst }} {{ object.plan.added }}"</h1>
-      </div>
-    </div>
-  </div>
+  <h1>Leaving "{{ object.plan.title|capfirst }} {{ object.plan.added }}"</h1>
 
-  <div class="row uninett-color-white uninett-whole-row">
-    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-        <p>Are you sure you really want to leave this plan? You will no longer
-        be able to access the plan, and it will disappear from your list of
-        plans.</p>
-        {% crispy form %}
-</div></div>
+  <div class="confirm-form">
+  <p>Are you sure you really want to leave this plan? You will no longer be
+  able to access the plan, and it will disappear from your list of plans.</p>
+  {% crispy form %}
+  </div>
 {% endblock content %}

@@ -1,6 +1,5 @@
-<div class="invitation-list">
 {% if invitations.exists %}
-<table>
+<table class="invitation-list">
 <tr>
     <th>Invited</th>
     <th>By</th>
@@ -24,4 +23,3 @@
 {% else %}
 <p>No invitations are currently active for plan &quot;<a href="{% url 'plan_detail' plan=plan.pk %}">{{ plan }}</a>&quot;.</p>
 {% endif %}
-</div>

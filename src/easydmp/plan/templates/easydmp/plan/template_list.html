@@ -5,38 +5,36 @@
 {% block content %}
   <h1>Choose a template</h1>
 
-  <div class="template-choice">
-    <table id="templatetable" class="display" style="width:100%">
-      <thead>
-          <tr>
-              <th>Template</th>
-              <th>Version</th>
-              <th>Description</th>
-              <th></th>
-              {% if request.user.has_superpowers %}
-              <th>Published</th>
-              <th>Retired</th>
-              {% endif %}
-          </tr>
-      </thead>
-      <tbody>
-        {% for object in object_list %}
+  <table id="templatetable" class="display">
+    <thead>
         <tr>
-            <td>{{ object.title }}</td>
-            <td>{{ object.version }}</td>
-            <td>{{ object.description }}
-                {% if object.more_info %}<a href="{{ object.more_info }}">More info</a>{% endif %}
-            </td>
-            <td><a class="btn btn-primary"href="{% url 'create_plan' template_id=object.id %}">Use</a></td>
-              {% if request.user.has_superpowers %}
-              <th>{{ object.published|default:"No" }}</th>
-              <th>{{ object.retired|default:"No" }}</th>
-              {% endif %}
+            <th>Template</th>
+            <th>Version</th>
+            <th>Description</th>
+            <th></th>
+            {% if request.user.has_superpowers %}
+            <th>Published</th>
+            <th>Retired</th>
+            {% endif %}
         </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    </thead>
+    <tbody>
+      {% for object in object_list %}
+      <tr>
+          <td>{{ object.title }}</td>
+          <td>{{ object.version }}</td>
+          <td>{{ object.description }}
+              {% if object.more_info %}<a href="{{ object.more_info }}">More info</a>{% endif %}
+          </td>
+          <td><a class="btn btn-primary"href="{% url 'create_plan' template_id=object.id %}">Use</a></td>
+            {% if request.user.has_superpowers %}
+            <th>{{ object.published|default:"No" }}</th>
+            <th>{{ object.retired|default:"No" }}</th>
+            {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock content %}
 
 {% block postload %}

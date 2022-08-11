@@ -1,50 +1,41 @@
 {% extends "easydmp/plan/base.html" %}
 {% load static %}
 {% load plan_tags %}
+{% block extrahead %}
+    <link rel="stylesheet" href="/static/plan-list.css" />
+{{ form.media.css }}
+{% endblock %}
 {% block content %}
-  <div class="row uninett-color-white uninett-whole-row">
-    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-      {% if object_list.exists %}
-      <div class="top-wrap">
-        <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-          <h1>Your plans</h1>
-        </div>
-        <div id="create_new_plan">
-          <h2><a href="{% url 'choose_template' %}">+ Create new plan</a></h2>
-        </div>
-      </div>
-      <table class="plantable">
+<div>
+ {% if object_list.exists %}
+ <div class="planlist-header">
+ <h1>Your plans</h1>
+ <h2 id="create_new_plan"><a href="{% url 'choose_template' %}">+ Create new plan</a></h2>
+ </div>
 
-        {% for object in object_list %}
-        <tbody>
-          <tr class="summary">
-            <td class="plan-title"><a href="{% url 'plan_detail' plan=object.id %}">{{ object.title|capfirst }} v{{ object.version }}{% show_checkmark object.valid %}</a></td>
-            <td class="template-name">{{ object.template }}</a></td>
-            <td class="datetime">{{ object.added }}</td>
-            <td class="action">
-              <button class="btn btn-default collapsed" id="button-{{ object.id }}" data-toggle="collapse" data-target="#actions-{{ object.id }}" aria-haspopup="true" aria-label="Show/hide">
-                <span class="caret"></span>
-              </button>
-            </td>
-          </tr>
-          <tr class="actions collapse" id="actions-{{ object.id }}" aria-expanded="false">
-             <td colspan="4">
-               <ul>
-                 {% include "easydmp/plan/_plan_actions_dropdown.html" %}
-               </ul>
-             </td>
-          </tr>
-        </tbody>
-        {% endfor %}
-      </table>
-      {% else %}
-      <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-        <h1>Your plans</h1>
-        <p>You currently have no plans. After creating or being given access to
-        your first plan, it'll turn up here.</p>
-        <a class="btn btn-default" href="{% url 'new_plan' %}">Create your first plan</a>
-      </div>
-      {% endif %}
-    </div>
-  </div>
+ <div class="plantable" role="table" aria-label="Plan list">
+
+   {% for object in object_list %}
+   <details class="plan-actions" role="rowgroup">
+     <summary role="row">
+       <div role="cell" class="plan-title"><a href="{% url 'plan_detail' plan=object.id %}">{{ object.title|capfirst }} v{{ object.version }}</a>{% show_checkmark object.valid %}</div>
+       <div role="cell" class="template-name">{{ object.template }}</a></div>
+       <div role="cell" class="datetime">{{ object.added }}</div>
+       <div role="cell" class="action" aria-hidden="true"><span class="caret"></span></div>
+     </summary>
+     <div role="row" class="actions" id="actions-{{ object.id }}" aria-expanded="false">
+       <ul>
+         {% include "easydmp/plan/_plan_actions_dropdown.html" %}
+       </ul>
+     </div>
+   </details>
+   {% endfor %}
+ </div>
+ {% else %}
+ <h1>Your plans</h1>
+ <p>You currently have no plans. After creating or being given access to
+ your first plan, it'll turn up here.</p>
+ <a class="btn btn-default" href="{% url 'new_plan' %}">Create your first plan</a>
+ {% endif %}
+</div>
 {% endblock content %}

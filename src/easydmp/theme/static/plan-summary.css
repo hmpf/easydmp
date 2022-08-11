@@ -1,0 +1,207 @@
+@import "plan-actions.css";
+
+div.plan-detail { padding: 0; }
+
+/* sub-header */
+
+.plan-detail summary {
+  background-color: var(--subnav-bg-color);
+  color: var(--subnav-fg-color);
+  padding: 40px;
+  margin: 0;
+  justify-content: space-between;
+}
+.plan-detail .plan-actions summary * {
+  padding: 0;
+  margin: 0;
+}
+.plan-detail details h1 {
+  font-size: 1.75rem;
+  font-weight: bold;
+}
+.plan-detail details .actions {
+  background-color: var(--main-bg-color);
+}
+.plan-detail summary span.caret {
+  height: 23px;
+  width: 23px;
+  vertical-align: middle;
+  background: url('icons/icon-options.png') no-repeat center center;
+  background-size: 100%;
+}
+.plan-detail details[open] summary span.caret {
+  background: url('icons/icon-close.png') no-repeat center center;
+  background-size: 76%;
+}
+
+/* end sub-header */
+
+.dmpsummary summary {
+  color: var(--main-fg-color);
+}
+
+.dmpsummary .subsection details summary {
+  background-color: var(--pale-grey-color);
+}
+
+.dmpsummary .topmost summary {
+  background-color: var(--main-bg-color);
+}
+
+.dmpsummary .answerset {
+  background-color: var(--pale-grey-color);
+  padding: 1ex;
+  margin-top: 1em;
+}
+
+.dmpsummary .answerset-header {
+  display: flex;
+  align-items: center;
+  flex-flow: row;
+  justify-content: space-between;
+}
+
+.dmpsummary .answerset-header .answerset-name {
+  flex-grow: 1;
+  width: 70%;
+}
+
+.dmpsummary .answerset:first-child {
+  margin-top: 0;
+}
+
+.dmpsummary .section-controls {
+  display: flex;
+}
+
+.dmpsummary .topmost:not(:first-child) {
+  border-top: 2px solid var(--main-fg-color);
+}
+.dmpsummary .subsection {
+  border-top: 1px solid var(--mid-grey-color);
+}
+
+.dmpsummary section {
+  display: block;
+}
+
+.dmpsummary details {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.dmpsummary summary .section_title a {
+  color: var(--main-fg-color);
+  font-size: 22px;
+  font-weight: bold;
+  vertical-align: middle;
+}
+.dmpsummary summary .section_title {
+  width: 100%;
+}
+.dmpsummary .subsection summary .section_title a {
+  color: var(--standard-link-color);
+}
+.dmpsummary summary .section-controls {
+  flex-grow: 0;
+}
+.dmpsummary summary {
+  display: flex;
+  justify-content: space-between;
+}
+.dmpsummary summary > * {
+  margin: 0;
+  padding: 0;
+}
+.dmpsummary .section-depth-1 section summary .section-header {
+	background-color: var(--pale-grey-color):
+}
+.dmpsummary .section-body {
+  height: auto;
+}
+
+.dmpsummary summary * {
+	line-height: 5rem;
+  height: 5rem;
+}
+.dmpsummary .section-controls {
+  align-items: center;
+  display: flex;
+  flex-flow: row nowrap;
+  flex-grow: 0;
+  height: 5rem;
+  justify-content: center;
+}
+.dmpsummary .add-answerset {
+  padding-right: 1rem;
+  padding-left: 1rem;
+}
+.dmpsummary .add-answerset button {
+  background: url('icons/icon-plus-black.png') no-repeat center center;
+  background-size: 100%;
+  height: 18px;
+  width: 18px;
+  border-style: none;
+  vertical-align: middle;
+  padding: 0.5rem;
+}
+.dmpsummary .remove-answerset button {
+  background: url('icons/icon-minus-black.png') no-repeat center center;
+  background-size: 100%;
+  border-style: none;
+  height: 18px;
+  width: 18px;
+  vertical-align: middle;
+  padding: 0.5rem;
+}
+
+.dmpsummary details summary .section-controls .caret{
+  width: 11px;
+  height: 11px;
+  background-color: var(--main-bg-color);
+  border-right: 3px solid var(--main-fg-color);
+  border-top: 3px solid var(--main-fg-color);
+  border-radius: 2px;
+  transform: rotate(135deg);
+  margin-right: 0.4rem;
+  margin-left: 0.5rem;
+}
+.dmpsummary .subsection .section-controls .caret{
+  background-color: var(--pale-grey-color);
+  border-left: 3px solid var(--pale-grey-color);
+  border-bottom: 3px solid var(--pale-grey-color);
+}
+
+.dmpsummary details[open] > summary .section-controls .caret{
+  transform: rotate(-45deg);
+}
+.dmpsummary .question {
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+}
+.dmpsummary .question p {
+	margin: 0;
+}
+.dmpsummary .answer {
+	margin: 0.5em 0 2em;
+}
+.dmpsummary .answerset-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-flow: row nowrap;
+  margin-bottom: 10px;
+  column-gap: 2rem;
+}
+.dmpsummary .answerset-header * {
+  margin: 0;
+  height: 2.8rem;
+  line-height: 2.8;
+}
+.dmpsummary .answerset-header a {
+  font-weight: bold;
+  display: inline-block;
+}
+

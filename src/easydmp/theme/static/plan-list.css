@@ -1,0 +1,71 @@
+@import "/static/plan-actions.css";
+
+/* plantable */
+
+.plantable summary {
+  border-bottom: 1px dashed #eeebe8;
+}
+.plantable summary .caret{
+  width: 16px;
+  height: 16px;
+  background: url('icons/icon-options-black.png') no-repeat center center;
+  background-size: 100%;
+  transform: rotate(-0deg);
+  border: none;
+  text-align: right;
+}
+.plantable details[open] .caret {
+  background: transparent url('icons/icon-close.png') no-repeat center center;
+  background-size: 100%;
+}
+.planlist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  border-bottom: 1px dashed #eeebe8;
+  padding-bottom: 2rem;
+}
+.planlist-header h1 {
+  font-size: 28px;
+  font-weight: bold;
+}
+#create_new_plan {
+  font-size: 1.2em !important;
+  display: inline-block;
+}
+#create_new_plan h2{
+  font-size: 1em;
+  margin-bottom: 0;
+}
+.plantable {
+  display: flex;
+  box-sizing: border-box;
+  flex-flow: column;
+}
+.plantable summary {
+    border-bottom: 1px dashed #eeebe8;
+    text-align: middle;
+    display: flex;
+}
+.plantable details[open] summary {
+  border: none;
+}
+.plantable summary div {
+    padding: 2ex 1ex 2ex 1em;
+}
+.plantable .plan-title {
+    padding-left: 0;
+    font-weight: bold;
+    width: 50%;
+}
+.plantable .template-name {
+    width: 50%;
+}
+.plantable .datetime {
+    flex: 0 0 12rem;
+    margin-left: auto;
+}
+.plantable .action {
+    padding-right: 0;
+    flex: 0 0 1rem;
+}

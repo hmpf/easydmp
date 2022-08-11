@@ -1,0 +1,14 @@
+{% extends "easydmp/invitation/plan/edit/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h1>Resend invitation to edit {{ object.plan.title|capfirst }}</h1>
+
+<div class="confirm-form">
+  <p>You are about to resend an invitation to {{ object.email_address }} to edit the plan {{ object.plan.title|capfirst }}.</p>
+  <form action="." method="POST">
+    {% csrf_token %}
+    <input type="submit" value="I hereby resend the invitation to edit {{ object.plan.title|capfirst }}" class="btn btn-primary" />
+  </form>
+</div>
+{% endblock content %}

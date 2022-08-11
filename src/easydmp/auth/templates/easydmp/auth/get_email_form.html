@@ -1,20 +1,16 @@
 {% extends "easydmp/auth/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-  <div class="row uninett-color-white uninett-whole-row">
-    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-      <h2>Add email address to account</h2>
-      <p>Your login method didn't provide an email address to use for
-      a username so you will have to input it below.</p>
-      <p>The email address is used for this so that your peers can recognize
-      you. As there is currently no automated email verification step, make
-      sure to double check that the address is correct.</p>
+ <h1>Add email address to account</h1>
+ <p>Your login method didn't provide an email address to use for
+ a username so you will have to input it below.</p>
+ <p>The email address is used for this so that your peers can recognize
+ you. As there is currently no automated email verification step, make
+ sure to double check that the address is correct.</p>
 
-      <form action="{{ nexthop }}" method="post">
-        {% csrf_token %}
-        {{ form|crispy }}
-        <button type="submit">Submit</button>
-      </form>
-    </div>
-  </div>
+ <form class="smallform" action="{{ nexthop }}" method="post">
+   {% csrf_token %}
+   {{ form|crispy }}
+   <input type="submit" value="Submit" />
+ </form>
 {% endblock content %}

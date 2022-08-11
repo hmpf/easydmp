@@ -1,0 +1,192 @@
+/* Edit Page */
+
+.path .current {
+  font-weight: bold;
+  background: var(--dark-grey-color);
+  color: var(--main-bg-color);
+}
+.superuser * {
+  border-color: var(--pale-grey-color);
+  border-style: solid;
+  border-width: 1px 6px 1px 6px;
+  background-color: var(--pale-grey-color);
+  font-weight: bold;
+}
+
+/* header */
+
+#editplan_header {
+  background: #eef9ff;
+  border-bottom: none;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  width: 100%;
+  height: auto;
+  padding: 0;
+  justify-content: space-between;
+}
+#editplan_header h1 {
+  color: var(--standard-link-color);
+  padding: 2.5rem;
+  font-size: 28px;
+  font-weight: bold;
+}
+#editplan_header .btn-grp {
+  text-align: right;
+  display: flex;
+  flex-flow: column nowrap;
+  padding-right: 2.5rem;
+}
+#editplan_header .summary-link, #editplan_header .caret{
+  color: var(--standard-link-color);
+  background: transparent;
+  font-weight: bold;
+  padding: 0;
+  font-size: 18px;
+  display: inline-block;
+  vertical-align: middle;
+}
+#editplan_header .summary-link:hover{
+  background-color: transparent;
+  text-decoration: underline;
+  color: #005c9e;
+}
+#editplan_header .caret {
+  background: transparent url('icons/icon-arrow.png') no-repeat center center;
+  width: 15px;
+  height: 28.8px;
+  background-size: 100%;
+  margin-right: 10px;
+}
+
+/* Autosave message */
+
+.savetxt {
+  color: var(--dark-grey-color);
+  font-size: 15px;
+  padding: 0;
+}
+
+/* progress / status bar */
+
+.progressbar {
+  height: 2.5rem;
+  margin-bottom: 1em;
+  margin-top: 0;
+  padding: 0;
+  font-size: 13px;
+}
+.progressbar ul {
+  height: 100%;
+  width: 100%;
+  background-color: #8fcef1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+}
+.progressbar li {
+  list-style: none;
+  display: inline-block;
+  cursor: pointer;
+}
+.progressbar li.active span {
+  background: var(--standard-link-color);
+}
+.progressbar span {
+  width: 1.875rem;
+  height: 1.875rem;
+  border: 1px solid var(--button-bg-hover-color);
+  background-color: #eeebe8;
+  border-radius: 50%;
+  margin-right: 0.3rem;
+  background-size: 100%;
+  display: inline-block;
+  transition: all .5s ease-out 0s;
+}
+.progressbar li:hover span {
+  background: var(--standard-link-color);
+}
+.progressbar a {
+  display: block;
+  color: var(--dark-grey-color);
+}
+.progressbar a:hover {
+  text-decoration: none;
+  color: var(--main-fg-color);
+}
+.progressbar * {
+  text-decoration: none;
+  line-height: 1.875rem;
+  vertical-align: middle;
+}
+
+/* end progressbar */
+
+.section-depth-1 h2 {
+  padding-bottom: 1.5em;
+  margin: 0;
+  color: var(--main-fg-color);
+}
+.form-actions {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.form-actions input {
+  line-height: 1.25rem;
+}
+.form-actions a button {
+  background-color: #e9e9ed;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 6px 12px;
+}
+.form-actions a button:hover {
+  background-color: #d0d0d7;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+}
+.section-header > * {
+  line-height: 2rem;
+}
+.section-header .section-title {
+  width: 100%;
+  display: inline-block;
+  vertical-align: middle;
+  padding: 0;
+  margin: 0;
+}
+.answerset-controls {
+  display: flex;
+  gap: 1rem;
+}
+.add-answerset button {
+  background: url('/static/icons/icon-plus-black.png') no-repeat center center;
+  background-size: 100%;
+  height: 18px;
+  width: 18px;
+  padding: 0.5rem;
+  border-style: none;
+  vertical-align: middle;
+}
+.remove-answerset button {
+  background: url('/static/icons/icon-minus-black.png') no-repeat center center;
+  background-size: 100%;
+  height: 18px;
+  width: 18px;
+  padding: 0.5rem;
+  border-style: none;
+  vertical-align: middle;
+}
+#question-position {
+  vertical-align: middle;
+  line-height: 2.125rem;
+}

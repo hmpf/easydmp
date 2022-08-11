@@ -58,7 +58,7 @@ input[type="search"] {
     visibility: hidden;
 }
 .checkmark::after {
-    content: '✅';
+    content: '\02705';
     visibility: visible;
 }
 
