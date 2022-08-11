@@ -884,10 +884,11 @@ class Plan(DeletionMixin, ClonableModel):
                 new_answerset.save()
 
     def clean(self):
-        for section in self.template.sections.all():
-            for answerset in self.answersets.filter(section=section):
-                if answerset.data or answerset.previous_data:
-                    answerset.clean()
+        if self.template_id:
+            for section in self.template.sections.all():
+                for answerset in self.answersets.filter(section=section):
+                    if answerset.data or answerset.previous_data:
+                        answerset.clean()
 
     def validate_data(self, recalculate: bool = True) -> bool:
         qids = self.question_ids_answered()
