@@ -22,9 +22,12 @@ class TestPlanValidation(test.TestCase):
         plan = PlanFactory(template=self.template)
         plan.data = None
         plan.template.list_unknown_questions = lambda x: set()
-        result = plan.validate_data(recalculate=False)
-        expected = False
-        self.assertEqual(result, expected)
+        with self.assertLogs('easydmp.plan.models', level='ERROR') as cm:
+            result = plan.validate_data(recalculate=False)
+            self.assertEqual(len(cm.output), 1)
+            self.assertIn('has no data: invalid', cm.output[0])
+            expected = False
+            self.assertEqual(result, expected)
 
 # TODO: replace with test that verifies that answers for deleted questions get
 # deleted on save/verify
