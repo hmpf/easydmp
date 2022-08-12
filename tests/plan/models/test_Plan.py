@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import logging
 
 from django import test
 from django.test import tag, skipUnlessDBFeature

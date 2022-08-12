@@ -118,6 +118,4 @@ class TestFunctions(unittest.TestCase):
             "  choice bah 32 notes  choice Yes"
         )
 
-        print()
-        print(dump_obj_to_searchable_string(obj))
         self.assertEqual(expected, dump_obj_to_searchable_string(obj))
