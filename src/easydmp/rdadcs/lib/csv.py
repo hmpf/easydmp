@@ -6,7 +6,7 @@ from .models import createupdate_rda_question_link
 from .models import createupdate_rda_section_link
 
 
-def load_rdadcs_from_csv(file, stderr=sys.stderr, csv_options=None):
+def load_rdadcs_from_csv(file, stderr=sys.stderr, csv_options=None, show_warnings=True):
     if not csv_options:
         csv_options = {'delimiter': '\t'}
     tabreader = csv.DictReader(file, fieldnames=('path', 'type'), **csv_options)
@@ -14,8 +14,9 @@ def load_rdadcs_from_csv(file, stderr=sys.stderr, csv_options=None):
         path = line['path']
         input_type = line.get('type', None)
         warnings = createupdate_rdakey(path, input_type)
-        for warning in warnings:
-            stderr.write(warning)
+        if show_warnings:
+            for warning in warnings:
+                stderr.write(warning)
 
 
 def dump_rdadcs_to_csv(paths_types, file, stderr=sys.stderr, csv_options=None):

@@ -27,7 +27,7 @@ class TestModelResourceLoading(DjangoTestCase):
     def test_load_rdadcs_keymapping_modelresource(self):
         count = RDADCSKey.objects.count()
         self.assertEqual(count, 0)
-        load_rdadcs_keymapping_modelresource()
+        load_rdadcs_keymapping_modelresource(show_warnings=False)
         count = RDADCSKey.objects.count()
         self.assertEqual(count, 93)
 

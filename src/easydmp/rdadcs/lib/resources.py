@@ -24,9 +24,9 @@ def load_rdadcs_eestore_cache_modelresource():
         yield source
 
 
-def load_rdadcs_keymapping_modelresource():
+def load_rdadcs_keymapping_modelresource(show_warnings=True):
     with open_text(*RDADCS_KEYFILE) as F:
-        load_rdadcs_from_csv(F)
+        load_rdadcs_from_csv(F, show_warnings=show_warnings)
 
 
 def load_rdadcs_template_dictresource():

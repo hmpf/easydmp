@@ -16,7 +16,7 @@ class RDADCSTest(test.TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        load_rdadcs_keymapping_modelresource()
+        load_rdadcs_keymapping_modelresource(show_warnings=False)
 
     @tag('JSONField', 'load_file')
     def test_minimal_rda11_export(self):

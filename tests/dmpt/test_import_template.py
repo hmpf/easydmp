@@ -210,7 +210,7 @@ class TestImportOrGetTemplate(DjangoTestCase):
     def test_import_rdadcs_with_import_serialized_template_export(self):
         # fixtures
         tuple(load_rdadcs_eestore_cache_modelresource())
-        load_rdadcs_keymapping_modelresource()
+        load_rdadcs_keymapping_modelresource(show_warnings=False)
         complex_export_dict = load_rdadcs_template_dictresource()
 
         export_dict = deepcopy(complex_export_dict)
