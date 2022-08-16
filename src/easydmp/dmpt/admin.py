@@ -549,6 +549,11 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
 
     # Overrides
 
+    def get_readonly_fields(self, request, obj=None):
+        if request.user.has_superpowers:
+            return self.readonly_fields
+        return self.readonly_fields + ['optional', 'repeatable']
+
     def get_limited_queryset(self, request):
         return get_sections_for_user(request.user)
 
