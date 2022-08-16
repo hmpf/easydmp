@@ -900,7 +900,7 @@ class Plan(DeletionMixin, ClonableModel):
             self.clean()
         if self.is_empty:
             error = 'The plan {} ({}) has no data: invalid'
-            LOG.error(error.format(self, self.pk))
+            LOG.info(error.format(self, self.pk))
             return False
         if recalculate:
             for answerset in self.answersets.all():
