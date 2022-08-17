@@ -22,7 +22,7 @@ class TestPlanValidation(test.TestCase):
         plan = PlanFactory(template=self.template)
         plan.data = None
         plan.template.list_unknown_questions = lambda x: set()
-        with self.assertLogs('easydmp.plan.models', level='ERROR') as cm:
+        with self.assertLogs('easydmp.plan.models', level='INFO') as cm:
             result = plan.validate_data(recalculate=False)
             self.assertEqual(len(cm.output), 1)
             self.assertIn('has no data: invalid', cm.output[0])
