@@ -11,6 +11,23 @@ Planned
 
 * Good UX for repeated sections
 
+1.24.3
+------
+
+The shut up release
+
+Micro-features:
+
+* Temporarily disallow non-superusers from making optional/repeatable sections
+* Lowered log level for noisy warning
+* Added flag to rda dcs key loading command to silence output
+
+Paperwork:
+
+* Upgraded Django 4.0 to shut up Dependabot
+* Improved some tests, now less chatty
+* Rearranged flake8 config so that it doesn't check JSON-files..
+
 1.24.2
 ------
 
