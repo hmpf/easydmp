@@ -122,6 +122,18 @@ class AnswerHelper():
             return self.save_choice(choice, saved_by)
         return None
 
+    def skips_answerset(self, choice):
+        if not self.section.optional:
+            return False
+        if self.question.position != 0:
+            return False
+        elif self.question.input_type_id != 'bool':
+            return False
+        condition = choice.get('choice', None)
+        if condition is None:
+            return False  # Not answered yet
+        return condition == 'No'
+
     def save_choice(self, choice, saved_by):
         LOG.debug('save_choice: q%s/p%s: Answer: previous %s current %s',
                   self.question_id, self.plan.pk, self.current_choice, choice)
@@ -129,9 +141,11 @@ class AnswerHelper():
             LOG.debug('save_choice: q%s/p%s: saving changes',
                       self.question_id, self.plan.pk)
             self.plan.modified_by = saved_by
-            self.answerset.update_answer(self.question_id, choice)
+            skipped = self.skips_answerset(choice)
+            self.answerset.update_answer(self.question_id, choice, skipped)
             self.plan.save(user=saved_by)
             self.set_valid()
+            # report on change
             if choice:
                 new_condition = choice.get('choice', None)
                 new_answer = self.question._serialize_condition(new_condition)
@@ -288,7 +302,7 @@ class AnswerSet(ClonableModel):
         return self.data.get(str(question_id), {})
 
     @transaction.atomic
-    def update_answer(self, question_id, choice):
+    def update_answer(self, question_id, choice, skipped=False):
         lookup_question_id = str(question_id)
         previous_choice = self.data.get(lookup_question_id, None)
         if previous_choice:
@@ -298,6 +312,8 @@ class AnswerSet(ClonableModel):
             question_id=int(question_id),
             defaults={'valid': True}
         )
+        if self.skipped != skipped:
+            self.skipped = skipped
         self.save()
 
     def get_choice(self, question_id):

@@ -567,6 +567,10 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
         ('Super section', {
             'fields': ('super_section', 'section_depth'),
         }),
+        ('Options for optional questions', {
+            'fields': ('optional_canned_text',),
+            'classes': ('collapse',),
+        }),
         ('Advanced', {
             'fields': ('cloned_from', 'cloned_when'),
             'classes': ('collapse',),
