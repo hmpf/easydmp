@@ -270,11 +270,15 @@ class AnswerSet(ClonableModel):
             parent=self.parent
         ).order_by('pk')
 
+    @transaction.atomic
     def add_children(self):
         for section in self.section.subsections.all():
-            answerset = AnswerSet(plan=self.plan, section=section, parent=self)
-            answerset.save()
-            answerset.add_children()  # Cannot put this in self.save(), would loop
+            answerset, _ = AnswerSet.objects.get_or_create(plan=self.plan, section=section, parent=self)
+            if answerset.answersets.exists():
+                for subanswerset in answerset.answersets.all():
+                    subanswerset.add_children()
+            else:
+                answerset.add_children()  # Cannot put this in self.save(), would loop
 
     @property
     def is_empty(self):
@@ -712,7 +716,6 @@ class Plan(DeletionMixin, ClonableModel):
             self.set_adder_as_editor()
             return
 
-        self.search_data = dump_obj_to_searchable_string(self.total_answers)
         if user:
             self.modified_by = user
         if not self.pk:  # New, empty plan
@@ -725,6 +728,7 @@ class Plan(DeletionMixin, ClonableModel):
             log_event(self.added_by, 'create', target=self,
                       timestamp=self.added, template=template)
         else:
+            self.search_data = dump_obj_to_searchable_string(self.total_answers)
             self.modified = tznow()
             if question is not None:
                 # set visited
@@ -844,7 +848,8 @@ class Plan(DeletionMixin, ClonableModel):
     @transaction.atomic
     def initialize_starting_answersets(self):
         for section in self.template.sections.filter(super_section__isnull=True):
-            a = self.create_answerset(section)
+            if not section.answersets.exists():
+                a = self.ensure_answerset(section)
 
     @transaction.atomic
     def create_answerset(self, section, parent=None):
@@ -853,6 +858,18 @@ class Plan(DeletionMixin, ClonableModel):
         a.save()
         a.add_children()  # recursive
         return a
+
+    @transaction.atomic
+    def ensure_answerset(self, section, parent=None):
+        "Ensure a section has the answersets it needs"
+        answerset, _ = AnswerSet.objects.get_or_create(
+            plan=self,
+            section=section,
+            parent=parent,
+            defaults={'valid': False},
+        )
+        answerset.add_children()  # recursive
+        return answerset
 
     # Traversal
 
