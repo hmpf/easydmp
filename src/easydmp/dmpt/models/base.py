@@ -2010,6 +2010,10 @@ class CannedAnswer(DeletionMixin, ClonableModel):
 #         super().save(*args, **kwargs)
 #         self.sync_transition()
 
+    @property
+    def is_readonly(self):
+        return self.question.is_readonly
+
     def clone(self, question):
         new = self.get_copy()
         new.question = question

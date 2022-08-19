@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 import warnings
 from urllib.parse import parse_qsl
 
@@ -12,7 +13,6 @@ from django.http import Http404
 from django.urls import reverse, path
 from django.utils.html import format_html, mark_safe
 
-from guardian.admin import GuardedModelAdmin
 from guardian.shortcuts import get_objects_for_user, assign_perm
 
 from easydmp.auth.utils import set_user_object_permissions
@@ -46,29 +46,38 @@ hence all questions are on_trunk.
 """
 
 
-def get_templates_for_user(user):
+def get_templates_for_user(user, verbs=None):
     if user.has_superpowers:
         return Template.objects.all()
+    good_verbs = ('change', 'add', 'delete', 'view', 'use')
+    if verbs is None:
+        verbs = ('change',)
+    permission_set = set()
+    for verb in verbs:
+        if verb not in good_verbs:
+            verb = 'change'
+        permission_set.add(f'dmpt.{verb}_template')
     templates = get_objects_for_user(
         user,
-        'dmpt.change_template',
+        permission_set,
+        any_perm=True,
         accept_global_perms=False,
     )
     return templates
 
 
-def get_sections_for_user(user):
-    templates = get_templates_for_user(user)
+def get_sections_for_user(user, verbs=None):
+    templates = get_templates_for_user(user, verbs)
     return Section.objects.filter(template__in=templates)
 
 
-def get_questions_for_user(user):
-    sections = get_sections_for_user(user)
+def get_questions_for_user(user, verbs=None):
+    sections = get_sections_for_user(user, verbs)
     return Question.objects.filter(section__in=sections)
 
 
-def get_canned_answers_for_user(user):
-    questions = get_questions_for_user(user)
+def get_canned_answers_for_user(user, verbs=None):
+    questions = get_questions_for_user(user, verbs)
     return CannedAnswer.objects.filter(question__in=questions)
 
 
@@ -89,6 +98,11 @@ class BaseOrderingInline(admin.TabularInline):
 
     You may override:
 
+    * permissions_checker: the name (as a string) of a function that takes
+     a user and an iterable of permission verbs (one or more of 'add', 'view',
+     'change', 'delete', 'use'). It returns an iterable of model instances that
+     has at least one of the permissions. Used to visually disable all buttons
+     if the user does not have permission to change the object.
     * ordering_fieldname: the field that holds the order, by default "position"
     * item: a method that prints a human readable summary of the object to be
       ordered, by default ``str(obj)``
@@ -96,8 +110,10 @@ class BaseOrderingInline(admin.TabularInline):
     If you extend an BaseOrderingInline to work as a normal inline, you should
     probably also override the following:
 
-    * readonly_fields: ordering_fieldname needs to be in here if it is in fields
-    * fields: must contain "movement", for the movement buttons
+    * fields: must contain "movement", for the movement buttons, and
+      ordering_fieldname
+    * readonly_fields: must always contain at least "movement" and
+      ordering_fieldname
     * extra
     * can_delete
     * show_change_link
@@ -110,6 +126,13 @@ class BaseOrderingInline(admin.TabularInline):
     readonly_fields = fields
     can_delete = False
     show_change_link = True
+    permissions_checker = None
+    MOVEMENT_BUTTONS = {
+        Move.UP: {'active': True, 'icon': '⭡'},
+        Move.TOP: {'active': True, 'icon': '⭱'},
+        Move.DOWN: {'active': True, 'icon': '⭣'},
+        Move.BOTTOM: {'active': True, 'icon': '⭳'},
+    }
 
     def get_order(self, parent):
         raise NotImplementedError
@@ -132,24 +155,33 @@ class BaseOrderingInline(admin.TabularInline):
     def has_add_permission(self, request, _=None):
         return False
 
+    def has_change_permission(self, request, obj=None):
+        if obj and isinstance(self.permissions_checker, str):
+            allowed_objs = globals()[self.permissions_checker](request.user)
+            self.changeable = obj in allowed_objs
+        else:
+            self.changeable = super().has_change_permission(request, obj)
+        return self.changeable
+
     @mark_safe
     def movement(self, obj):
-        buttons = {
-            Move.UP: {'active': True, 'icon': '⭡'},
-            Move.TOP: {'active': True, 'icon': '⭱'},
-            Move.DOWN: {'active': True, 'icon': '⭣'},
-            Move.BOTTOM: {'active': True, 'icon': '⭳'},
-        }
-        parent = self.get_parent(obj)
-        order = self.get_order(parent)
-        obj_index = order.index(obj.pk)
+        buttons = deepcopy(self.MOVEMENT_BUTTONS)
         # Deactivate invalid movement directions
-        if obj_index == 0:
+        if obj.is_readonly or not self.changeable:
             buttons[Move.UP]['active'] = False
             buttons[Move.TOP]['active'] = False
-        if obj_index == len(order) - 1:
             buttons[Move.DOWN]['active'] = False
             buttons[Move.BOTTOM]['active'] = False
+        else:
+            parent = self.get_parent(obj)
+            order = self.get_order(parent)
+            obj_index = order.index(obj.pk)
+            if obj_index == 0:
+                buttons[Move.UP]['active'] = False
+                buttons[Move.TOP]['active'] = False
+            if obj_index == len(order) - 1:
+                buttons[Move.DOWN]['active'] = False
+                buttons[Move.BOTTOM]['active'] = False
         # Build html, this should maybe be a template or widget
         button_html = []
         icon_html_template = '<span class="{button}">{icon}</span>'
@@ -168,15 +200,29 @@ class BaseOrderingInline(admin.TabularInline):
 class TemplateAuthMixin:
     message_cannot_delete = ('The {} cannot be deleted because it is'
                              ' in use by one or more plans.')
+    permissions_checker = None
 
     def has_change_permission(self, request, obj=None):
-        if obj and obj.is_readonly:
-            return False
+        if obj:
+            if obj.is_readonly:
+                return False
+            if isinstance(self.permissions_checker, str):
+                allowed_objs = globals()[self.permissions_checker](request.user)
+                return obj in allowed_objs
         return super().has_change_permission(request, obj)
 
+    def has_view_permission(self, request, obj=None):
+        if obj and isinstance(self.permissions_checker, str):
+            allowed_objs = globals()[self.permissions_checker](request.user, ['view'])
+            return obj in allowed_objs
+        return super().has_view_permission(request, obj)
+
     def has_delete_permission(self, request, obj=None):
-        if obj and obj.is_readonly:
-            if obj.in_use():
+        if obj:
+            if isinstance(self.permissions_checker, str):
+                allowed_objs = globals()[self.permissions_checker](request.user, ['delete'])
+                return obj in allowed_objs
+            if obj.is_readonly and obj.in_use():
                 model = get_model_name(obj)
                 self.message_user(
                     request,
@@ -246,6 +292,7 @@ class SectionOrderingInline(BaseOrderingInline):
     readonly_fields = fields
     movement_view_pattern = '%s:%s-template-section-reorder'
     verbose_name_plural = "Section ordering"
+    permissions_checker = 'get_templates_for_user'
 
     def get_order(self, parent):
         return parent.get_section_order()
@@ -294,6 +341,7 @@ class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissio
             'classes': ('collapse',),
         }),
     )
+    permissions_checker = 'get_templates_for_user'
 
     class Media:
         css = {
@@ -305,6 +353,8 @@ class TemplateAdmin(AdminConvenienceMixin, TemplateAuthMixin, SetObjectPermissio
     def reorder_sections(self, request, parent_pk, pk, movement):
         url = self.get_change_url(parent_pk)
         parent = self.model.objects.get(pk=parent_pk)
+        if parent.is_readonly or parent not in get_sections_for_user(request.user):
+            return HttpResponseRedirect(url)
         try:
             parent.reorder_sections(pk, movement)
         except ValueError as e:
@@ -453,6 +503,7 @@ class SubsectionOrderingInline(BaseOrderingInline):
     readonly_fields = fields
     movement_view_pattern = '%s:%s-section-section-reorder'
     verbose_name_plural = "Subsection ordering"
+    permissions_checker = 'get_sections_for_user'
 
     def get_order(self, parent):
         return parent.get_section_order()
@@ -466,6 +517,7 @@ class QuestionOrderingInline(BaseOrderingInline):
     fk_name = 'section'
     movement_view_pattern = '%s:%s-section-question-reorder'
     verbose_name_plural = "Question ordering"
+    permissions_checker = 'get_sections_for_user'
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -519,6 +571,7 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
     inlines = [SubsectionOrderingInline, QuestionOrderingInline]
     readonly_fields = ['cloned_from', 'cloned_when', 'position']
     _model_slug = 'section'
+    permissions_checker = 'get_sections_for_user'
 
     class Media:
         css = {
@@ -530,6 +583,8 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
     def reorder_sections(self, request, parent_pk, pk, movement):
         url = self.get_change_url(parent_pk)
         parent = self.model.objects.get(pk=parent_pk)
+        if parent.is_readonly or parent not in get_sections_for_user(request.user):
+            return HttpResponseRedirect(url)
         try:
             parent.reorder_sections(pk, movement)
         except ValueError as e:
@@ -540,6 +595,8 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
     def reorder_questions(self, request, parent_pk, pk, movement):
         url = self.get_change_url(parent_pk)
         parent = self.model.objects.get(pk=parent_pk)
+        if parent.is_readonly or parent not in get_questions_for_user(request.user):
+            return HttpResponseRedirect(url)
         try:
             parent.reorder_questions(pk, movement)
         except ValueError as error:
@@ -555,7 +612,7 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
         return self.readonly_fields + ['optional', 'repeatable']
 
     def get_limited_queryset(self, request):
-        return get_sections_for_user(request.user)
+        return get_sections_for_user(request.user, ('change', 'view'))
 
     def get_form(self, request, obj=None, **kwargs):
         request.instance = obj
@@ -734,6 +791,7 @@ class QuestionCannedAnswerOrderingInline(BaseOrderingInline):
     fk_name = 'question'
     movement_view_pattern = '%s:%s-question-cannedanswer-reorder'
     verbose_name_plural = "Canned answer ordering"
+    permissions_checker = 'get_questions_for_user'
 
     def get_order(self, parent):
         return parent.get_canned_answer_order()
@@ -800,6 +858,7 @@ class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMo
         }),
     )
     _model_slug = 'question'
+    permissions_checker = 'get_questions_for_user'
 
     class Media:
         css = {
@@ -811,6 +870,8 @@ class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMo
     def reorder_canned_answers(self, request, parent_pk, pk, movement):
         url = self.get_change_url(parent_pk)
         parent = self.model.objects.get(pk=parent_pk)
+        if parent.is_readonly or parent not in get_canned_answers_for_user(request.user):
+            return HttpResponseRedirect(url)
         try:
             parent.reorder_canned_answers(pk, movement)
         except ValueError as error:
@@ -825,8 +886,8 @@ class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMo
             return self.readonly_fields + ['on_trunk']
         return self.readonly_fields
 
-    def get_queryset(self, request):
-        return get_questions_for_user(request.user)
+    def get_limited_queryset(self, request):
+        return get_questions_for_user(request.user, ('change', 'view'))
 
     def get_object(self, request, object_id, from_field=None):
         queryset = self.get_queryset(request)
