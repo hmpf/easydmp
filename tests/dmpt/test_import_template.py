@@ -13,6 +13,7 @@ from easydmp.dmpt.import_template import _check_missing_input_types
 from easydmp.dmpt.import_template import deserialize_template_export
 from easydmp.dmpt.import_template import import_or_get_template
 from easydmp.dmpt.import_template import TemplateImportError
+from easydmp.dmpt.models import Section, Question
 from easydmp.rdadcs.lib.resources import load_rdadcs_eestore_cache_modelresource
 from easydmp.rdadcs.lib.resources import load_rdadcs_keymapping_modelresource
 from easydmp.rdadcs.lib.resources import load_rdadcs_template_dictresource
@@ -195,17 +196,26 @@ class TestDeserializeTemplateExport(UnitTestCase):
 class TestImportOrGetTemplate(DjangoTestCase):
 
     def test_import_serialized_template_export_with_one_section(self):
+        # ensure no cruft from previous tests
+        self.assertEqual(Section.objects.count(), 0)
+        self.assertEqual(Question.objects.count(), 0)
         export_dict = deepcopy(EXPORT_DICT)
         tim = import_or_get_template(export_dict, via='test')
         # ensure mappings are of the right format by reloading the tim
         tim.refresh_from_db()  # int -> str after save
         mappings = tim.mappings
+        # one section in the import, one section in the database
+        self.assertEqual(Section.objects.count(), 1)
+        generated_section_id = Section.objects.get().id
         self.assertIn('184', mappings['sections'])
         self.assertTrue(mappings['sections']['184'])
-        self.assertEqual(mappings['sections']['184'], 1)
+        self.assertEqual(mappings['sections']['184'], generated_section_id)
+        # one question in the import, one question in the database
+        self.assertEqual(Question.objects.count(), 1)
+        generated_question_id = Question.objects.get().id
         self.assertIn('625', mappings['questions'])
         self.assertTrue(mappings['questions']['625'])
-        self.assertEqual(mappings['questions']['625'], 1)
+        self.assertEqual(mappings['questions']['625'], generated_question_id)
 
     def test_import_rdadcs_with_import_serialized_template_export(self):
         # fixtures
