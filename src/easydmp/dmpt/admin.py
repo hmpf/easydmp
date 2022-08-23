@@ -198,6 +198,10 @@ class BaseOrderingInline(admin.TabularInline):
 
 
 class TemplateAuthMixin:
+    change_form_template = 'admin/dmpt/guardian-model-change_form.html'
+    obj_perms_manage_group_template = 'admin/dmpt/guardian-model-obj_perms_manage_group.html'
+    obj_perms_manage_user_template = 'admin/dmpt/guardian-model-obj_perms_manage_user.html'
+    obj_perms_manage_template = 'admin/dmpt/guardian-model-obj_perms_manage.html'
     message_cannot_delete = ('The {} cannot be deleted because it is'
                              ' in use by one or more plans.')
     permissions_checker = None
