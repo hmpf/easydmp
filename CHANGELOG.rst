@@ -11,6 +11,26 @@ Planned
 
 * Good UX for repeated sections
 
+1.24.4
+------
+
+A security release
+
+Micro-feature:
+
+* Lock down what non-superusers can do in the admin a lot more
+
+Paperwork:
+
+* Fix wird database-behavior on github, sequences in github doesn't always
+  start with 1...
+* Test on Django 4.1
+
+  * Change LoginRequiredMiddleware to work on Django 4.1
+  * Ensure a Plan is saved before plan.answersets is accessed for the first time
+* Upgrade patch-version of Django 3.2 for security
+* Upgrade dependencies in prepartion for Python 3.11
+
 1.24.3
 ------
 
