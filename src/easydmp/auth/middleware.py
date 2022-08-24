@@ -6,7 +6,7 @@ from django.utils.encoding import force_str
 
 class LoginRequiredMiddleware:
 
-    def __init__(self, get_response=None):
+    def __init__(self, get_response):
         self.public_urls = getattr(settings, 'PUBLIC_URLS', ())
         self.login_url = force_str(settings.LOGIN_URL)
         self.get_response = get_response
