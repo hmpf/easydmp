@@ -50,13 +50,7 @@ implementation details.
    optional section
        A section that is designed to be optional and need not be answered.
 
-       It has a magical toggle question, that if answered with "No" will skip
-       that section.
-
        If it is not answered it will still count towards that plan being valid.
-
-   optional section question
-       See :term:`section toggle question`
 
    plan
        A named collection of question-answer pairs according to some template,
@@ -105,14 +99,6 @@ implementation details.
 
    template designer
        A person that may design a template for editors to use.
-
-   section toggle question
-       An optional section's magical toggle question. It has two possible
-       answers, "Yes", and "No". Answering "No" will skip the section.
-
-       Implementation detail: It is the first question of a sections's
-       questions and have a magical position of "0". It will be automatically
-       created when a section is designated as "optional".
 
    viewer
        A person that has read-only access to the plan.

@@ -314,7 +314,7 @@ def _create_imported_sections(export_dict, tim):
             stripped_dict = strip_model_dict(section_dict, 'super_section')
             section = Section(template=tim.template, **stripped_dict)
             # Wanted to use bulk_create but primary keys are not returned..
-            section.save(do_section_question=False)
+            section.save()
             section_map[orig_id] = section.id
     for orig_id, new_id in section_map.items():
         orig_identifier_question_id = orig_identifier_question_map.get(orig_id, None)
@@ -324,7 +324,7 @@ def _create_imported_sections(export_dict, tim):
         if orig_super_section_id:  # top level sections lack a super_section
             new_super_section = section_map[orig_super_section_id]
             section.super_section_id = new_super_section
-            section.save(do_section_question=False)
+            section.save()
 
     mappings['identifier_questions'] = identifier_question_set
     mappings['sections'] = section_map
@@ -416,7 +416,7 @@ def _create_imported_questions(export_dict, mappings):
         identifies_section = orig_id in mappings['identifier_questions']
         if identifies_section:
             question.section.identifier_question = question
-            question.section.save(do_section_question=False)
+            question.section.save()
     del mappings['identifier_questions']
     mappings['rdadcs_questions'] = rdadcs_paths
     return mappings

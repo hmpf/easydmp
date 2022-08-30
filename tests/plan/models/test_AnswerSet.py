@@ -21,20 +21,34 @@ class TestAnswersetSkipped(test.TestCase):
             as1.save()
 
 
+class TestAnswerSetAutoCreate(test.TestCase):
+
+    def test_answerset_is_created_on_plan_save(self):
+        template = TemplateFactory()
+        section = SectionFactory.build(template=template)
+        section.save()
+        plan = Plan(template=template, added_by_id=1, modified_by_id=1, valid=False)
+        plan.save()
+        answersets = AnswerSet.objects.filter(plan=plan)
+        self.assertEqual(answersets.count(), 1)
+        self.assertEqual(answersets[0].section, section)
+
+
 class TestAnswerSetValidation(test.TestCase):
 
-    def setUp(self):
-        self.template = TemplateFactory()
-        self.plan = Plan(template=self.template, added_by_id=1, modified_by_id=1, valid=False)
-        self.plan.save()
-        self.section = SectionFactory.build(template=self.template)
-        self.section.save()
-        self.q1 = ShortFreetextQuestion(section=self.section, position=1)
-        self.q2 = BooleanQuestion(section=self.section, position=2)
-        self.q3 = PositiveIntegerQuestion(section=self.section, position=3)
-        self.q1.save()
-        self.q2.save()
-        self.q3.save()
+    @classmethod
+    def setUpTestData(cls):
+        cls.template = TemplateFactory()
+        cls.section = SectionFactory.build(template=cls.template)
+        cls.section.save()
+        cls.q1 = ShortFreetextQuestion(section=cls.section, position=1)
+        cls.q2 = BooleanQuestion(section=cls.section, position=2)
+        cls.q3 = PositiveIntegerQuestion(section=cls.section, position=3)
+        cls.q1.save()
+        cls.q2.save()
+        cls.q3.save()
+        cls.plan = Plan(template=cls.template, added_by_id=1, modified_by_id=1, valid=False)
+        cls.plan.save()
 
     def test_validate_answerset_data_ok(self):
         as1 = AnswerSet(plan=self.plan, section=self.section, valid=False, data={
@@ -54,9 +68,9 @@ class TestAnswerSetValidation(test.TestCase):
         as1.save()
         as1.initialize_answers()
         as1.validate()
-        self.assertTrue(Answer.objects.get(question=self.q1).valid)
-        self.assertTrue(Answer.objects.get(question=self.q2).valid)
-        self.assertTrue(Answer.objects.get(question=self.q3).valid)
+        self.assertTrue(Answer.objects.get(answerset=as1, question=self.q1).valid)
+        self.assertTrue(Answer.objects.get(answerset=as1, question=self.q2).valid)
+        self.assertTrue(Answer.objects.get(answerset=as1, question=self.q3).valid)
         self.assertTrue(as1.valid)
 
     def test_validate_answerset_data_fail(self):
@@ -77,9 +91,9 @@ class TestAnswerSetValidation(test.TestCase):
         as1.save()
         as1.initialize_answers()
         as1.validate()
-        self.assertFalse(Answer.objects.get(question=self.q1).valid)
-        self.assertFalse(Answer.objects.get(question=self.q2).valid)
-        self.assertFalse(Answer.objects.get(question=self.q3).valid)
+        self.assertFalse(Answer.objects.get(answerset=as1, question=self.q1).valid)
+        self.assertFalse(Answer.objects.get(answerset=as1, question=self.q2).valid)
+        self.assertFalse(Answer.objects.get(answerset=as1, question=self.q3).valid)
         self.assertFalse(as1.valid)
 
     def test_validate_answerset_data_subset(self):
@@ -92,9 +106,9 @@ class TestAnswerSetValidation(test.TestCase):
         as1.save()
         as1.initialize_answers()
         as1.validate()
-        self.assertTrue(Answer.objects.get(question=self.q1).valid)
-        self.assertFalse(Answer.objects.get(question=self.q2).valid)
-        self.assertFalse(Answer.objects.get(question=self.q3).valid)
+        self.assertTrue(Answer.objects.get(answerset=as1, question=self.q1).valid)
+        self.assertFalse(Answer.objects.get(answerset=as1, question=self.q2).valid)
+        self.assertFalse(Answer.objects.get(answerset=as1, question=self.q3).valid)
         self.assertFalse(as1.valid)
 
     def test_validate_answerset_bogus_answer(self):
@@ -131,9 +145,9 @@ class TestAnswerSetValidation(test.TestCase):
         as1.save()
         as1.initialize_answers()
         as1.validate()  # Sets the answers valid
-        self.assertTrue(Answer.objects.get(question=self.q1.pk).valid)
-        self.assertTrue(Answer.objects.get(question=self.q2.pk).valid)
-        self.assertTrue(Answer.objects.get(question=self.q3.pk).valid)
+        self.assertTrue(Answer.objects.get(answerset=as1, question=self.q1.pk).valid)
+        self.assertTrue(Answer.objects.get(answerset=as1, question=self.q2.pk).valid)
+        self.assertTrue(Answer.objects.get(answerset=as1, question=self.q3.pk).valid)
         self.assertTrue(as1.valid)
 
 
@@ -142,17 +156,19 @@ class TestAnswersetGetIdentifier(test.TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.template = TemplateFactory()
+        cls.section = SectionFactory(template=cls.template, repeatable=True)
         cls.plan = Plan(template=cls.template, added_by_id=1, modified_by_id=1, valid=False)
         cls.plan.save()
 
     def test_no_identifier_question_should_yield_serial_number(self):
-        section = SectionFactory(template=self.template, repeatable=True)
-        as1 = AnswerSet(plan=self.plan, section=section, data={})
+        as0 = AnswerSet.objects.get(plan=self.plan, section=self.section)
+        as1 = AnswerSet(plan=self.plan, section=self.section, data={})
         as1.save()
-        as2 = AnswerSet(plan=self.plan, section=section, data={})
+        as2 = AnswerSet(plan=self.plan, section=self.section, data={})
         as2.save()
-        self.assertEqual(as1.identifier, '1')
-        self.assertEqual(as2.identifier, '2')
+        self.assertEqual(as0.identifier, '1')
+        self.assertEqual(as1.identifier, '2')
+        self.assertEqual(as2.identifier, '3')
 
     def test_identifier_question_should_use_answer_in_data(self):
         section = SectionFactory(template=self.template, repeatable=True)

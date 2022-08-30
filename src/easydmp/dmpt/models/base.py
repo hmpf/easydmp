@@ -393,6 +393,8 @@ class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
         texts = []
         for section in self.ordered_sections():
             canned_text = section.generate_canned_text(data)
+            if not canned_text:
+                continue
             section_dict = model_to_dict(section, exclude=('_state', '_template_cache'))
             section_dict['introductory_text'] = mark_safe(section_dict['introductory_text'])
             texts.append({
@@ -418,11 +420,7 @@ class Template(DeletionMixin, ModifiedTimestampModel, ClonableModel):
                 # 2/2 Otherwise this might edit the actual plan data in memory!
                 # Mutable types strike back..
                 value['question'] = question
-                if answer and section.get_optional_section_question() == question and answer.get('choice',
-                                                                                                 None) == 'No':
-                    optional_section_chosen = False
-                if not section.get_optional_section_question() == question and not optional_section_chosen:
-                    continue
+                # X2X
                 section_summary[question.pk] = value
             has_questions = section.questions.exists()
             may_edit_all = has_questions and not section.branching
@@ -627,21 +625,6 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
     def __str__(self):
         return '{}: {}'.format(self.template.title, self.full_title())
 
-    @transaction.atomic()
-    def save(self, do_section_question=True, *args, **kwargs):
-        if self.optional:
-            self.branching = True
-        super().save(*args, **kwargs)
-        if do_section_question:
-            # Toggle the existence of an optional question according to self.optional
-            section_questions = Question.objects.filter(section=self, position=0, input_type_id='bool')
-            if section_questions.exists():
-                if not self.optional:
-                    section_questions.delete()
-            else:
-                if self.optional:
-                    self._make_do_section_question()
-
     def natural_key(self):
         return (self.template, self.position, self.super_section)
 
@@ -651,28 +634,6 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
 
     def in_use(self):
         return self.template.plans.exists()
-
-    def _make_do_section_question(self):
-        """
-        Automatically add a bool question with branch and add first
-
-        If this question is answered "No", skip the section.
-        """
-        text_to_update = "(Template designer please update)"
-        help_text = (text_to_update + 'This is an optional section. '
-                     'If you select "No", this section will be skipped.')
-        do_section_question = Question(input_type_id='bool',
-                                       section=self,
-                                       question=text_to_update,
-                                       help_text=help_text,
-                                       position=0)
-        do_section_question.save()
-        yes = CannedAnswer(question=do_section_question, canned_text='Yes', choice='Yes')
-        yes.save()
-        no = CannedAnswer(question=do_section_question, canned_text='No', choice='No')
-        no.save()
-        branch_past_section = ExplicitBranch(current_question=do_section_question, category='Last', condition='No')
-        branch_past_section.save()
 
     def full_title(self):
         if self.label:
@@ -766,13 +727,11 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
 
     def get_question_order(self):
         "Get a list of the pk's of questions, in order"
-        # Due to optional section magic question in position 0
-        qs = self.questions.filter(position__gte=1)
+        qs = self.questions.all()
         return PositionUtils.get_order(qs)
 
     def set_question_order(self, pk_list):
-        # Due to optional section magic question in position 0
-        qs = self.questions.filter(position__gte=1)
+        qs = self.questions.all()
         PositionUtils.set_order(qs, pk_list)
 
     def reorder_questions(self, pk, movement):
@@ -994,30 +953,37 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
 
     # END: Section movement helpers
 
-    def get_optional_section_question(self):
-        if self.optional:
-            return self.questions.get(position=0).get_instance()
-        return None
-
-    def is_skipped(self, data):
-        if not self.optional:  # Non-optional sections can never be skipped
+    @property
+    def is_skipped(self):
+        if not self.optional:
             return False
-        toggle_question = self.get_optional_section_question()
-        toggle_answer = toggle_question.get_answer_choice(data)
-        if not data or not toggle_answer:
-            return True  # Should simplify logic elsewhere
-        toggle = toggle_question._serialize_condition(toggle_answer)
-        if toggle == 'No':
+        if self.is_missing:
+            return True
+        # A section with a skipped AnswerSet have no other AnswerSets
+        if self.answersets.filter(skipped=True).exists():
+            return True
+        return False
+
+    @property
+    def is_missing(self):
+        if not self.answersets.exists():  # Bug, but hard to ensure
+            return True
+        # No answersets have been answered
+        if self.answersets.filter(data={}).count() == self.answersets.count():
             return True
         return False
 
     def generate_canned_text(self, data: Data):
+        if self.is_skipped:
+            if not self.optional_canned_text:
+                return []
+            return [{'text': self.optional_canned_text, 'skipped': True}]
+
+        if self.optional and not data:
+            return []
+
         texts = []
         questions = self.questions.order_by('position')
-        if self.is_skipped(data):
-            questions = [self.get_optional_section_question()]
-        else:
-            questions = questions.filter(position__gt=0)
         for question in questions:
             answer = question.get_instance().generate_canned_text(data)
             if not isinstance(answer.get('text', ''), bool):
@@ -1039,11 +1005,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
             # 2/2 Otherwise this might edit the actual data in memory!
             # Mutable types strike back..
             value['question'] = question
-            if answer and self.get_optional_section_question() == question and answer.get('choice',
-                                                                                             None) == 'No':
-                optional_section_chosen = False
-            if not self.get_optional_section_question() == question and not optional_section_chosen:
-                continue
+            # X2X
             data_summary[question.pk] = value
         return data_summary
 
@@ -1111,8 +1073,7 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
             return True
         if not data:
             return False
-        # Toggle question == 'No' makes the section valid
-        if self.is_skipped(data):
+        if self.is_skipped:
             return True
         if not question_validity_status:
             valids, invalids = self.find_validity_of_questions(data)
@@ -1630,7 +1591,7 @@ class Question(DeletionMixin, ClonableModel):
 
     def get_optional_canned_answer(self):
         if self.optional:
-            return self.optional_canned_text
+            return self.section.optional_canned_text
         return ''
 
     def generate_canned_text(self, data: Data):

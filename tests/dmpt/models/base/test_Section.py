@@ -3,40 +3,12 @@ from django import test
 from easydmp.dmpt.models import ExplicitBranch
 from easydmp.dmpt.positioning import Move
 from easydmp.dmpt.models import Section
+from easydmp.plan.models import AnswerSet
+from easydmp.plan.models import Plan
 
 from tests.dmpt.factories import (TemplateFactory, SectionFactory,
                                   ReasonQuestionFactory)
-
-
-class TestSectionSaving(test.TestCase):
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.template = TemplateFactory()
-
-    def test_saving_required_section(self):
-        section = Section(template=self.template, position=1, optional=False)
-        section.save()
-        self.assertEqual(Section.objects.count(), 1)
-        self.assertEqual(section.questions.count(), 0)
-
-    def test_saving_optional_section(self):
-        section = Section(template=self.template, position=1, optional=True)
-        section.save()
-        self.assertEqual(Section.objects.count(), 1)
-        self.assertEqual(section.questions.count(), 1)
-
-    def test_saving_optional_section_with_do_section_question_off(self):
-        section = Section(template=self.template, position=1, optional=True)
-        section.save(do_section_question=False)
-        self.assertEqual(Section.objects.count(), 1)
-        self.assertEqual(section.questions.count(), 0)
-
-    def test_saving_required_section_with_do_section_question_off(self):
-        section = Section(template=self.template, position=1, optional=False)
-        section.save(do_section_question=False)
-        self.assertEqual(Section.objects.count(), 1)
-        self.assertEqual(section.questions.count(), 0)
+from tests.plan.factories import PlanFactory
 
 
 class TestOrderingSection(test.TestCase):
@@ -276,115 +248,34 @@ class TestOptionalSections(test.TestCase):
 
     def setUp(self):
         self.template = TemplateFactory()
+        self.plan = PlanFactory(template=self.template)
 
-    def test_optional_question_added(self):
-        section = SectionFactory(position=1)
-        section.optional = True
-        section.save()
-        self.assertEqual(1, len(section.questions.all()))
-        q0 = section.questions.get()
-        self.assertEqual(0, q0.position)
-        self.assertEqual('bool', q0.input_type_id)
-        self.assertEqual(1, len(ExplicitBranch.objects.all()))
-        branch = ExplicitBranch.objects.get()
-        self.assertEqual('Last', branch.category)
-        self.assertEqual(q0, branch.current_question)
-        ReasonQuestionFactory(question='Foo', section=section, position=1).save()
-        ReasonQuestionFactory(question='Bar', section=section, position=2).save()
-        self.assertEqual(3, len(section.questions.all()))
-        self.assertEqual(0, section.questions.first().position)
-
-        section.optional = False
-        section.save()
-        self.assertEqual(0, len(ExplicitBranch.objects.all()))
-        self.assertEqual(2, len(section.questions.all()))
-        self.assertEqual(1, section.questions.get(question='Foo').position)
-        self.assertEqual(2, section.questions.get(question='Bar').position)
-
-    def test_optional_section_in_summary(self):
-        # first section is optional
-        section1 = SectionFactory.build(title='Section 1', template=self.template, position=1)
-        section1.optional = True
-        section1.save()
-        q11 = ReasonQuestionFactory(question='Foo1', section=section1, position=1)
-        q11.save()
-        q12 = ReasonQuestionFactory(question='Bar1', section=section1, position=2)
-        q12.save()
-        # second section is required
-        section2 = SectionFactory.build(title='Section 2', template=self.template, position=2)
-        section2.optional = False
-        section2.save()
-        q21 = ReasonQuestionFactory(question='Foo2', section=section2, position=1)
-        q21.save()
-        q22 = ReasonQuestionFactory(question='Bar2', section=section2, position=2)
-        q22.save()
-        # third section is optional
-        section3 = SectionFactory.build(title='Section 3', template=self.template, position=3)
-        section3.optional = True
-        section3.save()
-        q31 = ReasonQuestionFactory(question='Foo3', section=section3, position=1)
-        q31.save()
-        q32 = ReasonQuestionFactory(question='Bar3', section=section3, position=2)
-        q32.save()
-        # there should be eight questions in all
-        self.assertEqual(self.template.questions.count(), 8)
-
-        # get summary from data set of answers
-        s1_firstq_pk = section1.questions.all().first().pk
-        s3_firstq_pk = section3.questions.all().first().pk
-        data = {
-            str(s1_firstq_pk): {"choice": "No"},
-            str(q11.pk): {},
-            str(q12.pk): {},
-            str(s3_firstq_pk): {"choice": "Yes"},
-            str(q31.pk): {},
-            str(q32.pk): {},
-        }
-        summary = self.template.get_summary(data)
-        self.assertEqual(1, len(summary[section1.title]['data']))
-        self.assertEqual('(Template designer please update)', summary[section1.title]['data'][s1_firstq_pk]['question'].question)
-        self.assertEqual(2, len(summary[section2.title]['data']))
-        self.assertEqual(3, len(summary[section3.title]['data']))
-
-    def test_get_optional_section_question_in_optional_section(self):
-        section = SectionFactory.build(template=self.template, optional=True)
-        section.save()
-        question = section.get_optional_section_question()
-        self.assertEqual(question.position, 0)
-        self.assertEqual(question.input_type_id, 'bool')
-
-    def test_get_optional_section_question_in_normal_section(self):
+    def test_is_skipped_on_normal_section_is_always_false(self):
         section = SectionFactory.build(template=self.template, optional=False)
         section.save()
-        question = section.get_optional_section_question()
-        self.assertEqual(question, None)
+        self.assertFalse(section.is_skipped)
+        ans = AnswerSet.objects.create(section=section, plan=self.plan, data='ghjg', skipped=True)
+        self.assertFalse(section.is_skipped)
 
-    def test_is_skipped_true(self):
+    def test_is_skipped_when_answerset_is_skipped_is_true(self):
         section = SectionFactory.build(template=self.template, optional=True)
         section.save()
-        toggle_question = section.get_optional_section_question()
-        data = {str(toggle_question.pk): {'choice': 'No'}}
-        result = section.is_skipped(data)
-        self.assertTrue(result)
+        ans = AnswerSet.objects.create(section=section, plan=self.plan)
+        self.assertTrue(section.is_skipped)
 
-    def test_is_skipped_when_not_answered_is_true(self):
+    def test_is_skipped_when_answerset_is_not_skipped_is_false(self):
         section = SectionFactory.build(template=self.template, optional=True)
         section.save()
-        toggle_question = section.get_optional_section_question()
-        data = {}
-        result = section.is_skipped(data)
-        self.assertTrue(result)
+        ans = AnswerSet.objects.create(section=section, plan=self.plan, data='ghjg', skipped=None)
+        self.assertFalse(section.is_skipped)
 
-    def test_is_skipped_on_normal_section_is_false(self):
-        section = SectionFactory.build(template=self.template, optional=False)
-        section.save()
-        result = section.is_skipped(None)
-        self.assertFalse(result)
-
-    def test_is_skipped_false(self):
+    def test_is_skipped_when_answerset_does_not_exist_is_true(self):
         section = SectionFactory.build(template=self.template, optional=True)
         section.save()
-        toggle_question = section.get_optional_section_question()
-        data = {str(toggle_question.pk): {'choice': 'Yes'}}
-        result = section.is_skipped(data)
-        self.assertFalse(result)
+        self.assertTrue(section.is_skipped)
+
+    def test_is_skipped_when_answerset_not_answered_is_true(self):
+        section = SectionFactory.build(template=self.template, optional=True)
+        section.save()
+        ans = AnswerSet.objects.create(section=section, plan=self.plan, data={}, skipped=None)
+        self.assertTrue(section.is_skipped)
