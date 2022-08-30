@@ -11,6 +11,11 @@ Planned
 
 * Good UX for repeated sections
 
+1.25.1
+------
+
+Merge in fix from 1.24.5
+
 1.25.0
 ------
 
