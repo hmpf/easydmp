@@ -11,6 +11,16 @@ Planned
 
 * Good UX for repeated sections
 
+1.25.0
+------
+
+Paperwork release
+
+Paperwork:
+
+* Add a field that'll later make it possible to replace toggle questions
+* Make middlewares independent of MiddlewareMixin (and add/update tests)
+
 1.24.4
 ------
 
