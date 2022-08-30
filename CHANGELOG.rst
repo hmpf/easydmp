@@ -11,6 +11,15 @@ Planned
 
 * Good UX for repeated sections
 
+1.24.5
+------
+
+Yet another miniscule bugfix release
+
+Bugfix:
+
+* Ensure that when creating a missing answerset that it is connected to a plan
+
 1.24.4
 ------
 
