@@ -877,13 +877,12 @@ class Plan(DeletionMixin, ClonableModel):
         return self.template.first_question
 
     def get_answersets_for_section(self, section, parent=NotSet):
-        kwargs={'section': section}
+        kwargs={'section': section, 'plan': self}
         if parent != NotSet:
             kwargs['parent'] = parent
         answersets = self.answersets.filter(**kwargs)
         if not answersets.exists():
-            answerset = AnswerSet(valid=False, **kwargs)
-            answerset.save()
+            answerset = AnswerSet.objects.create(valid=False, **kwargs)
             answerset.add_children()
         answersets = self.answersets.filter(**kwargs)
         return answersets
