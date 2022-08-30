@@ -603,7 +603,8 @@ class Section(DeletionMixin, ModifiedTimestampModel, ClonableModel):
     section_depth = models.PositiveSmallIntegerField(default=1)
     branching = models.BooleanField(default=False)
     optional = models.BooleanField(default=False,
-                                   help_text='True if this section is optional. The template designer needs to provide a wording to an automatically generated yes/no question at the start of the section.')
+                                   help_text='True if this section is optional. Add an optional canned text to stand in for the questions if needed if the section is later skipped.')
+    optional_canned_text = models.TextField(blank=True)
     repeatable = models.BooleanField(default=False,
                                      help_text='True if this section is repeatable. This means a plan can have multiple answersets for this section.')
     identifier_question = models.ForeignKey(
