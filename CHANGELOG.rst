@@ -21,6 +21,15 @@ Paperwork:
 * Add a field that'll later make it possible to replace toggle questions
 * Make middlewares independent of MiddlewareMixin (and add/update tests)
 
+1.24.5
+------
+
+Yet another miniscule bugfix release
+
+Bugfix:
+
+* Ensure that when creating a missing answerset that it is connected to a plan
+
 1.24.4
 ------
 
