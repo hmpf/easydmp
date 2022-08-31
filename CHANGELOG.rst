@@ -11,6 +11,15 @@ Planned
 
 * Good UX for repeated sections
 
+1.24.6
+------
+
+Yet another bugfix release
+
+Bugfix:
+
+* Plans now create its dependent answersets correctly on first save
+
 1.24.5
 ------
 
