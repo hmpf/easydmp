@@ -864,7 +864,7 @@ class Plan(DeletionMixin, ClonableModel):
     @transaction.atomic
     def initialize_starting_answersets(self):
         for section in self.template.sections.filter(super_section__isnull=True):
-            if not section.answersets.exists():
+            if not section.answersets.filter(plan=self).exists():
                 a = self.ensure_answerset(section)
 
     @transaction.atomic

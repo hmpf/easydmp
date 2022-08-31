@@ -169,7 +169,10 @@ class StartPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
     def get_success_url(self):
         first_question = self.object.get_first_question()
         first_section = first_question.section
-        answerset = self.object.answersets.get(section=first_section)
+        try:
+            answerset = self.object.answersets.get(section=first_section)
+        except AnswerSet.DoesNotExist:
+            answerset = self.object.ensure_answerset(first_section)
         kwargs = {'plan': self.object.pk, 'answerset': answerset.pk}
         if first_question.section.branching:
             kwargs['question'] = first_question.pk
