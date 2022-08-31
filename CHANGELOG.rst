@@ -11,6 +11,15 @@ Planned
 
 * Good UX for repeated sections
 
+1.25.2
+------
+
+Yet another bugfix release, same patch as 1.24.6
+
+Bugfix:
+
+* Plans now create its dependent answersets correctly on first save
+
 1.25.1
 ------
 
@@ -25,6 +34,15 @@ Paperwork:
 
 * Add a field that'll later make it possible to replace toggle questions
 * Make middlewares independent of MiddlewareMixin (and add/update tests)
+
+1.24.6
+------
+
+Yet another bugfix release
+
+Bugfix:
+
+* Plans now create its dependent answersets correctly on first save
 
 1.24.5
 ------
