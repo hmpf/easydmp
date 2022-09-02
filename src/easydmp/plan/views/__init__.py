@@ -4,7 +4,11 @@ import logging
 from django.contrib import messages
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy, NoReverseMatch
-from django.http import HttpResponseRedirect, Http404, HttpResponseServerError, HttpResponse
+from django.http import Http404
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
+from django.http import HttpResponseServerError
+from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import (
     CreateView,
@@ -22,8 +26,13 @@ from easydmp.dmpt.forms import AbstractNodeFormSet
 from easydmp.eventlog.models import EventLog
 from easydmp.eventlog.utils import log_event
 
-from ..models import AnswerHelper, PlanAccess, AnswerSet
+from ..models import add_answerset
+from ..models import AnswerHelper
+from ..models import AnswerSet
+from ..models import AnswerSetException
 from ..models import Plan
+from ..models import PlanAccess
+from ..models import remove_answerset
 from ..forms import ConfirmForm
 from ..forms import SaveAsPlanForm
 from ..forms import StartPlanForm
@@ -63,7 +72,7 @@ def update_data_for_additional_form_in_formset(form, post_data):
     if not isinstance(form, AbstractNodeFormSet):
         return
     prefix = form.prefix
-    if not f'{prefix}_add_row' in post_data:
+    if f'{prefix}_add_row' not in post_data:
         return  # row not added
     data = post_data.copy()
     total_form_lookup = f'{prefix}-TOTAL_FORMS'
@@ -173,7 +182,7 @@ class StartPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
         try:
             answerset = self.object.answersets.get(section=first_section)
         except AnswerSet.DoesNotExist:
-            answerset = self.object.ensure_answerset(first_section)
+            answerset = self.object.ensure_answersets(first_section)
         kwargs = {'plan': self.object.pk, 'answerset': answerset.pk}
         if first_question.section.branching:
             kwargs['question'] = first_question.pk
@@ -358,35 +367,45 @@ class CreateNewVersionPlanView(PlanAccessViewMixin, UpdateView):
 class AddAnswerSetView(RedirectView):
 
     def get(self, request, *args, **kwargs):
+        url = self.get_redirect_url(*args, **kwargs)
         self.section = get_object_or_404(Section, pk=self.kwargs['section'])
         self.plan = get_object_or_404(Plan, pk=self.kwargs['plan'])
-        if not self.plan.template == self.section.template:
-            raise Http404
+        parent_id = self.kwargs.get('parent', None)
+        self.parent = None
+        if parent_id:
+            self.parent = get_object_or_404(AnswerSet, pk=parent_id)
         editable = self.plan.may_edit(request.user)
         if not editable:
-            raise Http404
-        answerset = self.plan.get_answersets_for_section(self.section).last()
-        self.sibling = answerset.add_sibling()
+            raise Http404  # go away, peon
+
+        try:
+            answerset = add_answerset(self.section, self.plan, None)
+        except (AnswerSetException, AnswerSet.MultipleObjectsReturned) as e:
+            raise HttpResponseBadRequest(e)
+        if not answerset:
+            messages.warning(request, "Answerset not added, invalid action")
+            return HttpResponseRedirect(url)
+        self.next_answerset = answerset
+
         template = '{timestamp} {actor} added answerset "{action_object}" to plan {target}'
         log_event(request.user, 'add-answerset', target=self.plan,
-                  object=self.sibling, template=template)
-        messages.success(request, 'Answerset added')
-        url = self.get_redirect_url(*args, **kwargs)
+                  object=self.next_answerset, template=template)
+        messages.success(request, "Answerset added")
         return HttpResponseRedirect(url)
 
-    def get_redirect_url(self, *args,**kwargs):
-        minimal_kwargs = {'plan': self.sibling.plan_id, 'answerset': self.sibling.id}
-        if self.sibling.section.branching:
+    def get_redirect_url(self, *args, **kwargs):
+        minimal_kwargs = {'plan': self.next_answerset.plan_id, 'answerset': self.next_answerset.id}
+        if self.next_answerset.section.branching:
             viewname = 'answer_question'
             kwargs = dict(
-                question=self.sibling.section.first_question.id,
+                question=self.next_answerset.section.first_question.id,
                 **minimal_kwargs,
             )
             return reverse(viewname, kwargs=kwargs)
         else:
             viewname = 'answer_linear_section'
             kwargs = dict(
-                section=self.sibling.section_id,
+                section=self.next_answerset.section_id,
                 **minimal_kwargs,
             )
             return reverse(viewname, kwargs=kwargs)
@@ -420,7 +439,10 @@ class RemoveAnswerSetView(DeleteFormMixin, AnswerSetSectionMixin, DeleteView):
         template = '{timestamp} {actor} removed answerset "{action_object}" from plan {target}'
         log_event(request.user, 'remove-answerset', target=self.plan,
                   object=self.answerset, template=template)
-        self.answerset.delete()
+        try:
+            remove_answerset(self.answerset)
+        except AnswerSetException as e:
+            raise HttpResponseBadRequest(e)
         messages.success(request, 'Answerset removed')
         return HttpResponseRedirect(success_url)
 
@@ -478,7 +500,7 @@ class AnswerLinearSectionView(AnswerSetSectionMixin, DetailView):
             return reverse(viewname, kwargs=kwargs)
         if 'next' in self.request.POST and self.next_section:
             answerset = self.answerset.get_next_answerset()
-            kwargs=dict(
+            kwargs = dict(
                 answerset=answerset.pk,
                 **minimal_kwargs,
             )
@@ -491,7 +513,7 @@ class AnswerLinearSectionView(AnswerSetSectionMixin, DetailView):
             return reverse(viewname, kwargs=kwargs)
         if 'prev' in self.request.POST and self.prev_section:
             answerset = self.answerset.get_previous_answerset()
-            kwargs=dict(
+            kwargs = dict(
                 answerset=answerset.pk,
                 **minimal_kwargs,
             )
@@ -617,7 +639,7 @@ class RedirectToAnswerQuestionView(RedirectView):
             raise Http404
         question_pk = kwargs['question']
         try:
-           question = Question.objects.get(id=question_pk)
+            question = Question.objects.get(id=question_pk)
         except Question.DoesNotExist:
             raise Http404
         answersets = plan.answersets.filter(section=question.section)
@@ -642,8 +664,8 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         """
         self.plan_pk = self.kwargs.get('plan')
         plans = (Plan.objects
-            .select_related('template')
-            .prefetch_related('template__sections', 'answersets'))
+                 .select_related('template')
+                 .prefetch_related('template__sections', 'answersets'))
         try:
             self.plan = plans.get(id=self.plan_pk)
         except Plan.DoesNotExist:
@@ -669,10 +691,10 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         try:
             sections = self.template.sections.all()
             question = (Question.objects
-                .select_related('section')
-                .get(pk=question_pk, section__in=sections)
-            )
-        except Question.DoesNotExist as e:
+                        .select_related('section')
+                        .get(pk=question_pk, section__in=sections)
+                        )
+        except Question.DoesNotExist:
             raise Http404(f"Unknown question id: {question_pk}")
         question = question.get_instance()
         return question
@@ -696,7 +718,6 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         return reverse('answer_question', kwargs=kwargs)
 
     def get_next_url(self, data):
-        plan_kwargs = {'plan': self.plan.pk}
         next_question = self.question.get_next_question(data)
         self.__LOG.debug('Next question found: "%s"', next_question)
         if not next_question:
@@ -1063,7 +1084,7 @@ class SectionDetailView(DetailView):
             # This shouldn't happen unless a plan has been deleted behind our
             # backs or something
             LOG.warn('Failed accessing plan %i details while in that plan. Race condition? (User %s)',
-                    self.plan, request.user)
+                     self.plan, request.user)
             raise Http404
 
     def next(self):

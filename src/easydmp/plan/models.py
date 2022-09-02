@@ -5,7 +5,7 @@ from collections import OrderedDict, defaultdict, namedtuple
 from copy import deepcopy
 from datetime import datetime
 from types import SimpleNamespace
-from typing import Any, Set, Dict, TYPE_CHECKING
+from typing import Set, TYPE_CHECKING
 from uuid import uuid4
 
 from django.conf import settings
@@ -14,7 +14,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 from django.forms import model_to_dict
-from django.db.models import Q, Count, Exists, OuterRef
+from django.db.models import Q, Count
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now as tznow
@@ -40,6 +40,11 @@ GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
 
 AnswerSetKey = namedtuple('AnswerSetKey', ['plan', 'parent', 'section', 'identifier'])
 AnswerKey = namedtuple('AnswerKey', ['answerset', 'question'])
+
+
+class AnswerSetException(Exception):
+    pass
+
 
 def create_plan_export_obj(plan, variant, include_template=True, comment=''):
     """
@@ -69,6 +74,192 @@ def create_plan_export_obj(plan, variant, include_template=True, comment=''):
     obj.answers = answers
 
     return obj
+
+
+def _ensure_possible_answerset(section, plan, answerset_parent=None):
+    error_message = None
+    if plan.template != section.template:
+        error_message = 'Plan "{plan}" incompatible with section "{section}"'
+    elif section.super_section and answerset_parent is None:
+        error_message = 'The section has a super section, but the answerset has no parent'
+    if error_message:
+        raise AnswerSetException(error_message)
+
+
+def purge_wrongly_skipped_answersets(section, answersets):
+    """Only an optional section for a plan can have a skipped answerset
+
+    There is either one skipped answerset, or one or more unskipped answersets.
+    If a section is not optional there should be *no* skipped answersets.
+    """
+    skipped_answersets = answersets.filter(skipped=True)
+
+    # no skipped answersets, no problem!
+    if not skipped_answersets.exists():
+        return answersets
+
+    # optional section may have only *one* skipped answerset
+    if section.optional:
+        if answersets.filter(skipped=None).exists():
+            skipped_answersets.delete()
+        elif skipped_answersets.count() > 1:
+            answerset = skipped_answersets.first()  # all skipped are equal
+            skipped_answersets.exclude(pk=answerset.pk).delete()
+        answersets = answersets.all()
+        return answersets
+
+    # required sections cannot have *any* skipped answersets
+    good_answersets = answersets.filter(skipped=None)
+    if good_answersets:
+        skipped_answersets.delete()
+        return good_answersets
+
+    # no visible answersets: convert one skipped answerset, delete the rest
+    answerset = skipped_answersets.first()
+    answerset.skipped = None
+    answerset.save()
+    skipped_answersets.exclude(pk=answerset.pk).delete()
+    answersets = answersets.all()
+    return answersets
+
+
+def remove_extraneous_answersets_for_singleton_sections(section, answersets):
+    """A non-repeatable section has only one answerset
+
+    Attempt to remove any others.
+
+    Assumes there are no extraneous skipped answersets.
+    """
+    if section.repeatable:  # handled elsewhere
+        return answersets
+
+    try:
+        answerset = answersets.get()
+        return answersets  # No multiple answersets, no problem!
+    except AnswerSet.MultipleObjectsReturned:
+        # Try deleting extras
+        num_answersets = answersets.count()
+        empties = answersets.filter(data={})
+        num_empties = empties.count()
+        if num_answersets > num_empties:
+            empties.delete()
+        elif num_answersets == num_empties:
+            answerset = empties.first()
+            answersets.exclude(pk=answerset.pk).delete()
+
+        # recheck
+        answersets = answersets.all()
+        try:
+            answerset = answersets.get()
+            return answersets  # We're left with one, great!
+        except AnswerSet.MultipleObjectsReturned:
+            # We can't know which to delete now so panic
+            raise
+
+
+def fix_answersets(section, plan, answerset_parent=None):
+    _ensure_possible_answerset(section, plan, answerset_parent)
+    answersets = plan.get_answersets_for_section(section, answerset_parent)
+
+    # create answerset if missing
+    if not answersets.exists():
+        skipped = True if section.optional else None
+        AnswerSet.objects.create(
+            plan=plan,
+            section=section,
+            parent=answerset_parent,
+            skipped=skipped,
+            valid=False,
+        )
+        answersets = answersets.all()
+        return answersets
+
+    answersets = purge_wrongly_skipped_answersets(section, answersets)
+    answersets = remove_extraneous_answersets_for_singleton_sections(section, answersets)
+    return answersets
+
+
+def add_answerset(section, plan, answerset_parent=None):
+    # must be run after fix_answersets
+    # for reference, kept as code to have it checked by linters
+    KARNAUGH = {
+        # optional, repeatable, singleton, skipped
+        (False, False, True, None): 'noop',
+        (False, True, True, None): 'add',
+        (True, False, True, None): 'noop',
+        (True, True, True, None): 'add',
+        (False, False, True, True): 'error_skipped',
+        (False, True, True, True): 'convert',
+        (True, False, True, True): 'convert',
+        (True, True, True, True): 'convert',
+
+        (False, False, False, None): 'error_too_many',
+        (False, True, False, None): 'add',
+        (True, False, False, None): 'error_too_many',
+        (True, True, False, None): 'add',
+        (False, False, False, True): 'error_too_many_and_skipped',
+        (False, True, False, True): 'convert',
+        (True, False, False, True): 'error_too_many_and_skipped',
+        (True, True, False, True): 'convert',
+    }
+    answersets = fix_answersets(section, plan, answerset_parent)
+
+    if not (section.repeatable and section.optional):  # noop
+        return None
+
+    if section.optional and not section.repeatable:
+        answerset = answersets.get()
+        if answerset.skipped:  # convert
+            answerset.skipped = None
+            answerset.save()
+            return answerset
+        return None  # noop
+
+    if section.repeatable:  # add
+        answerset = answersets.last()
+        answerset = answerset.add_sibling()
+        return answerset
+
+
+def remove_answerset(answerset) -> None:
+    # for reference, kept as code to have it checked by linters
+    KARNAUGH = {
+        # optional, repeatable, singleton, skipped
+        (False, False, True, None): 'noop',
+        (False, True, True, None): 'noop',
+        (True, False, True, None): 'convert',
+        (True, True, True, None): 'convert',
+        (False, False, True, True): 'error_skipped',
+        (False, True, True, True): 'noop',
+        (True, False, True, True): 'convert',
+        (True, True, True, True): 'convert',
+
+        (False, False, False, None): 'error_too_many',
+        (False, True, False, None): 'remove',
+        (True, False, False, None): 'error_too_many',
+        (True, True, False, None): 'remove',
+        (False, False, False, True): 'error_too_many_and_skipped',
+        (False, True, False, True): 'error_skipped',
+        (True, False, False, True): 'error_too_many_and_skipped',
+        (True, True, False, True): 'remove',
+    }
+    section = answerset.section
+    answersets = fix_answersets(section, answerset.plan, answerset.parent)
+
+    if not (section.repeatable and section.optional):  # noop
+        return
+
+    one_answerset = answersets.count() == 1
+
+    if one_answerset:
+        if section.optional:  # convert
+            answerset.skipped = True
+            answerset.save()
+            return
+        if section.repeatable:  # noop
+            return
+
+    answerset.delete()  # remove
 
 
 class AnswerHelper():
@@ -194,7 +385,7 @@ class AnswerSetQuerySet(models.QuerySet):
     def childmap(self, qs=None):
         mapping = defaultdict(OrderedDict)
         if not qs:
-            qs = tuple(self.only('id','parent_id', 'section_id').iterator())
+            qs = tuple(self.only('id', 'parent_id', 'section_id').iterator())
         for answerset in qs.order_by('section_id', 'parent_id', 'id'):
             mapping[answerset.parent_id][answerset.id] = answerset.section_id
         return mapping
@@ -292,7 +483,7 @@ class AnswerSet(ClonableModel):
             kwargs.pop('force_update', None)
             super().save(force_insert=True, *args, **kwargs)
             return
-        self.identifier =  self.get_identifier()
+        self.identifier = self.get_identifier()
         super().save(*args, **kwargs)
         if not self.answers.exists():
             self.initialize_answers()
@@ -411,8 +602,8 @@ class AnswerSet(ClonableModel):
     def get_choice(self, question_id):
         return self.get_answer(question_id).get('choice', None)
 
-    def get_answersets_for_section(self, section):
-        return self.plan.get_answersets_for_section(section)
+    def get_answersets_for_section(self, section, parent=NotSet):
+        return self.plan.get_answersets_for_section(section, parent)
 
     def delete_answers(self, question_ids, commit=True):
         deleted = set()
@@ -965,7 +1156,12 @@ class Plan(DeletionMixin, ClonableModel):
     def initialize_starting_answersets(self):
         for section in self.template.sections.filter(super_section__isnull=True):
             if not section.answersets.filter(plan=self).exists():
-                a = self.ensure_answerset(section)
+                self.ensure_answersets(section)
+
+    @transaction.atomic
+    def add_missing_answersets(self):
+        for section in self.template.sections.filter(super_section__isnull=True):
+            self.ensure_answersets(section)
 
     @transaction.atomic
     def create_answerset(self, section, parent=None):
@@ -976,14 +1172,25 @@ class Plan(DeletionMixin, ClonableModel):
         return a
 
     @transaction.atomic
-    def ensure_answerset(self, section, parent=None):
+    def ensure_answersets(self, section, parent=None):
         "Ensure a section has the answersets it needs"
-        answerset, _ = AnswerSet.objects.get_or_create(
-            plan=self,
-            section=section,
-            parent=parent,
-            defaults={'valid': False},
-        )
+        created = False
+        try:
+            answerset, created = AnswerSet.objects.get_or_create(
+                plan=self,
+                section=section,
+                parent=parent,
+                defaults={'valid': False},
+            )
+        except AnswerSet.MultipleObjectsReturned:
+            answerset = AnswerSet.objects.filter(
+                plan=self,
+                section=section,
+                parent=parent
+            ).last()
+        if created and section.optional:
+            answerset.skipped = True
+            answerset.save()
         answerset.add_children()  # recursive
         return answerset
 
@@ -1090,6 +1297,7 @@ class Plan(DeletionMixin, ClonableModel):
         meta_summary['valid'] = is_valid
         meta_summary['addable'] = bool(addable_if_repeatable or addable_if_optional)
         meta_summary['deletable'] = bool(deletable_if_optional or deletable_if_repeatable)
+        meta_summary['answerset_parent_id'] = answersetobjs[0].parent_id
 
         answer_blocks = []
         for answersetobj in answersetobjs:
@@ -1117,7 +1325,7 @@ class Plan(DeletionMixin, ClonableModel):
         This assumes that each question may be answered more than once,
         basically: sections may be answered more than once.
 
-        Optimized for makling few calls to the database, by avoiding queries
+        Optimized for making few calls to the database, by avoiding queries
         in loops.
         """
         sections = (self.template.sections
