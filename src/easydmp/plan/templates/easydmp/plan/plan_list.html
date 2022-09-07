@@ -22,14 +22,14 @@
             <td class="template-name">{{ object.template }}</a></td>
             <td class="datetime">{{ object.added }}</td>
             <td class="action">
-              <button class="btn btn-default collapsed" id="button-{{ object.id }}" data-toggle="collapse" data-target="#actions-{{ object.id }}" aria-haspopup="true">
+              <button class="btn btn-default collapsed" id="button-{{ object.id }}" data-toggle="collapse" data-target="#actions-{{ object.id }}" aria-haspopup="true" aria-label="Show/hide">
                 <span class="caret"></span>
               </button>
             </td>
           </tr>
           <tr class="actions collapse" id="actions-{{ object.id }}" aria-expanded="false">
              <td colspan="4">
-               <ul aria-labelledby="button-{{ object.id }}">
+               <ul>
                  {% include "easydmp/plan/_plan_actions_dropdown.html" %}
                </ul>
              </td>
