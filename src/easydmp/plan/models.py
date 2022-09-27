@@ -124,15 +124,13 @@ class AnswerHelper():
 
     def skips_answerset(self, choice):
         if not self.section.optional:
-            return False
+            return None
         if self.question.position != 0:
-            return False
+            return None
         elif self.question.input_type_id != 'bool':
-            return False
+            return None
         condition = choice.get('choice', None)
-        if condition is None:
-            return False  # Not answered yet
-        return condition == 'No'
+        return condition == 'No' or None
 
     def save_choice(self, choice, saved_by):
         LOG.debug('save_choice: q%s/p%s: Answer: previous %s current %s',
@@ -206,7 +204,7 @@ class AnswerSet(ClonableModel):
     parent = models.ForeignKey('self', models.CASCADE, related_name='answersets', null=True, blank=True)
     valid = models.BooleanField(default=False)
     last_validated = models.DateTimeField(auto_now=True)
-    skipped = models.BooleanField(null=True, blank=True)
+    skipped = models.BooleanField(null=True, blank=True, help_text='True or None')
     # The user's answers, represented as a Question PK keyed dict in JSON.
     data = models.JSONField(default=dict, encoder=DjangoJSONEncoder, blank=True)
     previous_data = models.JSONField(default=dict, encoder=DjangoJSONEncoder, blank=True)
@@ -223,6 +221,10 @@ class AnswerSet(ClonableModel):
                 fields=('plan', 'section', 'parent', 'identifier'),
                 condition=Q(parent__isnull=False),
                 name='plan_answerset_unique_identifiers_parent'),
+            models.CheckConstraint(
+                check=Q(skipped=True),  # PostGreSQL: True if true OR null!
+                name='plan_answerset_skipped_never_false'
+            ),
         ]
 
     def __str__(self):
@@ -437,18 +439,26 @@ class AnswerSet(ClonableModel):
 
         Returns validity.
         """
+        if self.skipped and not self.section.optional:  # in case of garbage
+            self.skipped = None
+
         self.last_validated = timestamp or tznow()
-        valids, invalids, = self.section.find_validity_of_questions(self.data)
-        self.set_validity_of_answers(valids, invalids)
-        subsections = self.section.ordered_sections()[1:]
-        if subsections:
+        if self.skipped:
             valid = True
-            if AnswerSet.objects.filter(section__in=subsections, valid=False).exists():
-                valid = False
         else:
+            valids, invalids, = self.section.find_validity_of_questions(self.data)
+            self.set_validity_of_answers(valids, invalids)
             valid = self.section.validate_data(self.data, (valids, invalids))
+
+            children = self.answersets.all()
+            child_validity = set(
+                child.validate(self.last_validated)
+                for child in children if not child.skipped
+            )
+            valid = valid and False not in child_validity
+
         self.valid = valid
-        self.save(update_fields=('valid', 'last_validated'))
+        self.save(update_fields=('skipped', 'valid', 'last_validated'))
         if not self.valid:
             self.plan.valid = False
             self.plan.last_validated = self.last_validated
@@ -939,7 +949,7 @@ class Plan(DeletionMixin, ClonableModel):
                 answerset.validate()
         # All answersets of all sections must be valid for a plan to be valid
         for section in self.template.sections.all():
-            if self.answersets.filter(section=section, valid=False).exists():
+            if self.answersets.filter(section=section, valid=False, skipped=None).exists():
                 return False
         return True
 

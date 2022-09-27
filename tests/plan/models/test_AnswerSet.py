@@ -1,10 +1,24 @@
 from django import test
+from django.db import IntegrityError
 
 from easydmp.dmpt.models import ShortFreetextQuestion
 from easydmp.dmpt.models import BooleanQuestion
 from easydmp.dmpt.models import PositiveIntegerQuestion
 from easydmp.plan.models import Plan, AnswerSet, Answer
 from tests.dmpt.factories import TemplateFactory, SectionFactory
+
+
+class TestAnswersetSkipped(test.TestCase):
+
+    def test_skipped_may_never_be_false(self):
+        template = TemplateFactory()
+        section = SectionFactory.build(template=template)
+        section.save()
+        plan = Plan(template=template, added_by_id=1, modified_by_id=1, valid=False)
+        plan.save()
+        as1 = AnswerSet(plan=plan, section=section, skipped=False)
+        with self.assertRaises(IntegrityError):
+            as1.save()
 
 
 class TestAnswerSetValidation(test.TestCase):
