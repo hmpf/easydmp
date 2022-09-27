@@ -102,7 +102,7 @@ jsonschema==3.2.0
     # via drf-spectacular
 markupsafe==1.1.1
     # via jinja2
-oauthlib==3.1.0
+oauthlib==3.2.1
     # via
     #   requests-oauthlib
     #   social-auth-core
@@ -121,7 +121,7 @@ pygments==2.9.0
     # via
     #   -r requirements/forced-upgrade.txt
     #   sphinx
-pyjwt[crypto]==2.3.0
+pyjwt[crypto]==2.5.0
     # via
     #   drf-jwt
     #   social-auth-core
@@ -198,6 +198,8 @@ tinycss2==1.1.0
     #   cairosvg
     #   cssselect2
     #   weasyprint
+types-cryptography==3.3.23
+    # via pyjwt
 uritemplate==3.0.1
     # via drf-spectacular
 urllib3==1.26.5
