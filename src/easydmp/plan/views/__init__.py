@@ -613,6 +613,16 @@ class AnswerLinearSectionView(AnswerSetSectionMixin, DetailView):
             forms.append(self._get_form(answer, form_kwargs))
         return forms
 
+    def get_additional_buttons(self):
+        num_answersets = self.answerset.get_siblings().count() - 1
+        deletable_if_optional = self.section.optional and num_answersets
+        deletable_if_repeatable = self.section.repeatable and num_answersets > 1
+        addable_if_optional = self.section.optional and not num_answersets
+        addable_if_repeatable = self.section.repeatable
+        addable = bool(addable_if_repeatable or addable_if_optional)
+        deletable = bool(deletable_if_optional or deletable_if_repeatable)
+        return {'addable': addable, 'deletable': deletable}
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs).copy()
         context['section'] = self.section
@@ -621,6 +631,7 @@ class AnswerLinearSectionView(AnswerSetSectionMixin, DetailView):
         context['next_section'] = self.next_section
         context['section_progress'] = get_section_progress(self.plan, self.section)
         context['forms'] = kwargs.get('forms', self.get_forms())
+        context.update(self.get_additional_buttons())
         return context
 
     def put(self, *args, **kwargs):
