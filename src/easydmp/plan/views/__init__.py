@@ -474,7 +474,7 @@ class RemoveAnswerSetView(DeleteFormMixin, AnswerSetSectionMixin, DeleteView):
 
 
 class GetAnswerSetView(AnswerSetSectionMixin, DetailView):
-    ACTIONS = set(('next', 'prev', 'current', 'skip'))
+    ACTIONS = set(('next', 'prev', 'current', 'skip_to_next', 'skip_to_prev'))
     model = AnswerSet
     pk_url_kwarg = 'answerset'
     viewname = 'answer_linear_section'
@@ -515,7 +515,7 @@ class GetAnswerSetView(AnswerSetSectionMixin, DetailView):
         answerset = self.answerset.get_next_answerset()
         return self.get_url(answerset.section.first_question.pk, answerset)
 
-    get_skip = get_next
+    get_skip_to_next = get_next
 
     def get_prev(self):
         prev_section = self.section.get_prev_section()
@@ -525,13 +525,15 @@ class GetAnswerSetView(AnswerSetSectionMixin, DetailView):
         answerset = self.answerset.get_prev_answerset()
         return self.get_url(answerset.section.last_question.pk, answerset)
 
+    get_skip_to_prev = get_prev
+
     def get_current(self):
         answerset = self.answerset.get_prev_answerset()
         return self.get_url(self.section.first_question.pk, self.answerset)
 
 
 class AnswerLinearSectionView(AnswerSetSectionMixin, DetailView):
-    ACTIONS = ['save', 'next', 'prev', 'skip']
+    ACTIONS = ['save', 'next', 'skip_to_next', 'prev', 'skip_to_prev']
     template_name = 'easydmp/plan/answer_linear_section_form.html'
     model = AnswerSet
     pk_url_kwarg = 'answerset'
@@ -585,7 +587,7 @@ class AnswerLinearSectionView(AnswerSetSectionMixin, DetailView):
             plan=self.plan_pk,
         )
         kwargs['action'] = 'current'  # safe default, reached by "save"
-        if action in ('next', 'prev', 'skip'):
+        if action in self.ACTIONS[1:]:
             kwargs['action'] = action
         url = reverse("get_answerset", kwargs=kwargs)
         return url
@@ -680,7 +682,80 @@ class AnswerLinearSectionView(AnswerSetSectionMixin, DetailView):
             forms.append(self._get_form(answer, form_kwargs))
         return forms
 
-    def get_additional_buttons(self):
+    def get_button_context(self):
+        # Next/Prev/Save/Summary/Skip
+        prev = {
+            'name': 'prev',
+            'value': 'Prev',
+            'primary': True,
+            'tooltip': "Save the form then go to the previous section",
+        }
+        prev_summary = {
+            'name': 'prev',
+            'value': 'Summary',
+            'primary': True,
+            'tooltip': "Save the form then go to the summary",
+        }
+        save = {
+            'name': 'save',
+            'value': 'Save',
+            'primary': True,
+            'tooltip': "Save the form",
+        }
+        next = {
+            'name': 'next',
+            'value': 'Next',
+            'primary': True,
+            'tooltip': "Save the form then go to the next section",
+        }
+        next_summary = {
+            'name': 'next',
+            'value': 'Summary',
+            'primary': True,
+            'tooltip': "Save the form then go to the summary",
+        }
+        skip_to_prev = {
+            'name': 'skip_to_prev',
+            'value': '< Skip',
+            'primary': False,
+            'tooltip': "Go to the prev section without saving",
+        }
+        skip_to_prev_summary = {
+            'name': 'skip_to_prev',
+            'value': '< Summary',
+            'primary': False,
+            'tooltip': "Go to the summary without saving",
+        }
+        skip_to_next = {
+            'name': 'skip_to_next',
+            'value': 'Skip >',
+            'primary': False,
+            'tooltip': "Go to the next section without saving",
+        }
+        skip_to_next_summary = {
+            'name': 'skip_to_next',
+            'value': 'Summary >',
+            'primary': False,
+            'tooltip': "Go to the summary without saving",
+        }
+        if self.prev_section and self.next_section:
+            buttons = (prev, save, next)
+            skip_to_prev_button = skip_to_prev
+            skip_to_next_button = skip_to_next
+        elif self.prev_section and not self.next_section:
+            buttons = (prev, save, next_summary)
+            skip_to_prev_button = skip_to_prev
+            skip_to_next_button = skip_to_next_summary
+        elif self.next_section and not self.prev_section:
+            buttons = (prev_summary, save, next)
+            skip_to_prev_button = skip_to_prev_summary
+            skip_to_next_button = skip_to_next
+        else:
+            buttons = (save,)
+            skip_to_prev_button = None
+            skip_to_next_button = skip_to_next_summary
+
+        # Add/remove buttons
         num_answersets = self.answerset.get_full_siblings().count() - 1
         deletable_if_optional = self.section.optional and num_answersets
         deletable_if_repeatable = self.section.repeatable and num_answersets > 1
@@ -688,7 +763,13 @@ class AnswerLinearSectionView(AnswerSetSectionMixin, DetailView):
         addable_if_repeatable = self.section.repeatable
         addable = bool(addable_if_repeatable or addable_if_optional)
         deletable = bool(deletable_if_optional or deletable_if_repeatable)
-        return {'addable': addable, 'deletable': deletable}
+        return {
+            'traversal_buttons': buttons,
+            'skip_to_prev': skip_to_prev_button,
+            'skip_to_next': skip_to_next_button,
+            'addable': addable,
+            'deletable': deletable,
+        }
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs).copy()
@@ -698,7 +779,7 @@ class AnswerLinearSectionView(AnswerSetSectionMixin, DetailView):
         context['next_section'] = self.next_section
         context['section_progress'] = get_section_progress(self.plan, self.section)
         context['forms'] = kwargs.get('forms', self.get_forms())
-        context.update(self.get_additional_buttons())
+        context.update(self.get_button_context())
         return context
 
     def put(self, *args, **kwargs):

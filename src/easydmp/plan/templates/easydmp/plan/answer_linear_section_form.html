@@ -47,19 +47,29 @@
       {% endfor %}
 
       <div class="form-actions">
-        {% if section.title %}
-        {% if prev_section %}
-        <input class="btn btn-primary" name="prev" type="submit" value="Prev" />
-        {% else %}
-        <input class="btn btn-primary" name="prev" type="submit" value="Summary" />
+        {% if skip_to_prev %}
+        <a href="{% url 'get_answerset' plan=plan.pk section=section.pk answerset=answerset.pk action='skip_to_prev' %}">
+          <button class="btn{% if skip_to_prev.primary %} btn-primary{% endif %}"
+              name="{{ skip_to_prev.name }}" type="button" value="{{ skip_to_prev.value }}"
+              title="{{ skip_to_prev.tooltip }}"
+              role="link"
+              aria-label="{{ skip_to_prev.tooltip }}">{{ skip_to_prev.value }}</button>
+        </a>
         {% endif %}
-        {% endif %}
-        <input class="btn btn-primary" name="save" type="submit" value="Save" />
-        {% if next_section %}
-        <input class="btn btn-primary" name="next" type="submit" value="Next" />
-        {% else %}
-        <input class="btn btn-primary" name="next" type="submit" value="Summary" />
-        {% endif %}
+        {% for button in traversal_buttons %}
+        <input class="btn{% if button.primary %} btn-primary{% endif %}"
+            name="{{ button.name }}" type="submit" value="{{ button.value }}"
+            title="{{ button.tooltip }}"
+            aria-label="{{ button.tooltip }}"
+        />
+        {% endfor %}
+        <a href="{% url 'get_answerset' plan=plan.pk section=section.pk answerset=answerset.pk action='skip_to_next' %}">
+          <button class="btn{% if skip_to_next.primary %} btn-primary{% endif %}"
+              name="{{ skip_to_next.name }}" type="button" value="{{ skip_to_next.value }}"
+              title="{{ skip_to_next.tooltip }}"
+              role="link"
+              aria-label="{{ skip_to_next.tooltip }}">{{ skip_to_next.value }}</button>
+        </a>
       </div>
       </form>
     </div>
