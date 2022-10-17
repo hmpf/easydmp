@@ -54,7 +54,7 @@ def get_section_progress(plan, current_section):
     section_struct = []
     current_section = current_section.get_topmost_section()
     for section in sections:
-        answerset = section.answersets.order_by('pk').first()
+        answerset = section.answersets.filter(plan=plan).order_by('pk').first()
         kwargs = {'plan': plan.id, 'section': section.pk, 'answerset': answerset.pk}
         link = reverse(viewname, kwargs=kwargs)
         section_dict = {
