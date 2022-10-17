@@ -5,7 +5,7 @@
 <section role="region" class="section section_depth_{{ section.depth }} " id="section-{{ section.pk }}">
   <div class="section-header">
     {% if section.section.title %}
-    <h{{2|add:section.depth }} class="section_title"><a href="{% url 'answerset_detail' section=section.pk plan=object.id answerset=section.answerset.pk %}">{{ section.full_title }}{% show_checkmark section.valid %}</a></h{{ 2|add:section.depth }}>
+    <h{{2|add:section.depth }} class="section_title"><a href="{% url 'answerset_detail' section=section.pk plan=object.id answerset=section.answerset.pk %}">{{ section.full_title }}</a>{% if not section.optional%}<span class="asteriskField">*</span>{% endif %}{% show_checkmark section.valid %}</h{{ 2|add:section.depth }}>
     {% endif %}
     <div class="section-controls">
       {% if section.addable and editable_for_user %}
