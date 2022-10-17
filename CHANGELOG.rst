@@ -11,6 +11,25 @@ Planned
 
 * Good UX for repeated sections
 
+1.26.0
+------
+
+Preparing the way for repeatable sections
+
+Deprecation:
+
+- Remove support for old-style optional sections. These were never in use and
+  poorly compatible with repeatable sections.
+
+Bugfix:
+
+- Ensure AnswerSet.skipped is either True or None, never False
+
+Paperwork:
+
+* Upgrade various dependencies
+* Test on newest Djangos, while waiting for 4.2
+
 1.25.2
 ------
 
