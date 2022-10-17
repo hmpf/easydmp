@@ -6,8 +6,8 @@ This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.htm
 as of v0.10. Prior to v0.10, annotated tags per feature, annotated tags plus
 date per feature, or commit hashes were used.
 
-Planned
--------
+1.27.0
+------
 
 Proper support for manually filling out an RDA DCS plan or any other template
 with repeatable or optional sections. No changes to database or API.
@@ -18,6 +18,11 @@ still not have been finished if not for WFH, due to the level of focus needed.
 Feature:
 
 - Workable UX for answering repeated and/or optional sections
+
+Paperwork:
+
+- Improve accessibility by increasing contrast where that is easy and adding
+  labels to gui-only controls.
 
 1.26.0
 ------
