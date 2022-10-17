@@ -9,7 +9,15 @@ date per feature, or commit hashes were used.
 Planned
 -------
 
-* Good UX for repeated sections
+Proper support for manually filling out an RDA DCS plan or any other template
+with repeatable or optional sections. No changes to database or API.
+
+This concludes a process that started in the before times! It would probably
+still not have been finished if not for WFH, due to the level of focus needed.
+
+Feature:
+
+- Workable UX for answering repeated and/or optional sections
 
 1.26.0
 ------
