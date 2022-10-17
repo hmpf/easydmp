@@ -6,27 +6,14 @@
 </style>
 {% endblock %}
 {% block content %}
-  <div class="row">
+  <div class="row uninett-whole-row">
     <div class="col-lg-12">
       <div class="jumbotron uninett-color-darkBlue">
           <h1>{{ plan|capfirst }}</h1>
       </div>
+    {% include "easydmp/plan/_section_progress_bar.html" %}
     </div>
   </div>
-
-  <!-- start progress / status bar // USIT-code -->
-  <div class="row uninett-whole-row progressbar">
-    <ul>
-    {% for section in section_progress %}
-    <li {% if section.status %}class="{{ section.status }}"{% endif %}>
-          <div class="progressbar2"></div>
-          <span><a href="{% url 'section_detail' plan=plan.id section=section.pk %}">{{ section.label }}</a></span>
-          {{ section.title }}
-      </li>
-    {% endfor %}
-    </ul>
-  </div>
-  <!-- end progress / status bar // USIT-code -->
 
   <div class="row uninett-color-white uninett-whole-row">
     <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
@@ -35,8 +22,10 @@
           <div class="section-introduction">{{ section.introductory_text|safe }}</div>
           <div class="section-comment">{{ section.comment|safe }}</div>
           <div class="form-actions">
-            <a id="id-prev" class="btn btn-primary" href="{{ prev }}">Prev</a>
-            <a id="id-next" class="btn btn-primary" href="{{ next }}">Next</a>
+            <p>
+              <a id="id-prev" class="btn btn-primary" href="{{ prev }}">Prev</a>
+              <a id="id-next" class="btn btn-primary" href="{{ next }}">Next</a>
+            </p>
           </div>
       </div>
     </div>

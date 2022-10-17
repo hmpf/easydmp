@@ -15,47 +15,63 @@
 
     {% include "easydmp/plan/_section_progress_bar.html" %}
     <div class="section section-depth-{{ section.section_depth }}">
-      <h3>{{ section.full_title }}</h3>
+      <div class="section-header">
+        <h3>{{ section.full_title }}{% if not section.optional %}<span class="asteriskField">*</span>{% endif %}</h3><!-- Skipped: {{ answerset.skipped }} -->
+        <p class="answerset-controls">
+          {% if deletable %}
+          <form action="{% url 'remove_answerset' plan=plan.pk section=section.pk answerset=answerset.pk %}" class="remove-answerset" method="get">
+            <button title="Remove" aria-label="Remove"></button>
+          </form>
+          {% endif %}
+          {% if addable %}
+          <form action="{% url 'add_answerset' plan=plan.pk section=section.pk answerset=answerset.pk %}" class="add-answerset" method="get">
+            <button title="Add" aria-label="Add"></button>
+          </form>
+          {% endif %}
+        </p>
+      </div>
       {% if section.introductory_text or section.comment %}
-      <div class="actions dropdown section-information">
-        <button class="btn btn-default open" type="button" data-toggle="collapse" data-target="#collapsible_section_metadata" aria-expanded="true" aria-controls="collapsible_section_metadata">
-          <span class="caret"></span>
-        </button>
-        <div class="collapse in" id="collapsible_section_metadata" aria-expanded="true">
-          <div class="section-info-wrap">
-            <div class="section-introduction">{{ section.introductory_text }}</div>
-            <div class="section-comment">{{ section.comment }}</div>
-          </div>
-        </div>
+      <div class="section-information">
+        <div class="section-introduction">{{ section.introductory_text }}</div>
+        <div class="section-comment">{{ section.comment }}</div>
       </div>
       {% endif %}
 
-    <form class="blueForms" method="post">
-    {% csrf_token %}
-    {% for question in forms %}
-      <p>
-      {% with form=question.form notesform=question.notesform answer=question.answer %}
-      {% include "easydmp/plan/_answer_form.html"%}
-      {% endwith %}
-    {% endfor %}
+      <form class="blueForms" method="post">
+      {% csrf_token %}
+      {% for question in forms %}
+        <p>
+        {% with form=question.form notesform=question.notesform answer=question.answer %}
+        {% include "easydmp/plan/_answer_form.html"%}
+        {% endwith %}
+      {% endfor %}
 
       <div class="form-actions">
-        {% if section.title %}
-        {% if prev_section %}
-        <input class="btn btn-primary" name="prev" type="submit" value="Prev" />
-        {% else %}
-        <input class="btn btn-primary" name="prev" type="submit" value="Summary" />
+        {% if skip_to_prev %}
+        <a href="{% url 'get_answerset' plan=plan.pk section=section.pk answerset=answerset.pk action='skip_to_prev' %}">
+          <button class="btn{% if skip_to_prev.primary %} btn-primary{% endif %}"
+              name="{{ skip_to_prev.name }}" type="button" value="{{ skip_to_prev.value }}"
+              title="{{ skip_to_prev.tooltip }}"
+              role="link"
+              aria-label="{{ skip_to_prev.tooltip }}">{{ skip_to_prev.value }}</button>
+        </a>
         {% endif %}
-        {% endif %}
-        <input class="btn btn-primary" name="save" type="submit" value="Save" />
-        {% if next_section %}
-        <input class="btn btn-primary" name="next" type="submit" value="Next" />
-        {% else %}
-        <input class="btn btn-primary" name="next" type="submit" value="Summary" />
-        {% endif %}
+        {% for button in traversal_buttons %}
+        <input class="btn{% if button.primary %} btn-primary{% endif %}"
+            name="{{ button.name }}" type="submit" value="{{ button.value }}"
+            title="{{ button.tooltip }}"
+            aria-label="{{ button.tooltip }}"
+        />
+        {% endfor %}
+        <a href="{% url 'get_answerset' plan=plan.pk section=section.pk answerset=answerset.pk action='skip_to_next' %}">
+          <button class="btn{% if skip_to_next.primary %} btn-primary{% endif %}"
+              name="{{ skip_to_next.name }}" type="button" value="{{ skip_to_next.value }}"
+              title="{{ skip_to_next.tooltip }}"
+              role="link"
+              aria-label="{{ skip_to_next.tooltip }}">{{ skip_to_next.value }}</button>
+        </a>
       </div>
-    </form>
-    </div>
+      </form>
     </div>
   </div>
 {% endblock content %}

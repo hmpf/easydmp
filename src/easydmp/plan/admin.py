@@ -80,8 +80,9 @@ class AnswerSetAdmin(AdminConvenienceMixin, admin.ModelAdmin):
         redirect = super().response_change(request, obj)
         if "_add-sibling" in request.POST:
             sib = obj.add_sibling()
-            url = self.get_change_url(sib.pk)
-            return HttpResponseRedirect(url)
+            if sib:
+                url = self.get_change_url(sib.pk)
+                return HttpResponseRedirect(url)
         return redirect
 
     def get_readonly_fields(self, request, obj=None):

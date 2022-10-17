@@ -9,6 +9,7 @@
     div.section-introduction { padding-bottom: 2em;}
     div.answer { padding-bottom: 1em; }
     div.note { padding-top: 1em; }
+    .answer .question {font-weight: bold}
     </style>
 </head>
 <body>
@@ -28,31 +29,6 @@
         <tr><th>Editors</th><td>{{ editors }}</td></tr>
     </table>
   </header>
-  {% for section in text %}
-  <section>
-  <h2>{{ section.section.title }}</h2>
-  {% if section.section.introductory_text %}
-  <div class="section-introduction">{{ section.section.introductory_text }}</div>
-  {% endif %}
-  {% for answerset in section.answersets %}
-    <section>
-    {% if section.section.num_answersets > 1 %}
-    <h3>{{ answerset.name }}</h3>
-    {% endif %}
-    <div class="canned_answers">
-    {% for para in answerset.text %}
-      {% if para.text or para.notes %}
-      <div class="answer">
-        {% if reveal_questions and not para.skipped %}<h3 class="question">{{ para.question }}</h3>{% endif %}
-        <div class="canned">{{ para.text }}</div>{% if para.notes %}
-        <div class="note">Note: {{ para.notes }}</div>{% endif %}
-      </div>
-      {% endif %}
-    {% endfor %}
-    </div>
-    </section>
-    {% endfor %} {# / answerset #}
-  </section>
-  {% endfor %} {# / section #}
+{% include "easydmp/plan/_generated_section.html" %}
 </body>
 </html>

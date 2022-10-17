@@ -1,10 +1,15 @@
 from copy import deepcopy
 import logging
 
+from django.contrib import messages
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy, NoReverseMatch
-from django.http import HttpResponseRedirect, Http404, HttpResponseServerError, HttpResponse
-from django.shortcuts import redirect
+from django.http import Http404
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
+from django.http import HttpResponseServerError
+from django.http import HttpResponseBadRequest
+from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import (
     CreateView,
     UpdateView,
@@ -21,8 +26,13 @@ from easydmp.dmpt.forms import AbstractNodeFormSet
 from easydmp.eventlog.models import EventLog
 from easydmp.eventlog.utils import log_event
 
-from ..models import AnswerHelper, PlanAccess, AnswerSet
+from ..models import add_answerset
+from ..models import AnswerHelper
+from ..models import AnswerSet
+from ..models import AnswerSetException
 from ..models import Plan
+from ..models import PlanAccess
+from ..models import remove_answerset
 from ..forms import ConfirmForm
 from ..forms import SaveAsPlanForm
 from ..forms import StartPlanForm
@@ -37,18 +47,23 @@ def progress(so_far, all):
     return so_far/float(all)*100
 
 
-def get_section_progress(plan, current_section=None):
+def get_section_progress(plan, current_section):
+    viewname = 'answerset_detail'
     sections = plan.template.sections.filter(section_depth=1).order_by('position')
     visited_sections = plan.visited_sections.all()
     section_struct = []
     current_section = current_section.get_topmost_section()
     for section in sections:
+        answerset = section.answersets.filter(plan=plan).order_by('pk').first()
+        kwargs = {'plan': plan.id, 'section': section.pk, 'answerset': answerset.pk}
+        link = reverse(viewname, kwargs=kwargs)
         section_dict = {
             'label': section.label,
             'title': section.title,
             'full_title': section.full_title(),
             'pk': section.pk,
             'status': 'new',
+            'link': link,
         }
         if section in visited_sections:
             section_dict['status'] = 'visited'
@@ -58,11 +73,25 @@ def get_section_progress(plan, current_section=None):
     return section_struct
 
 
+def get_question(question_pk, template):
+    # Ensure that the template does contain the question
+    try:
+        sections = template.sections.all()
+        question = (Question.objects
+            .select_related('section')
+            .get(pk=question_pk, section__in=sections)
+        )
+    except Question.DoesNotExist as e:
+        raise Http404(f"Unknown question id: {question_pk}")
+    question = question.get_instance()
+    return question
+
+
 def update_data_for_additional_form_in_formset(form, post_data):
     if not isinstance(form, AbstractNodeFormSet):
         return
     prefix = form.prefix
-    if not f'{prefix}_add_row' in post_data:
+    if f'{prefix}_add_row' not in post_data:
         return  # row not added
     data = post_data.copy()
     total_form_lookup = f'{prefix}-TOTAL_FORMS'
@@ -172,7 +201,7 @@ class StartPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
         try:
             answerset = self.object.answersets.get(section=first_section)
         except AnswerSet.DoesNotExist:
-            answerset = self.object.ensure_answerset(first_section)
+            answerset = self.object.ensure_answersets(first_section)
         kwargs = {'plan': self.object.pk, 'answerset': answerset.pk}
         if first_question.section.branching:
             kwargs['question'] = first_question.pk
@@ -354,13 +383,58 @@ class CreateNewVersionPlanView(PlanAccessViewMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
-class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
-    template_name = 'easydmp/plan/answer_linear_section_form.html'
-    model = AnswerSet
-    pk_url_kwarg = 'answerset'
-    viewname = 'answer_linear_section'
-    branching_viewname = 'answer_question'
-    __LOG = logging.getLogger('{}.{}'.format(__name__, 'AnswerLinearSectionView'))
+class AddAnswerSetView(RedirectView):
+
+    def get(self, request, *args, **kwargs):
+        self.section = get_object_or_404(Section, pk=self.kwargs['section'])
+        self.plan = get_object_or_404(Plan, pk=self.kwargs['plan'])
+        sibling_id = self.kwargs.get('answerset', None)
+        self.sibling = None
+        if sibling_id:
+            self.sibling = get_object_or_404(AnswerSet, pk=sibling_id)
+        editable = self.plan.may_edit(request.user)
+        if not editable:
+            raise Http404  # go away, peon
+
+        try:
+            answerset = add_answerset(self.section, self.plan, self.sibling)
+        except (AnswerSetException, AnswerSet.MultipleObjectsReturned) as e:
+            raise HttpResponseBadRequest(e)
+        if not answerset:
+            messages.warning(request, "Answerset not added, invalid action")
+            url = self.get_failure_url(*args, **kwargs)
+            return HttpResponseRedirect(url)
+        self.next_answerset = answerset
+        url = self.get_redirect_url(*args, **kwargs)
+
+        template = '{timestamp} {actor} added answerset "{action_object}" to plan {target}'
+        log_event(request.user, 'add-answerset', target=self.plan,
+                  object=self.next_answerset, template=template)
+        messages.success(request, "Answerset added")
+        return HttpResponseRedirect(url)
+
+    def get_failure_url(self, *args, **kwargs):
+        return reverse('plan_detail', kwargs={'plan': self.plan.pk})
+
+    def get_redirect_url(self, *args, **kwargs):
+        minimal_kwargs = {'plan': self.next_answerset.plan_id, 'answerset': self.next_answerset.id}
+        if self.next_answerset.section.branching:
+            viewname = 'answer_question'
+            kwargs = dict(
+                question=self.next_answerset.section.first_question.id,
+                **minimal_kwargs,
+            )
+            return reverse(viewname, kwargs=kwargs)
+        else:
+            viewname = 'answer_linear_section'
+            kwargs = dict(
+                section=self.next_answerset.section_id,
+                **minimal_kwargs,
+            )
+            return reverse(viewname, kwargs=kwargs)
+
+
+class AnswerSetSectionMixin(AnswerSetAccessViewMixin):
 
     def check_and_get_kwargs(self, request):
         self.answerset = super().get_object()
@@ -372,6 +446,100 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
         self.editable = self.plan.may_edit(request.user)
         if not all((correct_plan, correct_section, viewable)):
             raise Http404
+
+
+class RemoveAnswerSetView(DeleteFormMixin, AnswerSetSectionMixin, DeleteView):
+    model = AnswerSet
+    pk_url_kwarg = 'answerset'
+    template_name = 'easydmp/plan/answerset_confirm_delete.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.check_and_get_kwargs(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        success_url = self.get_success_url()
+        template = '{timestamp} {actor} removed answerset "{action_object}" from plan {target}'
+        log_event(request.user, 'remove-answerset', target=self.plan,
+                  object=self.answerset, template=template)
+        try:
+            remove_answerset(self.answerset)
+        except AnswerSetException as e:
+            raise HttpResponseBadRequest(e)
+        messages.success(request, 'Answerset removed')
+        return HttpResponseRedirect(success_url)
+
+    def get_success_url(self):
+        return reverse('plan_detail', kwargs={'plan': self.plan.id})
+
+
+class GetAnswerSetView(AnswerSetSectionMixin, DetailView):
+    ACTIONS = set(('next', 'prev', 'current', 'skip_to_next', 'skip_to_prev'))
+    model = AnswerSet
+    pk_url_kwarg = 'answerset'
+    viewname = 'answer_linear_section'
+    branching_viewname = 'answer_question'
+
+    def get(self, request, *args, **kwargs):
+        self.check_and_get_kwargs(request)
+        action = self.kwargs['action']
+        if not action in self.ACTIONS:
+            raise Http404
+        method = getattr(self, f'get_{action}', None)
+
+        self.plan_pk = self.plan.pk
+        template = '{timestamp} {actor} accessed {action_object} of {target}'
+        log_event(request.user, 'access', target=self.plan,
+                  object=self.answerset, template=template)
+        url = method()
+        return redirect(url)
+
+    def get_url(self, question_pk, answerset):
+        kwargs = dict(plan=self.plan_pk, answerset=answerset.pk)
+        if answerset.section.branching:
+            viewname = self.branching_viewname
+            kwargs['question'] = question_pk
+        else:
+            viewname = self.viewname
+            kwargs['section'] = answerset.section.pk
+        return reverse(viewname, kwargs=kwargs)
+
+    def get_summary(self):
+        return reverse('plan_detail', kwargs={'plan': self.plan_pk})
+
+    def get_next(self):
+        next_section = self.section.get_next_section()
+        if not next_section:
+            return self.get_summary()
+
+        answerset = self.answerset.get_next_answerset()
+        return self.get_url(answerset.section.first_question.pk, answerset)
+
+    get_skip_to_next = get_next
+
+    def get_prev(self):
+        prev_section = self.section.get_prev_section()
+        if not prev_section:
+            return self.get_summary()
+
+        answerset = self.answerset.get_prev_answerset()
+        return self.get_url(answerset.section.last_question.pk, answerset)
+
+    get_skip_to_prev = get_prev
+
+    def get_current(self):
+        answerset = self.answerset.get_prev_answerset()
+        return self.get_url(self.section.first_question.pk, self.answerset)
+
+
+class AnswerLinearSectionView(AnswerSetSectionMixin, DetailView):
+    ACTIONS = ['save', 'next', 'skip_to_next', 'prev', 'skip_to_prev']
+    template_name = 'easydmp/plan/answer_linear_section_form.html'
+    model = AnswerSet
+    pk_url_kwarg = 'answerset'
+    viewname = 'answer_linear_section'
+    branching_viewname = 'answer_question'
+    __LOG = logging.getLogger('{}.{}'.format(__name__, 'AnswerLinearSectionView'))
 
     def dispatch(self, request, *args, **kwargs):
         error_message_404 = "This Section cannot be edited in one go"
@@ -404,51 +572,25 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        minimal_kwargs = {'plan': self.plan_pk}
-        if 'save' in self.request.POST:
-            kwargs = dict(
-                section=self.section.pk,
-                answerset=self.answerset.pk,
-                **minimal_kwargs,
-            )
-            viewname = self.viewname
-            return reverse(viewname, kwargs=kwargs)
-        if 'next' in self.request.POST and self.next_section:
-            answerset = self.plan.get_answersets_for_section(self.next_section).first()
-            if self.next_section.branching:
-                kwargs=dict(
-                    question=self.next_section.first_question.pk,
-                    answerset=answerset.pk,
-                    **minimal_kwargs,
-                )
-                viewname = self.branching_viewname
-            else:
-                kwargs = dict(
-                    section=self.next_section.pk,
-                    answerset=answerset.pk,
-                    **minimal_kwargs,
-                )
-                viewname = self.viewname
-            return reverse(viewname, kwargs=kwargs)
-        if 'prev' in self.request.POST and self.prev_section:
-            answerset = self.plan.get_answersets_for_section(self.prev_section).last()
-            if self.prev_section.branching:
-                kwargs=dict(
-                    question=self.prev_section.last_question.pk,
-                    answerset=answerset.pk,
-                    **minimal_kwargs,
-                )
-                viewname = self.branching_viewname
-            else:
-                kwargs = dict(
-                    section=self.prev_section.pk,
-                    answerset=answerset.pk,
-                    **minimal_kwargs,
-                )
-                viewname = self.viewname
-            return reverse(viewname, kwargs=kwargs)
+        for action in self.ACTIONS:
+            if self.request.POST.get(action, None):
+                if action == 'save':
+                    action == 'current'
+                return self.get_url(action)
         # Summary
-        return reverse('plan_detail', kwargs=minimal_kwargs)
+        return reverse('plan_detail', kwargs={'plan': self.plan_pk})
+
+    def get_url(self, action):
+        kwargs = dict(
+            section=self.section.pk,
+            answerset=self.answerset.pk,
+            plan=self.plan_pk,
+        )
+        kwargs['action'] = 'current'  # safe default, reached by "save"
+        if action in self.ACTIONS[1:]:
+            kwargs['action'] = action
+        url = reverse("get_answerset", kwargs=kwargs)
+        return url
 
     def get(self, _request, *args, **kwargs):
         forms = self.get_forms()
@@ -509,6 +651,10 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
         return HttpResponseRedirect(self.get_success_url())
 
     def forms_invalid(self, forms):
+        skip = self.request.POST.get('skip', None)
+        if skip:
+            url = self.get_url('skip')
+            return HttpResponseRedirect(url)
         return self.render_to_response(self.get_context_data(forms=forms))
 
     def get_form_kwargs(self):
@@ -536,6 +682,95 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
             forms.append(self._get_form(answer, form_kwargs))
         return forms
 
+    def get_button_context(self):
+        # Next/Prev/Save/Summary/Skip
+        prev = {
+            'name': 'prev',
+            'value': 'Prev',
+            'primary': True,
+            'tooltip': "Save the form then go to the previous section",
+        }
+        prev_summary = {
+            'name': 'prev',
+            'value': 'Summary',
+            'primary': True,
+            'tooltip': "Save the form then go to the summary",
+        }
+        save = {
+            'name': 'save',
+            'value': 'Save',
+            'primary': True,
+            'tooltip': "Save the form",
+        }
+        next = {
+            'name': 'next',
+            'value': 'Next',
+            'primary': True,
+            'tooltip': "Save the form then go to the next section",
+        }
+        next_summary = {
+            'name': 'next',
+            'value': 'Summary',
+            'primary': True,
+            'tooltip': "Save the form then go to the summary",
+        }
+        skip_to_prev = {
+            'name': 'skip_to_prev',
+            'value': '< Skip',
+            'primary': False,
+            'tooltip': "Go to the prev section without saving",
+        }
+        skip_to_prev_summary = {
+            'name': 'skip_to_prev',
+            'value': '< Summary',
+            'primary': False,
+            'tooltip': "Go to the summary without saving",
+        }
+        skip_to_next = {
+            'name': 'skip_to_next',
+            'value': 'Skip >',
+            'primary': False,
+            'tooltip': "Go to the next section without saving",
+        }
+        skip_to_next_summary = {
+            'name': 'skip_to_next',
+            'value': 'Summary >',
+            'primary': False,
+            'tooltip': "Go to the summary without saving",
+        }
+        if self.prev_section and self.next_section:
+            buttons = (prev, save, next)
+            skip_to_prev_button = skip_to_prev
+            skip_to_next_button = skip_to_next
+        elif self.prev_section and not self.next_section:
+            buttons = (prev, save, next_summary)
+            skip_to_prev_button = skip_to_prev
+            skip_to_next_button = skip_to_next_summary
+        elif self.next_section and not self.prev_section:
+            buttons = (prev_summary, save, next)
+            skip_to_prev_button = skip_to_prev_summary
+            skip_to_next_button = skip_to_next
+        else:
+            buttons = (save,)
+            skip_to_prev_button = None
+            skip_to_next_button = skip_to_next_summary
+
+        # Add/remove buttons
+        num_answersets = self.answerset.get_full_siblings().count() - 1
+        deletable_if_optional = self.section.optional and num_answersets
+        deletable_if_repeatable = self.section.repeatable and num_answersets > 1
+        addable_if_optional = self.section.optional and not num_answersets
+        addable_if_repeatable = self.section.repeatable
+        addable = bool(addable_if_repeatable or addable_if_optional)
+        deletable = bool(deletable_if_optional or deletable_if_repeatable)
+        return {
+            'traversal_buttons': buttons,
+            'skip_to_prev': skip_to_prev_button,
+            'skip_to_next': skip_to_next_button,
+            'addable': addable,
+            'deletable': deletable,
+        }
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs).copy()
         context['section'] = self.section
@@ -544,6 +779,7 @@ class AnswerLinearSectionView(AnswerSetAccessViewMixin, DetailView):
         context['next_section'] = self.next_section
         context['section_progress'] = get_section_progress(self.plan, self.section)
         context['forms'] = kwargs.get('forms', self.get_forms())
+        context.update(self.get_button_context())
         return context
 
     def put(self, *args, **kwargs):
@@ -562,13 +798,88 @@ class RedirectToAnswerQuestionView(RedirectView):
             raise Http404
         question_pk = kwargs['question']
         try:
-           question = Question.objects.get(id=question_pk)
+            question = Question.objects.get(id=question_pk)
         except Question.DoesNotExist:
             raise Http404
         answersets = plan.answersets.filter(section=question.section)
         answerset = answersets.order_by('pk').first()
         kwargs['answerset'] = int(answerset.pk)
         return super().get_redirect_url(*args, **kwargs)
+
+
+class GetAnswerView(AnswerSetAccessViewMixin, DetailView):
+    ACTIONS = set(('next', 'prev', 'current'))
+    model = AnswerSet
+    pk_url_kwarg = 'answerset'
+    viewname = 'answer_linear_section'
+    branching_viewname = 'answer_question'
+    __LOG = logging.getLogger('{}.{}'.format(__name__, 'GetAnswerView'))
+
+    def check_and_get_kwargs(self, request):
+        self.answerset = super().get_object()
+        self.plan = self.answerset.plan
+        correct_plan = self.plan.pk == self.kwargs['plan']
+        self.section = self.answerset.section
+        viewable = self.plan.may_view(request.user)
+        self.editable = self.plan.may_edit(request.user)
+        if not all((correct_plan, viewable)):
+            raise Http404
+        self.question_pk = self.kwargs.get('question')
+        self.question = get_question(self.question_pk, self.plan.template)
+        self.answer = AnswerHelper(self.question, self.answerset)
+
+    def get(self, request, *args, **kwargs):
+        error_message_404 = "This Section cannot be edited in one go"
+        self.check_and_get_kwargs(request)
+        action = self.kwargs['action']
+        if not action in self.ACTIONS:
+            raise Http404
+        method = getattr(self, f'get_{action}', None)
+
+        self.plan_pk = self.plan.pk
+        template = '{timestamp} {actor} accessed {action_object} of {target}'
+        log_event(request.user, 'access', target=self.plan,
+                  object=self.answerset, template=template)
+        url = method()
+        return redirect(url)
+
+    def get_url(self, question, answerset):
+        kwargs = {
+            'plan': self.plan.pk,
+            'question': question.pk,
+            'answerset': answerset.pk,
+        }
+        self.__LOG.debug('Going to question "%s"', kwargs['question'])
+        return reverse(self.branching_viewname, kwargs=kwargs)
+
+    def get_summary(self):
+        return reverse('plan_detail', kwargs={'plan': self.plan_pk})
+
+    def get_current(self):
+        return self.get_url(self.question, self.answerset)
+
+    def get_next(self):
+        data = self.answerset.data
+        next_question = self.question.get_next_question(data)
+        if not next_question:
+            # Finished answering all questions
+            return self.get_summary()
+        plan_kwargs = {'plan': self.plan.pk}
+        answerset = self.answerset
+        if next_question.section != self.section:
+            answerset = self.answerset.get_next_answerset()
+        return self.get_url(next_question, answerset)
+
+    def get_prev(self):
+        data = self.answerset.data
+        prev_question = self.question.get_prev_question(data)
+        if not prev_question:
+            # Clicked prev on very first question
+            return self.get_summary_url()
+        answerset = self.answerset
+        if prev_question.section != self.section:
+            answerset = self.answerset.get_prev_answerset()
+        return self.get_url(prev_question, answerset)
 
 
 class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
@@ -587,8 +898,8 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         """
         self.plan_pk = self.kwargs.get('plan')
         plans = (Plan.objects
-            .select_related('template')
-            .prefetch_related('template__sections', 'answersets'))
+                 .select_related('template')
+                 .prefetch_related('template__sections', 'answersets'))
         try:
             self.plan = plans.get(id=self.plan_pk)
         except Plan.DoesNotExist:
@@ -598,7 +909,7 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
         self.answerset = super().get_object()
         self.object = self.answerset
         self.question_pk = self.kwargs.get('question')
-        self.question = self._get_question()
+        self.question = get_question(self.question_pk, self.template)
         self.answer = AnswerHelper(self.question, self.answerset)
         self.section = self.question.section
         self.prev_section = self.section.get_prev_section()
@@ -607,20 +918,6 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         self.check_and_get_kwargs()
         return super().dispatch(request, *args, **kwargs)
-
-    def _get_question(self):
-        question_pk = self.question_pk
-        # Ensure that the template does contain the question
-        try:
-            sections = self.template.sections.all()
-            question = (Question.objects
-                .select_related('section')
-                .get(pk=question_pk, section__in=sections)
-            )
-        except Question.DoesNotExist as e:
-            raise Http404(f"Unknown question id: {question_pk}")
-        question = question.get_instance()
-        return question
 
     def set_referer(self, request):
         self.referer = request.META.get('HTTP_REFERER', None)
@@ -631,51 +928,17 @@ class AnswerQuestionView(AnswerSetAccessViewMixin, UpdateView):
     def get_summary_url(self):
         return reverse('plan_detail', kwargs={'plan': self.plan.pk})
 
-    def get_url(self, question, answerset):
-        kwargs = {
-            'plan': self.plan.pk,
-            'question': question.pk,
-            'answerset': answerset.pk,
-        }
-        self.__LOG.debug('Going to question "%s"', kwargs['question'])
-        return reverse('answer_question', kwargs=kwargs)
-
-    def get_next_url(self, data):
-        plan_kwargs = {'plan': self.plan.pk}
-        next_question = self.question.get_next_question(data)
-        self.__LOG.debug('Next question found: "%s"', next_question)
-        if not next_question:
-            # Finished answering all questions
-            self.__LOG.debug('No next question, going to summary')
-            return self.get_summary_url()
-        answerset = self.answerset
-        if next_question.section != self.section:
-            answersets = self.plan.get_answersets_for_section(next_question.section)
-            answerset = answersets.first()
-        return self.get_url(next_question, answerset)
-
-    def get_prev_url(self, data):
-        prev_question = self.question.get_prev_question(data)
-        self.__LOG.debug('Prev question found: "%s"', prev_question)
-        if not prev_question:
-            # Clicked prev on very first question
-            self.__LOG.debug('No prev question, going to summary')
-            return self.get_summary_url()
-        answerset = self.answerset
-        if prev_question.section != self.section:
-            answersets = self.plan.get_answersets_for_section(prev_question.section)
-            answerset = answersets.last()
-        return self.get_url(prev_question, answerset)
-
     def get_success_url(self):
-        current_data = self.answer.get_current_data()
-        if 'summary' in self.request.POST:
-            self.__LOG.debug('Going to summary')
-            return self.get_summary_url()
-        if 'prev' in self.request.POST:
-            return self.get_prev_url(current_data)
-        if 'next' in self.request.POST:
-            return self.get_next_url(current_data)
+        kwargs = dict(
+            answerset=self.answerset.pk,
+            plan=self.plan_pk,
+            question=self.question.pk,
+        )
+        action = None
+        for action in ('save', 'next', 'prev'):
+            if action in self.request.POST:
+                kwargs['action'] = action if action != 'save' else 'current'
+                return reverse('get_answer', kwargs=kwargs)
         # Stay on same page if not explicitly going elsewhere
         return self.get_url(self.question, self.answerset)
 
@@ -861,6 +1124,7 @@ def generate_pretty_exported_plan(plan, template_name):
                PlanAccess.objects.filter(plan=plan).filter(may_edit=True)]
 
     context = plan.get_context_for_generated_text()
+    context['text'] = plan.get_nested_canned_text()
     context['logs'] = EventLog.objects.any(plan)
     context['reveal_questions'] = plan.template.reveal_questions
     context['editors'] = ', '.join([str(ed) for ed in editors])
@@ -930,75 +1194,49 @@ class GeneratedPlanPDFView(AbstractGeneratedPlanView):
         return response
 
 
-class SectionDetailView(DetailView):
-    """Show a section
+class AnswerSetDetailView(AnswerSetSectionMixin, DetailView):
+    """Show an answerset
 
-    Mostly relevant for sections without questions.
+    Mostly relevant for sections without questions, ergo where the answerset
+    will always be empty. If there *are* question, redirect to the correct
+    update-view.
     """
 
-    model = Section
-    pk_url_kwarg = 'section'
-    template_name = 'easydmp/plan/section_detail.html'
-
-    def get_plan(self, *args, **kwargs):
-        user = self.request.user
-        plan_id = kwargs['plan']
-        try:
-            plan = Plan.objects.viewable(user).get(id=plan_id)
-        except Plan.DoesNotExist:
-            raise Http404
-        return plan
-
-    @staticmethod
-    def check_plan(plan, section):
-        if plan.template != section.template:
-            return False
-        return True
-
-    def get_section(self, *args, **kwargs):
-        section_id = kwargs['section']
-        try:
-            section = Section.objects.get(id=section_id)
-        except Section.DoesNotExist:
-            raise Http404
-        if not self.check_plan(self.plan, section):
-            raise Http404
-        return section
-
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        correct_plan = self.check_plan(self.plan, obj)
-        if correct_plan:
-            return obj
-        raise Http404
+    model = AnswerSet
+    pk_url_kwarg = 'answerset'
+    template_name = 'easydmp/plan/answerset_detail.html'
 
     def get(self, request, *args, **kwargs):
-        self.plan = self.get_plan(**self.kwargs)
-        self.editable = self.plan.may_edit(self.request.user)
-        section = self.get_section(**self.kwargs)
+        self.check_and_get_kwargs(request)
 
         # Set visited empty section
-        self.plan.visited_sections.add(section)
-        topmost = section.get_topmost_section()
+        self.plan.visited_sections.add(self.section)
+        topmost = self.section.get_topmost_section()
         if topmost:
             self.plan.visited_sections.add(topmost)
 
-        question = section.first_question
         template = '{timestamp} {actor} accessed {action_object} of {target}'
         log_event(request.user, 'access', target=self.plan,
-                  object=section, template=template)
-        if not question:
-            # Show page for empty section
+                  object=self.section, template=template)
+
+        if not self.section.questions.exists():
+            # Show page for empty answerset
             return super().get(request, *args, **kwargs)
 
-        # Redirect to first question if any
+        question = self.section.first_question
+        # Redirect to correct update-view if any questions
         if self.editable:
-            answerset = self.plan.get_answersets_for_section(section).first()
+            if self.section.branching:
+                view_name = 'answer_question'
+                kwargs = {'question': question.pk}
+            else:
+                view_name = 'answer_linear_section'
+                kwargs = {'section': self.section.pk}
             return redirect(
-                'answer_question',
-                question=question.pk,
+                view_name,
                 plan=self.plan.pk,
-                answerset=answerset.pk
+                answerset=self.answerset.pk,
+                **kwargs,
             )
 
         try:
@@ -1007,45 +1245,45 @@ class SectionDetailView(DetailView):
             # This shouldn't happen unless a plan has been deleted behind our
             # backs or something
             LOG.warn('Failed accessing plan %i details while in that plan. Race condition? (User %s)',
-                    self.plan, request.user)
+                     self.plan, request.user)
             raise Http404
 
     def next(self):
         "Generate link to next page"
         plan_pk = self.plan.pk
-        next_section = self.object.get_next_section()
+        next_section = self.section.get_next_section()
         kwargs = {'plan': plan_pk}
         if next_section is not None:
             if self.editable:
-                question = next_section.first_question
+                answerset = self.plan.get_answersets_for_section(next_section).first()
+                kwargs['answerset'] = answerset.pk
                 # Has questions
+                question = next_section.first_question
                 if question:
-                    answerset = self.plan.get_answersets_for_section(next_section).first()
-                    kwargs['answerset'] = answerset.pk
                     kwargs['question'] = question.pk
                     return reverse('answer_question', kwargs=kwargs)
                 # Empty section
                 kwargs['section'] = next_section.pk
-                return reverse('section_detail', kwargs=kwargs)
+                return reverse('answerset_detail', kwargs=kwargs)
         return reverse('plan_detail', kwargs=kwargs)
 
     def prev(self):
         "Generate link to previous page"
         plan_pk = self.plan.pk
-        prev_section = self.object.get_prev_section()
+        prev_section = self.section.get_prev_section()
         kwargs = {'plan': plan_pk}
         if prev_section is not None:
             if self.editable:
-                question = prev_section.first_question
+                answerset = self.plan.get_answersets_for_section(prev_section).last()
+                kwargs['answerset'] = answerset.pk
                 # Has questions
+                question = prev_section.first_question
                 if question:
-                    answerset = self.plan.get_answersets_for_section(prev_section).last()
-                    kwargs['answerset'] = answerset.pk
                     kwargs['question'] = question.pk
                     return reverse('answer_question', kwargs=kwargs)
                 # Empty section
                 kwargs['section'] = prev_section.pk
-                return reverse('section_detail', kwargs=kwargs)
+                return reverse('answerset_detail', kwargs=kwargs)
         return reverse('plan_detail', kwargs=kwargs)
 
     def get_context_data(self, **kwargs):
@@ -1053,7 +1291,8 @@ class SectionDetailView(DetailView):
             'plan': self.plan,
             'next': self.next(),
             'prev': self.prev(),
-            'section_progress': get_section_progress(self.plan, self.object),
+            'section': self.section,
+            'section_progress': get_section_progress(self.plan, self.section),
         }
         context.update(**kwargs)
         return super().get_context_data(**context)

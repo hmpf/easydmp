@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Set, Dict, TYPE_CHECKING
+from types import SimpleNamespace
+from typing import Set, TYPE_CHECKING
 from uuid import uuid4
 
 from django.conf import settings
@@ -13,13 +14,15 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 from django.forms import model_to_dict
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.template.loader import render_to_string
+from django.utils.safestring import mark_safe
 from django.utils.timezone import now as tznow
 
 from easydmp.constants import NotSet
 from easydmp.dmpt.forms import make_form, NotesForm
 from easydmp.dmpt.export_template import create_template_export_obj
+from easydmp.dmpt.models.base import get_section_meta_summary
 from easydmp.dmpt.utils import DeletionMixin, make_qid
 from easydmp.eventlog.utils import log_event
 from easydmp.lib import dump_obj_to_searchable_string
@@ -37,6 +40,11 @@ GENERATED_HTML_TEMPLATE = 'easydmp/plan/generated_plan.html'
 
 AnswerSetKey = namedtuple('AnswerSetKey', ['plan', 'parent', 'section', 'identifier'])
 AnswerKey = namedtuple('AnswerKey', ['answerset', 'question'])
+
+
+class AnswerSetException(Exception):
+    pass
+
 
 def create_plan_export_obj(plan, variant, include_template=True, comment=''):
     """
@@ -66,6 +74,203 @@ def create_plan_export_obj(plan, variant, include_template=True, comment=''):
     obj.answers = answers
 
     return obj
+
+
+def _ensure_possible_answerset(section, plan, answerset_parent=None):
+    error_message = None
+    if plan.template != section.template:
+        error_message = 'Plan "{plan}" incompatible with section "{section}"'
+    elif section.super_section and answerset_parent is None:
+        error_message = 'The section has a super section, but the answerset has no parent'
+    if error_message:
+        raise ValueError(error_message)
+
+
+def purge_wrongly_skipped_answersets(section, answersets):
+    """Only an optional section for a plan can have a skipped answerset
+
+    There is either one skipped answerset, or one or more unskipped answersets.
+    If a section is not optional there should be *no* skipped answersets.
+    """
+    skipped_answersets = answersets.filter(skipped=True)
+
+    # no skipped answersets, no problem!
+    if not skipped_answersets.exists():
+        return answersets
+
+    # optional section may have only *one* skipped answerset
+    if section.optional:
+        if answersets.filter(skipped=None).exists():
+            skipped_answersets.delete()
+        elif skipped_answersets.count() > 1:
+            answerset = skipped_answersets.first()  # all skipped are equal
+            skipped_answersets.exclude(pk=answerset.pk).delete()
+        answersets = answersets.all()
+        return answersets
+
+    # required sections cannot have *any* skipped answersets
+    good_answersets = answersets.filter(skipped=None)
+    if good_answersets:
+        skipped_answersets.delete()
+        return good_answersets
+
+    # no visible answersets: convert one skipped answerset, delete the rest
+    answerset = skipped_answersets.first()
+    answerset.skipped = None
+    answerset.save()
+    skipped_answersets.exclude(pk=answerset.pk).delete()
+    answersets = answersets.all()
+    return answersets
+
+
+def remove_extraneous_answersets_for_singleton_sections(section, answersets):
+    """A non-repeatable section has only one answerset
+
+    Attempt to remove any others.
+
+    Assumes there are no extraneous skipped answersets.
+    """
+    if section.repeatable:  # handled elsewhere
+        return answersets
+
+    try:
+        answerset = answersets.get()
+        return answersets  # No multiple answersets, no problem!
+    except AnswerSet.MultipleObjectsReturned:
+        # Try deleting extras
+        num_answersets = answersets.count()
+        empties = answersets.filter(data={})
+        num_empties = empties.count()
+        if num_answersets > num_empties:
+            empties.delete()
+        elif num_answersets == num_empties:
+            answerset = empties.first()
+            answersets.exclude(pk=answerset.pk).delete()
+
+        # recheck
+        answersets = answersets.all()
+        try:
+            answerset = answersets.get()
+            return answersets  # We're left with one, great!
+        except AnswerSet.MultipleObjectsReturned:
+            # We can't know which to delete now so panic
+            raise
+
+
+@transaction.atomic
+def fix_answersets(section, plan, answerset_parent=None):
+    _ensure_possible_answerset(section, plan, answerset_parent)
+    answersets = plan.get_answersets_for_section(section, answerset_parent)
+
+    # create answerset if missing
+    if not answersets.exists():
+        skipped = True if section.optional else None
+        AnswerSet.objects.create(
+            plan=plan,
+            section=section,
+            parent=answerset_parent,
+            skipped=skipped,
+            valid=False,
+        )
+        answersets = answersets.all()
+        return answersets
+
+    answersets = purge_wrongly_skipped_answersets(section, answersets)
+    answersets = remove_extraneous_answersets_for_singleton_sections(section, answersets)
+    return answersets
+
+
+def fix_all_answersets(plan):
+    plan.add_missing_answersets()
+    for section in plan.template.sections.filter(super_section__isnull=True):
+        for answerset in plan.answersets.filter(section=section):
+            answerset.fix_children()
+
+
+def add_answerset(section, plan, answerset):
+    "Add sibling to given answerset"
+    # must be run after fix_answersets
+    # for reference, kept as code to have it checked by linters
+    KARNAUGH = {
+        # optional, repeatable, singleton, skipped
+        (False, False, True, None): 'noop',
+        (False, True, True, None): 'add',
+        (True, False, True, None): 'noop',
+        (True, True, True, None): 'add',
+        (False, False, True, True): 'error_skipped',
+        (False, True, True, True): 'convert',
+        (True, False, True, True): 'convert',
+        (True, True, True, True): 'convert',
+
+        (False, False, False, None): 'error_too_many',
+        (False, True, False, None): 'add',
+        (True, False, False, None): 'error_too_many',
+        (True, True, False, None): 'add',
+        (False, False, False, True): 'error_too_many_and_skipped',
+        (False, True, False, True): 'convert',
+        (True, False, False, True): 'error_too_many_and_skipped',
+        (True, True, False, True): 'convert',
+    }
+    answersets = fix_answersets(section, plan, answerset.parent)
+
+    if not (section.repeatable and section.optional):  # noop
+        return None
+
+    if section.optional and not section.repeatable:
+        answerset = answersets.get()
+        if answerset.skipped:  # convert
+            answerset.skipped = None
+            answerset.save()
+            return answerset
+        return None  # noop
+
+    if section.repeatable:  # add
+        answerset = answersets.last()
+        answerset = answerset.add_sibling()
+        return answerset
+
+
+def remove_answerset(answerset) -> None:
+    # for reference, kept as code to have it checked by linters
+    KARNAUGH = {
+        # optional, repeatable, singleton, skipped
+        (False, False, True, None): 'noop',
+        (False, True, True, None): 'noop',
+        (True, False, True, None): 'convert',
+        (True, True, True, None): 'convert',
+        (False, False, True, True): 'error_skipped',
+        (False, True, True, True): 'noop',
+        (True, False, True, True): 'convert',
+        (True, True, True, True): 'convert',
+
+        (False, False, False, None): 'error_too_many',
+        (False, True, False, None): 'remove',
+        (True, False, False, None): 'error_too_many',
+        (True, True, False, None): 'remove',
+        (False, False, False, True): 'error_too_many_and_skipped',
+        (False, True, False, True): 'error_skipped',
+        (True, False, False, True): 'error_too_many_and_skipped',
+        (True, True, False, True): 'remove',
+    }
+    section = answerset.section
+    answersets = fix_answersets(section, answerset.plan, answerset.parent)
+
+    if not (section.repeatable and section.optional):  # noop
+        return
+
+    one_answerset = answersets.count() == 1
+
+    if one_answerset:
+        if section.optional:  # convert
+            answerset.skipped = True
+            answerset.data = {}
+            answerset.previous_data = {}
+            answerset.save()
+            return
+        if section.repeatable:  # noop
+            return
+
+    answerset.delete()  # remove
 
 
 class AnswerHelper():
@@ -172,6 +377,10 @@ class AnswerHelper():
             self.plan.save(update_fields=['valid', 'last_validated'])
 
 
+AnswerSetParentKey = namedtuple('AnswerSetParentKey', 'plan_id section_id parent_id')
+AnswerSetSectionKey = namedtuple('AnswerSetSectionKey', 'plan_id section_id')
+
+
 class AnswerSetQuerySet(models.QuerySet):
 
     def get_by_natural_key(self, plan_id, parent_id, section_id, identifier):
@@ -181,6 +390,66 @@ class AnswerSetQuerySet(models.QuerySet):
             answerset__section_id=section_id,
             answerset__identifier=identifier,
         )
+
+    def order(self):
+        return self.select_related('section').order_by('parent_id', 'section__position', 'id')
+
+    # START: optimized answerset access
+
+    def childmap(self):
+        mapping = defaultdict(OrderedDict)
+        qs = (
+            self
+            .select_related('section')
+            .only('id', 'parent_id', 'section_id', 'section__position')
+            .order()
+        )
+        for answerset in qs.iterator():
+            mapping[answerset.parent_id][answerset.id] = answerset.section_id
+        return mapping
+
+    def plain_lookup_map(self, qs=None):
+        if not qs:
+            qs = self.all()
+        mapping = {}
+        for answerset in qs:
+            mapping[answerset.id] = answerset
+        return mapping
+
+    def decorate(self, func, qs=None):
+        if qs is None:
+            qs = self.all()
+        for answerset in qs:
+            answerset.decoration = func(answerset)
+        return qs
+
+    def lookup_map(self):
+        child_mapping = self.childmap()
+        mapping = {}
+        for answerset in self.iterator():
+            parent_id = answerset.parent.pk if answerset.parent else None
+            decoration = getattr(answerset, 'decoration', None)
+            answersetobj = SimpleNamespace(
+                children=child_mapping[answerset.id],
+                answerset=answerset,
+                parent_id=parent_id,
+                section=answerset.section,
+                decoration=decoration,
+                skipped=answerset.skipped,
+            )
+            mapping[answerset.id] = answersetobj
+        return mapping
+
+    def map_by_parent_key(self):
+        qs = self.order()
+        mapping = defaultdict(list)
+        for answerset in qs:
+            key = AnswerSetParentKey(answerset.plan_id, answerset.section_id, answerset.parent_id)
+            mapping[key].append(answerset.id)
+        result = {k: tuple(v) for k, v in mapping.items()}
+        return {k: tuple(v) for k, v in mapping.items()}
+
+    # END: optimized answerset access
 
 
 class AnswerSet(ClonableModel):
@@ -217,12 +486,12 @@ class AnswerSet(ClonableModel):
         ]
 
     def __str__(self):
-        return '"{}" #{}, section: {}, plan: {}, valid: {}'.format(
-            self.identifier,
-            self.pk,
-            self.section_id,
-            self.plan_id,
-            self.valid)
+        msg = f'"{self.identifier}, section: {self.section_id}, plan: {self.plan_id}'
+        if self.skipped:
+            msg = msg + ', skipped'
+        else:
+            msg = msg + f', valid: {self.valid}'
+        return msg
 
     @transaction.atomic
     def save(self, importing=False, *args, **kwargs):
@@ -231,7 +500,7 @@ class AnswerSet(ClonableModel):
             kwargs.pop('force_update', None)
             super().save(force_insert=True, *args, **kwargs)
             return
-        self.identifier =  self.get_identifier()
+        self.identifier = self.get_identifier()
         super().save(*args, **kwargs)
         if not self.answers.exists():
             self.initialize_answers()
@@ -256,34 +525,160 @@ class AnswerSet(ClonableModel):
         return self.generate_next_identifier()
 
     def add_sibling(self, identifier=None):
+        if not self.section.repeatable:
+            return None
+        if self.section.optional:
+            skipped_sibs = self.section.answersets.filter(
+                plan=self.plan,
+                parent=self.parent,
+                skipped=True,
+            )
+            if skipped_sibs.exists():
+                sib = skipped_sibs.first()
+                sib.skipped = None
+                sib.save()
+                return sib
         if identifier is None:
             identifier = self.generate_next_identifier()
-        sib = self.__class__(
-            plan=self.plan,
-            section=self.section,
-            parent=self.parent,
-            identifier=identifier,
-        )
-        sib.save()
-        sib.add_children()
+        sib = self.plan.create_answerset(self.section, self.parent, identifier)
         return sib
 
-    def get_siblings(self):
+    def get_full_siblings(self):
         return self.__class__.objects.filter(
             plan=self.plan,
             section=self.section,
-            parent=self.parent
-        ).order_by('pk')
+            parent=self.parent,
+        ).order()
+
+    def get_all_siblings(self):
+        return self.__class__.objects.filter(
+            plan=self.plan,
+            parent=self.parent,
+        ).order()
 
     @transaction.atomic
     def add_children(self):
         for section in self.section.subsections.all():
-            answerset, _ = AnswerSet.objects.get_or_create(plan=self.plan, section=section, parent=self)
-            if answerset.answersets.exists():
-                for subanswerset in answerset.answersets.all():
-                    subanswerset.add_children()
-            else:
-                answerset.add_children()  # Cannot put this in self.save(), would loop
+            answersets = AnswerSet.objects.filter(
+                plan=self.plan,
+                section=section,
+                parent=self,
+            )
+            if not answersets.exists():
+                answerset, created = AnswerSet.objects.get_or_create(
+                    plan=self.plan,
+                    section=section,
+                    parent=self,
+                    defaults={'valid': False},
+                )
+                if created and section.optional:
+                    answerset.skipped = True
+                    answerset.save()
+                answersets = (answerset,)
+            for answerset in answersets:
+                if answerset.answersets.exists():
+                    for subanswerset in answerset.answersets.all():
+                        subanswerset.add_children()
+                else:
+                    # Cannot put this in self.save(), would loop
+                    answerset.add_children()
+
+    @transaction.atomic
+    def fix_children(self):
+        for section in self.section.subsections.all():
+            fix_answersets(section, self.plan, answerset_parent=self)
+            for answerset in self.answersets.all():
+                answerset.fix_children()
+
+    # START: Traversal
+
+    def get_first_child(self):
+        if self.answersets.exists():
+            return self.answersets.order().first()
+        return None
+
+    def get_next_sibling(self):
+        if self.section.repeatable:
+            siblings = tuple(self.get_full_siblings())
+            index = siblings.index(self) + 1
+            younger = siblings[index:]
+            if younger:
+                return younger[0]
+        return None
+
+    def get_next_section(self):
+        next_section = self.section.get_next_section()
+        if next_section:
+            answersets = self.plan.get_answersets_for_section(next_section)
+            if answersets:
+                return answersets.first()
+        return None
+
+    def get_next_answerset(self):
+        if self.skipped:
+            next_section = self.get_next_section()
+            if next_section:
+                return next_section
+            return None
+        child = self.get_first_child()
+        if child:
+            return child
+        sibling = self.get_next_sibling()
+        if sibling:
+            return sibling
+        next_section = self.get_next_section()
+        if next_section:
+            return next_section
+        # We've run out of possible answersets
+        return None
+
+    def get_last_child(self):
+        if self.answersets.exists():
+            return self.answersets.order().last()
+        return None
+
+    def get_prev_sibling(self):
+        if self.section.repeatable:
+            siblings = tuple(self.get_all_siblings())
+            if len(siblings) > 1:
+                index = siblings.index(self)
+                younger = siblings[:index]
+                if younger:
+                    return younger[-1]
+        return None
+
+    def get_prev_section(self):
+        prev_section = self.section.get_prev_section()
+        if prev_section:
+            answersets = self.plan.get_answersets_for_section(prev_section)
+            if answersets:
+                return answersets.last()
+        return None
+
+    def get_prev_answerset(self):
+        sibling = self.get_prev_sibling()
+        if sibling:
+            if sibling.skipped:
+                return sibling.get_prev_answerset()
+            child = sibling.get_last_child()
+            if child:
+                return child
+        parent = self.parent
+        if parent:
+            return parent
+        prev_section = self.get_prev_section()
+        if prev_section:
+            if prev_section.skipped:
+                return prev_section.get_prev_answerset()
+            child = prev_section.get_last_child()
+            if child:
+                if not child.skipped:
+                    return child
+            return prev_section
+        # We've run out of possible answersets
+        return None
+
+    # END: Traversal
 
     @property
     def is_empty(self):
@@ -293,7 +688,7 @@ class AnswerSet(ClonableModel):
         return self.data.get(str(question_id), {})
 
     @transaction.atomic
-    def update_answer(self, question_id, choice):
+    def update_answer(self, question_id, choice, skipped=None):
         lookup_question_id = str(question_id)
         previous_choice = self.data.get(lookup_question_id, None)
         if previous_choice:
@@ -303,13 +698,15 @@ class AnswerSet(ClonableModel):
             question_id=int(question_id),
             defaults={'valid': True}
         )
+        if self.skipped != skipped:
+            self.skipped = skipped
         self.save()
 
     def get_choice(self, question_id):
         return self.get_answer(question_id).get('choice', None)
 
     def get_answersets_for_section(self, section, parent=NotSet):
-        return self.plan.get_answersets_for_section(section, parent=parent)
+        return self.plan.get_answersets_for_section(section, parent)
 
     def delete_answers(self, question_ids, commit=True):
         deleted = set()
@@ -734,28 +1131,29 @@ class Plan(DeletionMixin, ClonableModel):
         if not self.pk:  # New, empty plan
             super().save(**kwargs)
             if not clone:
-                self.initialize_starting_answersets()
+                self.add_missing_answersets()
                 self.set_adder_as_editor()
             LOG.info('Created plan "%s" (%i)', self, self.pk)
             template = '{timestamp} {actor} created {target}'
             log_event(self.added_by, 'create', target=self,
                       timestamp=self.added, template=template)
-        else:
-            self.search_data = dump_obj_to_searchable_string(self.total_answers)
-            self.modified = tznow()
-            if question is not None:
-                # set visited
-                self.visited_sections.add(question.section)
-                topmost = question.section.get_topmost_section()
-                if topmost:
-                    self.visited_sections.add(topmost)
-                # set validated
-                self.validate(user, recalculate, commit=False)
-            super().save(**kwargs)
-            template = '{timestamp} {actor} saved {target}'
-            log_event(self.added_by, 'save', target=self,
-                      timestamp=self.modified, template=template)
-            LOG.info('Updated plan "%s" (%i)', self, self.pk)
+            return
+
+        self.search_data = dump_obj_to_searchable_string(self.total_answers)
+        self.modified = tznow()
+        if question is not None:
+            # set visited
+            self.visited_sections.add(question.section)
+            topmost = question.section.get_topmost_section()
+            if topmost:
+                self.visited_sections.add(topmost)
+            # set validated
+            self.validate(user, recalculate, commit=False)
+        super().save(**kwargs)
+        template = '{timestamp} {actor} saved {target}'
+        log_event(self.added_by, 'save', target=self,
+                  timestamp=self.modified, template=template)
+        LOG.info('Updated plan "%s" (%i)', self, self.pk)
 
     @transaction.atomic
     def delete(self, user, **kwargs):
@@ -859,28 +1257,43 @@ class Plan(DeletionMixin, ClonableModel):
                       template=template)
 
     @transaction.atomic
-    def initialize_starting_answersets(self):
+    def add_missing_answersets(self):
         for section in self.template.sections.filter(super_section__isnull=True):
-            if not section.answersets.filter(plan=self).exists():
-                a = self.ensure_answerset(section)
+            self.ensure_answersets(section)
 
     @transaction.atomic
-    def create_answerset(self, section, parent=None):
+    def create_answerset(self, section, parent=None, identifier=None):
         "Create another answerset for a specific section"
-        a = AnswerSet(plan=self, section=section, parent=parent, valid=False)
+        a = AnswerSet(plan=self, section=section, parent=parent)
+        if section.optional:
+            a.skipped = True
+        if identifier:
+            a.identifier = identifier
         a.save()
         a.add_children()  # recursive
         return a
 
     @transaction.atomic
-    def ensure_answerset(self, section, parent=None):
+    def ensure_answersets(self, section, parent=None):
         "Ensure a section has the answersets it needs"
-        answerset, _ = AnswerSet.objects.get_or_create(
-            plan=self,
-            section=section,
-            parent=parent,
-            defaults={'valid': False},
-        )
+        created = False
+        try:
+            answerset, created = AnswerSet.objects.get_or_create(
+                plan=self,
+                section=section,
+                parent=parent,
+                defaults={'valid': False},
+            )
+        except AnswerSet.MultipleObjectsReturned:
+            answerset = AnswerSet.objects.filter(
+                plan=self,
+                section=section,
+                parent=parent
+            ).order_by('pk').last()
+        else:
+            if created and section.optional:
+                answerset.skipped = True
+                answerset.save()
         answerset.add_children()  # recursive
         return answerset
 
@@ -932,7 +1345,9 @@ class Plan(DeletionMixin, ClonableModel):
             LOG.info(error.format(self, self.pk))
             return False
         if recalculate:
-            for answerset in self.answersets.all():
+            for answerset in self.answersets.order_by(
+                    'section__super_section__position', 'section__position'
+            ).iterator():
                 answerset.validate()
         # All answersets of all sections must be valid for a plan to be valid
         for section in self.template.sections.all():
@@ -958,33 +1373,53 @@ class Plan(DeletionMixin, ClonableModel):
         context = self.get_context_for_generated_text()
         return render_to_string(GENERATED_HTML_TEMPLATE, context)
 
-    def get_summary_for_section(self, sectionobj, default_tag_level):
+    def make_summary_of_answerset(self, answerset):
+        sectionobj = self.linear_sections[answerset.section_id]
+        decorate_answerset = sectionobj.section.get_data_summary
+        data_summary = decorate_answerset(answerset.data)
+        return SimpleNamespace(pk=answerset.pk, name=answerset.identifier,
+                    valid=answerset.valid, data=data_summary, skipped=answerset.skipped)
+
+    def get_summary_for_section(self, sectionobj, answersetobjs):
         section = sectionobj.section
-        answersets = self.answersets.filter(section=section)
-        num_answersets = answersets.count()
-        is_valid = answersets.filter(valid=True).count() == num_answersets
-        meta_summary = section.get_meta_summary(
-            valid=is_valid,
-            num_answersets=num_answersets,
-            title_tag=f'h{section.section_depth+default_tag_level}',
-        )
+        num_answersets = len(answersetobjs)
+        num_valid_answersets = 0
+        for answersetobj in answersetobjs:
+            if answersetobj.answerset.valid:
+                num_valid_answersets += 1
+        is_valid = num_valid_answersets == num_answersets
+        deletable_if_optional = section.optional and num_answersets
+        deletable_if_repeatable = section.repeatable and num_answersets > 1
+        addable_if_optional = section.optional and not num_answersets
+        addable_if_repeatable = section.repeatable
+        meta_summary = sectionobj.summary
+        meta_summary['valid'] = is_valid
+        meta_summary['addable'] = bool(addable_if_repeatable or addable_if_optional)
+        meta_summary['deletable'] = bool(deletable_if_optional or deletable_if_repeatable)
+        meta_summary['answerset'] = answersetobjs[0].answerset
+        meta_summary['num_answersets'] = num_answersets
+
         answer_blocks = []
-        for answerset in answersets.order_by('pk'):
-            data_summary = section.get_data_summary(answerset.data)
-            answer_blocks.append({
-                'pk': answerset.pk,
-                'name': answerset.identifier,
-                'valid': answerset.valid,
-                'data': data_summary,
-            })
-        subsections = []
-        for sectionobj in sectionobj.subsections:
-            subsummary = self.get_summary_for_section(sectionobj, default_tag_level)
-            subsections.append(subsummary)
+        for answersetobj in answersetobjs:
+            decoration = answersetobj.decoration
+            decoration.section = answersetobj.section
+            if answersetobj.answerset.skipped:
+                answer_blocks.append(decoration)
+                continue
+            if sectionobj.children and answersetobj.children:
+                decoration.children = list()
+                parent_id = answersetobj.answerset.id
+                for subsection_id in sectionobj.children:
+                    key = AnswerSetParentKey(self.id, subsection_id, parent_id)
+                    asids = self.parent_map.get(key, tuple())
+                    subsectionobj = self.linear_sections[subsection_id]
+                    child_answersetobjs = [self.answerset_mapping[asid] for asid in asids]
+                    subsummary = self.get_summary_for_section(subsectionobj, child_answersetobjs)
+                    decoration.children.append(subsummary)
+            answer_blocks.append(decoration)
         return {
             'answersets': answer_blocks,
             'section': meta_summary,
-            'subsections': tuple(subsections),
         }
 
     def get_nested_summary(self):
@@ -992,43 +1427,105 @@ class Plan(DeletionMixin, ClonableModel):
 
         This assumes that each question may be answered more than once,
         basically: sections may be answered more than once.
+
+        Optimized for making few calls to the database, by avoiding queries
+        in loops.
         """
-        default_tag_level = 2
+        self.add_missing_answersets()
+        sections = self.template.sections.order_by('position')
+        self.linear_sections = sections.lookup_map(summary=get_section_meta_summary)
+        self.parent_map = self.answersets.map_by_parent_key()
+        self.answerset_mapping = self.answersets.lookup_map()
+        for value in self.answerset_mapping.values():
+            decoration = self.make_summary_of_answerset(value.answerset)
+            value.decoration = decoration
         summary = []
-        for sectionobj in self.template.get_section_tree():
-            summary.append(self.get_summary_for_section(sectionobj, default_tag_level))
+        # Avoid queries in loops
+        for section in sections:
+            if section.super_section:
+                continue
+            key = AnswerSetParentKey(self.id, section.id, None)
+            asids = self.parent_map.get(key, tuple())
+            answersets = []
+            if asids:
+                answersets = [self.answerset_mapping[asid] for asid in asids]
+            sectionobj = self.linear_sections[section.id]
+            summary.append(self.get_summary_for_section(sectionobj, answersets))
         return summary
+
+    def make_canned_text_of_answerset(self, answerset):
+        section = answerset.section
+        decorate_answerset = section.generate_canned_text
+        data_summary = decorate_answerset(answerset.data)
+        return SimpleNamespace(answerset=data_summary)
+
+    def get_canned_text_for_section(self, sectionobj, answersetobjs):
+        section = sectionobj.section
+        num_answersets = len(answersetobjs)
+        meta_summary = {
+            'depth': section.section_depth,
+            'title': section.title,
+            'introductory_text': mark_safe(section.introductory_text),
+            'comment': mark_safe(section.comment),
+            'num_answersets': num_answersets,
+            'optional': section.optional,
+            'show': num_answersets or not section.optional,
+        }
+        answer_blocks = []
+        for answersetobj in answersetobjs:
+            decoration = answersetobj.decoration
+            if answersetobj.answerset.skipped:
+                answer_blocks.append(decoration)
+                continue
+            if sectionobj.children and answersetobj.children:
+                decoration.children = list()
+                decoration.name = answersetobj.answerset.identifier
+                parent_id = answersetobj.answerset.id
+                for subsection_id in sectionobj.children:
+                    key = AnswerSetParentKey(self.id, subsection_id, parent_id)
+                    asids = self.parent_map.get(key, tuple())
+                    subsectionobj = self.linear_sections[subsection_id]
+                    child_answersetobjs = [self.answerset_mapping.get(asid, None)
+                                           for asid in asids]
+                    child_answersetobjs = list(filter(None, child_answersetobjs))
+                    subtext = self.get_canned_text_for_section(subsectionobj, child_answersetobjs)
+                    decoration.children.append(subtext)
+            answer_blocks.append(decoration)
+        return {
+            'answersets': answer_blocks,
+            'section': meta_summary,
+        }
 
     def get_nested_canned_text(self):
         texts = []
-        for section in self.template.ordered_sections():
-            if section.is_skipped and not section.optional_canned_text:
-                continue
-            answersets = self.answersets.filter(section=section)
-            num_answersets = answersets.count()
-            meta_summary = section.get_meta_summary(num_answersets=num_answersets)
-            answer_blocks = []
-            for answerset in answersets.order_by('pk'):
-                canned_text = section.generate_canned_text(answerset.data)
-                if not canned_text:
-                    continue
-                answer_blocks.append({
-                    'name': answerset.identifier,
-                    'text': canned_text,
-                })
-            if not answer_blocks and section.optional:
-                continue
-            texts.append({
-                'section': meta_summary,
-                'answersets': answer_blocks,
-            })
+        fix_all_answersets(self)
+        self.parent_map = self.answersets.map_by_parent_key()
+        qs = self.answersets.select_related('parent', 'section').order_by('pk')
+        self.answerset_mapping = self.answersets.filter(
+            Q(skipped__isnull=True) | ~Q(section__optional_canned_text='')
+        ).lookup_map()
+        for value in self.answerset_mapping.values():
+            decoration = self.make_canned_text_of_answerset(value.answerset)
+            value.decoration = decoration
+        sections = self.template.sections.order_by('position')
+        self.linear_sections = sections.lookup_map()
+        for section in sections.filter(super_section__isnull=True):
+            key = AnswerSetParentKey(self.id, section.id, None)
+            asids = self.parent_map.get(key, tuple())
+            answersets = []
+            if asids:
+                for asid, answerset in self.answerset_mapping.items():
+                    if asid in asids:
+                        answersets.append(answerset)
+
+            sectionobj = self.linear_sections[section.id]
+            text = self.get_canned_text_for_section(sectionobj, answersets)
+            texts.append(text)
         return texts
 
     def get_context_for_generated_text(self):
         return {
             'data': self.total_answers,
-            'output': self.get_nested_summary(),
-            'text': self.get_nested_canned_text(),
             'plan': self,
             'template': self.template,
         }

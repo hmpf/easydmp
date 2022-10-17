@@ -52,7 +52,7 @@ class ChoiceValidationMixin:
 
     def validate_choice(self, data):
         choice = data.get('choice', None)
-        if self.optional and choice is None:
+        if self.optional and not choice:
             return True
         if choice in self.get_choices_keys():
             return True
