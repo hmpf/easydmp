@@ -11,7 +11,7 @@
       {% if section.addable and editable_for_user %}
       <form action="{% url 'add_answerset' plan=plan.pk section=section.pk answerset=section.answerset.pk %}" class="add-answerset" method="get"><button title="Add" aria-label="Add"></button></form>
       {% endif %}
-      <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#section-{{ section.pk }} .content-wrap" aria-expanded="false" aria-controls="collapseExample">
+      <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#section-{{ section.pk }} .content-wrap" aria-expanded="false" aria-controls="collapseExample" aria-label="Show/Hide">
         <span class="caret"></span>
       </button>
     </div>

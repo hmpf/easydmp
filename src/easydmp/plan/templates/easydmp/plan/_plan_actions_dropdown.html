@@ -1,24 +1,24 @@
 {% load static %}
               {% if request.user|may_edit_plan:object %}
-              <li><a href="{% url 'update_plan' plan=object.id %}"><img src="{% static 'icons/icon-edit.png' %}"/>Rename</a></li>
-              <li><a href="{% url 'share_plan' plan=object.id %}"><img src="{% static 'icons/icon-people.png' %}"/>People</a></li>
+              <li><a href="{% url 'update_plan' plan=object.id %}" id="rename-{{ object.id }}"><img src="{% static 'icons/icon-edit.png'  %}" aria-labelledby="rename-{{ object.id }}" />Rename</a></li>
+              <li><a href="{% url 'share_plan' plan=object.id %}" id="people-{{ object.id }}"><img src="{% static 'icons/icon-people.png'  %}" aria-labelledby="people-{{ object.id }}" />People</a></li>
               {% if object.locked %}
-              <li><a href="{% url 'unlock_plan' plan=object.id %}"><img src="{% static 'icons/icon-unlocked.png' %}"/>Unlock (new version)</a></li>
+              <li><a href="{% url 'unlock_plan' plan=object.id %}" id="unlock-{{ object.id }}"><img src="{% static 'icons/icon-unlocked.png'  %}" aria-labelledby="unlock-{{ object.id }}" />Unlock (new version)</a></li>
               {% else %}
                 {% if object.valid  %}
-              <li><a href="{% url 'lock_plan' plan=object.id %}"><img src="{% static 'icons/icon-locked.png' %}"/>Lock (read only)</a></li>
+              <li><a href="{% url 'lock_plan' plan=object.id %}" id="lock-{{ object.id }}"><img src="{% static 'icons/icon-locked.png'  %}" aria-labelledby="lock-{{ object.id }}" />Lock (read only)</a></li>
                 {% else %}
-              <li><a href="{% url 'validate_plan' plan=object.id %}"><img src="{% static 'icons/icon-check.png' %}"/>Check</a></li>
+              <li><a href="{% url 'validate_plan' plan=object.id %}" id="check-{{ object.id }}"><img src="{% static 'icons/icon-check.png'  %}" aria-labelledby="check-{{ object.id }}" />Check</a></li>
                 {% endif %}
               {% endif %}
-              <li><a href="{% url 'plan_delete' plan=object.id %}"><img src="{% static 'icons/icon-delete.png' %}"/>Delete</a></li>
-              <li><a href="{% url 'plan_saveas' plan=object.id %}"><img src="{% static 'icons/icon-duplicate.png' %}"/>Duplicate</a></li>
+              <li><a href="{% url 'plan_delete' plan=object.id %}" id="delete-{{ object.id }}"><img src="{% static 'icons/icon-delete.png'  %}" aria-labelledby="delete-{{ object.id }}" />Delete</a></li>
+              <li><a href="{% url 'plan_saveas' plan=object.id %}" id="duplicate-{{ object.id }}"><img src="{% static 'icons/icon-duplicate.png'  %}" aria-labelledby="duplicate-{{ object.id }}" />Duplicate</a></li>
               {% endif %}
               {% if object.locked and not object.published %}
-              <li><a href="{% url 'publish_plan' plan=object.id %}"><img src="{% static 'icons/icon-share.png' %}"/>Make public</a></li>
+              <li><a href="{% url 'publish_plan' plan=object.id %}" id="publicize-{{ object.id }}"><img src="{% static 'icons/icon-share.png'  %}" aria-labelledby="publicize-{{ object.id }}" />Make public</a></li>
               {% endif %}
-              <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'icons/icon-export.png' %}"/>Export to HTML</a></li>
-              <li><a href="{% url 'generated_plan_pdf' plan=object.id %}"><img src="{% static 'icons/icon-export.png' %}"/>Export to PDF</a></li>
-              <!--
-              <li><a href="{% url 'generated_plan_html' plan=object.id %}"><img src="{% static 'icons/icon-print.png' %}"/>Print</a></li>
-              -->
+              <li><a href="{% url 'generated_plan_html' plan=object.id %}" id="export-html-{{ object.id }}"><img src="{% static 'icons/icon-export.png'  %}" aria-labelledby="export-html-{{ object.id }}" />Export to HTML</a></li>
+              <li><a href="{% url 'generated_plan_pdf' plan=object.id %}" id="export-pdf-{{ object.id }}"><img src="{% static 'icons/icon-export.png'  %}" aria-labelledby="export-pdf-{{ object.id }}" />Export to PDF</a></li>
+              {% comment %}
+              <li><a href="{% url 'generated_plan_html' plan=object.id %}" id="export-print-{{ object.id }}"><img src="{% static 'icons/icon-print.png'  %}" aria-labelledby="export-print-{{ object.id }}" />Print</a></li>
+              {% endcomment %}

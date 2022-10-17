@@ -22,14 +22,18 @@
         body {
             margin: 1em;
         }
-        .footer {
-          padding: 1em;
-          position: absolute;
+        footer {
+          padding-top: 0;
+          margin-top: 2rem;
+          margin-bottom: 0;
           bottom: 0;
           width: 100%;
-          /* Set the fixed height of the footer here */
-          height: 60px;
-          background-color: #f5f5f5;
+          background-color: #ffffff;
+        }
+        footer > p {
+            margin: 0;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
         }
         table.dmptable td {
           padding-right: 1ex;
@@ -37,7 +41,8 @@
         table.dmptable th {
           padding-right: 1ex;
         }
-        .asteriskField { color: red }
+        button, .btn { font-weight: bold }
+        .asteriskField { color: #dd0000; font-weight: bold; }
         .control-group ul { list-style-type: none; }
         .superuser {
             border-color: #f2f2f2;
@@ -46,7 +51,7 @@
             background-color: #f2f2f2;
         }
         .alert { background-color: #9ed2df; font-weight: bold; color: #fff}
-        .instance { background-color: #fc9039}
+        .instance { background-color: #fc9039; color: #000}
 
         /*
         .remove-answerset {
@@ -161,25 +166,23 @@
   </main>
 
   <footer role="contentinfo">
-    <div class="row uninett-whole-row">
-        <p>
-        <a href="https://eudat.eu/"><img src="{% static 'eudat/logo.png' %}" alt="EUDAT logo" width="150"></a>
-        <span style="padding: 1em"> </span>
-        <a href="https://www.sigma2.no/"><img src="{% static 'uninett/UNINETT_Sigma2_logo_H.png' %}" alt="Uninett logo" width="200"></a>
-        <span style="padding: 1em"> </span>
-        <a href="https://www.sigma2.no/easydmp/how-to">User Guide</a>
-        <span style="padding: 1em"> </span>
-        <a href="/about/">About</a>
-        <span style="padding: 1em"> </span>
-        <a href="mailto:support@easydmp.sigma2.no">Support</a>
-        <span style="padding: 1em"> </span>
-        <a href="http://hdl.handle.net/11304/e43b2e3f-83c5-4e3f-b8b7-18d38d37a6cd">Terms of use</a>
-        <span style="padding: 1em"> </span>
-        <a href="/privacy/">Privacy policy</a>
-        </p>
-    </div>
+    <p>
+    <a href="https://eudat.eu/"><img src="{% static 'eudat/logo.png' %}" alt="EUDAT logo" width="150"></a>
+    <span style="padding: 1em"> </span>
+    <a href="https://www.sigma2.no/"><img src="{% static 'uninett/UNINETT_Sigma2_logo_H.png' %}" alt="Uninett logo" width="200"></a>
+    <span style="padding: 1em"> </span>
+    <a href="https://www.sigma2.no/easydmp/how-to">User Guide</a>
+    <span style="padding: 1em"> </span>
+    <a href="/about/">About</a>
+    <span style="padding: 1em"> </span>
+    <a href="mailto:support@easydmp.sigma2.no">Support</a>
+    <span style="padding: 1em"> </span>
+    <a href="http://hdl.handle.net/11304/e43b2e3f-83c5-4e3f-b8b7-18d38d37a6cd">Terms of use</a>
+    <span style="padding: 1em"> </span>
+    <a href="/privacy/">Privacy policy</a>
+    </p>
   </footer>
-  </div>
+  </div> <!-- // container -->
 
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
