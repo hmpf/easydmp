@@ -138,7 +138,7 @@ class PlanAdmin(AdminConvenienceMixin, admin.ModelAdmin):
         PublishedFilter,
         ImportedFilter,
     ]
-    search_fields = ['title', 'abbreviation', 'added_by__email', 'added_by__username']
+    search_fields = ['id', 'title', 'abbreviation', 'added_by__email', 'added_by__username']
     readonly_fields = ['added', 'added_by', 'uuid', 'locked', 'locked_by',
                        'cloned_from', 'cloned_when',
                        'published', 'published_by', 'generated_html']
@@ -318,3 +318,4 @@ class PlanAccessAdmin(admin.ModelAdmin):
     list_display = ['user', 'plan', 'may_edit']
     list_filter = ['may_edit']
     search_fields = ['plan__title', 'plan__abbreviation', 'user__username']
+    raw_id_fields = ['user', 'plan']
