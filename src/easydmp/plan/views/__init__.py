@@ -508,7 +508,7 @@ class GetAnswerSetView(AnswerSetSectionMixin, DetailView):
         return reverse('plan_detail', kwargs={'plan': self.plan_pk})
 
     def get_next(self):
-        next_section = self.section.get_next_section()
+        next_section = self.section.get_next_nonempty_section()
         if not next_section:
             return self.get_summary()
 
@@ -518,7 +518,7 @@ class GetAnswerSetView(AnswerSetSectionMixin, DetailView):
     get_skip_to_next = get_next
 
     def get_prev(self):
-        prev_section = self.section.get_prev_section()
+        prev_section = self.section.get_prev_nonempty_section()
         if not prev_section:
             return self.get_summary()
 

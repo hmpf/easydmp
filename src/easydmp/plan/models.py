@@ -592,6 +592,9 @@ class AnswerSet(ClonableModel):
 
     # START: Traversal
 
+    def can_be_answered(self):
+        return self.section.questions.exists()
+
     def get_first_child(self):
         if self.answersets.exists():
             return self.answersets.order().first()
@@ -607,7 +610,7 @@ class AnswerSet(ClonableModel):
         return None
 
     def get_next_section(self):
-        next_section = self.section.get_next_section()
+        next_section = self.section.get_next_nonempty_section()
         if next_section:
             answersets = self.plan.get_answersets_for_section(next_section)
             if answersets:
@@ -648,7 +651,7 @@ class AnswerSet(ClonableModel):
         return None
 
     def get_prev_section(self):
-        prev_section = self.section.get_prev_section()
+        prev_section = self.section.get_prev_nonempty_section()
         if prev_section:
             answersets = self.plan.get_answersets_for_section(prev_section)
             if answersets:
@@ -663,9 +666,8 @@ class AnswerSet(ClonableModel):
             child = sibling.get_last_child()
             if child:
                 return child
-        parent = self.parent
-        if parent:
-            return parent
+            if sibling.can_be_answered():
+                return sibling
         prev_section = self.get_prev_section()
         if prev_section:
             if prev_section.skipped:
@@ -674,7 +676,8 @@ class AnswerSet(ClonableModel):
             if child:
                 if not child.skipped:
                     return child
-            return prev_section
+            if prev_section.can_be_answered():
+                return prev_section
         # We've run out of possible answersets
         return None
 
