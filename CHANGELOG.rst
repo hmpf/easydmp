@@ -6,6 +6,20 @@ This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.htm
 as of v0.10. Prior to v0.10, annotated tags per feature, annotated tags plus
 date per feature, or commit hashes were used.
 
+1.27.1
+------
+
+Bugfix-release
+
+Micro-feature:
+
+* Make it easier to find a plan by id in admin, for debugging
+* Make it easier to change plan access in admin, for debugging
+
+Bugfix:
+
+* Ensure traversal over empty (question-less) sections work
+
 1.27.0
 ------
 
