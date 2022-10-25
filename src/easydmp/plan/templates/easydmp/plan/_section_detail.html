@@ -19,16 +19,15 @@
   <div class="section-body content-wrap collapse" aria-expanded="false" style="height: 0px;">
     {% if section.introductory_text %}<div class="section_introduction">{{ section.introductory_text }}</div>{% endif %}
     {% if section.comment %}<div class="section_comment"><td colspan="3">{{ section.comment }}</div>{% endif %}
-    {% if section.has_questions %}
-    <div class="answersets">
+    <div class="answersets"> {# answersets start #}
       {% for answerset in answersets %}
       <!-- answerset {{ answerset.name }} ({{ answerset.pk }}) valid {{ answerset.valid }} skipped {{ answerset.skipped }}-->
       {% if not answerset.skipped %}
       <div class="answerset"> {# answerset #}
         <div class="answerset-header">
-          <p class="answerset-name">{% if section.num_answersets > 1 %}
-            {{ answerset.name }} {% endif %}{% show_checkmark answerset.valid %}
-          </p>
+          <p class="answerset-name">{% if section.has_questions and section.num_answersets > 1 %}
+            {{ answerset.name }} {% show_checkmark answerset.valid %}
+          {% endif %}</p>
 
           {% if editable_for_user %}
           {% if section.deletable %}
@@ -65,8 +64,7 @@
       </div> {# / answerset #}
       {% endif %} {# / answerset #}
       {% endfor %}
-    </div> {# / answersets #}
-  {% endif %}
+    </div> {# / answersets end #}
   </div> {# / section-body #}
 </section>
 {% endwith %}
