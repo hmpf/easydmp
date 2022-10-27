@@ -32,8 +32,6 @@
 .statistics-box th, .statistics-box td { padding-right: 1em; }
 .alert {
   background-color: var(--alert-bg-color);
-  border: 1px solid transparent;
-  border-radius: 4px;
   color: var(--alert-fg-color);
   font-weight: bold;
   margin-bottom: 20px;
@@ -51,6 +49,7 @@
   color: var(--mid-grey-color);
 }
 body {
+  min-width: 240px;
   display: flex;
   flex-direction: column;
   font-size: 16px;
@@ -138,55 +137,72 @@ label {
   font-weight: bold;
 }
 header .navbar {
-  width: 71rem;
   margin: auto;
 }
-nav {
-  display: flex;
-  flex-direction: row;
+.container {
+  padding-left: 1ex;
+  padding-right: 1ex;
+  flex-flow: row nowrap;
   justify-content: space-between;
-  list-style-type: none;
-  font-weight: bold;
+  gap: 1rem;
 }
-nav > ul {
+nav {
+  margin-right: 1rem;
+}
+nav ul {
+  list-style-type: none;
   display: flex;
-  flex-flow: row wrap;
-  align-content: stretch;
-  gap: 3em;
-  justify-content: space-between;
-  align-items: center;
+  flex-flow: column;
+  align-items: stretch;
   list-style-type: none;
   font-weight: bold;
+  padding: 0;
+  gap: 1ex;
 }
 nav a, nav a:hover, nav a:visited, nav a:focus, nav button {
   color: var(--nav-fg-color);
   font-weight: bold;
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  vertical-align: middle;
 }
-.navbar div {
+nav li {
+display: flex;
+align-items: center;
+}
+.navbar > div {
   display: flex;
   flex-flow: row wrap;
   justify-content: space-between;
 }
-.navbar-header { width: 240px; }
+.navbar-header {
+  width: 240px;
+  flex-grow: 0;
+}
+main > div {
+  padding: 1rem;
+}
 main, footer {
-  width: 71rem;
   margin: auto;
+  width: 100%;
   background-color: white;
 }
 main {
   margin-top: 1em;
   margin-bottom: 1em;
 }
-main > div {
-  padding: 2.5rem;
+footer {
+  padding-left: 1ex;
+  padding-right: 1ex;
 }
-footer > p {
+footer p {
   padding: 1ex;
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  flex-wrap: wrap;
+}
+footer p a {
+  padding: 1rem;
 }
 details summary {
   cursor: pointer;
@@ -235,4 +251,72 @@ table {
 .checkmark::after {
     content: '\02705';
     visibility: visible;
+}
+
+@media (min-width: 40rem) {
+  main > div {
+    padding: 2.5rem;
+  }
+  footer p a {
+    padding: 0;
+  }
+}
+@media (min-width: 710px) {
+  #hamburger, nav label { display: none; }
+  nav ul {
+    align-content: stretch;
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+    font-weight: bold;
+    gap: 1ex;
+    justify-content: space-between;
+    list-style-type: none;
+    padding: 0;
+    width: 100%;
+  }
+  nav li {
+    height: 58px;
+  }
+}
+@media (min-width: 800px) {
+  nav ul {
+    justify-content: flex-end;
+  }
+  footer p {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0;
+}
+@media (min-width: 900px) {
+  nav ul {
+    gap: 1.5rem;
+  }
+}
+@media (min-width: 72rem) {
+  .alert {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    padding: 15px;
+  }
+  .container {
+    padding-left: 0;
+    padding-right: 0;
+    justify-content: space-between;
+  }
+  footer {
+    padding: 0;
+  }
+  header .navbar {
+    width: 71rem;
+  }
+  nav ul {
+    gap: 3rem;
+  }
+  main, footer {
+    width: 71rem;
+  }
 }
