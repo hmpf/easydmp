@@ -2,26 +2,18 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<div class="row">
-  <div class="col-lg-12">
-    <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-      <h1>Accept invitation to view {{ object.plan.title|capfirst }}</h1>
-    </div>
-  </div>
-</div>
+<h1>Accept invitation to view {{ object.plan.title|capfirst }}</h1>
 
-<div class="row uninett-color-white uninett-whole-row">
-  <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-      <p>You are registered as {{ request.user }}{% if request.user.email_address %},
-      email address {{ request.user.email_address }}{% endif %}.</p>
-      <p>If this is not the id you wish to use to view this plan: bookmark this
-      page, log out, log in again with the correct id and visit
-      <a href=".">this specific page</a> once more.</p>
-      </p>
-      <form action="." method="POST">
-          {% csrf_token %}
-          <input type="submit" value="I hereby accept the invitation to view {{ object.plan.title|capfirst }}" class="btn btn-primary" />
-      </form>
-  </div>
+<div class="confirm-form">
+  <p>You are registered as {{ request.user }}{% if request.user.email_address %},
+  email address {{ request.user.email_address }}{% endif %}.</p>
+  <p>If this is not the id you wish to use to view this plan: bookmark this
+  page, log out, log in again with the correct id and visit
+  <a href=".">this specific page</a> once more.</p>
+  </p>
+  <form action="." method="POST">
+      {% csrf_token %}
+      <input type="submit" value="I hereby accept the invitation to view {{ object.plan.title|capfirst }}" class="btn btn-primary" />
+  </form>
 </div>
 {% endblock content %}

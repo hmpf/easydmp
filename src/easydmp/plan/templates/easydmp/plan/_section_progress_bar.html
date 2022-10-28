@@ -1,11 +1,11 @@
       {% if section_progress|length > 1 %}
-      <div class="uninett-whole-row progressbar progressbar-small">
+      <div class="progressbar">
       <ul>
         {% for item in section_progress %}
         <li {% if item.status %}class="{{ item.status }}"{% endif %}>
-          <div class="progressbar2"></div>
-          <span class="withfadein"><a href="{{ item.link }}" title="{{ item.title }}">{{ item.label }}</a></span>
-          <p title="{{ item.title }}">{{ item.title|truncatechars:13 }}</p>
+          <a href="{{ item.link }}" title="{{ item.title }}">
+          <span class="bullet"></span> {{ item.title|truncatechars:13 }}
+          </a>
         </li>
         {% endfor %}
       </ul>

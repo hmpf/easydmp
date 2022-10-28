@@ -117,14 +117,14 @@ class AbstractResendPlanInvitationView(AbstractPlanInvitationView, UpdateView):
 class ResendPlanEditorInvitationView(AbstractResendPlanInvitationView):
     """Invite user via email address to edit specific plan"""
     model = PlanEditorInvitation
-    template_name = 'easydmp/invitation/plan/edit/resend_form.html'
+    template_name = 'easydmp/invitation/plan/edit/resend_confirm_form.html'
     success_url_name = 'share_plan'
 
 
 class ResendPlanViewerInvitationView(AbstractResendPlanInvitationView):
     """Invite user via email address to view specific plan"""
     model = PlanViewerInvitation
-    template_name = 'easydmp/invitation/plan/view/resend_form.html'
+    template_name = 'easydmp/invitation/plan/view/resend_confirm_form.html'
     success_url_name = 'share_plan'
 
 

@@ -1,0 +1,49 @@
+.plan-actions summary {
+    text-align: middle;
+    display: flex;
+}
+details[open].plan-actions summary {
+  border: none;
+}
+.plan-actions summary div {
+    padding: 2ex 1ex 2ex 1em;
+}
+.plan-actions summary button {
+  background-color: white;
+  border: none !important;
+  padding-left: 2em;
+}
+.plan-actions summary .action {
+    text-align: right;
+}
+.plan-actions .actions {
+    background-color: #eef9ff;
+    border-top: 2px solid #eeebe8;
+    border-bottom: 2px solid #eeebe8;
+}
+.plan-actions .actions ul {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+}
+.plan-actions .actions li {
+  width: 33.333%;
+  display: inline-block;
+}
+.plan-actions .actions li a {
+  line-height: 40px;
+  color: #000000;
+  display: block;
+  padding: .5em 2em;
+}
+.plan-actions .actions li:hover{
+  background: rgba(255,255,255,.95);
+}
+.plan-actions .actions li a:hover {
+  background: transparent;
+}
+.plan-actions .actions img {
+  height: 20px;
+  margin-right: 10px;
+}

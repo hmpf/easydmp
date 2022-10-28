@@ -1,19 +1,12 @@
 {% extends "easydmp/plan/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-  <div class="row">
-    <div class="col-lg-12">
-      <div class="jumbotron uninett-color-darkBlue uninett-pattern1">
-<h1>Create new, editable version of  "{{ object.title|capfirst }} {{ object.added }}"</h1>
-      </div>
-    </div>
-  </div>
+  <h1>Create new, editable version of  "{{ object.title|capfirst }} {{ object.added }}"</h1>
 
-  <div class="row uninett-color-white uninett-whole-row">
-    <div class="col-lg-12 col-md-12 uninett-color-white uninett-padded gutter">
-        <p>In order to edit a published or locked plan, a new version of the plan must be created.</p>
-        <p>By clicking "Yes" below the plan will get a new, editable version with a new version number.</p>
-        <p>Do you want to create a new version of the plan now?</p>
-        {% crispy form %}
-</div></div>
+  <div class="confirm-form">
+    <p>In order to edit a published or locked plan, a new version of the plan must be created.</p>
+    <p>By clicking "Yes" below the plan will get a new, editable version with a new version number.</p>
+    <p>Do you want to create a new version of the plan now?</p>
+    {% crispy form %}
+  </div>
 {% endblock content %}
