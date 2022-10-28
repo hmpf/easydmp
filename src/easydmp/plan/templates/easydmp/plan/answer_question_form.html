@@ -44,9 +44,9 @@
           {% csrf_token %}
           <div class="question-label">
             {% if question.optional %}
-            <label class="control-label">{{ form.label }}</label>
+            <label for="{{ form.choice.id_for_label }}" class="control-label">{{ form.label }}</label>
             {% else %}
-            <label class="control-label requiredField">{{ form.label }}<span class="asteriskField">*</span></label>
+            <label for="{{ form.choice.id_for_label }}" class="control-label requiredField">{{ form.label }}<span class="asteriskField">*</span></label>
             {% endif %}
           </div>
           <p class="help_text question-help">{{ form.help_text|safe }}</p>
