@@ -6,6 +6,23 @@ This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.htm
 as of v0.10. Prior to v0.10, annotated tags per feature, annotated tags plus
 date per feature, or commit hashes were used.
 
+1.28.1
+------
+
+A formset fix release
+
+Bugfix:
+
+* Make the formsets of optional questions also optional, e.g.
+  multistring-questions
+
+Paperwork:
+
+* Make formset questions work more like normal questions, in order to fix the
+  optionality-bug
+* Move extremely template-specific formset questions to separate files à la
+  multistring-questions
+
 1.28.0
 ------
 
