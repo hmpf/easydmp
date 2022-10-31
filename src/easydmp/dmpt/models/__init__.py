@@ -32,7 +32,6 @@ from .questions import (
     PositiveIntegerQuestion,
     ReasonQuestion,
     ShortFreetextQuestion,
-    StorageForecastQuestion,
 )
 
 

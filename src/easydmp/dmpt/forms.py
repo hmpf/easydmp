@@ -20,7 +20,6 @@ from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
 from .fields import DMPTypedReasonField
 from .fields import RDACostField
-from .fields import StorageForecastField
 from .utils import make_qid
 from .widgets import DMPTDateInput
 from .widgets import Select2Widget
@@ -619,60 +618,6 @@ class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
 
 MultiRDACostOneTextFormSet = AbstractMultiRDACostOneTextFormSet.generate_formset()
 Question.register_form_class('multirdacostonetext', MultiRDACostOneTextFormSet)
-
-
-class StorageForecastFormSetForm(forms.Form):
-    choice = StorageForecastField(label='')
-    choice.widget.attrs.update({'class': 'question-storageforecast'})
-
-    def __init__(self, year, *args, **kwargs):
-        self.year = year
-        super().__init__(*args, **kwargs)
-        self.fields['choice'].widget.attrs.update({'year': year})
-
-
-class AbstractStorageForecastFormSet(AbstractNodeFormSet):
-    FORM = StorageForecastFormSetForm
-    MIN_NUM = 5
-    MAX_NUM = 5
-    can_add = False
-    start_year = int(datetime.now().year)
-
-    @classmethod
-    def generate_choice(cls, choice):
-        return {
-            'year': choice['year'],
-            'storage_estimate': choice['storage_estimate'],
-            'backup_percentage': choice['backup_percentage'],
-        }
-
-    def serialize_subform(self):
-        return {
-            'properties': {
-                'year': {
-                    'type': 'string',
-                },
-                'storage_estimate': {
-                    'type': 'string',
-                },
-                'backup_percentage': {
-                    'type': 'string',
-                },
-            },
-            'required': ['year', 'storage_estimate', 'backup_percentage'],
-        }
-
-    def get_form_kwargs(self, form_index):
-        form_kwargs = super().get_form_kwargs(form_index)
-        index = 0
-        if form_index is not None:
-            index = form_index
-        form_kwargs['year'] = str(self.start_year + index)
-        return form_kwargs
-
-
-StorageForecastFormSet = AbstractStorageForecastFormSet.generate_formset()
-Question.register_form_class('storageforecast', StorageForecastFormSet)
 
 
 def make_form(question, **kwargs):

@@ -19,7 +19,6 @@ __all__ = [
     'SelectMultipleNotListed',
     'DMPTypedReasonWidget',
     'RDACostWidget',
-    'StorageForecastWidget',
 ]
 
 
@@ -164,36 +163,3 @@ class RDACostWidget(forms.MultiWidget):
         if value:
             return value['currency_code'], value['description'], value['title'], value['value']
         return (None, None, None, None)
-
-
-class StorageForecastWidget(forms.MultiWidget):
-    BACKUP_ESTIMATE_CHOICES = [
-         ('= 0%', '0%'),
-         ('≤ 25%', 'Up to 25%'),
-         ('≤ 50%', 'Up to 50%'),
-         ('≤ 75%', 'Up to 75%'),
-         ('≤ 100%', 'Up to 100%'),
-    ]
-    template_name = 'widgets/storageestimate_widget.html'
-
-    def __init__(self, attrs=None, year=None, *args, **kwargs):
-        if attrs is None:
-            attrs = {}
-        attrs.pop('placeholder', None)
-        attrs.pop('year', None)
-        self.year = year
-        year_attrs = dict(placeholder="year", year=year)
-        storage_estimate_attrs = dict(placeholder='storage estimate', min=0)
-        backup_percentage_attrs = dict(placeholder='backup percentage')
-        widgets = (
-            forms.TextInput(attrs=year_attrs),
-            forms.NumberInput(attrs=storage_estimate_attrs),
-            forms.Select(attrs=backup_percentage_attrs, choices=self.BACKUP_ESTIMATE_CHOICES),
-        )
-        self.widgets = widgets
-        super().__init__(widgets, {})
-
-    def decompress(self, value):
-        if value:
-            return value['year'], value['storage_estimate'], value['backup_percentage']
-        return (None, None, None)
