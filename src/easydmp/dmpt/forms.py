@@ -483,6 +483,11 @@ class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
             )
         )
 
+    def _set_required_on_serialized_subform(self, serialized_subform):
+        if not self.question.optional:
+            serialized_subform['required'] = self.required
+        return serialized_subform
+
     def serialize_subform(self):
         raise NotImplementedError
 
@@ -511,13 +516,14 @@ class NamedURLFormSetForm(forms.Form):
 
 class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
     FORM = NamedURLFormSetForm
+    required = ['url']
 
     @classmethod
     def generate_choice(cls, choice):
         return {'url': choice['url'], 'name': choice['name']}
 
     def serialize_subform(self):
-        return {
+        json_schema = {
             'properties': {
                 'url': {
                     'type': 'string',
@@ -527,10 +533,8 @@ class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
                     'type': 'string',
                 },
             },
-            'required': ['url'],
         }
-
-
+        return self._set_required_on_serialized_subform(json_schema)
 MultiNamedURLOneTextFormSet = AbstractMultiNamedURLOneTextFormSet.generate_formset()
 Question.register_form_class('multinamedurlonetext', MultiNamedURLOneTextFormSet)
 
@@ -545,6 +549,7 @@ class DMPTypedReasonFormSetForm(forms.Form):
 
 class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
     FORM = DMPTypedReasonFormSetForm
+    required = ['type']
 
     @classmethod
     def generate_choice(cls, choice):
@@ -555,7 +560,7 @@ class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
         }
 
     def serialize_subform(self):
-        return {
+        json_schema = {
             'properties': {
                 'type': {
                     'type': 'string',
@@ -568,10 +573,8 @@ class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
                     'type': 'string',
                 },
             },
-            'required': ['type'],
         }
-
-
+        return self._set_required_on_serialized_subform(json_schema)
 MultiDMPTypedReasonOneTextFormSet = AbstractMultiDMPTypedReasonOneTextFormSet.generate_formset()
 Question.register_form_class('multidmptypedreasononetext', MultiDMPTypedReasonOneTextFormSet)
 
@@ -586,6 +589,7 @@ class RDACostFormSetForm(forms.Form):
 
 class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
     FORM = RDACostFormSetForm
+    required = ['title']
 
     @classmethod
     def generate_choice(cls, choice):
@@ -597,7 +601,7 @@ class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
         }
 
     def serialize_subform(self):
-        return {
+        json_schema = {
             'properties': {
                 'currency_code': {
                     'type': 'string',
@@ -612,10 +616,8 @@ class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
                     'type': 'number',
                 },
             },
-            'required': ['title'],
         }
-
-
+        return self._set_required_on_serialized_subform(json_schema)
 MultiRDACostOneTextFormSet = AbstractMultiRDACostOneTextFormSet.generate_formset()
 Question.register_form_class('multirdacostonetext', MultiRDACostOneTextFormSet)
 

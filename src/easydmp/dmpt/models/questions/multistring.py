@@ -77,20 +77,21 @@ class MultistringFormSetForm(forms.Form):
 
 class AbstractMultistringFormSet(AbstractNodeFormSet):
     FORM = MultistringFormSetForm
+    required = ['string']
 
     @classmethod
     def generate_choice(cls, choice):
         return choice
 
     def serialize_subform(self):
-        return {
+        json_schema = {
             'properties': {
                 'string': {
                     'type': 'string',
                 },
             },
-            'required': ['string'],
         }
+        return self._set_required_on_serialized_subform(json_schema)
 
 
 MultistringFormSet = AbstractMultistringFormSet.generate_formset()

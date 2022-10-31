@@ -158,6 +158,7 @@ class AbstractStorageForecastFormSet(AbstractNodeFormSet):
     FORM = StorageForecastFormSetForm
     MIN_NUM = 5
     MAX_NUM = 5
+    required = ['year', 'storage_estimate', 'backup_percentage']
     can_add = False
     start_year = int(tznow().year)
 
@@ -170,8 +171,7 @@ class AbstractStorageForecastFormSet(AbstractNodeFormSet):
         }
 
     def serialize_subform(self):
-        required = ['year', 'storage_estimate', 'backup_percentage']
-        return {
+        json_schema = {
             'properties': {
                 'year': {
                     'type': 'string',
@@ -183,8 +183,8 @@ class AbstractStorageForecastFormSet(AbstractNodeFormSet):
                     'type': 'string',
                 },
             },
-            'required': required,
         }
+        return self._set_required_on_serialized_subform(json_schema)
 
     def get_form_kwargs(self, form_index):
         form_kwargs = super().get_form_kwargs(form_index)
