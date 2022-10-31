@@ -76,6 +76,7 @@ class MultistringFormSetForm(forms.Form):
 
 class AbstractMultistringFormSet(AbstractNodeFormSet):
     FORM = MultistringFormSetForm
+    TYPE = TYPE
     required = ['string']
 
     @classmethod
@@ -91,6 +92,3 @@ class AbstractMultistringFormSet(AbstractNodeFormSet):
             },
         }
         return self._set_required_on_serialized_subform(json_schema)
-
-
-Question.register_form_class(TYPE, AbstractMultistringFormSet)

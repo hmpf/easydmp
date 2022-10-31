@@ -155,6 +155,7 @@ class StorageForecastFormSetForm(forms.Form):
 
 class AbstractStorageForecastFormSet(AbstractNodeFormSet):
     FORM = StorageForecastFormSetForm
+    TYPE = TYPE
     MIN_NUM = 5
     MAX_NUM = 5
     required = ['year', 'storage_estimate', 'backup_percentage']
@@ -192,6 +193,3 @@ class AbstractStorageForecastFormSet(AbstractNodeFormSet):
             index = form_index
         form_kwargs['year'] = str(self.start_year + index)
         return form_kwargs
-
-
-Question.register_form_class('storageforecast', AbstractStorageForecastFormSet)

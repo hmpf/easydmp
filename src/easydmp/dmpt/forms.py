@@ -452,6 +452,10 @@ class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
     MIN_NUM: int = 1  # Override in subclass
     MAX_NUM: int  # Override in subclass
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        Question.register_form_class(cls.TYPE, cls)
+
     def deserialize(self, initial):
         data = initial.get('choice', [])
         for i, item in enumerate(data):
@@ -517,6 +521,7 @@ class NamedURLFormSetForm(forms.Form):
 
 class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
     FORM = NamedURLFormSetForm
+    TYPE = 'multinamedurlonetext'
     required = ['url']
 
     @classmethod
@@ -536,7 +541,6 @@ class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
             },
         }
         return self._set_required_on_serialized_subform(json_schema)
-Question.register_form_class('multinamedurlonetext', AbstractMultiNamedURLOneTextFormSet)
 
 
 class DMPTypedReasonFormSetForm(forms.Form):
@@ -549,6 +553,7 @@ class DMPTypedReasonFormSetForm(forms.Form):
 
 class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
     FORM = DMPTypedReasonFormSetForm
+    TYPE = 'multidmptypedreasononetext'
     required = ['type']
 
     @classmethod
@@ -575,7 +580,6 @@ class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
             },
         }
         return self._set_required_on_serialized_subform(json_schema)
-Question.register_form_class('multidmptypedreasononetext', AbstractMultiDMPTypedReasonOneTextFormSet)
 
 
 class RDACostFormSetForm(forms.Form):
@@ -588,6 +592,7 @@ class RDACostFormSetForm(forms.Form):
 
 class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
     FORM = RDACostFormSetForm
+    TYPE = 'multirdacostonetext'
     required = ['title']
 
     @classmethod
@@ -617,7 +622,6 @@ class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
             },
         }
         return self._set_required_on_serialized_subform(json_schema)
-Question.register_form_class('multirdacostonetext', AbstractMultiRDACostOneTextFormSet)
 
 
 def make_form(question, **kwargs):
