@@ -27,7 +27,6 @@ from .questions import (
     MultiDMPTypedReasonOneTextQuestion,
     MultiNamedURLOneTextQuestion,
     MultipleChoiceOneTextQuestion,
-    MultiRDACostOneTextQuestion,
     NamedURLQuestion,
     PositiveIntegerQuestion,
     ReasonQuestion,

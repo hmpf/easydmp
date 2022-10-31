@@ -19,7 +19,6 @@ from .fields import NamedURLField
 from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
 from .fields import DMPTypedReasonField
-from .fields import RDACostField
 from .utils import make_qid
 from .widgets import DMPTDateInput
 from .widgets import Select2Widget
@@ -576,48 +575,6 @@ class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
                 },
                 'reason': {
                     'type': 'string',
-                },
-            },
-        }
-        return self._set_required_on_serialized_subform(json_schema)
-
-
-class RDACostFormSetForm(forms.Form):
-    # Low magic form to be used in a formset
-    #
-    # The formset has the node-magic
-    choice = RDACostField(label='')
-    choice.widget.attrs.update({'class': 'question-multirdacostonetext'})
-
-
-class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
-    FORM = RDACostFormSetForm
-    TYPE = 'multirdacostonetext'
-    required = ['title']
-
-    @classmethod
-    def generate_choice(cls, choice):
-        return {
-            'currency_code': choice['currency_code'],
-            'description': choice['description'],
-            'title': choice['title'],
-            'value': choice['value'],
-        }
-
-    def serialize_subform(self):
-        json_schema = {
-            'properties': {
-                'currency_code': {
-                    'type': 'string',
-                },
-                'description': {
-                    'type': 'string',
-                },
-                'title': {
-                    'type': 'string',
-                },
-                'value': {
-                    'type': 'number',
                 },
             },
         }
