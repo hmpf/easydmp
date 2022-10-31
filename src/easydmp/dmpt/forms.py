@@ -102,7 +102,7 @@ class AbstractNodeMixin():
 
         All other keywords and structures needed for a type in addition to "type"
         """
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class AbstractNodeForm(AbstractNodeMixin, forms.Form):
@@ -461,7 +461,7 @@ class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
 
     @classmethod
     def generate_choice(cls, choice):
-        raise NotImplemented
+        raise NotImplementedError
 
     def serialize(self):
         choices = []
@@ -485,7 +485,7 @@ class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
         )
 
     def serialize_subform(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     @classmethod
     def generate_formset(cls):

@@ -99,7 +99,7 @@ class AbstractEmailInvitation(models.Model):
         """
         # Ensure that template and subject is set
         if None in (self.template_name, self.email_subject_template):
-            raise NotImplemented
+            raise NotImplementedError
         # Create an absolute uri to the invitation accept view
         link = self.get_absolute_accept_url()
         if request is not None:
