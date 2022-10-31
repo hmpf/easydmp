@@ -7,7 +7,6 @@ from easydmp.dmpt.utils import get_question_type_from_filename
 
 __all__ = [
     'MultistringQuestion',
-    'MultistringFormSet',
 ]
 
 TYPE = get_question_type_from_filename(__file__)
@@ -77,21 +76,19 @@ class MultistringFormSetForm(forms.Form):
 
 class AbstractMultistringFormSet(AbstractNodeFormSet):
     FORM = MultistringFormSetForm
+    TYPE = TYPE
+    required = ['string']
 
     @classmethod
     def generate_choice(cls, choice):
         return choice
 
     def serialize_subform(self):
-        return {
+        json_schema = {
             'properties': {
                 'string': {
                     'type': 'string',
                 },
             },
-            'required': ['string'],
         }
-
-
-MultistringFormSet = AbstractMultistringFormSet.generate_formset()
-Question.register_form_class(TYPE, MultistringFormSet)
+        return self._set_required_on_serialized_subform(json_schema)

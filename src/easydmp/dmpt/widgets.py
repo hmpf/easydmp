@@ -17,9 +17,6 @@ __all__ = [
     'NamedURLWidget',
     'SelectNotListed',
     'SelectMultipleNotListed',
-    'DMPTypedReasonWidget',
-    'RDACostWidget',
-    'StorageForecastWidget',
 ]
 
 
@@ -118,82 +115,3 @@ class SelectMultipleNotListed(forms.MultiWidget):
             listed = value.get('not-listed', None)
             return (choices, listed)
         return (None, None)
-
-
-class DMPTypedReasonWidget(forms.MultiWidget):
-    template_name = 'widgets/dmptypedreason_widget.html'
-
-    def __init__(self, attrs=None, *args, **kwargs):
-        reason_attrs = {} if attrs is None else attrs.copy()
-        reason_attrs['placeholder'] = 'reason'
-        widgets = (
-            forms.TextInput(attrs=attrs),
-            forms.Textarea(attrs=reason_attrs),
-            forms.URLInput(attrs=attrs),
-        )
-        self.widgets = widgets
-        super().__init__(widgets, attrs)
-
-    def decompress(self, value):
-        if value:
-            return value['type'], value['reason'], value['access_url']
-        return (None, None, None)
-
-
-class RDACostWidget(forms.MultiWidget):
-    template_name = 'widgets/rdacost_widget.html'
-
-    def __init__(self, attrs=None, *args, **kwargs):
-        if attrs is None:
-            attrs = {}
-        attrs.pop('placeholder', None)
-        currency_code_attrs = dict(placeholder='Currency code', **attrs)
-        description_attrs = dict(placeholder='Description', **attrs)
-        title_attrs = dict(placeholder='Title', **attrs)
-        value_attrs = dict(placeholder='Value', **attrs)
-        widgets = (
-            forms.TextInput(attrs=currency_code_attrs),
-            forms.Textarea(attrs=description_attrs),
-            forms.TextInput(attrs=title_attrs),
-            forms.NumberInput(attrs=value_attrs),
-        )
-        self.widgets = widgets
-        super().__init__(widgets, attrs)
-
-    def decompress(self, value):
-        if value:
-            return value['currency_code'], value['description'], value['title'], value['value']
-        return (None, None, None, None)
-
-
-class StorageForecastWidget(forms.MultiWidget):
-    BACKUP_ESTIMATE_CHOICES = [
-         ('= 0%', '0%'),
-         ('≤ 25%', 'Up to 25%'),
-         ('≤ 50%', 'Up to 50%'),
-         ('≤ 75%', 'Up to 75%'),
-         ('≤ 100%', 'Up to 100%'),
-    ]
-    template_name = 'widgets/storageestimate_widget.html'
-
-    def __init__(self, attrs=None, year=None, *args, **kwargs):
-        if attrs is None:
-            attrs = {}
-        attrs.pop('placeholder', None)
-        attrs.pop('year', None)
-        self.year = year
-        year_attrs = dict(placeholder="year", year=year)
-        storage_estimate_attrs = dict(placeholder='storage estimate', min=0)
-        backup_percentage_attrs = dict(placeholder='backup percentage')
-        widgets = (
-            forms.TextInput(attrs=year_attrs),
-            forms.NumberInput(attrs=storage_estimate_attrs),
-            forms.Select(attrs=backup_percentage_attrs, choices=self.BACKUP_ESTIMATE_CHOICES),
-        )
-        self.widgets = widgets
-        super().__init__(widgets, {})
-
-    def decompress(self, value):
-        if value:
-            return value['year'], value['storage_estimate'], value['backup_percentage']
-        return (None, None, None)

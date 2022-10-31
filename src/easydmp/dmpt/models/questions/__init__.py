@@ -5,6 +5,11 @@ from django.utils.safestring import mark_safe
 
 from easydmp.constants import NotSet
 
+from easydmp.dmpt.typing import AnswerChoice, Data
+from easydmp.dmpt.utils import render_from_string
+from easydmp.dmpt.utils import print_url
+from easydmp.lib import pprint_list
+
 from .mixins import ChoiceValidationMixin
 from .mixins import EEStoreMixin
 from .mixins import IsSetValidationMixin
@@ -13,11 +18,6 @@ from .mixins import NotListedMixin
 from .mixins import PrimitiveTypeMixin
 from .mixins import SaveMixin
 from ..base import Question
-from ...typing import AnswerChoice, Data
-from ...utils import print_url
-from ...utils import render_from_string
-
-from easydmp.lib import pprint_list
 
 
 LOG = logging.getLogger(__name__)
@@ -508,149 +508,5 @@ class MultiNamedURLOneTextQuestion(NoCheckMixin, SaveMixin, Question):
         for choice in choices:
             url = choice.get('url', None)
             if url:
-                return True
-        return False
-
-
-class MultiDMPTypedReasonOneTextQuestion(NoCheckMixin, SaveMixin, Question):
-    """A non-branch-capable question answerable several type+reason+url sets
-
-    The url is optional.
-
-    The framing text for the canned answer utilizes the Django template system,
-    not standard python string formatting. If there is no framing text
-    a serialized version of the raw choice is returned.
-    """
-
-    TYPE = 'multidmptypedreasononetext'
-    DEFAULT_FRAMING_TEXT = """<dl>{% for triple in choices %}
-<dt>{{ triple.type }}</dt>
-<dd>Because {{ triple.reason }}</dd>
-{% if triple.access_url %}<dd><a href="{{ triple.access_url }}">Access instructions</a></dd>{% endif %}
-{% endfor %}
-</dl>
-"""
-
-    class Meta:
-        proxy = True
-
-    def get_canned_answer(self, choice, **kwargs):
-        if not choice:
-            return self.get_optional_canned_answer()
-
-        framing_text = self.framing_text if self.framing_text else self.DEFAULT_FRAMING_TEXT
-        return mark_safe(render_from_string(framing_text, {'choices': choice}))
-
-    def pprint(self, value):
-        return value['text']
-
-    def pprint_html(self, value):
-        choices = value['choice']
-        return self.get_canned_answer(choices)
-
-    def validate_choice(self, data):
-        choices = data.get('choice', [])
-        if self.optional and not choices:
-            return True
-        for choice in choices:
-            type_ = choice.get('type', None)
-            reason = choice.get('reason', None)
-            if type_ and reason:
-                return True
-        return False
-
-
-class MultiRDACostOneTextQuestion(NoCheckMixin, SaveMixin, Question):
-    """A non-branch-capable question for RDA DMP Common Standard Cost
-
-    Only title is required.
-
-    The framing text for the canned answer utilizes the Django template system,
-    not standard python string formatting. If there is no framing text
-    a serialized version of the raw choice is returned.
-    """
-
-    TYPE = 'multirdacostonetext'
-    DEFAULT_FRAMING_TEXT = """<dl class="answer-cost">{% for obj in choices %}
-<dt>{{ obj.title }}
-{% if obj.currency_code or obj.value %}
-<span>{{ obj.currency_code }} {{ obj.value|default_if_none:"Unknown" }}</span>
-{% endif %}
-</dt>
-<dd>{{ obj.description|default:"-" }}</dd>
-{% endfor %}
-</dl>
-"""
-
-    class Meta:
-        proxy = True
-
-    def get_canned_answer(self, choice, **kwargs):
-        if not choice:
-            return self.get_optional_canned_answer()
-
-        framing_text = self.framing_text if self.framing_text else self.DEFAULT_FRAMING_TEXT
-        return mark_safe(render_from_string(framing_text, {'choices': choice}))
-
-    def pprint(self, value):
-        return value['text']
-
-    def pprint_html(self, value):
-        choices = value['choice']
-        return self.get_canned_answer(choices)
-
-    def validate_choice(self, data):
-        choices = data.get('choice', [])
-        if self.optional and not choices:
-            return True
-        for choice in choices:
-            if choice.get('title', None):
-                return True
-        return False
-
-
-class StorageForecastQuestion(NoCheckMixin, SaveMixin, Question):
-    """A non-branch-capable question for RDA DMP Common Standard Cost
-
-    Only title is required.
-
-    The framing text for the canned answer utilizes the Django template system,
-    not standard python string formatting. If there is no framing text
-    a serialized version of the raw choice is returned.
-    """
-
-    TYPE = 'storageforecast'
-    DEFAULT_FRAMING_TEXT = """<p>Storage forecast:</p>
-<ul class="storage-estimate">{% for obj in choices %}
-    <li>{{ obj.year }}: {{ obj.storage_estimate }} TiB, backup {{ obj.backup_percentage }}</li>
-{% endfor %}</ul>
-"""
-
-    class Meta:
-        proxy = True
-
-    def get_canned_answer(self, choice, **kwargs):
-        if not choice:
-            return self.get_optional_canned_answer()
-
-        framing_text = self.framing_text if self.framing_text else self.DEFAULT_FRAMING_TEXT
-        return mark_safe(render_from_string(framing_text, {'choices': choice}))
-
-    def pprint(self, value):
-        return value['text']
-
-    def pprint_html(self, value):
-        choices = value['choice']
-        return self.get_canned_answer(choices)
-
-    def validate_choice(self, data):
-        choices = data.get('choice', [])
-        if self.optional and not choices:
-            return True
-        for choice in choices:
-            year = choice.get('year', None)
-            storage_estimate = choice.get('storage_estimate', None)
-            backup_percentage = choice.get('backup_percentage', None)
-            if year and storage_estimate and backup_percentage:
                 return True
         return False

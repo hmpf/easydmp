@@ -18,9 +18,6 @@ from .fields import DateRangeField
 from .fields import NamedURLField
 from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
-from .fields import DMPTypedReasonField
-from .fields import RDACostField
-from .fields import StorageForecastField
 from .utils import make_qid
 from .widgets import DMPTDateInput
 from .widgets import Select2Widget
@@ -453,6 +450,10 @@ class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
     MIN_NUM: int = 1  # Override in subclass
     MAX_NUM: int  # Override in subclass
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        Question.register_form_class(cls.TYPE, cls)
+
     def deserialize(self, initial):
         data = initial.get('choice', [])
         for i, item in enumerate(data):
@@ -484,15 +485,21 @@ class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
             )
         )
 
+    def _set_required_on_serialized_subform(self, serialized_subform):
+        if not self.question.optional:
+            serialized_subform['required'] = self.required
+        return serialized_subform
+
     def serialize_subform(self):
         raise NotImplementedError
 
     @classmethod
-    def generate_formset(cls):
+    def generate_formset(cls, required=True):
         kwargs = {}
         if hasattr(cls, 'MAX_NUM'):
             kwargs['max_num'] = cls.MAX_NUM
             kwargs['validate_max'] = True
+        cls.FORM.declared_fields['choice'].required = required
         return forms.formset_factory(
             cls.FORM,
             min_num=cls.MIN_NUM,
@@ -512,13 +519,15 @@ class NamedURLFormSetForm(forms.Form):
 
 class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
     FORM = NamedURLFormSetForm
+    TYPE = 'multinamedurlonetext'
+    required = ['url']
 
     @classmethod
     def generate_choice(cls, choice):
         return {'url': choice['url'], 'name': choice['name']}
 
     def serialize_subform(self):
-        return {
+        json_schema = {
             'properties': {
                 'url': {
                     'type': 'string',
@@ -528,151 +537,8 @@ class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
                     'type': 'string',
                 },
             },
-            'required': ['url'],
         }
-
-
-MultiNamedURLOneTextFormSet = AbstractMultiNamedURLOneTextFormSet.generate_formset()
-Question.register_form_class('multinamedurlonetext', MultiNamedURLOneTextFormSet)
-
-
-class DMPTypedReasonFormSetForm(forms.Form):
-    # Low magic form to be used in a formset
-    #
-    # The formset has the node-magic
-    choice = DMPTypedReasonField(label='')
-    choice.widget.attrs.update({'class': 'question-multidmptypedreasononetext'})
-
-
-class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
-    FORM = DMPTypedReasonFormSetForm
-
-    @classmethod
-    def generate_choice(cls, choice):
-        return {
-            'reason': choice['reason'],
-            'type': choice['type'],
-            'access_url': choice.get('access_url', ''),
-        }
-
-    def serialize_subform(self):
-        return {
-            'properties': {
-                'type': {
-                    'type': 'string',
-                },
-                'access_url': {
-                    'type': 'string',
-                    'format': 'uri',
-                },
-                'reason': {
-                    'type': 'string',
-                },
-            },
-            'required': ['type'],
-        }
-
-
-MultiDMPTypedReasonOneTextFormSet = AbstractMultiDMPTypedReasonOneTextFormSet.generate_formset()
-Question.register_form_class('multidmptypedreasononetext', MultiDMPTypedReasonOneTextFormSet)
-
-
-class RDACostFormSetForm(forms.Form):
-    # Low magic form to be used in a formset
-    #
-    # The formset has the node-magic
-    choice = RDACostField(label='')
-    choice.widget.attrs.update({'class': 'question-multirdacostonetext'})
-
-
-class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
-    FORM = RDACostFormSetForm
-
-    @classmethod
-    def generate_choice(cls, choice):
-        return {
-            'currency_code': choice['currency_code'],
-            'description': choice['description'],
-            'title': choice['title'],
-            'value': choice['value'],
-        }
-
-    def serialize_subform(self):
-        return {
-            'properties': {
-                'currency_code': {
-                    'type': 'string',
-                },
-                'description': {
-                    'type': 'string',
-                },
-                'title': {
-                    'type': 'string',
-                },
-                'value': {
-                    'type': 'number',
-                },
-            },
-            'required': ['title'],
-        }
-
-
-MultiRDACostOneTextFormSet = AbstractMultiRDACostOneTextFormSet.generate_formset()
-Question.register_form_class('multirdacostonetext', MultiRDACostOneTextFormSet)
-
-
-class StorageForecastFormSetForm(forms.Form):
-    choice = StorageForecastField(label='')
-    choice.widget.attrs.update({'class': 'question-storageforecast'})
-
-    def __init__(self, year, *args, **kwargs):
-        self.year = year
-        super().__init__(*args, **kwargs)
-        self.fields['choice'].widget.attrs.update({'year': year})
-
-
-class AbstractStorageForecastFormSet(AbstractNodeFormSet):
-    FORM = StorageForecastFormSetForm
-    MIN_NUM = 5
-    MAX_NUM = 5
-    can_add = False
-    start_year = int(datetime.now().year)
-
-    @classmethod
-    def generate_choice(cls, choice):
-        return {
-            'year': choice['year'],
-            'storage_estimate': choice['storage_estimate'],
-            'backup_percentage': choice['backup_percentage'],
-        }
-
-    def serialize_subform(self):
-        return {
-            'properties': {
-                'year': {
-                    'type': 'string',
-                },
-                'storage_estimate': {
-                    'type': 'string',
-                },
-                'backup_percentage': {
-                    'type': 'string',
-                },
-            },
-            'required': ['year', 'storage_estimate', 'backup_percentage'],
-        }
-
-    def get_form_kwargs(self, form_index):
-        form_kwargs = super().get_form_kwargs(form_index)
-        index = 0
-        if form_index is not None:
-            index = form_index
-        form_kwargs['year'] = str(self.start_year + index)
-        return form_kwargs
-
-
-StorageForecastFormSet = AbstractStorageForecastFormSet.generate_formset()
-Question.register_form_class('storageforecast', StorageForecastFormSet)
+        return self._set_required_on_serialized_subform(json_schema)
 
 
 def make_form(question, **kwargs):
@@ -680,6 +546,8 @@ def make_form(question, **kwargs):
     kwargs.pop('instance', None)
     kwargs['question'] = question
     form_class = question.get_form_class()
+    if issubclass(form_class, forms.BaseFormSet):
+        form_class = form_class.generate_formset(required=not question.optional)
     form = form_class(**kwargs)
     if isinstance(form, forms.BaseFormSet):
         form.validate_min = not question.optional
