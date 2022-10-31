@@ -6,6 +6,24 @@ This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.htm
 as of v0.10. Prior to v0.10, annotated tags per feature, annotated tags plus
 date per feature, or commit hashes were used.
 
+1.28.0
+------
+
+The UI rewrite release!
+
+The webpages have been rewritten with accessibility and ease of maintenace in
+mind. It looks pretty much as it used to with the following exceptions:
+
+* The Sigma2 logo has been updated
+* Some colors have been adjusted with increased contrast in mind
+* Most animations have been removed
+* On a narrow screen like on cell-phones, the hamburger-menu is gone. All menu
+  items are always visible. Instead of the hamburger, they move around to make
+  use of the available space.
+
+More time could have been spent on making it even prettier, especially on
+mobile, but that is a never ending story.
+
 1.27.2
 ------
 
