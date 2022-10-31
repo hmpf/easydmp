@@ -18,7 +18,6 @@ from .fields import DateRangeField
 from .fields import NamedURLField
 from .fields import ChoiceNotListedField
 from .fields import MultipleChoiceNotListedField
-from .fields import DMPTypedReasonField
 from .utils import make_qid
 from .widgets import DMPTDateInput
 from .widgets import Select2Widget
@@ -535,45 +534,6 @@ class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
                     'format': 'uri',
                 },
                 'name': {
-                    'type': 'string',
-                },
-            },
-        }
-        return self._set_required_on_serialized_subform(json_schema)
-
-
-class DMPTypedReasonFormSetForm(forms.Form):
-    # Low magic form to be used in a formset
-    #
-    # The formset has the node-magic
-    choice = DMPTypedReasonField(label='')
-    choice.widget.attrs.update({'class': 'question-multidmptypedreasononetext'})
-
-
-class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
-    FORM = DMPTypedReasonFormSetForm
-    TYPE = 'multidmptypedreasononetext'
-    required = ['type']
-
-    @classmethod
-    def generate_choice(cls, choice):
-        return {
-            'reason': choice['reason'],
-            'type': choice['type'],
-            'access_url': choice.get('access_url', ''),
-        }
-
-    def serialize_subform(self):
-        json_schema = {
-            'properties': {
-                'type': {
-                    'type': 'string',
-                },
-                'access_url': {
-                    'type': 'string',
-                    'format': 'uri',
-                },
-                'reason': {
                     'type': 'string',
                 },
             },

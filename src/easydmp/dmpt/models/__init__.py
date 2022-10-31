@@ -24,7 +24,6 @@ from .questions import (
     ExternalChoiceQuestion,
     ExternalMultipleChoiceNotListedOneTextQuestion,
     ExternalMultipleChoiceOneTextQuestion,
-    MultiDMPTypedReasonOneTextQuestion,
     MultiNamedURLOneTextQuestion,
     MultipleChoiceOneTextQuestion,
     NamedURLQuestion,

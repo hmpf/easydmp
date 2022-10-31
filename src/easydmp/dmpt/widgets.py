@@ -17,7 +17,6 @@ __all__ = [
     'NamedURLWidget',
     'SelectNotListed',
     'SelectMultipleNotListed',
-    'DMPTypedReasonWidget',
 ]
 
 
@@ -116,23 +115,3 @@ class SelectMultipleNotListed(forms.MultiWidget):
             listed = value.get('not-listed', None)
             return (choices, listed)
         return (None, None)
-
-
-class DMPTypedReasonWidget(forms.MultiWidget):
-    template_name = 'widgets/dmptypedreason_widget.html'
-
-    def __init__(self, attrs=None, *args, **kwargs):
-        reason_attrs = {} if attrs is None else attrs.copy()
-        reason_attrs['placeholder'] = 'reason'
-        widgets = (
-            forms.TextInput(attrs=attrs),
-            forms.Textarea(attrs=reason_attrs),
-            forms.URLInput(attrs=attrs),
-        )
-        self.widgets = widgets
-        super().__init__(widgets, attrs)
-
-    def decompress(self, value):
-        if value:
-            return value['type'], value['reason'], value['access_url']
-        return (None, None, None)
