@@ -492,11 +492,12 @@ class AbstractNodeFormSet(AbstractNodeMixin, forms.BaseFormSet):
         raise NotImplementedError
 
     @classmethod
-    def generate_formset(cls):
+    def generate_formset(cls, required=True):
         kwargs = {}
         if hasattr(cls, 'MAX_NUM'):
             kwargs['max_num'] = cls.MAX_NUM
             kwargs['validate_max'] = True
+        cls.FORM.declared_fields['choice'].required = required
         return forms.formset_factory(
             cls.FORM,
             min_num=cls.MIN_NUM,
@@ -535,8 +536,7 @@ class AbstractMultiNamedURLOneTextFormSet(AbstractNodeFormSet):
             },
         }
         return self._set_required_on_serialized_subform(json_schema)
-MultiNamedURLOneTextFormSet = AbstractMultiNamedURLOneTextFormSet.generate_formset()
-Question.register_form_class('multinamedurlonetext', MultiNamedURLOneTextFormSet)
+Question.register_form_class('multinamedurlonetext', AbstractMultiNamedURLOneTextFormSet)
 
 
 class DMPTypedReasonFormSetForm(forms.Form):
@@ -575,8 +575,7 @@ class AbstractMultiDMPTypedReasonOneTextFormSet(AbstractNodeFormSet):
             },
         }
         return self._set_required_on_serialized_subform(json_schema)
-MultiDMPTypedReasonOneTextFormSet = AbstractMultiDMPTypedReasonOneTextFormSet.generate_formset()
-Question.register_form_class('multidmptypedreasononetext', MultiDMPTypedReasonOneTextFormSet)
+Question.register_form_class('multidmptypedreasononetext', AbstractMultiDMPTypedReasonOneTextFormSet)
 
 
 class RDACostFormSetForm(forms.Form):
@@ -618,8 +617,7 @@ class AbstractMultiRDACostOneTextFormSet(AbstractNodeFormSet):
             },
         }
         return self._set_required_on_serialized_subform(json_schema)
-MultiRDACostOneTextFormSet = AbstractMultiRDACostOneTextFormSet.generate_formset()
-Question.register_form_class('multirdacostonetext', MultiRDACostOneTextFormSet)
+Question.register_form_class('multirdacostonetext', AbstractMultiRDACostOneTextFormSet)
 
 
 def make_form(question, **kwargs):
@@ -627,6 +625,8 @@ def make_form(question, **kwargs):
     kwargs.pop('instance', None)
     kwargs['question'] = question
     form_class = question.get_form_class()
+    if issubclass(form_class, forms.BaseFormSet):
+        form_class = form_class.generate_formset(required=not question.optional)
     form = form_class(**kwargs)
     if isinstance(form, forms.BaseFormSet):
         form.validate_min = not question.optional

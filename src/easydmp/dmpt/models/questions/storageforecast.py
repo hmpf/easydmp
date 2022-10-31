@@ -11,7 +11,6 @@ from easydmp.dmpt.utils import get_question_type_from_filename, render_from_stri
 
 __all__ = [
     'StorageForecastQuestion',
-    'AbstractStorageForecastFormSet',
 ]
 
 TYPE = get_question_type_from_filename(__file__)
@@ -195,5 +194,4 @@ class AbstractStorageForecastFormSet(AbstractNodeFormSet):
         return form_kwargs
 
 
-StorageForecastFormSet = AbstractStorageForecastFormSet.generate_formset()
-Question.register_form_class('storageforecast', StorageForecastFormSet)
+Question.register_form_class('storageforecast', AbstractStorageForecastFormSet)
