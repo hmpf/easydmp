@@ -702,6 +702,7 @@ class QuestionExplicitBranchInline(admin.StackedInline):
             field.queryset = field.queryset.filter(section__in=sections)
         return field
 
+
 class QuestionCannedAnswerInline(admin.StackedInline):
     model = CannedAnswer
     raw_id_fields = ['transition']
@@ -810,7 +811,6 @@ class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMo
         'input_type',
         'on_trunk',
         'optional',
-        'get_mount',
     )
     list_select_related = ['section']
     list_display_links = ('position', 'id', 'question')
@@ -828,6 +828,7 @@ class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMo
         'optional',
         QuestionTemplateFilter,
         QuestionSectionFilter,
+        'input_type',
         QuestionHasEEStoreFilter,
         QuestionEEStoreTypeFilter,
     ]
@@ -926,11 +927,6 @@ class QuestionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMo
         return extra_urls + urls
 
     # display fields
-
-    def get_mount(self, obj):
-        return obj.eestore.eestore_type if obj.eestore else ''
-    get_mount.short_description = 'EEStore'  # type: ignore
-    get_mount.admin_order_field = 'eestore'  # type: ignore
 
     # actions
 
