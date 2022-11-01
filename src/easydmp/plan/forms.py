@@ -67,6 +67,8 @@ class ConfirmOwnPlanAccessChangeForm(ConfirmForm, PlanAccessForm):
 
 
 class StartPlanForm(CheckExistingTitleMixin, forms.ModelForm):
+    FILL = 'Fill'
+    OVERVIEW = 'Overview'
 
     class Meta:
         model = Plan
@@ -83,7 +85,8 @@ class StartPlanForm(CheckExistingTitleMixin, forms.ModelForm):
         self.helper.form_id = 'id-plan-create'
         self.helper.form_class = FORM_CLASS
         self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Next'))
+        self.helper.add_input(Submit('submit', self.FILL))
+        self.helper.add_input(Submit('submit', self.OVERVIEW))
 
     def clean(self):
         super().clean()

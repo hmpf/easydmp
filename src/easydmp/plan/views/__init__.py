@@ -196,6 +196,9 @@ class StartPlanView(AbstractPlanViewMixin, PlanAccessViewMixin, CreateView):
         return HttpResponseServerError()
 
     def get_success_url(self):
+        submit_value = self.request.POST['submit']
+        if submit_value == self.form_class.OVERVIEW:
+            return reverse('plan_detail', kwargs={'plan': self.object.pk})
         first_question = self.object.get_first_question()
         first_section = first_question.section
         try:
