@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-from copy import deepcopy
+import copy
 import warnings
 from urllib.parse import parse_qsl
 
 from django.contrib import admin
 from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied
+from django.db import models
 from django import forms
 from django.template.response import TemplateResponse
 from django.http.response import HttpResponseRedirect
@@ -165,7 +166,7 @@ class BaseOrderingInline(admin.TabularInline):
 
     @mark_safe
     def movement(self, obj):
-        buttons = deepcopy(self.MOVEMENT_BUTTONS)
+        buttons = copy.deepcopy(self.MOVEMENT_BUTTONS)
         # Deactivate invalid movement directions
         if obj.is_readonly or not self.changeable:
             buttons[Move.UP]['active'] = False
@@ -689,6 +690,49 @@ class QuestionExplicitBranchInline(admin.StackedInline):
         if request.user.has_superpowers:
             return ()
         return [f.name for f in self.model._meta.fields]
+
+    # overriden to hide add/change buttons on next_question in formset
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        """
+        Hook for specifying the form Field instance for a given database Field
+        instance.
+
+        If kwargs are given, they're passed to the form Field's constructor.
+        """
+        # If the field specifies choices, we don't need to look for special
+        # admin widgets - we just need to use a select widget of some kind.
+        if db_field.choices:
+            return self.formfield_for_choice_field(db_field, request, **kwargs)
+
+        # ForeignKey or ManyToManyFields
+        if isinstance(db_field, (models.ForeignKey, models.ManyToManyField)):
+            # Combine the field kwargs with any options for formfield_overrides.
+            # Make sure the passed in **kwargs override anything in
+            # formfield_overrides because **kwargs is more specific, and should
+            # always win.
+            if db_field.__class__ in self.formfield_overrides:
+                kwargs = {**self.formfield_overrides[db_field.__class__], **kwargs}
+
+            # Get the correct formfield.
+            if isinstance(db_field, models.ForeignKey):
+                formfield = self.formfield_for_foreignkey(db_field, request, **kwargs)
+            elif isinstance(db_field, models.ManyToManyField):
+                formfield = self.formfield_for_manytomany(db_field, request, **kwargs)
+
+            return formfield
+
+        # If we've got overrides for the formfield defined, use 'em. **kwargs
+        # passed to formfield_for_dbfield override the defaults.
+        for klass in db_field.__class__.mro():
+            if klass in self.formfield_overrides:
+                kwargs = {**copy.deepcopy(self.formfield_overrides[klass]), **kwargs}
+                return db_field.formfield(**kwargs)
+
+        # BIG BLOCK REMOVED, added buttosn to related fields
+
+        # For any other type of field, just call its formfield() method.
+        return db_field.formfield(**kwargs)
+
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         field = super().formfield_for_foreignkey(db_field, request, **kwargs)
