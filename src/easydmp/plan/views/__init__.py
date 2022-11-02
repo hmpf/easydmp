@@ -1082,11 +1082,11 @@ class PlanListView(ListView):
         return 'superpowers' in self.request.GET
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        if self.has_superpowers():
-            qs = qs.all()
-        else:
-            qs = qs.viewable(self.request.user, superpowers=False)
+        qs = super().get_queryset().viewable(
+            self.request.user,
+            superpowers=self.has_superpowers(),
+            include_public=False,
+        )
         return qs.order_by('-added')
 
     def get(self, request, *args, **kwargs):
