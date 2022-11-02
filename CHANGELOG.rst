@@ -6,6 +6,17 @@ This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.htm
 as of v0.10. Prior to v0.10, annotated tags per feature, annotated tags plus
 date per feature, or commit hashes were used.
 
+1.29.1
+------
+
+Paperbag bugfix release
+
+Bugfix:
+
+* The plan list (accessible through "Your plans") no longer have duplicate
+  entries or the public plans but is back to showing only plans where the user
+  has explicit access.
+
 1.29.0
 ------
 
