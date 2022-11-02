@@ -6,6 +6,30 @@ This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.htm
 as of v0.10. Prior to v0.10, annotated tags per feature, annotated tags plus
 date per feature, or commit hashes were used.
 
+1.29.0
+------
+
+Small features release
+
+Features:
+
+* When creating a new plan, it is now possible to go directly to the summary
+  thanks to a new button.
+* Published plans are public in the web UI, it is no longer necessary to log in
+  to see them.
+
+Bugfix:
+
+* The RDA DCS template can now be properly exported
+
+Paperwork:
+
+* Improved the template admin a bit: the section list shows super section ids,
+  it's easier to select the correct next question for an ExplicitBranch, the
+  "has mount"-column has been removed from the question admin as it was
+  redundant.
+
+
 1.28.1
 ------
 
