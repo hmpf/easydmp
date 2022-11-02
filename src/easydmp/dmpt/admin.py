@@ -540,6 +540,7 @@ class SectionAdmin(AdminConvenienceMixin, TemplateAuthMixin, ObjectPermissionMod
         'id',
         'title',
         'graph_pdf',
+        'super_section_id',
     )
     list_display_links = ('template', 'section_depth', 'id', 'position')
     list_filter = ('branching', 'template', 'optional', 'repeatable')
