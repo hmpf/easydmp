@@ -26,7 +26,7 @@ def rdadcs_keys_in_use(template):
     rdadcs_question_links = template.questions.values_list('rdadcsquestionlink__key__path', flat=True)
     rdadcs_section_links = template.sections.values_list('rdadcssectionlink__key__path', flat=True)
     used = set(rdadcs_section_links) | set(rdadcs_question_links)
-    used.remove(None)
+    used.discard(None)  # there can be links not connected to anything
     return sorted(used)
 
 
