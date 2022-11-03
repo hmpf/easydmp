@@ -1,6 +1,7 @@
 from django import test
 from django.test import tag, skipUnlessDBFeature
 from django.urls import reverse
+from django.utils.timezone import now as tznow
 
 from easydmp.dmpt.models import Section, Question
 from easydmp.plan.models import Plan, AnswerSet
@@ -19,7 +20,7 @@ URLS = {
     'lock_plan': {'public': False, 'kwargs': ('plan',)},
     'answer_question': {'public': False, 'kwargs': ('plan', 'question', 'answerset')},
     'plan_delete': {'public': False, 'kwargs': ('plan',)},
-    'plan_detail': {'public': False, 'kwargs': ('plan',)},
+    'plan_detail': {'public': True, 'kwargs': ('plan',)},
     'plan_saveas': {'public': False, 'kwargs': ('plan',)},
     'publish_plan': {'public': False, 'kwargs': ('plan',)},
     'answerset_detail': {'public': False, 'kwargs': ('plan', 'section','answerset')},
@@ -44,7 +45,7 @@ def make_kwargs(args):
 
 
 @tag('JSONField')
-class AccessTestCase(test.TestCase):
+class PlanAccessTestCase(test.TestCase):
 
     def setUp(self):
         self.template = create_smallest_template(True)
@@ -53,6 +54,7 @@ class AccessTestCase(test.TestCase):
             template=self.template,
             added_by=self.user,
             modified_by=self.user,
+            published=tznow(),
         )
 
     def test_anon_access(self):

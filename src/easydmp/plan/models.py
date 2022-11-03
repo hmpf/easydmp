@@ -948,13 +948,13 @@ class PlanQuerySet(models.QuerySet):
         return self.filter(accesses__user=user, accesses__may_edit=True)
 
     def viewable(self, user, superpowers=True, include_public=True):
-        if superpowers and user.has_superpowers:
-            return self.all()
         public = self.none()
         if include_public:
             public = self.filter(published__isnull=False)
         if not user.is_authenticated:
             return public
+        if superpowers and user.has_superpowers:
+            return self.all()
         qs = public | self.filter(accesses__user=user)
         qs = qs.distinct()
         return qs
