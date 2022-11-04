@@ -17,8 +17,7 @@
               {% if object.locked and not object.published %}
               <li><a href="{% url 'publish_plan' plan=object.id %}" id="publicize-{{ object.id }}"><img src="{% static 'icons/icon-share.png'  %}" aria-labelledby="publicize-{{ object.id }}" />Make public</a></li>
               {% endif %}
-              <li><a href="{% url 'generated_plan_html' plan=object.id %}" id="export-html-{{ object.id }}"><img src="{% static 'icons/icon-export.png'  %}" aria-labelledby="export-html-{{ object.id }}" />Export to HTML</a></li>
-              <li><a href="{% url 'generated_plan_pdf' plan=object.id %}" id="export-pdf-{{ object.id }}"><img src="{% static 'icons/icon-export.png'  %}" aria-labelledby="export-pdf-{{ object.id }}" />Export to PDF</a></li>
+              <li><a href="{% url 'plan_export_list' plan=object.id %}" id="export-{{ object.id }}"><img src="{% static 'icons/icon-export.png'  %}" aria-labelledby="export-{{ object.id }}" />Export</a></li>
               {% comment %}
               <li><a href="{% url 'generated_plan_html' plan=object.id %}" id="export-print-{{ object.id }}"><img src="{% static 'icons/icon-print.png'  %}" aria-labelledby="export-print-{{ object.id }}" />Print</a></li>
               {% endcomment %}

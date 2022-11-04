@@ -1,0 +1,16 @@
+{% extends "easydmp/plan/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+  <h1>Export plan "{{ object }}"</h1>
+
+  <dl>
+    <dt><h2><a href="{{ export.html }}">HTML</a></h2></dt>
+    <dd>Get an HTML file generated from the plan. This fle can be imported into your favorite word processor and touched up by you.</dd>
+    <dt><h2><a href="{{ export.pdf }}">PDF</a></h2></dt>
+    <dd>Get a PDF-file generated from the HTML</dd>
+    <dt><h2><a href="{{ export.rdadcs }}">JSON: RDA DCS</a></h2></dt>
+    <dd>Get a JSON download suitable for use by anything that can handle <a href="https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard">RDA DMP Common Standard</a>. If the plan is not based on the RDA DCS template it will be very minimal.</dd>
+    <dt><h2><a href="{{ export.easydmp }}">JSON: EasyDMP</a></h2></dt>
+    <dd>Get a JSON download suitable for importing into another instance of EasyDMP.</dd>
+  </dl>
+{% endblock content %}

@@ -386,6 +386,26 @@ class CreateNewVersionPlanView(PlanAccessViewMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
+class ExportPlanView(PlanAccessViewMixin, DetailView):
+    template_name = 'easydmp/plan/plan_export.html'
+    model = Plan
+    pk_url_kwarg = 'plan'
+
+    def get_context_data(self, **kwargs):
+        pk = self.object.pk
+        html = reverse('generated_plan_html', kwargs={'plan': pk})
+        pdf = reverse('generated_plan_pdf', kwargs={'plan': pk})
+        easydmp = reverse('v2:plan-export', kwargs={'pk': pk, 'format': 'json'})
+        rdadcs = reverse('v2:plan-export-rda', kwargs={'pk': pk})
+        kwargs['export'] = {
+            'html': html,
+            'pdf': pdf,
+            'easydmp': easydmp,
+            'rdadcs': rdadcs,
+        }
+        return kwargs
+
+
 class AddAnswerSetView(RedirectView):
 
     def get(self, request, *args, **kwargs):
