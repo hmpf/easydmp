@@ -6,6 +6,14 @@ This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.htm
 as of v0.10. Prior to v0.10, annotated tags per feature, annotated tags plus
 date per feature, or commit hashes were used.
 
+1.30.0
+------
+
+Nano-size feature:
+
+* Instead of two buttons for exporting a plan to HTML and PDF, link to a page
+  with all export-options, including the two JSON formats
+
 1.29.2
 ------
 
