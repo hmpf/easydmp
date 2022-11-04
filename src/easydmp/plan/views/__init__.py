@@ -1164,10 +1164,7 @@ class AbstractGeneratedPlanView(DetailView):
 
     def get_queryset(self):
         "Show published plans to the public, otherwise only viewable"
-        qs = self.model.objects.exclude(published=None)
-        if self.request.user.is_authenticated:
-            qs = qs | self.model.objects.viewable(self.request.user)
-        return qs.distinct()
+        return self.model.objects.viewable(self.request.user, include_public=True)
 
     def generate_exported_plan(self):
         self.object = self.get_object()
