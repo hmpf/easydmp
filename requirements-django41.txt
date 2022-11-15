@@ -110,7 +110,7 @@ oauthlib==3.2.1
     #   social-auth-core
 packaging==21.3
     # via sphinx
-pillow==9.2.0
+pillow==9.3.0
     # via
     #   -r requirements/forced-upgrade.txt
     #   cairosvg
