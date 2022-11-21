@@ -103,7 +103,7 @@ input, textarea {
   font-family: inherit;
   line-height: inherit;
 }
-button, input[type=submit], input[type=reset] {
+button, input[type=submit], input[type=reset], input::file-selector-button {
   font: inherit;
   border-radius: 4px;
   border: 1px solid transparent;

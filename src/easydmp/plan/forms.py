@@ -66,6 +66,19 @@ class ConfirmOwnPlanAccessChangeForm(ConfirmForm, PlanAccessForm):
         self.fields['access'].label = "Change access to"
 
 
+class PlanImportForm(forms.Form):
+    plan_export_file = forms.FileField()
+
+
+class CrispyPlanImportForm(forms.Form):
+    plan_export_file = forms.FileField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.add_input(Submit('submit', 'Import'))
+
+
 class StartPlanForm(CheckExistingTitleMixin, forms.ModelForm):
     FILL = 'Fill'
     OVERVIEW = 'Overview'

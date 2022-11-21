@@ -31,6 +31,10 @@ class DataImportError(ValueError):
     pass
 
 
+class PlanImportError(DataImportError):
+    pass
+
+
 def get_export_from_url(url, deserialize_export):
     try:
         with requests.get(url, timeout=TIMEOUT_TUPLE) as response:

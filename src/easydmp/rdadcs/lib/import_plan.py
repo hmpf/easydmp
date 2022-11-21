@@ -5,8 +5,8 @@ from django.http.request import QueryDict, MultiValueDict
 
 from easydmp.dmpt.models import Template
 from easydmp.eestore.models import EEStoreCache
+from easydmp.lib.import_export import PlanImportError
 from easydmp.plan.models import AnswerHelper, Answer, Plan, AnswerSet
-from easydmp.plan.import_plan import PlanImportError
 from easydmp.rdadcs.models import RDADCSKey
 from easydmp.rdadcs.models import RDADCSQuestionLink
 from easydmp.rdadcs.models import RDADCSSectionLink

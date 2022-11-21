@@ -1,0 +1,13 @@
+{% extends "easydmp/plan/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+  <h1>Import plan</h1>
+
+  <p>Plans must be a JSON-file, either according to the
+  <a href="https://github.com/RDA-DMP-Common/RDA-DMP-Common-Standard">RDA DMP Common Standard</a>
+  JSON format or EasyDMP's own export-format.</p>
+
+  {% crispy form %}
+
+  </form>
+{% endblock content %}

@@ -10,7 +10,10 @@
  {% if object_list.exists %}
  <div class="planlist-header">
  <h1>Your plans</h1>
- <h2 id="create_new_plan"><a href="{% url 'choose_template' %}">+ Create new plan</a></h2>
+ <h2 id="create_new_plan">
+     <a href="{% url 'choose_template' %}">+ Create new plan</a>
+     <a href="{% url 'plan_import_list' %}">+ Import plan</a>
+   </h2>
  </div>
 
  <div class="plantable" role="table" aria-label="Plan list">

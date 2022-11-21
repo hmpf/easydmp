@@ -3,6 +3,7 @@ import logging
 import warnings
 
 from django.contrib.auth import get_user_model
+from django.contrib import messages
 from django.db import transaction, DatabaseError, models
 
 from easydmp.dmpt.import_template import TemplateImportError
@@ -11,11 +12,12 @@ from easydmp.dmpt.import_template import get_stored_template_origin
 from easydmp.dmpt.models import TemplateImportMetadata
 from easydmp.eventlog.utils import log_event
 from easydmp.lib import strip_model_dict
-from easydmp.lib.import_export import DataImportError
+from easydmp.lib.import_export import PlanImportError
 from easydmp.lib.import_export import deserialize_export
 from easydmp.lib.import_export import get_free_title_for_importing
 from easydmp.lib.import_export import get_origin
 from easydmp.lib.import_export import load_json_from_stream
+from easydmp.rdadcs.lib.import_plan import ImportRDA11
 
 from .export_plan import SingleVersionExportSerializer
 from .models import Plan, PlanImportMetadata, AnswerSet, Answer
@@ -41,10 +43,6 @@ PreliminaryPlanImportMetadata = namedtuple(
 )
 
 
-class PlanImportError(DataImportError):
-    pass
-
-
 class PlanImportWarning(UserWarning):
     pass
 
@@ -56,7 +54,7 @@ class PlanExportType(models.TextChoices):
 
 def detect_export_type(export_json) -> PlanExportType:
     data = load_json_from_stream(export_json, 'Plan', PlanImportError)
-    if set(data.keys()) == set(('plan', 'answersets', 'comment', 'metadata')):
+    if set(data.keys()) >= set(('plan', 'answersets', 'comment', 'metadata')):
         # EasyDMP
         return PlanExportType.EASYDMP
     elif 'dmp' in data:
@@ -257,7 +255,7 @@ def import_serialized_plan_export(export_dict, user, via=DEFAULT_VIA):
             template_id, template_copy = get_template_metadata(metadata_dict)
         except PlanImportError:
             raise
-        template, mapping, _ = get_template_and_mappings(
+        template, mapping = get_template_and_mappings(
             template_copy,
             template_id,
             metadata.origin,
@@ -273,3 +271,86 @@ def import_serialized_plan_export(export_dict, user, via=DEFAULT_VIA):
 #                   timestamp=imported_plan.added, template=log_template)
 #     LOG.info('Imported plan "%s" (%i) via {via}', plan, plan.pk)
     return pim
+
+
+class PlanImporter:
+
+    def __init__(self, request, via=DEFAULT_VIA):
+        self.request = request
+        self.via = via
+        self.pim = None
+        self.msg = None
+        self.errors = []
+        self.warnings = []
+
+    def import_plan(self):
+        plan_export_file = self.request.FILES['plan_export_file']
+        plan_export_jsonblob = plan_export_file.read()
+        try:
+            export_type = detect_export_type(plan_export_jsonblob)
+        except PlanImportError as e:
+            self.errors.append(str(e))
+            return None
+        try:
+            if export_type == PlanExportType.EASYDMP:
+                pim = self.import_easydmp(plan_export_jsonblob)
+            elif export_type == PlanExportType.RDADCS:
+                pim = self.import_rdadcs(plan_export_jsonblob)
+        except PlanImportError as e:
+            self.errors.append(str(e))
+            return None
+        self.msg = f'Plan "{pim.plan}" successfully imported'
+        self.pim = pim
+        return pim
+
+    def message(self):
+        for error in self.errors:
+            messages.error(self.request, error)
+        for warning in self.warnings:
+            messages.warning(self.request, warning)
+        if self.msg:
+            messages.success(self.request, self.msg)
+
+    def audit_log(self):
+        if self.msg and self.pim:
+            log_event(self.request.user, 'import', target=self.pim.plan,
+                      timestamp=self.pim.imported,
+                      template=self.msg)
+
+    def import_easydmp(self, plan_export_jsonblob):
+        try:
+            serialized_dict = deserialize_plan_export(plan_export_jsonblob)
+        except PlanImportError as e:
+            error_msg = f'{e}, cannot import'
+            self.errors.append(error_msg)
+            raise
+
+        try:
+            with warnings.catch_warnings(record=True) as w:
+                pim = import_serialized_plan_export(
+                    serialized_dict, self.request.user, self.via
+                )
+                if w:
+                    self.warnings.append(self.request, w[-1].message)
+                return pim
+        except PlanImportError as e:
+            self.errors.append(str(e))
+            raise
+
+    def import_rdadcs(self, plan_export_jsonblob):
+        try:
+            data = load_json_from_stream(
+                plan_export_jsonblob, 'Plan', PlanImportError
+            )
+        except PlanImportError as e:
+            error_msg = f'{e}, cannot import'
+            self.errors.append(error_msg)
+            raise
+
+        try:
+            importer = ImportRDA11(data, self.request.user, self.via)
+            importer.import_rdadcs()
+            return importer.metadata
+        except PlanImportError as e:
+            self.errors.append(str(e))
+            raise

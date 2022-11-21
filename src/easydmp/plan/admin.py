@@ -1,29 +1,19 @@
-import warnings
-
 from django.contrib import admin
-from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django import forms
 from django.http.response import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, path
-from django.utils.html import format_html, mark_safe
 
 from easydmp.dmpt.models import Section
-from easydmp.eventlog.utils import log_event
 from easydmp.lib.admin import LockedFilter
 from easydmp.lib.admin import PublishedFilter
 from easydmp.lib.admin import ImportedFilter
 from easydmp.lib.admin import AdminConvenienceMixin
-from easydmp.lib.import_export import load_json_from_stream
-from easydmp.rdadcs.lib.import_plan import ImportRDA11
 from easydmp.rdadcs.models import RDADCSImportMetadata
 
-from .import_plan import deserialize_plan_export
-from .import_plan import detect_export_type
-from .import_plan import import_serialized_plan_export
-from .import_plan import PlanExportType
-from .import_plan import PlanImportError
+from .forms import PlanImportForm
+from .import_plan import PlanExportType, PlanImporter
 from .models import AnswerSet
 from .models import Plan
 from .models import PlanAccess
@@ -89,10 +79,6 @@ class AnswerSetAdmin(AdminConvenienceMixin, admin.ModelAdmin):
         if obj:
             return self.readonly_fields + ['plan', 'section', 'parent']
         return self.readonly_fields
-
-
-class PlanImportForm(forms.Form):
-    plan_export_file = forms.FileField()
 
 
 class PlanExportForm(forms.Form):
@@ -184,42 +170,6 @@ class PlanAdmin(AdminConvenienceMixin, admin.ModelAdmin):
 
     # extra buttons on changelist
 
-    @classmethod
-    def import_easydmp_plan(cls, request, plan_export_jsonblob):
-        try:
-            serialized_dict = deserialize_plan_export(plan_export_jsonblob)
-        except PlanImportError as e:
-            error_msg = f'{e}, cannot import'
-            messages.error(request, error_msg)
-            raise
-
-        try:
-            with warnings.catch_warnings(record=True) as w:
-                pim = import_serialized_plan_export(serialized_dict, request.user, via='admin')
-                if w:
-                    messages.warning(request, w[-1].message)
-                return pim
-        except PlanImportError as e:
-            messages.error(request, str(e))
-            raise
-
-    @classmethod
-    def import_rdadcs_plan(cls, request, plan_export_jsonblob):
-        try:
-            data = load_json_from_stream(plan_export_jsonblob, 'Plan', PlanImportError)
-        except PlanImportError as e:
-            error_msg = f'{e}, cannot import'
-            messages.error(request, error_msg)
-            raise
-
-        try:
-            importer = ImportRDA11(data, request.user, via='admin')
-            importer.import_rdadcs()
-            return importer.metadata
-        except PlanImportError as e:
-            messages.error(request, str(e))
-            raise
-
     def import_plan(self, request):
         # authorization
         user = request.user
@@ -231,22 +181,14 @@ class PlanAdmin(AdminConvenienceMixin, admin.ModelAdmin):
         if request.method == 'POST':
             form = PlanImportForm(request.POST, request.FILES)
             if form.is_valid():
-                plan_export_file = request.FILES['plan_export_file']
-                plan_export_jsonblob = plan_export_file.read()
-                url_on_error = reverse(self.get_viewname('import'))
-                try:
-                    export_type = detect_export_type(plan_export_jsonblob)
-                    if export_type == PlanExportType.EASYDMP:
-                        pim = self.import_easydmp_plan(request, plan_export_jsonblob)
-                    elif export_type == PlanExportType.RDADCS:
-                        pim = self.import_rdadcs_plan(request, plan_export_jsonblob)
-                except PlanImportError:
-                    return HttpResponseRedirect(url_on_error)
-                msg = f'Plan "{pim.plan}" successfully imported.'
-                messages.success(request, msg)
-                log_event(request.user, 'import', target=pim.plan,
-                          timestamp=pim.imported,
-                          template=msg[:-1])
+                importer = PlanImporter(request, via='admin')
+                pim = importer.import_plan()
+                importer.message()
+                if not pim:
+                    return HttpResponseRedirect(
+                        reverse(self.get_viewname('import'))
+                    )
+                importer.audit_log()
                 # for admin.LogEntry
                 self.log_change(request, pim.plan, {'added': {}})
                 return HttpResponseRedirect(

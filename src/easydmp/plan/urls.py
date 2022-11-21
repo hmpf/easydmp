@@ -18,6 +18,7 @@ from .views import (
     PublishPlanView,
     CreateNewVersionPlanView,
     ExportPlanView,
+    ImportPlanView,
     AnswerLinearSectionView,
     AnswerSetDetailView,
     GeneratedPlanPlainTextView,
@@ -39,6 +40,7 @@ urlpatterns = [
     path('start/', ChooseTemplateForNewPlanView.as_view(), name='choose_template'),
     path('template/<int:template_id>/', StartPlanView.as_view(), name='create_plan'),
     path('new/', RedirectView.as_view(url='/plan/start/'), name='new_plan'),
+    path('import/', ImportPlanView.as_view(), name='plan_import_list'),
 
     path('access/<int:access>/update/', UpdatePlanAccessView.as_view(), name='update_planaccess'),
     path('access/<int:access>/delete/', DeletePlanAccessView.as_view(), name='leave_plan'),

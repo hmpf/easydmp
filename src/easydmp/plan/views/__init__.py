@@ -16,7 +16,9 @@ from django.views.generic import (
     DetailView,
     ListView,
     DeleteView,
+    FormView,
     RedirectView,
+    TemplateView,
 )
 from weasyprint import HTML
 
@@ -26,6 +28,7 @@ from easydmp.dmpt.forms import AbstractNodeFormSet
 from easydmp.eventlog.models import EventLog
 from easydmp.eventlog.utils import log_event
 
+from ..import_plan import PlanImporter
 from ..models import add_answerset
 from ..models import AnswerHelper
 from ..models import AnswerSet
@@ -37,6 +40,7 @@ from ..forms import ConfirmForm
 from ..forms import SaveAsPlanForm
 from ..forms import StartPlanForm
 from ..forms import UpdatePlanForm
+from ..forms import CrispyPlanImportForm
 
 
 LOG = logging.getLogger(__name__)
@@ -404,6 +408,25 @@ class ExportPlanView(PlanAccessViewMixin, DetailView):
             'rdadcs': rdadcs,
         }
         return kwargs
+
+
+class ImportPlanView(PlanAccessViewMixin, FormView):
+    template_name = 'easydmp/plan/plan_import_form.html'
+    form_class = CrispyPlanImportForm
+    pim = None
+
+    def form_valid(self, form):
+        importer = PlanImporter(self.request, via='frontend')
+        self.pim = importer.import_plan()
+        importer.message()
+        if self.pim:
+            importer.audit_log()
+            return HttpResponseRedirect(self.get_success_url())
+        return self.form_invalid(form)
+
+    def get_success_url(self):
+        success_url = reverse('plan_detail', kwargs={'plan': self.pim.plan.pk})
+        return success_url
 
 
 class AddAnswerSetView(RedirectView):
