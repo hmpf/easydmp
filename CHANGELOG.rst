@@ -6,6 +6,16 @@ This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.htm
 as of v0.10. Prior to v0.10, annotated tags per feature, annotated tags plus
 date per feature, or commit hashes were used.
 
+1.31.0
+------
+
+Small feature:
+
+* Allow authenticated users to import plans via files. Supported formats:
+
+  * RDA DCS 1.1, json
+  * EasyDMP plan export format, json
+
 1.30.1
 ------
 
