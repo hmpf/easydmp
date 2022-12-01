@@ -304,6 +304,11 @@ class ImportRDA11:
 
     def do_subpaths_of_repeated_paths_with_one_subpath(self, jsonblob, parent_path, child_path=None):
         section = self.section_map[parent_path]
+        key, optional, _ = RDADCSKey.get_key(parent_path)
+        if not jsonblob or jsonblob == [None]:
+            if optional:
+                return
+            raise RDADCSImportError(f"{self.ERROR}: the required object \"{key}\" is missing")
 
         # Item 1
         answerset = self.answersets.get(section=section)
