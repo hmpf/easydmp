@@ -310,21 +310,30 @@ class ImportRDA11:
                 return
             raise RDADCSImportError(f"{self.ERROR}: the required object \"{key}\" is missing")
 
-        # Item 1
         answerset = self.answersets.get(section=section)
+        child_key, optional, repeatable = None, None, None
+        if child_path:
+            child_key, optional, repeatable = RDADCSKey.get_key(child_path)
+
+        # Item 1
         entry = jsonblob[0]
         self.do_subpaths_of_flat_path(entry, parent_path, answerset)
-        child_key = None
-        if child_path:
-            child_key, *_ = RDADCSKey.get_key(child_path)
-            self.do_subpaths_of_repeated_path(entry[child_key], child_path, parent=answerset)
 
-        # Item 2—n
-        for entry in jsonblob[1:]:  # list
-            answerset = answerset.add_sibling()
-            self.do_subpaths_of_flat_path(entry, parent_path, answerset)
-            if child_path:
-                self.do_subpaths_of_repeated_path(entry[child_key], child_path, parent=answerset)
+        subblob = entry.get(child_key, None)
+        if subblob:
+            self.do_subpaths_of_repeated_path(subblob, child_path, parent=answerset)
+        else:
+            if child_key and not optional:
+                raise RDADCSImportError(f"{self.ERROR}: the required object \"{child_key}\" is missing from \"{key}\"")
+
+        if repeatable:
+            # Item 2—n
+            for entry in jsonblob[1:]:  # list
+                answerset = answerset.add_sibling()
+                self.do_subpaths_of_flat_path(entry, parent_path, answerset)
+                subblob = entry.get(child_key, None)
+                if subblob:
+                    self.do_subpaths_of_repeated_path(entry[child_key], child_path, parent=answerset)
 
     # Specific parsers for subobjects that have subobjects
 
