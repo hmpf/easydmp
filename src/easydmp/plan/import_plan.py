@@ -126,8 +126,9 @@ def get_template_metadata(metadata_dict):
 def _map_data_to_new_keys(data, mapping):
     remapped_data = {}
     for key, value in data.items():
-        new_key = str(mapping[int(key)])
-        remapped_data[new_key] = value
+        new_key = mapping.get(int(key), None)
+        if new_key:
+            remapped_data[str(new_key)] = value
     return remapped_data
 
 
