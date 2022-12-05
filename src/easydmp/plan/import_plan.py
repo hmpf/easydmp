@@ -126,8 +126,9 @@ def get_template_metadata(metadata_dict):
 def _map_data_to_new_keys(data, mapping):
     remapped_data = {}
     for key, value in data.items():
-        new_key = str(mapping[int(key)])
-        remapped_data[new_key] = value
+        new_key = mapping.get(int(key), None)
+        if new_key:
+            remapped_data[str(new_key)] = value
     return remapped_data
 
 
@@ -221,22 +222,6 @@ def _create_answersets(export_dict, pim, mappings):
     pim.plan.visited_sections.set(sections_visited)
 
 
-@transaction.atomic
-def _create_answers(export_dict, pim, mappings):
-    answer_list = export_dict['answers']
-    if not answer_list:
-        warnings.warn(PlanImportWarning('This plan lacks answers'))
-        return
-    for answer_dict in answer_list:
-        orig_answerset_id = answer_dict.pop('answerset')
-        orig_question_id = answer_dict.pop('question')
-        Answer.objects.create(
-            answerset_id=mappings['answersets'][orig_answerset_id],
-            question_id=mappings['questions'][orig_question_id],
-            **strip_model_dict(answer_dict),
-        )
-
-
 def import_serialized_plan_export(export_dict, user, via=DEFAULT_VIA):
     if not export_dict:
         raise PlanImportError("Plan export file was empty, cannot import")
@@ -264,7 +249,6 @@ def import_serialized_plan_export(export_dict, user, via=DEFAULT_VIA):
 
         pim = _create_imported_plan(user, template, export_dict, metadata, via)
         _create_answersets(export_dict, pim, mapping)
-        _create_answers(export_dict, pim, mapping)
 #         plan = pim.plan
 #         log_template = '{timestamp} {actor} imported {target}' + f' via {via}'
 #         log_event(plan.added_by, 'import', target=plan,

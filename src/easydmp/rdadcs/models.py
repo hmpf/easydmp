@@ -67,7 +67,19 @@ class RDADCSKey(models.Model):
         return key
 
     @classmethod
-    def get_key(cls, path):
+    def clean_path(cls, path):
+        if not isinstance(path, str):
+            raise ValueError("\"path\" must be a string")
+        path = path.strip()
+        if not path:
+            raise ValueError("\"path\" may not be empty")
+        if not '.' in path:
+            raise ValueError("\"path\" is invalid, lacks any \".\"")
+        return path
+
+    @classmethod
+    def get_key(cls, path: str):
+        path = cls.clean_path(path)
         _, key = path.rsplit('.', 1)
         return cls.parse_key(key)
 
