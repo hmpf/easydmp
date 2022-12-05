@@ -6,6 +6,18 @@ This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.htm
 as of v0.10. Prior to v0.10, annotated tags per feature, annotated tags plus
 date per feature, or commit hashes were used.
 
+1.31.1
+------
+
+Various fixes to RDADCS import
+
+Bugfix:
+
+* Improve paranoia in general
+* Optional objects are now skipped correctly if missing from the import
+* Ignore the entire answers block as that's just timestamps
+* Answers to unknown querstions are properly ignored
+
 1.31.0
 ------
 
