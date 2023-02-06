@@ -104,7 +104,7 @@ jsonschema==4.10.3
     # via drf-spectacular
 markupsafe==2.1.1
     # via jinja2
-oauthlib==3.2.1
+oauthlib==3.2.2
     # via
     #   requests-oauthlib
     #   social-auth-core
