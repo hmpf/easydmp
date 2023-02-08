@@ -29,7 +29,7 @@ cffi==1.14.3
     #   weasyprint
 chardet==3.0.4
     # via requests
-cryptography==3.3.2
+cryptography==39.0.1
     # via
     #   pyjwt
     #   social-auth-core
