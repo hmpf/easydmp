@@ -44,7 +44,7 @@ defusedxml==0.6.0
     #   social-auth-core
 dj-database-url==0.5.0
     # via -r requirements/base.txt
-django==4.0.7
+django==4.1.7
     # via
     #   -r requirements/django40.txt
     #   django-appconf
