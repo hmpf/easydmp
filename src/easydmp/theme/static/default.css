@@ -196,13 +196,22 @@ footer {
   padding-right: 1ex;
 }
 footer p {
-  padding: 1ex;
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
+  margin: 0;
 }
 footer p a {
-  padding: 1rem;
+  font-weight: bold;
+}
+footer .logo {
+  gap: 1ex;
+}
+footer #eudat-logo img {
+  width: 150px;
+}
+footer #sigma2-logo img {
+  max-width: 400px;
 }
 details summary {
   cursor: pointer;
@@ -252,7 +261,24 @@ table {
     content: '\02705';
     visibility: visible;
 }
-
+@media (max-width: 420px) {
+  footer #sigma2-logo img {
+    width: 95%;
+  }
+  * { font-size: 0.95rem; }
+  h1 {
+    font-size: 1.5rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+  }
+  h3 {
+    font-size: 1.125rem;
+  }
+  h4 {
+    font-size: 1rem;
+  }
+}
 @media (min-width: 40rem) {
   main > div {
     padding: 2.5rem;
@@ -294,6 +320,9 @@ table {
   nav ul {
     gap: 1.5rem;
   }
+  footer p {
+    padding-top: 1rem;
+  }
 }
 @media (min-width: 72rem) {
   .alert {
@@ -309,6 +338,12 @@ table {
   }
   footer {
     padding: 0;
+  }
+  footer p {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
   }
   header .navbar {
     width: 71rem;
