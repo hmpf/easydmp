@@ -6,6 +6,12 @@ This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.htm
 as of v0.10. Prior to v0.10, annotated tags per feature, annotated tags plus
 date per feature, or commit hashes were used.
 
+1.13.2
+------
+
+Replaced Sigma2-logo with Sigma2+NRIS-logo. As the new logo is quite wide, it
+was necessary to redesign the footer. The logos are now on a separate row.
+
 1.31.1
 ------
 
