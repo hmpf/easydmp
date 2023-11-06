@@ -1,5 +1,4 @@
 django-cors-headers>=3.5
-django-crispy-forms>=1.9
 django-extensions
 django-filter>=2.4.0,<2.5
 django-guardian>=2.3,<2.4

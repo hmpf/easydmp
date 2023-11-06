@@ -1,0 +1,75 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "easydmp"
+description = "Easy web based Data Management Plan generator"
+readme = "README.rst"
+license = {text = "MIT License"}
+authors = [{name = "Hanne Moa", email = "hanne.moa@sikt.no"}]
+classifiers = [
+    "Framework :: Django",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+urls = {Homepage = "https://github.com/hmpf/easydmp"}
+requires-python = ">=3.9"
+dependencies = [
+    "django<5",
+    "django-cors-headers>=3.5",
+    "django-crispy-forms",
+    "django-extensions",
+    "django-filter>=2.4.0,<2.5",
+    "django-guardian>=2.3,<2.4",
+    "djangorestframework>=3.12",
+    "drf-jwt>=1.19",
+    "django_select2>=7.3",
+    "dj-database-url>=0.5",
+    "docutils>=0.16",
+    "graphviz>=0.16",
+    "psycopg2 --no-binary=psycopg2",
+    "social-auth-app-django>=4.0",
+    "social-auth-core>=4.1",
+    "whitenoise>=5.2",
+    "drf-spectacular>=0.14",
+    "weasyPrint==52.1",
+    "factory-boy>=3.0,<4.0",
+    "python-dataporten-auth>=2.0",
+    "social-auth-backend-b2access>=1.0",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+docs = [
+    "Sphinx>=3.3",
+    "sphinxcontrib_django",
+]
+tests = [
+    "tox",
+    "coverage",
+    "mypy",
+    "flake8",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["*/migrations/*"]
+# Auto-generated
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ["*/settings/*"]
+# Settings are a mess, cause by being python, not text
+ignore_errors = true
+
+[tool.vulture]
+exclude = ["admin.py", "settings/", "migrations/", "docs/"]
+make_whitelist = true
+min_confidence = 80
+paths = ["src"]
+sort_by_size = true
