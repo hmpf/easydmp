@@ -1,3 +1,4 @@
+.*
 *.egg-info
 *.pdf
 *.py?
@@ -5,9 +6,6 @@
 *.sh
 *.sqlite3
 *~
-.coverage*
-.mypy*
-.tox
 localsettings.py
 Attic
 htmlcov
@@ -21,3 +19,7 @@ collected_static_files
 src/easydmp/dmpt/static/**/*.svg
 src/easydmp/dmpt/static/**/*.png
 src/**/*.dot
+!.gitattributes
+!.github
+!.gitignore
+!.pre-commit-config.yaml
